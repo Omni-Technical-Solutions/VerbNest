@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_storage/postit_storage.dart';
 
+import '../state/import_actions.dart';
 import '../state/session.dart';
 import '../state/sidebar_rows.dart';
 import '../state/tree_state.dart';
@@ -15,6 +17,8 @@ enum _Action {
   moveUp,
   moveDown,
   delete,
+  copyCurl,
+  exportPostman,
 }
 
 /// The collections tree with filter and per-item actions (FR-COL-001/003).
@@ -73,6 +77,12 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
               ),
               onChanged: (v) => setState(() => _filter = v),
             ),
+          ),
+          IconButton(
+            key: const Key('import'),
+            tooltip: 'Import',
+            icon: const Icon(Icons.file_download_outlined),
+            onPressed: () => _import(context),
           ),
           IconButton(
             key: const Key('new-collection'),
@@ -175,6 +185,16 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         const PopupMenuItem(value: _Action.duplicate, child: Text('Duplicate')),
         const PopupMenuItem(value: _Action.moveUp, child: Text('Move up')),
         const PopupMenuItem(value: _Action.moveDown, child: Text('Move down')),
+        if (!node.isContainer)
+          const PopupMenuItem(
+            value: _Action.copyCurl,
+            child: Text('Copy as cURL'),
+          ),
+        if (node.parentId == null)
+          const PopupMenuItem(
+            value: _Action.exportPostman,
+            child: Text('Copy as Postman JSON'),
+          ),
         const PopupMenuItem(value: _Action.delete, child: Text('Delete')),
       ],
     );
@@ -223,6 +243,18 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         actions.nudge(node.id, -1);
       case _Action.moveDown:
         actions.nudge(node.id, 1);
+      case _Action.copyCurl:
+        await _copy(
+          context,
+          requestAsCurl(ref.read(sessionProvider), node.id),
+          'cURL command copied',
+        );
+      case _Action.exportPostman:
+        await _copy(
+          context,
+          exportCollectionJson(ref.read(sessionProvider), node.id),
+          'Postman collection copied',
+        );
       case _Action.delete:
         final ok = await confirm(
           context,
@@ -233,5 +265,83 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         );
         if (ok) actions.delete(node.id);
     }
+  }
+
+  Future<void> _copy(BuildContext context, String text, String message) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _import(BuildContext context) async {
+    final text = await showDialog<String>(
+      context: context,
+      builder: (_) => const _ImportDialog(),
+    );
+    if (text == null || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final r = importText(ref.read(sessionProvider), text);
+      final warn = r.warnings.isEmpty
+          ? ''
+          : ' (${r.warnings.length} notes: ${r.warnings.first})';
+      messenger.showSnackBar(SnackBar(content: Text('${r.message}$warn')));
+      final id = r.nodeId;
+      if (id != null) {
+        ref.read(expandedProvider.notifier).expand(id);
+      }
+    } on FormatException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+}
+
+class _ImportDialog extends StatefulWidget {
+  const _ImportDialog();
+
+  @override
+  State<_ImportDialog> createState() => _ImportDialogState();
+}
+
+class _ImportDialogState extends State<_ImportDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Import'),
+      content: SizedBox(
+        width: 520,
+        child: TextField(
+          key: const Key('import-text'),
+          controller: _controller,
+          autofocus: true,
+          maxLines: 12,
+          decoration: const InputDecoration(
+            hintText:
+                'Paste a cURL command, a Postman collection or a '
+                'Postman environment',
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          key: const Key('import-confirm'),
+          onPressed: () => Navigator.pop(context, _controller.text),
+          child: const Text('Import'),
+        ),
+      ],
+    );
   }
 }

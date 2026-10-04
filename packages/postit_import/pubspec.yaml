@@ -1,0 +1,16 @@
+name: postit_import
+description: cURL and Postman import/export for PostIt.
+version: 0.8.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  postit_core: any
+  postit_storage: any
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
