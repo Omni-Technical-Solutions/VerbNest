@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:postit_app/src/state/editor_state.dart';
 import 'package:postit_app/src/state/session.dart';
+import 'package:postit_app/src/state/variables.dart';
 import 'package:postit_app/src/widgets/request_editor.dart';
 import 'package:postit_core/postit_core.dart';
 import 'package:postit_http/postit_http.dart';
@@ -68,6 +69,7 @@ class FakeEngine extends HttpEngine {
 }
 
 void main() {
+  envAndHistoryTests();
   test('edits are saved after the debounce and name is kept', () async {
     final t = setup();
     final n = t.c.read(editorProvider(t.id).notifier);
@@ -155,5 +157,54 @@ void main() {
     expect(find.byKey(const Key('response-status')), findsOneWidget);
     expect(find.text('201 Created'), findsOneWidget);
     await tester.pump(EditorNotifier.saveDelay);
+  });
+}
+
+void envAndHistoryTests() {
+  test('environment values and secrets resolve; history is masked', () async {
+    final t = setup();
+    final repo = t.s.repo;
+    repo.saveEnvironment(const Environment(id: 'E1', name: 'Dev'));
+    saveVariables(t.s, VariableOwner.environment('E1'), [
+      const Variable(key: 'host', value: 'dev.test'),
+      const Variable(key: 'tok', value: 's3cret', secret: true),
+    ]);
+    // Secret value is not in the workspace file.
+    expect(repo.variables(VariableOwner.environment('E1')).last.value, isEmpty);
+    expect(
+      loadVariables(t.s, VariableOwner.environment('E1')).last.value,
+      's3cret',
+    );
+
+    t.c.read(activeEnvProvider.notifier).select('E1');
+    expect(repo.defaultEnvironmentId, 'E1');
+
+    final n = t.c.read(editorProvider(t.id).notifier);
+    n.edit(
+      (i) => i.copyWith(
+        url: 'http://{{host}}/x',
+        auth: const BearerAuth(token: '{{tok}}'),
+      ),
+    );
+    await n.send();
+    expect(t.e.last!.url.host, 'dev.test');
+    expect(t.e.last!.headers.any((h) => h.$2.contains('s3cret')), isTrue);
+
+    final history = t.s.local.listHistory(repo.workspaceId);
+    expect(history, hasLength(1));
+    expect(history.single.environmentName, 'Dev');
+    expect(history.single.status, 201);
+    expect(history.single.requestJson, isNot(contains('s3cret')));
+  });
+
+  test('engine failures are recorded in history', () async {
+    final t = setup();
+    final n = t.c.read(editorProvider(t.id).notifier);
+    n.edit((i) => i.copyWith(url: 'http://x.test'));
+    t.e.failWith = const NetworkError('refused');
+    await n.send();
+    final h = t.s.local.listHistory(t.s.repo.workspaceId).single;
+    expect(h.error, 'refused');
+    expect(h.status, isNull);
   });
 }

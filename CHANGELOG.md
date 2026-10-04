@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.7.0
+
+- Environments and history (FR-VAR-002..004, FR-HIS-001/002):
+  - Environments and globals page with a variables table; secret variables are never written to the workspace file (values kept in the device-local store until the OS secret store lands).
+  - Environment selector and variables quick-look in the request editor; the active environment is remembered per workspace.
+  - Every send (and engine failure) is recorded in local history with secrets masked; history page with search, detail view and clear.
+- Desktop sidebar now shows only for Collections.
+- Not yet: separate current vs initial values for non-secret variables, history retention settings UI.
+
 ## 0.6.0
 
 - Request editor (FR-REQ, FR-HTTP-001..007, FR-RES):

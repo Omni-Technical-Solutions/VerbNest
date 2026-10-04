@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'layout_class.dart';
+import 'pages/environments_page.dart';
+import 'pages/history_page.dart';
 import 'settings_page.dart';
 import 'state/session.dart';
 import 'state/tree_state.dart';
@@ -90,7 +92,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
             ],
           ),
           const VerticalDivider(width: 1),
-          if (sidebar) ...[
+          if (sidebar && _selected == _Destination.collections) ...[
             SizedBox(width: 280, child: _sidebar()),
             const VerticalDivider(width: 1),
           ],
@@ -100,9 +102,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     );
   }
 
-  Widget _sidebar() => _selected == _Destination.collections
-      ? const CollectionsSidebar()
-      : Center(child: Text('${_selected.label} sidebar'));
+  Widget _sidebar() => const CollectionsSidebar();
 
   bool _expanded = false;
 
@@ -156,11 +156,12 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   Widget _content() {
     return switch (_selected) {
       _Destination.settings => const SettingsPage(),
+      _Destination.history => const HistoryPage(),
+      _Destination.environments => const EnvironmentsPage(),
       _Destination.collections when !_expanded => CollectionsSidebar(
         onOpenRequest: _openFullScreen,
       ),
       _Destination.collections => _activeRequest(),
-      _ => Center(child: Text('${_selected.label} (coming soon)')),
     };
   }
 }

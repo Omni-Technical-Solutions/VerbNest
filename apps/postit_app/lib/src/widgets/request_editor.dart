@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
 
 import '../state/editor_state.dart';
+import 'env_selector.dart';
 import 'kv_editor.dart';
 import 'response_view.dart';
 import 'synced_field.dart';
@@ -32,6 +33,13 @@ class RequestEditor extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: EnvSelector(requestId: requestId),
+          ),
+        ),
         _urlBar(context, state, notifier),
         if (state.unresolved.isNotEmpty)
           _banner(

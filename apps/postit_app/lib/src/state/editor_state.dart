@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
@@ -6,6 +7,7 @@ import 'package:postit_http/postit_http.dart';
 import 'package:postit_storage/postit_storage.dart';
 
 import 'session.dart';
+import 'variables.dart';
 
 /// Replaceable in tests.
 final engineProvider = Provider<HttpEngine>((ref) => HttpEngine());
@@ -106,12 +108,15 @@ class EditorNotifier extends Notifier<EditorState> {
     flush();
     final token = _cancel = CancelToken();
     state = state.copyWith(sending: true, clearResult: true);
+    final session = ref.read(sessionProvider);
+    final repo = session.repo;
+    final item = state.item;
+    final envId = ref.read(activeEnvProvider);
+    PreparedRequest? prepared;
     try {
-      final repo = ref.read(repositoryProvider);
-      final item = state.item;
-      final prepared = await RequestBuilder().build(
+      prepared = await RequestBuilder().build(
         item,
-        VariableResolver(_scopes(repo)),
+        VariableResolver(buildScopes(session, requestId: id, envId: envId)),
         auth: effectiveAuth(item.auth, repo.authChain(id)),
       );
       final response = await ref
@@ -124,28 +129,75 @@ class EditorNotifier extends Notifier<EditorState> {
         warnings: prepared.warnings,
         maskedSentHead: prepared.masker.maskHead(response.sent.head),
       );
+      _record(prepared, envId, response: response);
     } on RequestBuildError catch (e) {
       state = state.copyWith(sending: false, error: e.message);
     } on HttpEngineError catch (e) {
       state = state.copyWith(sending: false, error: e.message);
+      if (prepared != null) _record(prepared, envId, error: e.message);
     } finally {
       if (_cancel == token) _cancel = null;
     }
   }
 
-  VariableScopes _scopes(WorkspaceRepository repo) {
-    final containers = repo.ancestors(id).reversed.toList(); // root first
-    return VariableScopes(
-      global: repo.variables(VariableOwner.global),
-      collection: [
-        for (var i = 0; i < containers.length; i++)
-          ...repo.variables(
-            i == 0
-                ? VariableOwner.collection(containers[i])
-                : VariableOwner.folder(containers[i]),
-          ),
-      ],
-    );
+  /// Stores the exchange in local history with secrets masked (FR-HIS-001).
+  /// A failure to record must never break sending.
+  void _record(
+    PreparedRequest p,
+    String? envId, {
+    HttpResponseRecord? response,
+    String? error,
+  }) {
+    try {
+      final session = ref.read(sessionProvider);
+      final spec = p.spec;
+      final envName = envId == null
+          ? null
+          : session.repo
+                .environments()
+                .where((e) => e.id == envId)
+                .firstOrNull
+                ?.name;
+      session.local.addHistory(
+        HistoryEntry(
+          id: Ulid.generate(),
+          workspaceId: session.repo.workspaceId,
+          requestId: id,
+          method: spec.method,
+          url: p.masker.maskText(spec.url.toString()),
+          environmentName: envName,
+          sentAt: DateTime.now(),
+          status: response?.status,
+          totalMs: response?.timings.total.inMilliseconds,
+          requestJson: jsonEncode({
+            'method': spec.method,
+            'url': p.masker.maskText(spec.url.toString()),
+            'headers': [
+              for (final (k, v) in spec.headers)
+                [k, p.masker.headerValue(k, v)],
+            ],
+            'body': spec.body == null
+                ? null
+                : p.masker.maskText(
+                    utf8.decode(spec.body!, allowMalformed: true),
+                  ),
+          }),
+          responseMetaJson: response == null
+              ? null
+              : jsonEncode({
+                  'reason': response.reason,
+                  'headers': [
+                    for (final (k, v) in response.headers) [k, v],
+                  ],
+                }),
+          responseBody: response?.body,
+          error: error,
+        ),
+      );
+      ref.read(historyTickProvider.notifier).bump();
+    } catch (_) {
+      // History is best-effort.
+    }
   }
 }
 
