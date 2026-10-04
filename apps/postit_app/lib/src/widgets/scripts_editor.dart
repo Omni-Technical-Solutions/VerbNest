@@ -1,0 +1,104 @@
+import 'package:flutter/material.dart';
+import 'package:postit_core/postit_core.dart';
+
+import 'synced_field.dart';
+
+/// Pre-request and post-response script boxes (FR-SCR-001). Plain text for
+/// now; highlighting and `pm.` completion come with the script editor work.
+class ScriptsEditor extends StatefulWidget {
+  const ScriptsEditor({
+    super.key,
+    required this.scripts,
+    required this.onChanged,
+    this.idPrefix = 'script',
+    this.fontSize,
+  });
+
+  final Scripts scripts;
+  final ValueChanged<Scripts> onChanged;
+  final String idPrefix;
+  final double? fontSize;
+
+  @override
+  State<ScriptsEditor> createState() => _ScriptsEditorState();
+}
+
+class _ScriptsEditorState extends State<ScriptsEditor> {
+  late Scripts _scripts = widget.scripts;
+  bool _post = false;
+
+  void _set(Scripts next) {
+    _scripts = next;
+    widget.onChanged(next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.idPrefix;
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              SegmentedButton<bool>(
+                key: Key('$p-phase'),
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: false,
+                    label: Text(
+                      _scripts.pre.isEmpty ? 'Pre-request' : 'Pre-request •',
+                    ),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    label: Text(
+                      _scripts.post.isEmpty
+                          ? 'Post-response'
+                          : 'Post-response •',
+                    ),
+                  ),
+                ],
+                selected: {_post},
+                onSelectionChanged: (s) => setState(() => _post = s.first),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: _post
+                ? SyncedTextField(
+                    key: Key('$p-post'),
+                    value: _scripts.post,
+                    hint: "pm.test('Status is 200', () => {\n  pm.response.to.have.status(200);\n});",
+                    monospace: true,
+                    expands: true,
+                    fontSize: widget.fontSize,
+                    onChanged: (v) => _set(Scripts(pre: _scripts.pre, post: v)),
+                  )
+                : SyncedTextField(
+                    key: Key('$p-pre'),
+                    value: _scripts.pre,
+                    hint: "pm.environment.set('token', 'abc');",
+                    monospace: true,
+                    expands: true,
+                    fontSize: widget.fontSize,
+                    onChanged: (v) =>
+                        _set(Scripts(pre: v, post: _scripts.post)),
+                  ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'pm.variables, pm.environment, pm.collectionVariables, pm.globals, '
+            'pm.request, pm.response, pm.test, pm.expect and console are '
+            'available. Scripts stop after 5 s; pm.sendRequest is not '
+            'supported yet.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}

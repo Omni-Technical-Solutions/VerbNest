@@ -48,11 +48,11 @@ jobs:
           - name: linux
             os: ubuntu-latest
             build: flutter build linux --release
-            test: xvfb-run -a flutter test integration_test/platform_test.dart integration_test/workspace_test.dart -d linux
+            test: xvfb-run -a flutter test integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart -d linux
           - name: windows
             os: windows-latest
             build: flutter build windows --release
-            test: flutter test integration_test/platform_test.dart integration_test/workspace_test.dart -d windows
+            test: flutter test integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart -d windows
           - name: macos
             os: macos-latest
             build: flutter build macos --release
@@ -81,6 +81,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev xvfb
+      # The script engine (fjs) is Rust; Linux, Windows and Android build it
+      # from source. Apple targets use its signed prebuilt binaries.
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal
       - run: flutter pub get
       - run: ${{ matrix.build }}
         working-directory: apps/postit_app

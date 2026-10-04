@@ -6,6 +6,7 @@ import 'package:postit_storage/postit_storage.dart';
 import '../state/session.dart';
 import '../state/variables.dart';
 import '../widgets/auth_editor.dart';
+import '../widgets/scripts_editor.dart';
 import '../widgets/synced_field.dart';
 import 'environments_page.dart';
 
@@ -41,7 +42,7 @@ class _ContainerSettingsPageState extends ConsumerState<ContainerSettingsPage> {
         : VariableOwner.folder(node.id);
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: Text('${node.name} settings'),
@@ -50,6 +51,7 @@ class _ContainerSettingsPageState extends ConsumerState<ContainerSettingsPage> {
               Tab(text: 'Overview'),
               Tab(text: 'Auth'),
               Tab(text: 'Variables'),
+              Tab(text: 'Scripts'),
             ],
           ),
         ),
@@ -80,6 +82,11 @@ class _ContainerSettingsPageState extends ConsumerState<ContainerSettingsPage> {
               initialCurrent: loadCurrentValues(session, owner),
               onChanged: (vars, cur) =>
                   saveVariables(session, owner, vars, current: cur),
+            ),
+            ScriptsEditor(
+              idPrefix: 'container-script',
+              scripts: repo.containerScripts(node.id),
+              onChanged: (s) => repo.setContainerScripts(node.id, s),
             ),
           ],
         ),

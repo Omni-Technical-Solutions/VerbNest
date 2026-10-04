@@ -6,6 +6,9 @@ import 'package:postit_core/postit_core.dart';
 import 'package:postit_http/postit_http.dart';
 import 'package:postit_storage/postit_storage.dart';
 
+import '../scripting/script_engine.dart';
+import '../scripting/script_flow.dart';
+import '../scripting/script_io.dart';
 import 'console_log.dart';
 import 'file_port.dart';
 import 'prefs.dart';
@@ -33,6 +36,9 @@ class EditorState {
     this.maskedSentHead,
     this.maskedSentBody,
     this.pendingUnresolved = const {},
+    this.tests = const [],
+    this.scriptLogs = const [],
+    this.scriptError,
   });
 
   final HttpRequestItem item;
@@ -53,6 +59,15 @@ class EditorState {
   /// Names that stopped a send until the user confirms.
   final Set<String> pendingUnresolved;
 
+  /// Results of the post-response scripts of the last send (FR-SCR-003).
+  final List<TestResult> tests;
+
+  /// `console.*` output of the scripts of the last send.
+  final List<ConsoleLine> scriptLogs;
+
+  /// A failed post-response script; the response is still shown.
+  final String? scriptError;
+
   EditorState copyWith({
     HttpRequestItem? item,
     bool? sending,
@@ -63,6 +78,9 @@ class EditorState {
     String? maskedSentHead,
     String? maskedSentBody,
     Set<String>? pendingUnresolved,
+    List<TestResult>? tests,
+    List<ConsoleLine>? scriptLogs,
+    String? scriptError,
     bool clearResult = false,
   }) => EditorState(
     item: item ?? this.item,
@@ -80,6 +98,11 @@ class EditorState {
     pendingUnresolved: clearResult
         ? (pendingUnresolved ?? const {})
         : (pendingUnresolved ?? this.pendingUnresolved),
+    tests: clearResult ? (tests ?? const []) : (tests ?? this.tests),
+    scriptLogs: clearResult
+        ? (scriptLogs ?? const [])
+        : (scriptLogs ?? this.scriptLogs),
+    scriptError: clearResult ? scriptError : (scriptError ?? this.scriptError),
   );
 }
 
@@ -148,13 +171,34 @@ class EditorNotifier extends Notifier<EditorState> {
     state = state.copyWith(sending: true, clearResult: true);
     final session = ref.read(sessionProvider);
     final repo = session.repo;
-    final item = state.item;
+    var item = state.item;
     final envId = ref.read(activeEnvProvider);
     PreparedRequest? prepared;
     try {
       final defaults = ref.read(httpDefaultsProvider);
+      final scripts = ref.read(scriptEngineProvider);
+      var local = <String, String>{};
+      final pre = await runScriptPhase(
+        session: session,
+        engine: scripts,
+        requestId: id,
+        item: item,
+        envId: envId,
+        phase: ScriptPhase.pre,
+        request: requestToMap(item),
+      );
+      local = pre.local;
+      if (pre.error != null) {
+        state = state.copyWith(
+          sending: false,
+          error: 'Pre-request script failed: ${pre.error}',
+          scriptLogs: pre.logs,
+        );
+        return;
+      }
+      if (pre.request != null) item = applyRequestMap(item, pre.request!);
       final resolver = VariableResolver(
-        buildScopes(session, requestId: id, envId: envId),
+        buildScopes(session, requestId: id, envId: envId, local: local),
       );
       var auth = effectiveAuth(item.auth, repo.authChain(id));
       if (auth is OAuth2Auth) {
@@ -177,9 +221,23 @@ class EditorNotifier extends Notifier<EditorState> {
       final response = await ref
           .read(engineProvider)
           .send(prepared.spec, cancel: token);
+      final post = await runScriptPhase(
+        session: session,
+        engine: scripts,
+        requestId: id,
+        item: item,
+        envId: envId,
+        phase: ScriptPhase.post,
+        request: requestToMap(item),
+        response: responseToMap(response),
+        local: local,
+      );
       state = state.copyWith(
         sending: false,
         response: response,
+        tests: post.tests,
+        scriptLogs: [...pre.logs, ...post.logs],
+        scriptError: post.error,
         unresolved: prepared.unresolved,
         warnings: prepared.warnings,
         maskedSentHead: prepared.masker.maskHead(response.sent.head),

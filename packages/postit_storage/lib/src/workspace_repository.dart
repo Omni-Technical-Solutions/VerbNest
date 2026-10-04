@@ -308,6 +308,24 @@ class WorkspaceRepository {
     ]);
   });
 
+  /// Pre-request and post-response scripts of a collection or folder.
+  Scripts containerScripts(String id) =>
+      Scripts.fromJson(_decodeOrNull(_row(id)['scripts_json']));
+
+  void setContainerScripts(String id, Scripts scripts) => _ws.transaction(() {
+    _row(id);
+    _db.execute(
+      'UPDATE node SET scripts_json = ?, updated_at = ? WHERE id = ?',
+      [jsonEncode(scripts.toJson()), _now, id],
+    );
+  });
+
+  /// Scripts of the containers above [id], collection first, then folders.
+  /// The order scripts run in (FR-SCR-001).
+  List<Scripts> scriptsChain(String id) => [
+    for (final a in ancestors(id).reversed) containerScripts(a),
+  ];
+
   String description(String id) => _row(id)['description'] as String;
 
   void setDescription(String id, String text) => _ws.transaction(() {

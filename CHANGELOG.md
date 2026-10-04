@@ -2,6 +2,18 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.19.0
+
+- Scripting: pre-request and post-response scripts on requests, folders and collections, run collection → folder → request (FR-SCR-001). Engine: QuickJS through `fjs` (ADR-002).
+- `pm` API: `pm.variables`, `pm.environment`, `pm.collectionVariables`, `pm.globals` (get/set/unset/has/replaceIn/toObject), `pm.request` (method, url, headers, body; editable before sending), `pm.response` (code, status, headers, text(), json(), responseTime, `to.have.status/header`, `to.be.ok`...), `pm.info`, `pm.test`, `pm.test.skip`, `pm.expect` with a Chai subset, `console.*`, and the old `postman.*` and `tests[]` forms.
+- Not supported yet, and reported by name: `pm.sendRequest`, `pm.cookies`, `pm.visualizer`, `pm.execution`, `pm.iterationData`, `require`.
+- Variable changes made by scripts are stored as current values, so initial (shared) values stay unchanged; new names are created in the scope.
+- Sandbox: no files, sockets, `fetch` or timers; 5 s timeout and 64 MB memory cap per script; an infinite loop is stopped.
+- Scripts tab on requests and on collection/folder settings; Tests tab in the response (pass/fail counts, messages, script errors, console output).
+- A failing pre-request script stops the send; a failing post-response script keeps the response and shows the error.
+- CI installs Rust for the builds that compile the script engine.
+- Not done: script editor highlighting and `pm.` completion, snippets panel, no-code assertions, `pm.sendRequest`, async scripts, runner reports. Windows and Linux are not verified.
+
 ## 0.18.0
 
 - Android: INTERNET permission and cleartext HTTP allowed (an API client must reach `http://` hosts); release APK builds (debug-signed, 61 MB, all ABIs).

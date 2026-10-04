@@ -139,11 +139,15 @@ VariableScopes buildScopes(
   WorkspaceSession s, {
   String? requestId,
   String? envId,
+  Map<String, String> local = const {},
 }) {
   final containers = requestId == null
       ? const <String>[]
       : s.repo.ancestors(requestId).reversed.toList(); // collection first
   return VariableScopes(
+    local: [
+      for (final e in local.entries) Variable(key: e.key, value: e.value),
+    ],
     global: loadResolvedVariables(s, VariableOwner.global),
     environment: envId == null
         ? const []

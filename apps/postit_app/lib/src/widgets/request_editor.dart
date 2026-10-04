@@ -11,6 +11,7 @@ import '../state/settings_state.dart';
 import '../state/var_text.dart';
 import '../state/variables.dart';
 import 'name_dialog.dart';
+import 'scripts_editor.dart';
 import 'auth_editor.dart';
 import 'env_selector.dart';
 import 'kv_editor.dart';
@@ -267,7 +268,7 @@ class RequestEditor extends ConsumerWidget {
 
   Widget _requestTabs(HttpRequestItem item, EditorNotifier notifier) {
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Column(
         children: [
           const TabBar(
@@ -278,6 +279,7 @@ class RequestEditor extends ConsumerWidget {
               Tab(text: 'Headers'),
               Tab(text: 'Auth'),
               Tab(text: 'Body'),
+              Tab(text: 'Scripts'),
               Tab(text: 'Settings'),
             ],
           ),
@@ -295,6 +297,14 @@ class RequestEditor extends ConsumerWidget {
                   onChanged: (a) => notifier.edit((i) => i.copyWith(auth: a)),
                 ),
                 _BodyTab(item: item, notifier: notifier),
+                Consumer(
+                  builder: (context, ref, _) => ScriptsEditor(
+                    scripts: item.scripts,
+                    fontSize: ref.watch(prefsProvider).editorFontSize,
+                    onChanged: (s) =>
+                        notifier.edit((i) => i.copyWith(scripts: s)),
+                  ),
+                ),
                 _SettingsTab(item: item, notifier: notifier),
               ],
             ),

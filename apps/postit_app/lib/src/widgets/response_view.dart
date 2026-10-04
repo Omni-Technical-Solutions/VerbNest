@@ -98,7 +98,7 @@ class _ResponseViewState extends State<ResponseView> {
         if (k.toLowerCase() == 'set-cookie') ?parseSetCookie(v),
     ];
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -143,6 +143,7 @@ class _ResponseViewState extends State<ResponseView> {
               ),
               const Tab(text: 'Headers'),
               const Tab(text: 'Sent'),
+              Tab(text: _testsLabel(state)),
             ],
           ),
           Expanded(
@@ -152,11 +153,69 @@ class _ResponseViewState extends State<ResponseView> {
                 _cookies(cookies),
                 _headers(r),
                 _scroll(_sentText(state), key: const Key('response-sent')),
+                _tests(state),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  static String _testsLabel(EditorState s) {
+    if (s.tests.isEmpty && s.scriptError == null) return 'Tests';
+    final passed = s.tests.where((t) => t.passed).length;
+    final counted = s.tests.where((t) => !t.status.startsWith('skip')).length;
+    return 'Tests ($passed/$counted)';
+  }
+
+  Widget _tests(EditorState s) {
+    if (s.tests.isEmpty && s.scriptError == null && s.scriptLogs.isEmpty) {
+      return const Center(
+        child: Text('No tests ran. Add pm.test() to a post-response script.'),
+      );
+    }
+    final scheme = Theme.of(context).colorScheme;
+    return ListView(
+      key: const Key('response-tests'),
+      padding: const EdgeInsets.all(8),
+      children: [
+        if (s.scriptError != null)
+          ListTile(
+            key: const Key('script-error'),
+            leading: Icon(Icons.error_outline, color: scheme.error),
+            title: Text('Script error', style: TextStyle(color: scheme.error)),
+            subtitle: SelectableText(s.scriptError!),
+          ),
+        for (final t in s.tests)
+          ListTile(
+            dense: true,
+            key: Key('test-${t.name}'),
+            leading: Icon(
+              switch (t.status) {
+                'pass' => Icons.check_circle,
+                'skip' => Icons.remove_circle_outline,
+                _ => Icons.cancel,
+              },
+              color: switch (t.status) {
+                'pass' => Colors.green.shade700,
+                'skip' => scheme.outline,
+                _ => scheme.error,
+              },
+            ),
+            title: Text(t.name),
+            subtitle: t.message == null ? null : SelectableText(t.message!),
+          ),
+        if (s.scriptLogs.isNotEmpty) ...[
+          const Divider(),
+          Text('Console', style: Theme.of(context).textTheme.titleSmall),
+          for (final l in s.scriptLogs)
+            SelectableText(
+              '${l.level == 'log' ? '' : '${l.level}: '}${l.text}',
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            ),
+        ],
+      ],
     );
   }
 

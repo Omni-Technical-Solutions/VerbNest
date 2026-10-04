@@ -18,6 +18,17 @@ void main() {
   });
   tearDown(() => ws.close());
 
+  test('container scripts are stored and listed collection first', () {
+    final col = repo.createCollection('C');
+    final folder = repo.createFolder(col, 'F');
+    final req = repo.createRequest(folder, draft('R'));
+    expect(repo.containerScripts(col).isEmpty, isTrue);
+    repo.setContainerScripts(col, const Scripts(pre: 'a', post: 'b'));
+    repo.setContainerScripts(folder, const Scripts(pre: 'c'));
+    expect(repo.containerScripts(col).post, 'b');
+    expect(repo.scriptsChain(req).map((s) => s.pre), ['a', 'c']);
+  });
+
   group('opening files', () {
     late Directory dir;
     setUp(() => dir = Directory.systemTemp.createTempSync('postit_ws'));
