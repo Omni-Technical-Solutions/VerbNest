@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'state/settings_state.dart';
+import 'state/theme_state.dart';
 import 'widgets/synced_field.dart';
 
 /// Workspace HTTP defaults; requests can override them (FR-HTTP-007).
@@ -15,10 +16,19 @@ class SettingsPage extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        const ListTile(
-          leading: Icon(Icons.brightness_6_outlined),
-          title: Text('Theme'),
-          subtitle: Text('Follows system'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SegmentedButton<ThemeMode>(
+            key: const Key('theme-mode'),
+            segments: const [
+              ButtonSegment(value: ThemeMode.system, label: Text('System')),
+              ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+              ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+            ],
+            selected: {ref.watch(themeModeProvider)},
+            onSelectionChanged: (s) =>
+                ref.read(themeModeProvider.notifier).set(s.first),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

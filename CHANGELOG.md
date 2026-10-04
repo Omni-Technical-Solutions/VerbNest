@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.10.0
+
+- Response viewer: Pretty/Raw toggle, search with match count and highlight, read-only Cookies tab, copy body (FR-RES).
+- History: open the original request or save an entry as a new request (secrets stay masked) (FR-HIS-002).
+- Theme setting: system, light or dark, saved with the workspace (FR-APP-004).
+- Not yet: save/share to file, image preview, FTS5 search, drag and drop.
+
 ## 0.9.0
 
 - OAuth 2.0 client credentials and password grants (FR-AUTH-002): `OAuth2Auth` model, token fetch with Basic or body client auth, in-memory token cache, Postman import/export, editor UI.

@@ -2,9 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:postit_http/postit_http.dart' show Masker;
 import 'package:postit_storage/postit_storage.dart';
 
+import '../state/history_actions.dart';
 import '../state/session.dart';
+import '../state/tree_state.dart';
 import '../state/variables.dart';
 import '../widgets/name_dialog.dart';
 import '../widgets/response_view.dart';
@@ -114,13 +117,15 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   }
 }
 
-class HistoryDetailPage extends StatelessWidget {
+class HistoryDetailPage extends ConsumerWidget {
   const HistoryDetailPage({super.key, required this.entry});
 
   final HistoryEntry entry;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(sessionProvider);
+    final exists = requestStillExists(session, entry);
     final request = const JsonEncoder.withIndent('  ')
         .convert(jsonDecode(entry.requestJson));
     final body = entry.responseBody;
@@ -132,6 +137,36 @@ class HistoryDetailPage extends StatelessWidget {
             '${entry.method} ${entry.url}',
             overflow: TextOverflow.ellipsis,
           ),
+          actions: [
+            if (exists)
+              TextButton(
+                key: const Key('history-open'),
+                onPressed: () {
+                  ref.read(tabsProvider.notifier).open(entry.requestId!);
+                  Navigator.of(context).popUntil((r) => r.isFirst);
+                },
+                child: const Text('Open request'),
+              ),
+            TextButton(
+              key: const Key('history-save'),
+              onPressed: () {
+                final masked = requestFromHistory(entry).hadMasked;
+                final id = saveHistoryAsRequest(session, entry);
+                ref.read(tabsProvider.notifier).open(id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      masked
+                          ? 'Saved to "Imported". Secrets were masked '
+                                '(${Masker.placeholder}); enter them again.'
+                          : 'Saved to "Imported"',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Save as new request'),
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Request'),
