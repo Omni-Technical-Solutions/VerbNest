@@ -13,8 +13,19 @@ void main() {
         local: [v('a', 'local')],
         data: [v('a', 'data'), v('b', 'data')],
         environment: [v('a', 'env'), v('b', 'env'), v('c', 'env')],
-        collection: [v('a', 'col'), v('b', 'col'), v('c', 'col'), v('d', 'col')],
-        global: [v('a', 'g'), v('b', 'g'), v('c', 'g'), v('d', 'g'), v('e', 'g')],
+        collection: [
+          v('a', 'col'),
+          v('b', 'col'),
+          v('c', 'col'),
+          v('d', 'col'),
+        ],
+        global: [
+          v('a', 'g'),
+          v('b', 'g'),
+          v('c', 'g'),
+          v('d', 'g'),
+          v('e', 'g'),
+        ],
       );
       final r = VariableResolver(scopes);
       expect(r.resolve('{{a}}{{b}}{{c}}{{d}}{{e}}').value, 'localdataenvcolg');
@@ -54,11 +65,11 @@ void main() {
       expect(
         () => VariableResolver(scopes).resolve('{{a}}'),
         throwsA(
-          isA<VariableCycleException>().having(
-            (e) => e.chain,
-            'chain',
-            ['a', 'b', 'a'],
-          ),
+          isA<VariableCycleException>().having((e) => e.chain, 'chain', [
+            'a',
+            'b',
+            'a',
+          ]),
         ),
       );
     });
@@ -108,9 +119,11 @@ void main() {
       expect(out[0], isNot(out[1]));
       expect(
         out[0],
-        matches(RegExp(
-          r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
-        )),
+        matches(
+          RegExp(
+            r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+          ),
+        ),
       );
     });
 
@@ -126,7 +139,10 @@ void main() {
 
     test('random helpers produce well-formed values', () {
       final r = VariableResolver(VariableScopes());
-      expect(int.parse(r.resolve(r'{{$randomInt}}').value), inInclusiveRange(0, 1000));
+      expect(
+        int.parse(r.resolve(r'{{$randomInt}}').value),
+        inInclusiveRange(0, 1000),
+      );
       expect(r.resolve(r'{{$randomEmail}}').value, endsWith('@example.com'));
       expect(r.resolve(r'{{$randomFirstName}}').value, isNotEmpty);
     });
