@@ -187,7 +187,7 @@ Each package is evaluated for: licence compatible with Apache-2.0, maintained in
 
 1. ADR-001 Custom HTTP engine over `dart:io` sockets (vs. `HttpClient` / native stacks).
 2. ADR-002 QuickJS-ng via FFI as the single script engine.
-3. ~~ADR-003 YAML one-request-per-file workspace format~~ superseded by ADR-007 SQLite workspace database (written; status Proposed).
+3. ~~ADR-003 YAML one-request-per-file workspace format~~ superseded by ADR-007 SQLite workspace database (accepted 2026-10-04).
 4. ADR-004 Riverpod + freezed as state architecture.
 5. ADR-005 No Flutter web target.
 6. ADR-006 Dynamic protobuf codec for gRPC.

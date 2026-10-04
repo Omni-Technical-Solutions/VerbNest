@@ -1,6 +1,6 @@
 # ADR-007: Store workspace data in SQLite instead of files
 
-- **Status:** Proposed (needs maintainer approval per the constitution's amendment rule)
+- **Status:** Accepted by the maintainer on 2026-10-04 (constitution amendment rule satisfied)
 - **Supersedes:** ADR-003 (YAML one-request-per-file workspace format)
 - **Amends:** Constitution II (and wording in I.2)
 - **Affects:** FR-WS-001..006, FR-VAR-002, FR-VAR-007, FR-COL-003, FR-IO-003, NFR-REL-001, NFR-PERF-004, FR-HIS-*, testing.md §3 (Storage row), roadmap Phase 1

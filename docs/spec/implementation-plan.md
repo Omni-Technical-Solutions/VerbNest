@@ -32,7 +32,7 @@ Core models, SQLite workspace and local stores, request builder, custom HTTP/1.1
 | 13 Response viewer P0 | Spike (c) `re_editor` with 5 MB JSON; highlight, fold, line numbers; image preview; wire/decoded sizes; copy header values; large-body streaming to temp file | L | step 12 |
 | 14 Search, reorder, workspaces | FTS5 index and Ctrl/Cmd+K search; drag and drop and long-press drag; workspace open/new/switch; `.postit` import/export UI; revision history UI | L | step 12 |
 | 15 History, settings, shortcuts | Group by day; retention and no-bodies options; network console; font scale and editor font; full shortcut set; persist open tabs; paste-cURL detection in URL bar | M | none |
-| 16 Platforms and MVP release | Android, iOS, Windows, Linux builds and entitlements; Apple Silicon/universal macOS; CI build matrix; TLS test listeners; spikes (a) to (e) with go/no-go; NFR-PERF checks; ADR-007 approval; then `feature` commit to 1.0.0 | L | steps 9 to 15 |
+| 16 Platforms and MVP release | Android, iOS, Windows, Linux builds and entitlements; Apple Silicon/universal macOS; CI build matrix; TLS test listeners; spikes (a) to (e) with go/no-go; NFR-PERF checks; then `feature` commit to 1.0.0 | L | steps 9 to 15 |
 
 Exit: all FR-*-P0 complete, Postman corpus round-trips (needs a 20-collection corpus), NFR-PERF-001/002 met, external beta passes.
 
@@ -57,7 +57,6 @@ Exit: all FR-*-P0 complete, Postman corpus round-trips (needs a 20-collection co
 ## Risks and decisions needed
 
 1. Plugin choices (secure storage, file picker, share, code editor) add native dependencies. Each must be proven on all five platforms before it is accepted.
-2. ADR-007 (SQLite workspace) is still Proposed and needs maintainer approval.
-3. ADR-002 (QuickJS-ng) is unproven on iOS and the other platforms; the Phase 2 schedule depends on that spike.
-4. Only macOS Intel has been built, and no step has been run on a real device. Step 16 may uncover platform issues in the engine (sockets, TLS) and in `sqlite3` bundling.
-5. Interim secret storage is unencrypted. Do not ship 1.0 without step 10.
+2. ADR-002 (QuickJS-ng) is unproven on iOS and the other platforms; the Phase 2 schedule depends on that spike.
+3. Only macOS Intel has been built, and no step has been run on a real device. Step 16 may uncover platform issues in the engine (sockets, TLS) and in `sqlite3` bundling.
+4. Interim secret storage is unencrypted. Do not ship 1.0 without step 10.

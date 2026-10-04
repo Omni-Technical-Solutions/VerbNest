@@ -8,7 +8,7 @@ Goal: a repo where contributors can build, test and ship an empty-but-real app o
 - Monorepo with pub workspaces + melos; package skeletons from architecture.md.
 - CI: analyze, test, build all five targets on every PR.
 - `test_server/` with HTTP/1.1 echo, TLS listeners, redirects, delays.
-- ADR-001 … ADR-005 and ADR-007 written (ADR-002 proposed until its spike runs; ADR-007 proposed).
+- ADR-001 … ADR-005 and ADR-007 written (ADR-002 proposed until its spike runs).
 - Storage spike (e): drift + bundled SQLite with FTS5 and WAL on all five platforms; 10,000-request workspace open/search timings; crash-injection test.
 - App shell: `AdaptiveScaffold` with compact/medium/expanded layouts, theme, settings stub.
 - Spike reports: (a) custom HTTP engine timing accuracy vs. curl; (b) QuickJS-ng FFI build on all five platforms incl. iOS; (c) re_editor with 5 MB JSON on a low-end Android device; (d) secure storage on Linux without a keyring.
