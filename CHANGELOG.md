@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.15.0
+
+- Response body viewer rewritten: line numbers, JSON colours, fold/unfold of objects and arrays, search highlight, selectable text, virtualised so large bodies scroll (FR-RES-001..003).
+- Image preview for PNG/JPEG/GIF/WebP responses.
+- Response size shows the size on the wire when it differs from the decoded size.
+- Response headers list with a copy-value button per header.
+- Not yet: streaming bodies over 10 MB to disk, XML/HTML colours, hex view; render speed on a real 5 MB body was not measured.
+
 ## 0.14.0
 
 - Files in requests: form-data file parts and a binary body mode with a file picker. Files are stored inside the workspace, so they travel with it (FR-HTTP-005/006).

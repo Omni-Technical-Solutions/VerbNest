@@ -6,6 +6,7 @@ import 'package:postit_http/postit_http.dart';
 
 import '../state/cookies.dart';
 import '../state/editor_state.dart';
+import 'code_view.dart';
 
 String formatBytes(int n) {
   if (n < 1024) return '$n B';
@@ -26,6 +27,16 @@ String prettyBody(HttpResponseRecord r) {
   }
   return text;
 }
+
+bool isImageResponse(HttpResponseRecord r) {
+  final t = (r.header('content-type') ?? '').toLowerCase();
+  return t.startsWith('image/') && !t.contains('svg');
+}
+
+/// Decoded size, plus the size on the wire when compression changed it.
+String sizeLabel(HttpResponseRecord r) => r.wireBodySize == r.body.length
+    ? formatBytes(r.body.length)
+    : '${formatBytes(r.body.length)} (${formatBytes(r.wireBodySize)} on the wire)';
 
 Color statusColor(int status) {
   if (status >= 500) return Colors.red.shade700;
@@ -55,6 +66,7 @@ class ResponseView extends StatefulWidget {
 
 class _ResponseViewState extends State<ResponseView> {
   bool _pretty = true;
+  bool _preview = false;
   String _query = '';
 
   @override
@@ -103,7 +115,7 @@ class _ResponseViewState extends State<ResponseView> {
                   ),
                 ),
                 Text('${r.timings.total.inMilliseconds} ms'),
-                Text(formatBytes(r.body.length)),
+                Text(sizeLabel(r)),
                 if (widget.onSave != null)
                   TextButton.icon(
                     key: const Key('response-save'),
@@ -136,10 +148,7 @@ class _ResponseViewState extends State<ResponseView> {
               children: [
                 _body(r),
                 _cookies(cookies),
-                _scroll(
-                  r.headers.map((h) => '${h.$1}: ${h.$2}').join('\n'),
-                  key: const Key('response-headers'),
-                ),
+                _headers(r),
                 _scroll(_sentText(state), key: const Key('response-sent')),
               ],
             ),
@@ -155,7 +164,36 @@ class _ResponseViewState extends State<ResponseView> {
     return body.isEmpty ? head : '${head.trimRight()}\n\n$body';
   }
 
+  Widget _headers(HttpResponseRecord r) => ListView(
+    key: const Key('response-headers'),
+    children: [
+      for (var i = 0; i < r.headers.length; i++)
+        ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          title: SelectableText(
+            '${r.headers[i].$1}: ${r.headers[i].$2}',
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+          ),
+          trailing: IconButton(
+            key: ValueKey('copy-header-$i'),
+            tooltip: 'Copy value',
+            icon: const Icon(Icons.copy, size: 16),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: r.headers[i].$2));
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${r.headers[i].$1} copied')),
+              );
+            },
+          ),
+        ),
+    ],
+  );
+
   Widget _body(HttpResponseRecord r) {
+    final isImage = isImageResponse(r);
+    final showImage = isImage && _preview;
     final text = _pretty ? prettyBody(r) : r.bodyText;
     final matches = countMatches(text, _query);
     return Column(
@@ -165,15 +203,25 @@ class _ResponseViewState extends State<ResponseView> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             children: [
-              SegmentedButton<bool>(
+              SegmentedButton<String>(
                 key: const Key('body-view'),
                 showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(value: true, label: Text('Pretty')),
-                  ButtonSegment(value: false, label: Text('Raw')),
+                segments: [
+                  const ButtonSegment(value: 'pretty', label: Text('Pretty')),
+                  const ButtonSegment(value: 'raw', label: Text('Raw')),
+                  if (isImage)
+                    const ButtonSegment(
+                      value: 'preview',
+                      label: Text('Preview'),
+                    ),
                 ],
-                selected: {_pretty},
-                onSelectionChanged: (s) => setState(() => _pretty = s.first),
+                selected: {
+                  showImage ? 'preview' : (_pretty ? 'pretty' : 'raw'),
+                },
+                onSelectionChanged: (s) => setState(() {
+                  _preview = s.first == 'preview';
+                  if (!_preview) _pretty = s.first == 'pretty';
+                }),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -204,40 +252,29 @@ class _ResponseViewState extends State<ResponseView> {
           ),
         ),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(8),
-            child: SelectableText.rich(
-              _highlight(text, _query),
-              key: const Key('response-body'),
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-            ),
-          ),
+          child: showImage
+              ? Center(
+                  child: Image.memory(
+                    r.body,
+                    key: const Key('response-image'),
+                    errorBuilder: (_, _, _) =>
+                        const Text('This image cannot be displayed'),
+                  ),
+                )
+              : CodeView(
+                  text: text,
+                  json:
+                      _pretty &&
+                      (r
+                              .header('content-type')
+                              ?.toLowerCase()
+                              .contains('json') ??
+                          false),
+                  query: _query,
+                ),
         ),
       ],
     );
-  }
-
-  TextSpan _highlight(String text, String query) {
-    if (query.isEmpty) return TextSpan(text: text);
-    final lower = text.toLowerCase();
-    final q = query.toLowerCase();
-    final spans = <TextSpan>[];
-    var at = 0;
-    for (var i = lower.indexOf(q); i != -1; i = lower.indexOf(q, at)) {
-      if (i > at) spans.add(TextSpan(text: text.substring(at, i)));
-      spans.add(
-        TextSpan(
-          text: text.substring(i, i + q.length),
-          style: const TextStyle(
-            backgroundColor: Color(0xFFFFE082),
-            color: Colors.black,
-          ),
-        ),
-      );
-      at = i + q.length;
-    }
-    if (at < text.length) spans.add(TextSpan(text: text.substring(at)));
-    return TextSpan(children: spans);
   }
 
   Widget _cookies(List<SetCookie> cookies) {
