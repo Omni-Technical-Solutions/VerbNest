@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.12.0
+
+- Secrets are stored in the system secret store (macOS Keychain verified; other platforms not yet tested) through `flutter_secure_storage`. Existing secrets move over on first start. If the store is unavailable, PostIt falls back to the old unencrypted device store and Settings says so.
+- Plain variables have a device-local Current value next to the shared Initial value; requests use Current when it is set (FR-VAR-002).
+- Show/hide toggle on secret values.
+- Fix: collection and folder secret variables now resolve when sending.
+- Not yet: `.env` import.
+
 ## 0.11.0
 
 - Collection and folder settings page: description, auth, variables (FR-COL-002).

@@ -131,7 +131,9 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
           child: VariablesEditor(
             key: ValueKey('${owner.kind}-${owner.id}'),
             initial: loadVariables(session, owner),
-            onChanged: (vars) => saveVariables(session, owner, vars),
+            initialCurrent: loadCurrentValues(session, owner),
+            onChanged: (vars, cur) =>
+                saveVariables(session, owner, vars, current: cur),
           ),
         ),
       ],
@@ -145,10 +147,15 @@ class VariablesEditor extends StatefulWidget {
     super.key,
     required this.initial,
     required this.onChanged,
+    this.initialCurrent = const {},
   });
 
   final List<Variable> initial;
-  final ValueChanged<List<Variable>> onChanged;
+
+  /// Device-local current values of plain variables, by name.
+  final Map<String, String> initialCurrent;
+  final void Function(List<Variable> vars, Map<String, String> current)
+  onChanged;
 
   @override
   State<VariablesEditor> createState() => _VariablesEditorState();
@@ -156,10 +163,17 @@ class VariablesEditor extends StatefulWidget {
 
 class _VariablesEditorState extends State<VariablesEditor> {
   late List<Variable> _vars = [...widget.initial];
+  late final Map<String, String> _current = {...widget.initialCurrent};
+  final Set<int> _revealed = {};
 
   void _update(List<Variable> next) {
     setState(() => _vars = next);
-    widget.onChanged(next);
+    widget.onChanged(next, Map.of(_current));
+  }
+
+  void _setCurrent(String key, String value) {
+    _current[key] = value;
+    widget.onChanged(_vars, Map.of(_current));
   }
 
   List<String> get _duplicates {
@@ -213,16 +227,50 @@ class _VariablesEditorState extends State<VariablesEditor> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextFormField(
-                  key: ValueKey('var-value-$i-${_vars[i].secret}'),
+                  key: ValueKey(
+                    'var-value-$i-${_vars[i].secret}${_revealed.contains(i) ? '-shown' : ''}',
+                  ),
                   initialValue: _vars[i].value,
-                  obscureText: _vars[i].secret,
-                  decoration: const InputDecoration(
+                  obscureText: _vars[i].secret && !_revealed.contains(i),
+                  decoration: InputDecoration(
                     isDense: true,
-                    hintText: 'Value',
+                    hintText: _vars[i].secret
+                        ? 'Secret value'
+                        : 'Initial value',
                   ),
                   onChanged: (v) => _set(i, _copy(_vars[i], value: v)),
                 ),
               ),
+              if (_vars[i].secret)
+                IconButton(
+                  key: ValueKey('var-reveal-$i'),
+                  tooltip: _revealed.contains(i) ? 'Hide' : 'Show',
+                  icon: Icon(
+                    _revealed.contains(i)
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    size: 18,
+                  ),
+                  onPressed: () => setState(() {
+                    _revealed.contains(i)
+                        ? _revealed.remove(i)
+                        : _revealed.add(i);
+                  }),
+                )
+              else ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    key: ValueKey('var-current-$i-${_vars[i].key}'),
+                    initialValue: _current[_vars[i].key] ?? '',
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      hintText: 'Current value (this device)',
+                    ),
+                    onChanged: (v) => _setCurrent(_vars[i].key, v),
+                  ),
+                ),
+              ],
               IconButton(
                 key: ValueKey('var-secret-$i'),
                 tooltip: _vars[i].secret ? 'Secret' : 'Mark as secret',

@@ -40,9 +40,9 @@ class HistoryTick extends Notifier<int> {
 
 final historyTickProvider = NotifierProvider<HistoryTick, int>(HistoryTick.new);
 
-/// Variables of [owner] for editing. Secret values are not in the workspace,
-/// so they come from the device-local store (interim until the OS secret
-/// store lands).
+/// Variables of [owner] for editing: the initial (shared) value for plain
+/// variables, the secret value for secrets. Secrets come from the secret
+/// store, never from the workspace file.
 List<Variable> loadVariables(WorkspaceSession s, VariableOwner owner) {
   final current = s.secrets.values(s.repo.workspaceId, owner.kind, owner.id);
   return [
@@ -59,12 +59,51 @@ List<Variable> loadVariables(WorkspaceSession s, VariableOwner owner) {
   ];
 }
 
+/// Device-local current values of plain variables (FR-VAR-002), by name.
+Map<String, String> loadCurrentValues(
+  WorkspaceSession s,
+  VariableOwner owner,
+) => s.currentOverrides(owner.kind, owner.id);
+
+/// Variables as they resolve: a non-empty current value replaces the initial
+/// value of a plain variable.
+List<Variable> loadResolvedVariables(WorkspaceSession s, VariableOwner owner) {
+  final current = loadCurrentValues(s, owner);
+  return [
+    for (final v in loadVariables(s, owner))
+      if (!v.secret && (current[v.key] ?? '').isNotEmpty)
+        Variable(
+          key: v.key,
+          value: current[v.key]!,
+          enabled: v.enabled,
+          description: v.description,
+        )
+      else
+        v,
+  ];
+}
+
 void saveVariables(
   WorkspaceSession s,
   VariableOwner owner,
-  List<Variable> vars,
-) {
+  List<Variable> vars, {
+  Map<String, String>? current,
+}) {
   final ws = s.repo.workspaceId;
+  if (current != null) {
+    final names = {
+      for (final v in vars)
+        if (!v.secret && v.key.isNotEmpty) v.key,
+    };
+    for (final key in loadCurrentValues(s, owner).keys) {
+      if (!names.contains(key)) {
+        s.setCurrentOverride(owner.kind, owner.id, key, '');
+      }
+    }
+    for (final key in names) {
+      s.setCurrentOverride(owner.kind, owner.id, key, current[key] ?? '');
+    }
+  }
   final old = s.secrets.values(ws, owner.kind, owner.id);
   final keepSecrets = <String>{};
   for (final v in vars) {
@@ -105,13 +144,14 @@ VariableScopes buildScopes(
       ? const <String>[]
       : s.repo.ancestors(requestId).reversed.toList(); // collection first
   return VariableScopes(
-    global: loadVariables(s, VariableOwner.global),
+    global: loadResolvedVariables(s, VariableOwner.global),
     environment: envId == null
         ? const []
-        : loadVariables(s, VariableOwner.environment(envId)),
+        : loadResolvedVariables(s, VariableOwner.environment(envId)),
     collection: [
       for (var i = 0; i < containers.length; i++)
-        ...s.repo.variables(
+        ...loadResolvedVariables(
+          s,
           i == 0
               ? VariableOwner.collection(containers[i])
               : VariableOwner.folder(containers[i]),

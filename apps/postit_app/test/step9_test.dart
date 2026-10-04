@@ -189,7 +189,7 @@ void main() {
           home: Scaffold(
             body: VariablesEditor(
               initial: const [Variable(key: 'a', value: '1')],
-              onChanged: (_) {},
+              onChanged: (_, _) {},
             ),
           ),
         ),

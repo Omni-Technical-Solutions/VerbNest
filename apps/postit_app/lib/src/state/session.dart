@@ -5,6 +5,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:postit_storage/postit_storage.dart';
 
+import 'secure_vault.dart';
+
 /// Everything tied to the open workspace: its database, the repository over
 /// it and the device-local store.
 class WorkspaceSession {
@@ -13,12 +15,33 @@ class WorkspaceSession {
     required this.repo,
     required this.local,
     SecretStore? secrets,
+    this.secretsProtected = false,
   }) : secrets = secrets ?? LocalDbSecretStore(local);
 
   final WorkspaceDatabase db;
   final WorkspaceRepository repo;
   final LocalStore local;
   final SecretStore secrets;
+
+  /// True when secrets live in the OS secret store. False means the
+  /// unencrypted device-local fallback is in use.
+  final bool secretsProtected;
+
+  /// Non-secret current values: device-local, never in the workspace file.
+  /// Stored under a `current:` scope so they are not mistaken for secrets.
+  Map<String, String> currentOverrides(String kind, String id) =>
+      local.currentValues(repo.workspaceId, 'current:$kind', id);
+
+  void setCurrentOverride(String kind, String id, String key, String value) =>
+      value.isEmpty
+      ? local.clearCurrentValue(repo.workspaceId, 'current:$kind', id, key)
+      : local.setCurrentValue(
+          repo.workspaceId,
+          'current:$kind',
+          id,
+          key,
+          value,
+        );
 
   /// In-memory session for tests and previews.
   factory WorkspaceSession.memory() {
@@ -32,7 +55,7 @@ class WorkspaceSession {
 
   /// Opens (creating if needed) the default workspace in app storage
   /// (FR-WS-001: no folder permission needed).
-  static Future<WorkspaceSession> openDefault() async {
+  static Future<WorkspaceSession> openDefault({SecretVault? vault}) async {
     final docs = await getApplicationDocumentsDirectory();
     final support = await getApplicationSupportDirectory();
     final dir = Directory(p.join(docs.path, 'PostIt', 'workspaces'))
@@ -46,6 +69,31 @@ class WorkspaceSession {
     final repo = WorkspaceRepository(db);
     final local = LocalStore.open(p.join(support.path, 'local.db'));
     local.touchWorkspace(repo.workspaceId, repo.name, db.path!);
+    final fallback = LocalDbSecretStore(local);
+    final v = vault ?? PlatformSecretVault();
+    if (await vaultWorks(v)) {
+      final store = await VaultSecretStore.load(v, repo.workspaceId);
+      final owners = local.secretOwners(repo.workspaceId);
+      migrateSecrets(
+        fallback,
+        store,
+        repo.workspaceId,
+        owners,
+        removeSource: false,
+      );
+      await store.flush();
+      // Keep the old copy until the platform store confirmed the write.
+      if (store.lastError == null) {
+        removeSecrets(fallback, repo.workspaceId, owners);
+      }
+      return WorkspaceSession(
+        db: db,
+        repo: repo,
+        local: local,
+        secrets: store,
+        secretsProtected: store.lastError == null,
+      );
+    }
     return WorkspaceSession(db: db, repo: repo, local: local);
   }
 

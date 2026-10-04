@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'state/session.dart';
 import 'state/settings_state.dart';
 import 'state/theme_state.dart';
 import 'widgets/synced_field.dart';
@@ -13,9 +14,28 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(httpDefaultsProvider);
     final notifier = ref.read(httpDefaultsProvider.notifier);
+    final protected = ref.watch(sessionProvider).secretsProtected;
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
+        ListTile(
+          key: const Key('secrets-status'),
+          leading: Icon(
+            protected ? Icons.lock : Icons.warning_amber,
+            color: protected ? null : Theme.of(context).colorScheme.error,
+          ),
+          title: Text(
+            protected
+                ? 'Secrets are kept in the system secret store'
+                : 'Secrets are stored unencrypted on this device',
+          ),
+          subtitle: protected
+              ? null
+              : const Text(
+                  'The system secret store is not available '
+                  '(on Linux, install and unlock a keyring service).',
+                ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SegmentedButton<ThemeMode>(

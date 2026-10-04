@@ -127,6 +127,8 @@ void main() {
       store.clearCurrentValue('w1', 'environment', 'e1', 'token');
       expect(store.currentValues('w1', 'environment', 'e1'), isEmpty);
       expect(store.currentValues('w1', 'environment', 'e2'), {'token': 'zzz'});
+      store.setCurrentValue('w1', 'current:environment', 'e2', 'k', 'v');
+      expect(store.secretOwners('w1'), [('environment', 'e2')]);
     });
   });
 

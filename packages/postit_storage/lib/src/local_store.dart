@@ -283,6 +283,17 @@ class LocalStore {
     [workspaceId, scope, scopeId, key, value],
   );
 
+  /// Distinct `(scope, scopeId)` pairs holding values, for migration.
+  /// Scopes starting with `current:` are plain value overrides, not secrets.
+  List<(String, String)> secretOwners(String workspaceId) => [
+    for (final r in _db.select(
+      'SELECT DISTINCT scope, scope_id FROM variable_current '
+      "WHERE workspace_id = ? AND scope NOT LIKE 'current:%'",
+      [workspaceId],
+    ))
+      (r['scope'] as String, r['scope_id'] as String),
+  ];
+
   void clearCurrentValue(
     String workspaceId,
     String scope,

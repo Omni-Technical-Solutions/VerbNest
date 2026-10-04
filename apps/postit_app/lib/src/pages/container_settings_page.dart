@@ -77,7 +77,9 @@ class _ContainerSettingsPageState extends ConsumerState<ContainerSettingsPage> {
             ),
             VariablesEditor(
               initial: loadVariables(session, owner),
-              onChanged: (vars) => saveVariables(session, owner, vars),
+              initialCurrent: loadCurrentValues(session, owner),
+              onChanged: (vars, cur) =>
+                  saveVariables(session, owner, vars, current: cur),
             ),
           ],
         ),
