@@ -96,7 +96,8 @@ Rules:
 4. `feature`, `minor` and `fix` commits update `CHANGELOG.md` and get an annotated tag `v<version>`; `chore` gets neither.
 5. Pushing and publishing releases stay manual.
 6. `.claude/context.md` is updated twice per phase step: before work starts (goal, FR IDs, ⏳/✅ checklist, planned version) and on completion (result, what was left out, what is untested). The completion update is part of the phase commit.
-7. Claude Code runs this with `/phase-commit <type> <summary>` (see `.claude/commands/phase-commit.md`).
+7. Release build (macOS): after the phase commit, `scripts/package_macos.sh` builds `flutter build macos --release` through `scripts/build.sh` (which raises the build number), ad-hoc signs `PostIt.app`, packages a styled DMG with `create-dmg` (plain `hdiutil` fallback) and moves it to `~/Downloads` as `PostIt-<version>+<build>-macos-<arch>.dmg`. The build number change is committed afterwards as a `chore`. Notarisation needs a Developer ID and stays manual.
+8. Claude Code runs this with `/phase-commit <type> <summary>` (see `.claude/commands/phase-commit.md`).
 
 Because `feature` bumps major, the first `feature` commit moves the project to 1.0.0. Treat that as the MVP release (end of Phase 1); use `minor` for steps before it.
 
