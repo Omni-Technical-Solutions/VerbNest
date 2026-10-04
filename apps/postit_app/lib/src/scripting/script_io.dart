@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:postit_core/postit_core.dart';
+
 import 'prelude.dart';
 
 enum ScriptPhase { pre, post }
@@ -18,6 +20,7 @@ class ScriptInput {
     this.response,
     this.variables = const {},
     this.environmentName,
+    this.data = const {},
   });
 
   final String code;
@@ -35,7 +38,11 @@ class ScriptInput {
   final Map<ScriptScope, Map<String, String>> variables;
   final String? environmentName;
 
+  /// The current row of a collection run's data file; read only.
+  final Map<String, String> data;
+
   Map<String, Object?> toJson() => {
+    'data': data,
     'phase': phase.name,
     'requestName': requestName,
     'requestId': requestId,
@@ -54,25 +61,6 @@ class ScriptInput {
       '__run(${jsonEncode(jsonEncode(toJson()))}, ${jsonEncode(code)});';
 }
 
-class TestResult {
-  const TestResult({required this.name, required this.status, this.message});
-
-  final String name;
-
-  /// `pass`, `fail` or `skip`.
-  final String status;
-  final String? message;
-
-  bool get passed => status == 'pass';
-  bool get failed => status == 'fail';
-
-  factory TestResult.fromJson(Map<String, Object?> j) => TestResult(
-    name: j['name'] as String? ?? '',
-    status: j['status'] as String? ?? 'fail',
-    message: j['message'] as String?,
-  );
-}
-
 class ConsoleLine {
   const ConsoleLine(this.level, this.text);
 
@@ -88,8 +76,21 @@ class VariableChange {
   final String? value;
 }
 
+/// Run flow control requested through `pm.execution` (FR-RUN-001).
+class ScriptFlow {
+  const ScriptFlow({this.next, this.stop = false, this.skip = false});
+
+  /// Name of the request to run next, or null for the natural order.
+  final String? next;
+  final bool stop;
+  final bool skip;
+
+  bool get isDefault => next == null && !stop && !skip;
+}
+
 class ScriptOutput {
   const ScriptOutput({
+    this.flow = const ScriptFlow(),
     this.tests = const [],
     this.logs = const [],
     this.changes = const {},
@@ -98,6 +99,7 @@ class ScriptOutput {
     this.elapsed = Duration.zero,
   });
 
+  final ScriptFlow flow;
   final List<TestResult> tests;
   final List<ConsoleLine> logs;
   final Map<ScriptScope, List<VariableChange>> changes;
@@ -112,6 +114,7 @@ class ScriptOutput {
   bool get ok => error == null;
 
   ScriptOutput withError(String message, {Duration? elapsed}) => ScriptOutput(
+    flow: flow,
     tests: tests,
     logs: logs,
     changes: changes,
@@ -126,7 +129,15 @@ class ScriptOutput {
   factory ScriptOutput.fromJson(String text, {required Duration elapsed}) {
     final j = jsonDecode(text) as Map<String, Object?>;
     final vars = (j['changes'] as Map?)?.cast<String, Object?>() ?? const {};
+    final f = (j['flow'] as Map?)?.cast<String, Object?>();
     return ScriptOutput(
+      flow: f == null
+          ? const ScriptFlow()
+          : ScriptFlow(
+              next: f['next'] as String?,
+              stop: f['stop'] as bool? ?? false,
+              skip: f['skip'] as bool? ?? false,
+            ),
       tests: [
         for (final t in (j['tests'] as List? ?? const []))
           TestResult.fromJson((t as Map).cast<String, Object?>()),

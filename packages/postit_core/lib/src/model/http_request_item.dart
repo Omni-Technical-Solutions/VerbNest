@@ -1,5 +1,6 @@
 import 'auth.dart';
 import 'body.dart';
+import 'assertion.dart';
 import 'key_value.dart';
 
 const _unset = Object();
@@ -118,6 +119,7 @@ class HttpRequestItem {
     this.auth = const InheritAuth(),
     this.settings = const RequestSettings(),
     this.scripts = const Scripts(),
+    this.assertions = const [],
     this.description = '',
     this.extra = const {},
   });
@@ -133,6 +135,7 @@ class HttpRequestItem {
   final Auth auth;
   final RequestSettings settings;
   final Scripts scripts;
+  final List<Assertion> assertions;
   final String description;
   final Map<String, Object?> extra;
 
@@ -147,6 +150,7 @@ class HttpRequestItem {
     Auth? auth,
     RequestSettings? settings,
     Scripts? scripts,
+    List<Assertion>? assertions,
     String? description,
   }) => HttpRequestItem(
     id: id,
@@ -160,6 +164,7 @@ class HttpRequestItem {
     auth: auth ?? this.auth,
     settings: settings ?? this.settings,
     scripts: scripts ?? this.scripts,
+    assertions: assertions ?? this.assertions,
     description: description ?? this.description,
     extra: extra,
   );
@@ -175,6 +180,7 @@ class HttpRequestItem {
     'headers': KeyValue.listToJson(headers),
     'body': body.toJson(),
     'settings': settings.toJson(),
+    if (assertions.isNotEmpty) 'assertions': Assertion.listToJson(assertions),
   };
 
   static const _knownDataKeys = {
@@ -185,6 +191,7 @@ class HttpRequestItem {
     'headers',
     'body',
     'settings',
+    'assertions',
   };
 
   factory HttpRequestItem.fromData({
@@ -208,6 +215,7 @@ class HttpRequestItem {
       (data['settings'] as Map?)?.cast<String, Object?>(),
     ),
     scripts: Scripts.fromJson(scripts),
+    assertions: Assertion.listFromJson(data['assertions']),
     description: description,
     extra: {
       for (final e in data.entries)

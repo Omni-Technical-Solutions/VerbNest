@@ -8,7 +8,9 @@ ScriptInput input(
   ScriptPhase phase = ScriptPhase.post,
   Map<ScriptScope, Map<String, String>> vars = const {},
   bool withResponse = true,
+  Map<String, String> data = const {},
 }) => ScriptInput(
+  data: data,
   code: code,
   phase: phase,
   requestName: 'R',
@@ -55,6 +57,39 @@ void main() {
     ),
     timeout: timeout,
   );
+
+  testWidgets('iteration data and run flow control', (tester) async {
+    final o = await engine.run(
+      input(
+        '''
+        pm.test('data', function () {
+          pm.expect(pm.iterationData.get('user')).to.equal('ann');
+          pm.expect(pm.variables.get('user')).to.equal('ann');
+        });
+        pm.execution.setNextRequest('Other');
+        ''',
+        data: {'user': 'ann'},
+      ),
+    );
+    expect(o.error, isNull);
+    expect(o.tests.single.passed, isTrue);
+    expect(o.flow.next, 'Other');
+
+    final stop = await engine.run(input('pm.execution.setNextRequest(null)'));
+    expect(stop.flow.stop, isTrue);
+
+    final skip = await engine.run(
+      input(
+        'pm.execution.skipRequest()',
+        phase: ScriptPhase.pre,
+        withResponse: false,
+      ),
+    );
+    expect(skip.flow.skip, isTrue);
+
+    final badSkip = await engine.run(input('pm.execution.skipRequest()'));
+    expect(badSkip.error, contains('pre-request'));
+  });
 
   testWidgets('tests, expect and response helpers', (tester) async {
     final o = await run('''

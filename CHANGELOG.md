@@ -2,6 +2,16 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.20.0
+
+- No-code assertions (FR-SCR-006): status, header, JSON path, response time, body and JSON schema checks with equals, comparison, exists, contains and regex operators. Built in the new Assertions tab; values may use `{{variables}}`. Results show in the Tests tab with `pm.test` results.
+- JSONPath subset (`$`, `.key`, `['key']`, `[n]`, `[-1]`, `[*]`, `.*`, `..key`) and a JSON Schema subset; unsupported syntax gives a clear error.
+- Collection runner (FR-RUN-001/002): "Run…" on a collection or folder. Pick and reorder requests, set iterations and delay, stop on first failure, stop at any time, and use a CSV or JSON data file (one row per iteration, available as `{{name}}` and `pm.iterationData`). Results appear live.
+- `pm.execution.setNextRequest(name | null)` and `pm.execution.skipRequest()` (pre-request only) control a run; `pm.iterationData` is read only. A jump to an unknown name ends the run with an error; a run stops after 10,000 steps.
+- Run reports (FR-RUN-003): export JSON, JUnit XML and HTML.
+- Assertions are evaluated in Dart, not compiled to JavaScript, so they work and are tested without the script engine.
+- Not done: saved run history, parallel runs, running from the command line, cookie jar between iterations. The runner UI was not exercised by widget tests or by hand; the logic is covered by unit tests and the new `pm.execution` script test passes on macOS only (not re-run on iOS or Android). Windows and Linux are not verified.
+
 ## 0.19.0
 
 - Scripting: pre-request and post-response scripts on requests, folders and collections, run collection → folder → request (FR-SCR-001). Engine: QuickJS through `fjs` (ADR-002).

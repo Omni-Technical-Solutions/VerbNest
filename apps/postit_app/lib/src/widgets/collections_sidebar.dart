@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_storage/postit_storage.dart';
 
 import '../pages/container_settings_page.dart';
+import '../pages/runner_page.dart';
 import '../pages/revisions_dialog.dart';
 import '../pages/search_dialog.dart';
 import '../pages/workspaces_dialog.dart';
@@ -19,6 +20,7 @@ enum _Action {
   newFolder,
   rename,
   settings,
+  run,
   duplicate,
   moveUp,
   moveDown,
@@ -265,6 +267,8 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         ],
         const PopupMenuItem(value: _Action.rename, child: Text('Rename')),
         if (node.isContainer)
+          const PopupMenuItem(value: _Action.run, child: Text('Run…')),
+        if (node.isContainer)
           const PopupMenuItem(value: _Action.settings, child: Text('Settings')),
         const PopupMenuItem(value: _Action.duplicate, child: Text('Duplicate')),
         const PopupMenuItem(value: _Action.moveUp, child: Text('Move up')),
@@ -330,6 +334,12 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => ContainerSettingsPage(containerId: node.id),
+          ),
+        );
+      case _Action.run:
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => RunnerPage(containerId: node.id),
           ),
         );
       case _Action.duplicate:

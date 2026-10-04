@@ -140,6 +140,7 @@ VariableScopes buildScopes(
   String? requestId,
   String? envId,
   Map<String, String> local = const {},
+  Map<String, String> data = const {},
 }) {
   final containers = requestId == null
       ? const <String>[]
@@ -148,6 +149,7 @@ VariableScopes buildScopes(
     local: [
       for (final e in local.entries) Variable(key: e.key, value: e.value),
     ],
+    data: [for (final e in data.entries) Variable(key: e.key, value: e.value)],
     global: loadResolvedVariables(s, VariableOwner.global),
     environment: envId == null
         ? const []

@@ -4,8 +4,7 @@
 /// touch is defined here.
 const scriptPrelude = r'''
 "use strict";
-var __UNSUPPORTED = ['sendRequest', 'cookies', 'visualizer', 'execution',
-  'iterationData', 'vault', 'require'];
+var __UNSUPPORTED = ['sendRequest', 'cookies', 'visualizer', 'vault', 'require'];
 
 function __fail(msg) { var e = new Error(msg); e.__assertion = true; throw e; }
 function __str(v) {
@@ -154,6 +153,24 @@ function __run(inputText, code) {
     console[lvl] = function () { if (logs.length < 1000) logs.push({ level: lvl, text: fmt(arguments) }); };
   });
 
+  var dataVals = input.data || {};
+  var iterationData = {
+    get: function (k) { return dataVals.hasOwnProperty(k) ? dataVals[k] : undefined; },
+    has: function (k) { return dataVals.hasOwnProperty(k); },
+    toObject: function () { return Object.assign({}, dataVals); }
+  };
+  var flow = { next: null, stop: false, skip: false };
+  var execution = {
+    setNextRequest: function (n) {
+      if (n === null || n === undefined) { flow.stop = true; flow.next = null; }
+      else { flow.next = String(n); flow.stop = false; }
+    },
+    skipRequest: function () {
+      if (!isPre) throw new Error('pm.execution.skipRequest is only available in pre-request scripts');
+      flow.skip = true;
+    }
+  };
+
   function scope(name) {
     var vals = input.variables[name] || {};
     var s = {
@@ -169,7 +186,9 @@ function __run(inputText, code) {
   }
   var scopes = { local: scope('local'), environment: scope('environment'), collection: scope('collection'), globals: scope('globals') };
   function lookup(k) {
-    var order = ['local', 'environment', 'collection', 'globals'];
+    if (scopes.local.has(k)) return scopes.local.get(k);
+    if (dataVals.hasOwnProperty(k)) return dataVals[k];
+    var order = ['environment', 'collection', 'globals'];
     for (var i = 0; i < order.length; i++) if (scopes[order[i]].has(k)) return scopes[order[i]].get(k);
     return undefined;
   }
@@ -287,6 +306,8 @@ function __run(inputText, code) {
 
   var pmCore = {
     variables: variables,
+    iterationData: iterationData,
+    execution: execution,
     environment: environment,
     collectionVariables: scopes.collection,
     globals: scopes.globals,
@@ -323,6 +344,6 @@ function __run(inputText, code) {
   } catch (e) {
     error = (e && e.name && e.name !== 'Error' ? e.name + ': ' : '') + (e && e.message !== undefined ? e.message : String(e));
   }
-  return JSON.stringify({ tests: tests, logs: logs, changes: changes, request: isPre ? request : null, error: error });
+  return JSON.stringify({ tests: tests, logs: logs, changes: changes, request: isPre ? request : null, flow: flow, error: error });
 }
 ''';

@@ -39,6 +39,7 @@ class EditorState {
     this.tests = const [],
     this.scriptLogs = const [],
     this.scriptError,
+    this.flow = const ScriptFlow(),
   });
 
   final HttpRequestItem item;
@@ -68,6 +69,9 @@ class EditorState {
   /// A failed post-response script; the response is still shown.
   final String? scriptError;
 
+  /// What `pm.execution` asked of a collection run in the last send.
+  final ScriptFlow flow;
+
   EditorState copyWith({
     HttpRequestItem? item,
     bool? sending,
@@ -81,6 +85,7 @@ class EditorState {
     List<TestResult>? tests,
     List<ConsoleLine>? scriptLogs,
     String? scriptError,
+    ScriptFlow? flow,
     bool clearResult = false,
   }) => EditorState(
     item: item ?? this.item,
@@ -103,6 +108,7 @@ class EditorState {
         ? (scriptLogs ?? const [])
         : (scriptLogs ?? this.scriptLogs),
     scriptError: clearResult ? scriptError : (scriptError ?? this.scriptError),
+    flow: clearResult ? (flow ?? const ScriptFlow()) : (flow ?? this.flow),
   );
 }
 
@@ -164,7 +170,10 @@ class EditorNotifier extends Notifier<EditorState> {
   /// Sends the draft. With undefined variables it stops first and sets
   /// [EditorState.pendingUnresolved] unless [force] is true or the user
   /// turned the warning off.
-  Future<void> send({bool force = false}) async {
+  Future<void> send({
+    bool force = false,
+    Map<String, String> data = const {},
+  }) async {
     if (state.sending) return;
     flush();
     final token = _cancel = CancelToken();
@@ -186,6 +195,7 @@ class EditorNotifier extends Notifier<EditorState> {
         envId: envId,
         phase: ScriptPhase.pre,
         request: requestToMap(item),
+        data: data,
       );
       local = pre.local;
       if (pre.error != null) {
@@ -197,8 +207,22 @@ class EditorNotifier extends Notifier<EditorState> {
         return;
       }
       if (pre.request != null) item = applyRequestMap(item, pre.request!);
+      if (pre.flow.skip) {
+        state = state.copyWith(
+          sending: false,
+          scriptLogs: pre.logs,
+          flow: pre.flow,
+        );
+        return;
+      }
       final resolver = VariableResolver(
-        buildScopes(session, requestId: id, envId: envId, local: local),
+        buildScopes(
+          session,
+          requestId: id,
+          envId: envId,
+          local: local,
+          data: data,
+        ),
       );
       var auth = effectiveAuth(item.auth, repo.authChain(id));
       if (auth is OAuth2Auth) {
@@ -231,11 +255,27 @@ class EditorNotifier extends Notifier<EditorState> {
         request: requestToMap(item),
         response: responseToMap(response),
         local: local,
+        data: data,
       );
+      final facts = ResponseFacts(
+        status: response.status,
+        headers: response.headers,
+        body: response.bodyText,
+        timeMs: response.timings.total.inMilliseconds,
+      );
+      final checks = [
+        for (final a in item.assertions)
+          if (a.enabled)
+            a.evaluate(facts, resolve: (t) => resolver.resolve(t).value),
+      ];
       state = state.copyWith(
         sending: false,
         response: response,
-        tests: post.tests,
+        tests: [...checks, ...post.tests],
+        flow: ScriptFlow(
+          next: post.flow.next ?? pre.flow.next,
+          stop: post.flow.stop || pre.flow.stop,
+        ),
         scriptLogs: [...pre.logs, ...post.logs],
         scriptError: post.error,
         unresolved: prepared.unresolved,

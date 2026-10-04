@@ -15,7 +15,10 @@ class ScriptPhaseResult {
     this.error,
     this.request,
     this.local = const {},
+    this.flow = const ScriptFlow(),
   });
+
+  final ScriptFlow flow;
 
   final List<TestResult> tests;
   final List<ConsoleLine> logs;
@@ -60,6 +63,7 @@ Future<ScriptPhaseResult> runScriptPhase({
   required Map<String, Object?> request,
   Map<String, Object?>? response,
   Map<String, String> local = const {},
+  Map<String, String> data = const {},
 }) async {
   final repo = session.repo;
   final codes = scriptsFor(repo, requestId, item.scripts, phase);
@@ -70,6 +74,7 @@ Future<ScriptPhaseResult> runScriptPhase({
   var current = request;
   var localVars = {...local};
   String? error;
+  var flow = const ScriptFlow();
   var ranRequest = false;
   final envName = envId == null
       ? null
@@ -86,7 +91,13 @@ Future<ScriptPhaseResult> runScriptPhase({
         response: response,
         variables: _scopeValues(session, requestId, envId, localVars),
         environmentName: envName,
+        data: data,
       ),
+    );
+    flow = ScriptFlow(
+      next: out.flow.next ?? flow.next,
+      stop: flow.stop || out.flow.stop,
+      skip: flow.skip || out.flow.skip,
     );
     tests.addAll(out.tests);
     logs.addAll(out.logs);
@@ -106,6 +117,7 @@ Future<ScriptPhaseResult> runScriptPhase({
     error: error,
     request: ranRequest ? current : null,
     local: localVars,
+    flow: flow,
   );
 }
 
