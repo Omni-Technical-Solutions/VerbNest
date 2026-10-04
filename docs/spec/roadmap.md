@@ -95,7 +95,8 @@ Rules:
 3. Commit message: `<type>(<scope>): <summary> (v<version>)`; `chore` uses `(build <N>)` instead because its version does not change.
 4. `feature`, `minor` and `fix` commits update `CHANGELOG.md` and get an annotated tag `v<version>`; `chore` gets neither.
 5. Pushing and publishing releases stay manual.
-6. Claude Code runs this with `/phase-commit <type> <summary>` (see `.claude/commands/phase-commit.md`).
+6. `.claude/context.md` is updated twice per phase step: before work starts (goal, FR IDs, ⏳/✅ checklist, planned version) and on completion (result, what was left out, what is untested). The completion update is part of the phase commit.
+7. Claude Code runs this with `/phase-commit <type> <summary>` (see `.claude/commands/phase-commit.md`).
 
 Because `feature` bumps major, the first `feature` commit moves the project to 1.0.0. Treat that as the MVP release (end of Phase 1); use `minor` for steps before it.
 
