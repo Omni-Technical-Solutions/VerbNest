@@ -30,24 +30,92 @@ class RawRequest {
 /// It parses requests itself instead of using `HttpServer`, because
 /// `HttpServer` normalises header names and would hide wire-fidelity bugs.
 class TestServer {
-  TestServer._(this._server);
+  TestServer._(this.port, this._close, {required this.secure});
 
-  final ServerSocket _server;
+  final Future<void> Function() _close;
+  final bool secure;
   final Set<Socket> _sockets = {};
   final List<RawRequest> requests = [];
 
-  int get port => _server.port;
-  String get baseUrl => 'http://127.0.0.1:$port';
+  final int port;
+  String get baseUrl => '${secure ? 'https' : 'http'}://127.0.0.1:$port';
 
-  static Future<TestServer> start() async {
+  /// With [tls] the listener speaks HTTPS using a self-signed certificate for
+  /// localhost, so clients must opt out of verification or trust it.
+  static Future<TestServer> start({bool tls = false}) async {
+    if (tls) {
+      final (cert, key) = await _selfSignedCertificate();
+      final context = SecurityContext()
+        ..useCertificateChainBytes(cert)
+        ..usePrivateKeyBytes(key);
+      final server = await SecureServerSocket.bind(
+        InternetAddress.loopbackIPv4,
+        0,
+        context,
+      );
+      final ts = TestServer._(server.port, server.close, secure: true);
+      // A client that rejects the certificate fails the handshake; that must
+      // not surface as an unhandled error in the server.
+      server.listen(ts._onConnection, onError: (Object _) {});
+      return ts;
+    }
     final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
-    final ts = TestServer._(server);
+    final ts = TestServer._(server.port, server.close, secure: false);
     server.listen(ts._onConnection);
     return ts;
   }
 
+  /// Whether `openssl` can be run to create the TLS test certificate.
+  static Future<bool> get tlsAvailable async {
+    try {
+      await _selfSignedCertificate();
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+
+  static (List<int>, List<int>)? _generated;
+
+  /// Creates a throwaway self-signed certificate for localhost with `openssl`,
+  /// so no private key is stored in the repository.
+  static Future<(List<int>, List<int>)> _selfSignedCertificate() async {
+    final cached = _generated;
+    if (cached != null) return cached;
+    final dir = await Directory.systemTemp.createTemp('postit-tls');
+    try {
+      final candidates = [
+        'openssl',
+        if (Platform.isWindows) r'C:\Program Files\Git\usr\bin\openssl.exe',
+      ];
+      ProcessResult? result;
+      for (final exe in candidates) {
+        try {
+          result = await Process.run(exe, [
+            'req', '-x509', '-newkey', 'rsa:2048', '-nodes', //
+            '-keyout', '${dir.path}/k.pem', '-out', '${dir.path}/c.pem',
+            '-days', '30', '-subj', '/CN=localhost',
+            '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1',
+          ]);
+          if (result.exitCode == 0) break;
+        } on ProcessException {
+          continue;
+        }
+      }
+      if (result == null || result.exitCode != 0) {
+        throw StateError('openssl is needed for TLS tests: ${result?.stderr}');
+      }
+      return _generated = (
+        await File('${dir.path}/c.pem').readAsBytes(),
+        await File('${dir.path}/k.pem').readAsBytes(),
+      );
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  }
+
   Future<void> close() async {
-    await _server.close();
+    await _close();
     for (final s in _sockets.toList()) {
       s.destroy();
     }

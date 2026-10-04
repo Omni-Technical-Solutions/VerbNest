@@ -2,6 +2,16 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.18.0
+
+- Android: INTERNET permission and cleartext HTTP allowed (an API client must reach `http://` hosts); release APK builds (debug-signed, 61 MB, all ABIs).
+- iOS: local network usage description; unsigned release/debug build works.
+- macOS release binary is universal (x86_64 + arm64).
+- CI: build matrix for Linux, Windows, macOS, Android and iOS, with integration tests on desktop (not run yet; the workflow has never executed).
+- Test server can listen on TLS (self-signed localhost certificate made with openssl at test time; those tests skip without it); engine tests cover rejecting and accepting it.
+- Integration tests `platform_test.dart`: FTS5 search, loopback request, 10,000-request workspace timings, request overhead.
+- Not done: Windows and Linux were not built or run; iOS only ran in the simulator; no physical devices. This is not the 1.0.0 release.
+
 ## 0.17.0
 
 - Console page: the last 200 requests of this session with the sent and received headers (secrets masked), cleared on exit.

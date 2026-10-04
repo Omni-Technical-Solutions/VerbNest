@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 import 'package:test_server/test_server.dart';
 
 void main() {
+  tlsTests();
   late TestServer server;
   final engine = HttpEngine();
 
@@ -184,6 +185,39 @@ void main() {
         ),
         throwsA(isA<NetworkError>()),
       );
+    });
+  });
+}
+
+void tlsTests() {
+  group('TLS', () {
+    late TestServer server;
+    final engine = HttpEngine();
+    late bool available;
+    setUpAll(() async => available = await TestServer.tlsAvailable);
+    setUp(() async {
+      if (available) server = await TestServer.start(tls: true);
+    });
+    tearDown(() async {
+      if (available) await server.close();
+    });
+
+    HttpRequestSpec req({required bool verify}) => HttpRequestSpec(
+      method: 'GET',
+      url: Uri.parse('${server.baseUrl}/echo'),
+      settings: HttpSettings(verifyTls: verify),
+    );
+
+    test('a self-signed certificate is rejected when verifying', () {
+      if (!available) return markTestSkipped('openssl not found');
+      expect(engine.send(req(verify: true)), throwsA(isA<TlsError>()));
+    });
+
+    test('verification off accepts it and reports a TLS timing', () async {
+      if (!available) return markTestSkipped('openssl not found');
+      final r = await engine.send(req(verify: false));
+      expect(r.status, 200);
+      expect(r.timings.tls, greaterThan(Duration.zero));
     });
   });
 }

@@ -7,7 +7,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Postit App</string>
+	<string>PostIt</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>PostIt sends requests to servers on your local network when you ask it to.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
