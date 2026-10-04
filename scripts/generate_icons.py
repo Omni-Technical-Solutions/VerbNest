@@ -71,6 +71,6 @@ ico = APP / "windows/runner/resources/app_icon.ico"
 render(rounded, 256).save(ico, sizes=[(s, s) for s in ico_sizes])
 print(f"wrote {ico.relative_to(ROOT)}")
 
-# Linux: PNG for the GTK window / .desktop entry. Not yet loaded by
-# linux/runner/my_application.cc (needs gtk_window_set_icon_from_file + CMake install).
+# Linux: installed to <bundle>/data by linux/CMakeLists.txt and set as the
+# window icon by linux/runner/my_application.cc.
 save(render(rounded, 256), APP / "linux/runner/resources/app_icon.png")
