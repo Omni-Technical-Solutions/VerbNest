@@ -95,6 +95,8 @@ class RequestBuilder {
         ],
       ),
       warnings: [
+        if (effective is OAuth2Auth)
+          'OAuth 2.0 needs a token first; none was added.',
         if (effective is RawAuth)
           'Auth type "${effective.type}" is not supported yet; no credentials were added.',
       ],

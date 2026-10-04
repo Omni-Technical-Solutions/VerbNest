@@ -7,10 +7,16 @@ import 'package:postit_http/postit_http.dart';
 import 'package:postit_storage/postit_storage.dart';
 
 import 'session.dart';
+import 'settings_state.dart';
 import 'variables.dart';
 
 /// Replaceable in tests.
 final engineProvider = Provider<HttpEngine>((ref) => HttpEngine());
+
+/// Tokens fetched by OAuth 2.0 auth, kept for the app session only.
+final oauthCacheProvider = Provider<OAuth2TokenCache>(
+  (ref) => OAuth2TokenCache(),
+);
 
 /// What the editor tab for one request shows.
 class EditorState {
@@ -114,11 +120,16 @@ class EditorNotifier extends Notifier<EditorState> {
     final envId = ref.read(activeEnvProvider);
     PreparedRequest? prepared;
     try {
-      prepared = await RequestBuilder().build(
-        item,
-        VariableResolver(buildScopes(session, requestId: id, envId: envId)),
-        auth: effectiveAuth(item.auth, repo.authChain(id)),
+      final defaults = ref.read(httpDefaultsProvider);
+      final resolver = VariableResolver(
+        buildScopes(session, requestId: id, envId: envId),
       );
+      var auth = effectiveAuth(item.auth, repo.authChain(id));
+      if (auth is OAuth2Auth) {
+        auth = await _oauthToken(auth, resolver, defaults, token);
+      }
+      prepared = await RequestBuilder(defaults: defaults)
+          .build(item, resolver, auth: auth);
       final response = await ref
           .read(engineProvider)
           .send(prepared.spec, cancel: token);
@@ -130,6 +141,8 @@ class EditorNotifier extends Notifier<EditorState> {
         maskedSentHead: prepared.masker.maskHead(response.sent.head),
       );
       _record(prepared, envId, response: response);
+    } on OAuth2Error catch (e) {
+      state = state.copyWith(sending: false, error: e.message);
     } on RequestBuildError catch (e) {
       state = state.copyWith(sending: false, error: e.message);
     } on HttpEngineError catch (e) {
@@ -138,6 +151,28 @@ class EditorNotifier extends Notifier<EditorState> {
     } finally {
       if (_cancel == token) _cancel = null;
     }
+  }
+
+  /// A bearer token for [auth], from the cache or the token endpoint.
+  Future<Auth> _oauthToken(
+    OAuth2Auth auth,
+    VariableResolver resolver,
+    HttpSettings defaults,
+    CancelToken cancel,
+  ) async {
+    final resolved = auth.mapText((t) => resolver.resolve(t).value);
+    final cache = ref.read(oauthCacheProvider);
+    var token = cache.get(resolved);
+    if (token == null) {
+      token = await fetchOAuth2Token(
+        ref.read(engineProvider),
+        resolved,
+        cancel: cancel,
+        settings: defaults,
+      );
+      cache.put(resolved, token);
+    }
+    return BearerAuth(token: token.accessToken);
   }
 
   /// Stores the exchange in local history with secrets masked (FR-HIS-001).

@@ -236,7 +236,14 @@ class _AuthTab extends StatelessWidget {
   final HttpRequestItem item;
   final EditorNotifier notifier;
 
-  static const _types = ['inherit', 'none', 'bearer', 'basic', 'apikey'];
+  static const _types = [
+    'inherit',
+    'none',
+    'bearer',
+    'basic',
+    'apikey',
+    'oauth2',
+  ];
 
   void _set(Auth a) => notifier.edit((i) => i.copyWith(auth: a));
 
@@ -245,6 +252,7 @@ class _AuthTab extends StatelessWidget {
     'bearer' => const BearerAuth(token: ''),
     'basic' => const BasicAuth(username: '', password: ''),
     'apikey' => const ApiKeyAuth(key: '', value: ''),
+    'oauth2' => const OAuth2Auth(grant: OAuth2Grant.clientCredentials),
     _ => const InheritAuth(),
   };
 
@@ -326,6 +334,7 @@ class _AuthTab extends StatelessWidget {
               ),
             ),
           ],
+          OAuth2Auth() => _oauth2(auth),
           InheritAuth() => [
             const Text('Uses the auth of the enclosing folder or collection.'),
           ],
@@ -336,6 +345,65 @@ class _AuthTab extends StatelessWidget {
         },
       ],
     );
+  }
+}
+
+extension on _AuthTab {
+  List<Widget> _oauth2(OAuth2Auth a) {
+    Widget field(
+      String label,
+      String value,
+      OAuth2Auth Function(String) change, {
+      bool obscure = false,
+    }) => Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SyncedTextField(
+        key: Key('oauth-$label'),
+        label: label,
+        value: value,
+        obscure: obscure,
+        onChanged: (v) => _set(change(v)),
+      ),
+    );
+
+    return [
+      SegmentedButton<OAuth2Grant>(
+        segments: const [
+          ButtonSegment(
+            value: OAuth2Grant.clientCredentials,
+            label: Text('Client credentials'),
+          ),
+          ButtonSegment(value: OAuth2Grant.password, label: Text('Password')),
+        ],
+        selected: {a.grant},
+        onSelectionChanged: (s) => _set(a.copyWith(grant: s.first)),
+      ),
+      const SizedBox(height: 8),
+      field('Token URL', a.tokenUrl, (v) => a.copyWith(tokenUrl: v)),
+      field('Client ID', a.clientId, (v) => a.copyWith(clientId: v)),
+      field(
+        'Client secret',
+        a.clientSecret,
+        (v) => a.copyWith(clientSecret: v),
+        obscure: true,
+      ),
+      field('Scope', a.scope, (v) => a.copyWith(scope: v)),
+      if (a.grant == OAuth2Grant.password) ...[
+        field('Username', a.username, (v) => a.copyWith(username: v)),
+        field(
+          'Password',
+          a.password,
+          (v) => a.copyWith(password: v),
+          obscure: true,
+        ),
+      ],
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Send client credentials in the body'),
+        value: a.clientAuthInBody,
+        onChanged: (v) => _set(a.copyWith(clientAuthInBody: v)),
+      ),
+    ];
   }
 }
 

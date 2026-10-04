@@ -69,6 +69,7 @@ class FakeEngine extends HttpEngine {
 }
 
 void main() {
+  oauthTests();
   envAndHistoryTests();
   test('edits are saved after the debounce and name is kept', () async {
     final t = setup();
@@ -207,4 +208,79 @@ void envAndHistoryTests() {
     expect(h.error, 'refused');
     expect(h.status, isNull);
   });
+}
+
+void oauthTests() {
+  test('OAuth2 fetches a token once and sends it as bearer', () async {
+    final t = setup();
+    final calls = <String>[];
+    final engine = _TokenEngine(calls);
+    final c = ProviderContainer(
+      overrides: [
+        sessionProvider.overrideWithValue(t.s),
+        engineProvider.overrideWithValue(engine),
+      ],
+    );
+    addTearDown(c.dispose);
+    final n = c.read(editorProvider(t.id).notifier);
+    n.edit(
+      (i) => i.copyWith(
+        url: 'http://api.test/x',
+        auth: const OAuth2Auth(
+          grant: OAuth2Grant.clientCredentials,
+          tokenUrl: 'http://auth.test/token',
+          clientId: 'id',
+          clientSecret: 'sec',
+        ),
+      ),
+    );
+    await n.send();
+    await n.send();
+    expect(calls.where((u) => u.contains('auth.test')), hasLength(1));
+    final api = engine.apiSpecs.last;
+    expect(
+      api.headers.firstWhere((h) => h.$1 == 'Authorization').$2,
+      'Bearer T0K',
+    );
+    expect(c.read(editorProvider(t.id)).response!.status, 200);
+  });
+}
+
+class _TokenEngine extends HttpEngine {
+  _TokenEngine(this.calls);
+
+  final List<String> calls;
+  final apiSpecs = <HttpRequestSpec>[];
+
+  @override
+  Future<HttpResponseRecord> send(
+    HttpRequestSpec spec, {
+    CancelToken? cancel,
+  }) async {
+    calls.add(spec.url.toString());
+    final isToken = spec.url.host == 'auth.test';
+    if (!isToken) apiSpecs.add(spec);
+    final body = Uint8List.fromList(
+      utf8.encode(isToken ? '{"access_token":"T0K","expires_in":3600}' : '{}'),
+    );
+    const z = Duration.zero;
+    return HttpResponseRecord(
+      status: 200,
+      reason: 'OK',
+      httpVersion: 'HTTP/1.1',
+      headers: const [],
+      body: body,
+      wireBodySize: body.length,
+      timings: const Timings(
+        dns: z,
+        connect: z,
+        tls: z,
+        ttfb: z,
+        download: z,
+        total: z,
+      ),
+      finalUrl: spec.url,
+      sent: SentRequest(head: 'x', body: Uint8List(0), url: spec.url),
+    );
+  }
 }

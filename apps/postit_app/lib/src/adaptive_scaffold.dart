@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'layout_class.dart';
 import 'pages/environments_page.dart';
 import 'pages/history_page.dart';
 import 'settings_page.dart';
+import 'state/editor_state.dart';
 import 'state/session.dart';
 import 'state/tree_state.dart';
 import 'widgets/collections_sidebar.dart';
@@ -38,8 +40,37 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   void _select(int index) =>
       setState(() => _selected = _Destination.values[index]);
 
+  void _sendActive() {
+    final id = ref.read(tabsProvider).active;
+    if (id != null && _selected == _Destination.collections) {
+      ref.read(editorProvider(id).notifier).send();
+    }
+  }
+
+  void _closeActive() {
+    final id = ref.read(tabsProvider).active;
+    if (id != null) ref.read(tabsProvider.notifier).close(id);
+  }
+
   @override
   Widget build(BuildContext context) {
+    return CallbackShortcuts(
+      bindings: {
+        for (final mod in [
+          const SingleActivator(LogicalKeyboardKey.enter, control: true),
+          const SingleActivator(LogicalKeyboardKey.enter, meta: true),
+        ])
+          mod: _sendActive,
+        const SingleActivator(LogicalKeyboardKey.keyW, control: true):
+            _closeActive,
+        const SingleActivator(LogicalKeyboardKey.keyW, meta: true):
+            _closeActive,
+      },
+      child: Focus(autofocus: true, child: _layout()),
+    );
+  }
+
+  Widget _layout() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final layout = LayoutClass.forWidth(constraints.maxWidth);

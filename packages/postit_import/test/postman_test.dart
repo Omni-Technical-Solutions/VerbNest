@@ -50,6 +50,7 @@ const sample =
 ''';
 
 void main() {
+  oauthRoundTrip();
   final json = jsonDecode(sample);
 
   test('imports folders, auth, variables, scripts and bodies', () {
@@ -160,3 +161,31 @@ Object? _flat(ImportNode n) => switch (n) {
     'x': n.item.extra,
   },
 };
+
+void oauthRoundTrip() {
+  test('oauth2 auth survives a Postman round trip', () {
+    const auth = OAuth2Auth(
+      grant: OAuth2Grant.password,
+      tokenUrl: 'https://t/token',
+      clientId: 'id',
+      clientSecret: 's',
+      scope: 'x',
+      username: 'u',
+      password: 'p',
+      clientAuthInBody: true,
+    );
+    final doc = exportPostmanCollection(
+      FolderNode(
+        'C',
+        auth: auth,
+        children: [
+          RequestNode(
+            const HttpRequestItem(id: '', name: 'r', url: 'http://h.test'),
+          ),
+        ],
+      ),
+    );
+    final back = importPostmanCollection(jsonDecode(jsonEncode(doc)));
+    expect(back.collection.auth.toJson(), auth.toJson());
+  });
+}

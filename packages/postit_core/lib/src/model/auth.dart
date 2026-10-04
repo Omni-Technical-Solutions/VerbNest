@@ -24,6 +24,16 @@ sealed class Auth {
         username: json['username'] as String? ?? '',
         password: json['password'] as String? ?? '',
       ),
+      'oauth2' when OAuth2Auth.supports(json['grantType']) => OAuth2Auth(
+        grant: OAuth2Grant.fromWire(json['grantType'] as String),
+        tokenUrl: json['tokenUrl'] as String? ?? '',
+        clientId: json['clientId'] as String? ?? '',
+        clientSecret: json['clientSecret'] as String? ?? '',
+        scope: json['scope'] as String? ?? '',
+        username: json['username'] as String? ?? '',
+        password: json['password'] as String? ?? '',
+        clientAuthInBody: json['clientAuth'] == 'body',
+      ),
       _ => RawAuth(Map.of(json)),
     };
   }
@@ -103,8 +113,99 @@ class BasicAuth extends Auth {
   };
 }
 
-/// An auth type this version does not understand (e.g. oauth2 before it is
-/// implemented). Kept verbatim.
+enum OAuth2Grant {
+  clientCredentials('client_credentials'),
+  password('password');
+
+  const OAuth2Grant(this.wire);
+
+  final String wire;
+
+  static OAuth2Grant fromWire(String v) =>
+      values.firstWhere((g) => g.wire == v);
+}
+
+/// OAuth 2.0 token-endpoint grants that need no browser (FR-AUTH-002).
+/// Interactive flows (authorization code, PKCE) are not part of this type.
+class OAuth2Auth extends Auth {
+  const OAuth2Auth({
+    required this.grant,
+    this.tokenUrl = '',
+    this.clientId = '',
+    this.clientSecret = '',
+    this.scope = '',
+    this.username = '',
+    this.password = '',
+    this.clientAuthInBody = false,
+  });
+
+  final OAuth2Grant grant;
+  final String tokenUrl;
+  final String clientId;
+  final String clientSecret;
+  final String scope;
+  final String username;
+  final String password;
+
+  /// Send client credentials in the form body instead of a Basic header.
+  final bool clientAuthInBody;
+
+  static bool supports(Object? grantType) =>
+      OAuth2Grant.values.any((g) => g.wire == grantType);
+
+  @override
+  String get type => 'oauth2';
+
+  OAuth2Auth copyWith({
+    OAuth2Grant? grant,
+    String? tokenUrl,
+    String? clientId,
+    String? clientSecret,
+    String? scope,
+    String? username,
+    String? password,
+    bool? clientAuthInBody,
+  }) => OAuth2Auth(
+    grant: grant ?? this.grant,
+    tokenUrl: tokenUrl ?? this.tokenUrl,
+    clientId: clientId ?? this.clientId,
+    clientSecret: clientSecret ?? this.clientSecret,
+    scope: scope ?? this.scope,
+    username: username ?? this.username,
+    password: password ?? this.password,
+    clientAuthInBody: clientAuthInBody ?? this.clientAuthInBody,
+  );
+
+  /// Applies [f] (e.g. variable substitution) to every text field.
+  OAuth2Auth mapText(String Function(String) f) => OAuth2Auth(
+    grant: grant,
+    tokenUrl: f(tokenUrl),
+    clientId: f(clientId),
+    clientSecret: f(clientSecret),
+    scope: f(scope),
+    username: f(username),
+    password: f(password),
+    clientAuthInBody: clientAuthInBody,
+  );
+
+  @override
+  Map<String, Object?> toJson() => {
+    'type': type,
+    'grantType': grant.wire,
+    'tokenUrl': tokenUrl,
+    'clientId': clientId,
+    'clientSecret': clientSecret,
+    if (scope.isNotEmpty) 'scope': scope,
+    if (grant == OAuth2Grant.password) ...{
+      'username': username,
+      'password': password,
+    },
+    'clientAuth': clientAuthInBody ? 'body' : 'header',
+  };
+}
+
+/// An auth type this version does not understand (e.g. a flow that is not
+/// supported). Kept verbatim.
 class RawAuth extends Auth {
   const RawAuth(this.json);
 

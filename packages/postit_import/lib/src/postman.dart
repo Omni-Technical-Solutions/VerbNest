@@ -293,6 +293,16 @@ Auth _auth(Object? a) {
           ? ApiKeyLocation.query
           : ApiKeyLocation.header,
     ),
+    'oauth2' when OAuth2Auth.supports(get('grant_type')) => OAuth2Auth(
+      grant: OAuth2Grant.fromWire(get('grant_type')),
+      tokenUrl: get('accessTokenUrl'),
+      clientId: get('clientId'),
+      clientSecret: get('clientSecret'),
+      scope: get('scope'),
+      username: get('username'),
+      password: get('password'),
+      clientAuthInBody: get('client_authentication') == 'body',
+    ),
     '' => const InheritAuth(),
     _ => RawAuth({'type': type, type: m[type]}),
   };
@@ -454,6 +464,21 @@ Json _exportAuth(Auth a) {
     ApiKeyAuth(:final key, :final value, :final addTo) => {
       'type': 'apikey',
       'apikey': kv({'key': key, 'value': value, 'in': addTo.name}),
+    },
+    OAuth2Auth() => {
+      'type': 'oauth2',
+      'oauth2': kv({
+        'grant_type': a.grant.wire,
+        'accessTokenUrl': a.tokenUrl,
+        'clientId': a.clientId,
+        'clientSecret': a.clientSecret,
+        'scope': a.scope,
+        if (a.grant == OAuth2Grant.password) ...{
+          'username': a.username,
+          'password': a.password,
+        },
+        'client_authentication': a.clientAuthInBody ? 'body' : 'header',
+      }),
     },
     RawAuth(:final json) => json,
   };

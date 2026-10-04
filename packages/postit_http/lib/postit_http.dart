@@ -5,3 +5,4 @@ export 'src/errors.dart';
 export 'src/masker.dart';
 export 'src/request_builder.dart';
 export 'src/models.dart';
+export 'src/oauth2.dart';

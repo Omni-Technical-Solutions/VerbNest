@@ -57,6 +57,17 @@ void main() {
         const BearerAuth(token: '{{t}}'),
         const BasicAuth(username: 'u', password: 'p'),
         const ApiKeyAuth(key: 'k', value: 'v', addTo: ApiKeyLocation.query),
+        const OAuth2Auth(
+          grant: OAuth2Grant.password,
+          tokenUrl: 'https://t/token',
+          clientId: 'id',
+          clientSecret: 's',
+          scope: 'a b',
+          username: 'u',
+          password: 'p',
+          clientAuthInBody: true,
+        ),
+        const OAuth2Auth(grant: OAuth2Grant.clientCredentials),
       ]) {
         final back = Auth.fromJson((roundTrip(auth.toJson()) as Map).cast());
         expect(back.toJson(), auth.toJson());
@@ -65,7 +76,7 @@ void main() {
     });
 
     test('unknown types are preserved', () {
-      final raw = {'type': 'oauth2', 'grantType': 'client_credentials'};
+      final raw = {'type': 'oauth2', 'grantType': 'authorization_code'};
       final auth = Auth.fromJson(raw);
       expect(auth, isA<RawAuth>());
       expect(auth.toJson(), raw);

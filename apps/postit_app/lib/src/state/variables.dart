@@ -44,11 +44,7 @@ final historyTickProvider = NotifierProvider<HistoryTick, int>(HistoryTick.new);
 /// so they come from the device-local store (interim until the OS secret
 /// store lands).
 List<Variable> loadVariables(WorkspaceSession s, VariableOwner owner) {
-  final current = s.local.currentValues(
-    s.repo.workspaceId,
-    owner.kind,
-    owner.id,
-  );
+  final current = s.secrets.values(s.repo.workspaceId, owner.kind, owner.id);
   return [
     for (final v in s.repo.variables(owner))
       v.secret
@@ -69,17 +65,17 @@ void saveVariables(
   List<Variable> vars,
 ) {
   final ws = s.repo.workspaceId;
-  final old = s.local.currentValues(ws, owner.kind, owner.id);
+  final old = s.secrets.values(ws, owner.kind, owner.id);
   final keepSecrets = <String>{};
   for (final v in vars) {
     if (v.secret && v.key.isNotEmpty) {
-      s.local.setCurrentValue(ws, owner.kind, owner.id, v.key, v.value);
+      s.secrets.put(ws, owner.kind, owner.id, v.key, v.value);
       keepSecrets.add(v.key);
     }
   }
   for (final key in old.keys) {
     if (!keepSecrets.contains(key)) {
-      s.local.clearCurrentValue(ws, owner.kind, owner.id, key);
+      s.secrets.remove(ws, owner.kind, owner.id, key);
     }
   }
   s.repo.saveVariables(owner, [

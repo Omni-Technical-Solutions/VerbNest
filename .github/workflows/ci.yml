@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed packages test_server apps/postit_app/lib apps/postit_app/test
+      - run: dart analyze packages test_server
+      - name: Package tests
+        run: |
+          for p in postit_core postit_http postit_storage postit_import; do
+            (cd packages/$p && dart test)
+          done
+
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+        working-directory: apps/postit_app
+      - run: flutter test
+        working-directory: apps/postit_app

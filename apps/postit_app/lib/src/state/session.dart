@@ -8,11 +8,17 @@ import 'package:postit_storage/postit_storage.dart';
 /// Everything tied to the open workspace: its database, the repository over
 /// it and the device-local store.
 class WorkspaceSession {
-  WorkspaceSession({required this.db, required this.repo, required this.local});
+  WorkspaceSession({
+    required this.db,
+    required this.repo,
+    required this.local,
+    SecretStore? secrets,
+  }) : secrets = secrets ?? LocalDbSecretStore(local);
 
   final WorkspaceDatabase db;
   final WorkspaceRepository repo;
   final LocalStore local;
+  final SecretStore secrets;
 
   /// In-memory session for tests and previews.
   factory WorkspaceSession.memory() {

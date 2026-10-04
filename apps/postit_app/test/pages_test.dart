@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:postit_app/src/pages/environments_page.dart';
 import 'package:postit_app/src/pages/history_page.dart';
+import 'package:postit_app/src/settings_page.dart';
 import 'package:postit_app/src/state/session.dart';
 import 'package:postit_storage/postit_storage.dart';
 
@@ -22,6 +23,7 @@ Future<WorkspaceSession> pump(WidgetTester tester, Widget page) async {
 }
 
 void main() {
+  settingsAndShortcutTests();
   testWidgets('environments: add environment and a variable', (tester) async {
     final s = await pump(tester, const EnvironmentsPage());
     await tester.tap(find.byKey(const Key('env-add')));
@@ -70,5 +72,17 @@ void main() {
     await tester.enterText(find.byKey(const Key('history-search')), 'b.test');
     await tester.pump();
     expect(find.textContaining('a.test'), findsNothing);
+  });
+}
+
+void settingsAndShortcutTests() {
+  testWidgets('settings persist workspace HTTP defaults', (tester) async {
+    final s = await pump(tester, const SettingsPage());
+    await tester.tap(find.byKey(const Key('default-verify-tls')));
+    await tester.pump();
+    expect(s.repo.settings['verifyTls'], false);
+    await tester.enterText(find.byKey(const Key('default-timeout')), '5');
+    await tester.pump();
+    expect(s.repo.settings['timeoutMs'], 5000);
   });
 }

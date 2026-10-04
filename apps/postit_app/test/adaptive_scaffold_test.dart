@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:postit_app/src/app.dart';
 import 'package:postit_app/src/layout_class.dart';
+import 'package:postit_app/src/adaptive_scaffold.dart';
 import 'package:postit_app/src/state/session.dart';
+import 'package:postit_app/src/state/tree_state.dart';
+import 'package:postit_core/postit_core.dart';
 
 Future<WorkspaceSession> pumpAt(WidgetTester tester, Size size) async {
   tester.view.physicalSize = size;
@@ -80,5 +84,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('List users'), findsWidgets);
     expect(session.repo.children(id).single.name, 'List users');
+  });
+
+  testWidgets('ctrl+W closes the active tab', (tester) async {
+    final session = await pumpAt(tester, const Size(1400, 900));
+    final c = session.repo.createCollection('C');
+    final id = session.repo.createRequest(
+      c,
+      HttpRequestItem(id: '', name: 'R'),
+    );
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(AdaptiveScaffold)),
+    );
+    container.read(tabsProvider.notifier).open(id);
+    await tester.pump();
+    expect(container.read(tabsProvider).open, [id]);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyW);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+    expect(container.read(tabsProvider).open, isEmpty);
   });
 }
