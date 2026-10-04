@@ -93,8 +93,7 @@ class TestServer {
   Future<bool> _handle(Socket socket, RawRequest req) async {
     final path = req.uri.path;
     final seg = path.split('/').where((s) => s.isNotEmpty).toList();
-    final closeAfter =
-        req.header('connection')?.toLowerCase() == 'close';
+    final closeAfter = req.header('connection')?.toLowerCase() == 'close';
     final route = seg.isEmpty ? '' : seg.first;
 
     switch (route) {
@@ -102,7 +101,12 @@ class TestServer {
         _write(socket, 200, _echoJson(req), closeAfter: closeAfter);
       case 'status':
         final code = int.tryParse(seg.length > 1 ? seg[1] : '') ?? 400;
-        _write(socket, code, utf8.encode('status $code'), closeAfter: closeAfter);
+        _write(
+          socket,
+          code,
+          utf8.encode('status $code'),
+          closeAfter: closeAfter,
+        );
       case 'delay':
         final ms = int.tryParse(seg.length > 1 ? seg[1] : '') ?? 0;
         await Future<void>.delayed(Duration(milliseconds: ms));
@@ -121,7 +125,12 @@ class TestServer {
         await _chunked(socket);
       case 'large':
         final mb = int.tryParse(seg.length > 1 ? seg[1] : '') ?? 1;
-        _write(socket, 200, Uint8List(mb * 1024 * 1024), closeAfter: closeAfter);
+        _write(
+          socket,
+          200,
+          Uint8List(mb * 1024 * 1024),
+          closeAfter: closeAfter,
+        );
       default:
         _write(socket, 404, utf8.encode('not found'), closeAfter: closeAfter);
     }
@@ -154,9 +163,7 @@ class TestServer {
   }
 
   Future<void> _chunked(Socket socket) async {
-    socket.write(
-      'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n',
-    );
+    socket.write('HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n');
     for (final part in ['hello ', 'chunked ', 'world']) {
       socket.write('${part.length.toRadixString(16)}\r\n$part\r\n');
       await socket.flush();
@@ -210,7 +217,8 @@ class _RequestParser {
     final headers = <(String, String)>[];
     for (final line in head.skip(1)) {
       final i = line.indexOf(':');
-      if (i > 0) headers.add((line.substring(0, i), line.substring(i + 1).trim()));
+      if (i > 0)
+        headers.add((line.substring(0, i), line.substring(i + 1).trim()));
     }
     final bodyStart = end + 4;
     final body = _readBody(bytes, bodyStart, headers);
