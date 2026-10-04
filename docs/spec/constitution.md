@@ -4,13 +4,15 @@ These principles outrank every other document in the kit. When a feature request
 
 ## I. Local-first, account-free
 1. PostIt MUST be fully usable offline with no account, no login and no telemetry by default.
-2. All user data (collections, environments, history) lives on the user's device. Any sync is opt-in and pluggable (git, a folder, or self-hosted), never a vendor cloud requirement.
+2. All user data (collections, environments, history) lives on the user's device. Any sharing or sync is opt-in and pluggable (workspace file/bundle exchange, YAML snapshots in git, or self-hosted), never a vendor cloud requirement.
 3. Telemetry, if ever added, is opt-in, anonymous, documented field by field, and off by default.
 
-## II. Plain files are the source of truth
-1. Collections and environments are stored as human-readable, diff-friendly text files (one request per file) so they can live in a git repo next to the code they test.
-2. The database (SQLite) is a cache and an index for history and search. Deleting it MUST NOT lose collection data.
-3. Secrets are never written into collection files. They live in the OS secure store and are referenced by name.
+## II. SQLite is the source of truth, and users can always take their data out
+*(Amended by ADR-007; previously "plain files are the source of truth".)*
+1. Workspace content (collections, folders, requests, examples, environments, variables, settings) is stored in a **workspace database**: one self-contained SQLite file per workspace. Device-local state (history, run results, current variable values, cookies, UI state, search index) is stored in a separate **local database** that is never part of the workspace.
+2. Every write is a transaction; a crash or power loss MUST NOT corrupt or half-apply a change. The schema is versioned and migrated forward only with tested migrations.
+3. The workspace database is a documented, stable format (schema published in data-model.md). Users MUST be able to leave: a workspace can be exported at any time to a copy of the `.postit` file, to Postman v2.1, and to a human-readable YAML folder snapshot (see FR-WS-006), and a snapshot can be imported back without loss.
+4. Secrets are never written into either database or any export. They live in the OS secure store and are referenced by name.
 
 ## III. One codebase, five first-class platforms
 1. Android, iOS, Linux, macOS and Windows are all first class. A feature is "done" only when it works on all five, or when the platform limitation is documented in the feature's spec and surfaced in the UI.

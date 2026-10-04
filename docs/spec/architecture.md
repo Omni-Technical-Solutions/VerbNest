@@ -5,7 +5,7 @@
 1. **Same behaviour in app and CLI** → protocol, scripting, variables and runner are pure Dart packages (constitution IV).
 2. **Wire fidelity and timing** → PostIt owns its HTTP engine instead of relying solely on `package:http` (constitution V).
 3. **Five platforms, one codebase** → platform specifics isolated behind interfaces (constitution III).
-4. **Plain files as source of truth** → storage layer writes YAML files; SQLite is only an index/cache (constitution II).
+4. **SQLite as source of truth with lossless export** → workspace data lives in a per-workspace SQLite database; users can always export to `.postit`, Postman and YAML snapshots (constitution II, ADR-007).
 
 Flutter **web is out of scope**: browsers cannot open raw sockets, set forbidden headers (`Host`, `Cookie`, `Origin`…) or bypass CORS, which defeats the purpose of an API client. Revisit only with a companion "agent" process (open-questions.md).
 
@@ -28,7 +28,7 @@ Flutter **web is out of scope**: browsers cannot open raw sockets, set forbidden
 │  postit_script    JS runtime binding (QuickJS-ng via FFI), pm API   │
 │  postit_runner    collection runner, reporters                      │
 │  postit_io        importers/exporters, codegen                      │
-│  postit_storage   workspace file format, drift (SQLite) index       │
+│  postit_storage   workspace + local SQLite (drift), repositories    │
 │  postit_mock      local mock server                                 │
 ├────────────────────────────────────────────────────────────────────┤
 │ Platform services (interfaces in core, impls in app / cli)          │
@@ -68,10 +68,15 @@ postit/
 - App Store note: scripts are user-authored and run in an interpreter, the same model as Scriptable/Pythonista; no code is downloaded from the network.
 
 ### 3.3 Storage (`postit_storage`)
-- Workspace files: YAML (see data-model.md) parsed with `yaml` and written with `yaml_edit` to keep comments/order stable for clean git diffs.
-- Writes are atomic (temp file + rename) and serialised through a single writer per workspace.
-- **drift** (SQLite via `sqlite3` with bundled native library) for: history, run results, FTS5 search index, UI state (open tabs, layout), OAuth token cache metadata (tokens themselves in SecretStore).
-- File watching with `package:watcher` on desktop; on mobile, rescan on resume (mtime/hash diff).
+Decision: ADR-007 (supersedes ADR-003).
+- **Workspace database** (`<name>.postit`): one SQLite file per workspace via **drift** (`sqlite3` with bundled native library, FTS5 enabled). Holds collections, requests, examples, environments, variables, settings, revisions and attachments (data-model.md §1).
+- **Local database**: a second drift database per device for history, run results, FTS5 search index, current variable values, cookies, OAuth token metadata, UI state and the recent-workspaces list (data-model.md §4). Tokens and secrets themselves stay in SecretStore.
+- Repository pattern: `WorkspaceRepository` (nodes, environments, variables, revisions) and `LocalStore` interfaces in `postit_storage`; the UI and runner depend on the interfaces, so the CLI can open a workspace read-only.
+- Writes are drift transactions in WAL mode; one writer isolate per open workspace, exclusive file lock while open. Reads for tree/search run on drift's background isolate.
+- Streams: drift `watch()` queries drive the sidebar tree and tabs, replacing file watching. No `package:watcher`.
+- Schema migrations are forward-only, versioned with `PRAGMA user_version`, and tested with `drift_dev` schema dumps.
+- Interchange (`postit_io`): `.postit` copy via `VACUUM INTO`, Postman v2.1, and **YAML snapshot** export/import (`yaml`, `yaml_edit`) for git workflows. Snapshot output is deterministic so diffs are clean.
+- Safety: the app warns when a workspace path is inside a known cloud-sync folder (iCloud Drive, Dropbox, OneDrive, Google Drive) because syncing a live WAL database can corrupt it; the recommended sharing path is export/import.
 
 ### 3.4 State management & navigation
 - **Riverpod** (v3, code-gen) for dependency injection and state; immutable models via **freezed**; JSON via **json_serializable**.
@@ -113,8 +118,8 @@ postit/
 | Routing | `go_router` | |
 | DB | `drift`, `sqlite3`, `sqlite3_flutter_libs` (or sqlite3 native-assets build) | FTS5 enabled |
 | Secure storage | `flutter_secure_storage` | Linux fallback in-house |
-| Files | `file_picker`, `path_provider`, `watcher`, `share_plus`, `desktop_drop` | |
-| Folder access (mobile) | `saf` style plugin on Android (or in-house MethodChannel); security-scoped bookmarks on iOS/macOS via in-house plugin | Evaluate `macos_secure_bookmarks` |
+| Files | `file_picker`, `path_provider`, `share_plus`, `desktop_drop` | Import/export and opening `.postit` files |
+| External file access | `file_picker` for import/export; security-scoped bookmarks only for desktop in-place `.postit` files on macOS (in-house plugin) | Evaluate `macos_secure_bookmarks` |
 | Desktop windowing | `window_manager`, `multi_split_view`, `menu_bar`/`PlatformMenuBar` (macOS native menu) | |
 | Editor | `re_editor`, `re_highlight` | |
 | Markdown | `flutter_markdown` (or `markdown_widget`) | |
@@ -125,7 +130,7 @@ postit/
 | GraphQL | `gql`, `graphql_parser`-based tooling | Introspection client in-house |
 | gRPC | `grpc`, `protobuf` (descriptor types only) | Dynamic codec in-house |
 | Realtime | `web_socket_channel`, `socket_io_client`, `mqtt_client`, `mqtt5_client` | |
-| YAML | `yaml`, `yaml_edit` | |
+| YAML | `yaml`, `yaml_edit` | Snapshot export/import only |
 | CSV | `csv` | Runner data files |
 | Fake data | in-house `$random*` set (avoid heavy deps) | |
 | i18n | `flutter_localizations`, `intl`, ARB | |
@@ -140,7 +145,7 @@ Each package is evaluated for: licence compatible with Apache-2.0, maintained in
 - Min SDK 24, target latest. Permissions: `INTERNET`, `ACCESS_NETWORK_STATE`; `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` (or `DATA_SYNC`) only for long collection runs / mock server, with Play policy justification.
 - Cleartext HTTP: `android:usesCleartextTraffic="true"` and a network security config allowing user CAs, because testing `http://` and local endpoints is core. (Applies to the native adapter; the `dart:io` engine uses its own trust settings, and PostIt's custom CA feature covers user CAs.)
 - Emulator → host machine is `10.0.2.2`; surface a hint when users type `localhost`.
-- Folder access via Storage Access Framework; plain paths only inside app storage.
+- Workspace databases live in app storage, so no folder permission is needed. Import/export files go through the Storage Access Framework picker.
 - Background: OS may kill sockets when backgrounded; runner uses a foreground service with notification.
 - F-Droid build flavour: no Google Play Services (use embedded Cronet or skip native adapter).
 
@@ -148,11 +153,11 @@ Each package is evaluated for: licence compatible with Apache-2.0, maintained in
 - Min iOS 15. `NSLocalNetworkUsageDescription` (and Bonjour keys if discovery is added) required to reach LAN hosts; first LAN request triggers the system prompt.
 - ATS does not govern raw sockets, but the native adapter (NSURLSession) needs `NSAllowsArbitraryLoads` with App Review justification ("developer tool for testing arbitrary APIs").
 - No background execution for long runs: runs pause when backgrounded (use `beginBackgroundTask` for ~30 s grace). Mock server works only in foreground.
-- Files: document picker + security-scoped bookmarks for external workspaces; iCloud Drive folders work as a sync path.
+- Files: workspaces live in app storage; the document picker handles `.postit`/snapshot import and export. Opening a `.postit` file in place from iCloud Drive is not supported (see §3.3 sync warning); import copies it.
 - iPad: full desktop-class layout, pointer and hardware keyboard shortcuts, Stage Manager multi-window (P2).
 
 ### macOS
-- Min macOS 11. Mac App Store build is sandboxed: entitlements `network.client`, `network.server` (OAuth loopback, mock server), `files.user-selected.read-write`, `files.bookmarks.app-scope`. Direct-download build (notarised DMG) unsandboxed so `git` and `protoc` from PATH are usable; App Store build disables shell-out features.
+- Min macOS 11. Mac App Store build is sandboxed: entitlements `network.client`, `network.server` (OAuth loopback, mock server), `files.user-selected.read-write`, `files.bookmarks.app-scope`. Direct-download build (notarised DMG) unsandboxed so `protoc` from PATH is usable; App Store build disables shell-out features.
 - Native menu bar via `PlatformMenuBar`; Cmd shortcuts.
 - Universal binary (arm64 + x64).
 
@@ -165,7 +170,7 @@ Each package is evaluated for: licence compatible with Apache-2.0, maintained in
 ### Linux
 - x64 and arm64; GTK3 runner. Packages: Flatpak (Flathub, primary), AppImage, `.deb`, `.rpm`; Snap optional.
 - Secret storage needs libsecret + a Secret Service (GNOME Keyring/KWallet); fallback described in §3.5.
-- Flatpak sandbox: workspace folders via the file chooser portal (`--filesystem` minimal); `git` invocation through `flatpak-spawn --host` is not allowed on Flathub, so git features use a bundled `git` in the Flatpak.
+- Flatpak sandbox: workspace databases live in the app data dir; import/export via the file chooser portal with minimal `--filesystem` access.
 - Webview support is the weakest; HTML preview falls back to "open in browser" if no webview backend loads.
 - Wayland and X11 both supported (Flutter GTK embedder).
 
@@ -181,7 +186,7 @@ Each package is evaluated for: licence compatible with Apache-2.0, maintained in
 
 1. ADR-001 Custom HTTP engine over `dart:io` sockets (vs. `HttpClient` / native stacks).
 2. ADR-002 QuickJS-ng via FFI as the single script engine.
-3. ADR-003 YAML one-request-per-file workspace format.
+3. ~~ADR-003 YAML one-request-per-file workspace format~~ superseded by ADR-007 SQLite workspace database (written; status Proposed).
 4. ADR-004 Riverpod + freezed as state architecture.
 5. ADR-005 No Flutter web target.
 6. ADR-006 Dynamic protobuf codec for gRPC.

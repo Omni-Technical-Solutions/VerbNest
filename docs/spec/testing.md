@@ -44,7 +44,9 @@ No test may hit the public internet (constitution X). A lint step greps tests fo
 | Proxy | HTTP CONNECT, SOCKS5, auth, bypass list | FR-HTTP-012 |
 | Responses | large body streaming, truncated preview, charset detection, compressed sizes | FR-RES-* |
 | Auth | every auth type against verifying endpoints; OAuth2 PKCE end-to-end (desktop loopback; mobile via patrol with Custom Tabs/ASWebAuthenticationSession) | FR-AUTH-* |
-| Storage | atomic writes under simulated crash (kill during write); external edit detection; conflict resolution; unknown keys preserved; stable diffs (write → read → write = byte-identical) | FR-WS-*, NFR-REL-001 |
+| Storage | transactions under simulated crash (kill during write, multi-row edits all-or-nothing); migrations from every released schema version via drift schema dumps; newer-schema and non-PostIt files rejected untouched; exclusive-lock behaviour; unknown JSON keys preserved; local database deletion loses no workspace data; `.postit` export contains no history, current values or secrets | FR-WS-001..004, 007, 009, NFR-REL-001 |
+| Snapshot | YAML snapshot export → import → export byte-identical; deterministic ordering; merge conflict list; path traversal and YAML alias bombs rejected | FR-WS-006 |
+| Revisions | one revision per save, 50 cap, restore | FR-WS-008 |
 | Import/export | corpus round-trip; malformed inputs; path traversal in file references; huge files | FR-IO-* |
 | Scripting | `pm` conformance suite; sandbox (no `require('fs')`, no infinite loop past timeout, memory cap); `sendRequest` appears in console | FR-SCR-* |
 | Runner | iterations × data rows; setNextRequest loops; stop-on-failure; JUnit output schema-valid | FR-RUN-* |
@@ -78,7 +80,7 @@ No test may hit the public internet (constitution X). A lint step greps tests fo
 ## 7. Security tests
 - Script sandbox fuzzing: generated JS attempting prototype pollution of host bridge, infinite loops, deep recursion, giant allocations; must terminate cleanly within limits.
 - Import hardening: zip-slip/path traversal in Bruno/Insomnia/data-dump archives; billion-laughs XML in SOAP/WSDL; YAML alias bombs.
-- Secret leakage: grep history DB, logs, exports and workspace files after a scripted session using secrets; zero occurrences allowed.
+- Secret leakage: grep the workspace and local databases (including WAL files), logs and exports after a scripted session using secrets; zero occurrences allowed.
 - TLS: verify that disabling verification is scoped to the request/environment that set it.
 
 ## 8. CI pipeline (GitHub Actions)
@@ -95,3 +97,4 @@ No test may hit the public internet (constitution X). A lint step greps tests fo
 - Manual smoke on one mobile and one desktop platform; platform limitations documented in the FR and in-app.
 - Accessibility labels present; keyboard path on desktop.
 - Docs page updated; changelog entry.
+- Committed as one commit per phase step with a change type and version bump (roadmap.md, Release workflow).

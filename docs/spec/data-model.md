@@ -1,55 +1,112 @@
 # Data Model
 
-Two stores, with different jobs:
+Three stores, with different jobs (ADR-007):
 
-| Store | Holds | Shared via git? |
+| Store | Holds | Shared? |
 |---|---|---|
-| **Workspace files** (YAML) | Collections, folders, requests, examples, environments (initial values), collection/global variables (initial values), scripts, workspace settings | Yes |
-| **App database** (SQLite via drift, per device) | History, run results, search index, current variable values, UI state, token metadata | No |
+| **Workspace database** (`<name>.postit`, SQLite via drift) | Collections, folders, requests, examples, environments, variables (initial values), scripts, workspace settings, per-request revisions, attached files (protos, data files) | Yes: copy/export the file |
+| **Local database** (SQLite via drift, per device, in app support dir) | History, run results, search index (FTS5), current variable values, cookies, OAuth token metadata, UI tabs/layout, recent workspaces | No |
 | **Secret store** (OS keychain) | Secret variable values, OAuth tokens, cert passphrases | No |
 
-## 1. Workspace layout on disk
+## 1. Workspace database
 
-```
-my-api/                              ← workspace root (can be a git repo)
-  postit.yaml                        workspace manifest
-  .gitignore                         generated: *.local.yaml, .postit/cache/
-  globals.yaml                       global variables (initial values)
-  environments/
-    dev.yaml
-    staging.yaml
-    prod.yaml
-    dev.local.yaml                   optional local overrides (git-ignored)
-  collections/
-    petstore/
-      _collection.yaml               collection meta: auth, vars, scripts, description
-      pets/
-        _folder.yaml                 folder meta
-        list-pets.req.yaml
-        create-pet.req.yaml
-        create-pet.examples/
-          201-created.example.yaml
-      auth/
-        _folder.yaml
-        login.req.yaml
-      chat.ws.yaml                   WebSocket request
-      events.sse.yaml                SSE request
-      catalog.gql.yaml               GraphQL request
-      inventory.grpc.yaml            gRPC request
-  protos/                            optional .proto / descriptor sets
-  data/                              runner data files (CSV/JSON)
-  .postit/
-    plugins/                         (P2)
-    cache/                           introspection & reflection caches (git-ignored)
-```
+One SQLite file per workspace. Opened in WAL mode with `foreign_keys=ON`; the app holds an exclusive lock while a workspace is open. Default location: `<app documents>/workspaces/<workspace id>.postit`. On desktop a workspace may also be opened in place from any path.
 
 Rules:
-- Ordering of siblings is stored in the parent's `_folder.yaml` / `_collection.yaml` as `order: [list-pets, create-pet]`; files missing from `order` sort alphabetically after listed ones (so hand-added files still appear).
-- File names are slugs derived from the display name; the display name is stored inside the file so renames of the display name don't have to rename files (renaming file is optional, done by the app on rename by default).
-- Every entity has a stable `id` (ULID) so history, run results and tabs can refer to it across renames and moves.
-- Unknown keys are preserved on read/write (forward compatibility).
+- Every entity has a stable `id` (ULID) so history, run results and tabs refer to it across renames and moves.
+- Sibling order is the integer `position` column (gaps allowed, renumbered on demand). Moving a node changes `parent_id` and `position` only.
+- Request bodies and type-specific fields live in a JSON document column (`data`) validated against the v1 schemas in §2; columns that are queried (name, kind, type, url, parent, position) are real columns.
+- Unknown keys inside `data`, `auth`, `scripts` and `extra` JSON are preserved on read/write (forward compatibility).
+- All edits are transactions. Each saved edit of a request appends a `revision` row (last 50 kept per node by default) to provide version history without git.
+- `PRAGMA user_version` holds the schema version; migrations are forward-only and covered by drift schema-dump tests.
 
-## 2. File schemas (v1)
+### 1.1 Schema (v1)
+
+```sql
+CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+-- keys: workspace_id, name, default_environment_id, settings_json, created_at
+
+CREATE TABLE node (
+  id          TEXT PRIMARY KEY,                 -- ULID
+  parent_id   TEXT REFERENCES node(id) ON DELETE CASCADE,  -- NULL = top level (collections)
+  kind        TEXT NOT NULL CHECK (kind IN ('collection','folder','request')),
+  type        TEXT,                             -- request type: http|graphql|websocket|sse|grpc|...; NULL for collection/folder
+  name        TEXT NOT NULL,
+  position    INTEGER NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  auth_json   TEXT,                             -- see §2.2/§2.5
+  scripts_json TEXT,                            -- {pre, post}
+  data        TEXT NOT NULL DEFAULT '{}',       -- type-specific request fields (§2.2, §2.6)
+  extra       TEXT NOT NULL DEFAULT '{}',       -- unknown/forward-compat and x-postman keys
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL
+);
+CREATE INDEX node_parent ON node(parent_id, position);
+
+CREATE TABLE example (
+  id TEXT PRIMARY KEY,
+  request_id TEXT NOT NULL REFERENCES node(id) ON DELETE CASCADE,
+  name TEXT NOT NULL, position INTEGER NOT NULL,
+  data TEXT NOT NULL,                           -- request snapshot + response (§2.3)
+  body_blob BLOB                                -- binary response body, if any
+);
+
+CREATE TABLE environment (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, color TEXT, position INTEGER NOT NULL
+);
+
+CREATE TABLE variable (                          -- initial values only; secrets store no value
+  id TEXT PRIMARY KEY,
+  owner_kind TEXT NOT NULL CHECK (owner_kind IN ('global','environment','collection','folder')),
+  owner_id TEXT,                                -- environment.id or node.id; NULL for global
+  key TEXT NOT NULL, value TEXT,
+  type TEXT NOT NULL DEFAULT 'default' CHECK (type IN ('default','secret')),
+  enabled INTEGER NOT NULL DEFAULT 1, description TEXT NOT NULL DEFAULT '',
+  position INTEGER NOT NULL,
+  UNIQUE (owner_kind, owner_id, key)
+);
+
+CREATE TABLE revision (
+  node_id TEXT NOT NULL REFERENCES node(id) ON DELETE CASCADE,
+  rev INTEGER NOT NULL, saved_at INTEGER NOT NULL,
+  snapshot TEXT NOT NULL,                       -- full JSON of the node at save time
+  PRIMARY KEY (node_id, rev)
+);
+
+CREATE TABLE attachment (                        -- protos, descriptor sets, runner data files, binary bodies
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, mime TEXT, content BLOB NOT NULL, created_at INTEGER NOT NULL
+);
+```
+
+References to files inside a request (binary body, multipart file part, proto file, data file) point to an `attachment.id`, or to a device path that is stored only in the local database (so a shared workspace never contains absolute paths from another machine).
+
+### 1.2 Export, import and sharing (replaces file layout)
+
+| Operation | Result | Priority |
+|---|---|---|
+| Copy `.postit` file / "Export workspace" | Consistent copy made with `VACUUM INTO`, no history, no current values, no secrets | P0 |
+| Export Postman v2.1, cURL | See §6 | P0 |
+| **Export YAML snapshot** to a folder | Writes the tree below from the database; deterministic output so it diffs cleanly in git | P1 |
+| **Import YAML snapshot** | Reads that tree into a new workspace or merges into the open one (by `id`, with a conflict list) | P1 |
+
+YAML snapshot layout (same shapes as §2):
+
+```
+my-api/
+  postit.yaml                        workspace manifest
+  globals.yaml
+  environments/dev.yaml ...
+  collections/petstore/_collection.yaml
+  collections/petstore/pets/_folder.yaml
+  collections/petstore/pets/list-pets.req.yaml
+  collections/petstore/pets/create-pet.examples/201-created.example.yaml
+  protos/ data/                      attachments written as files
+```
+Sibling order is written as `order: [...]` in each `_folder.yaml`/`_collection.yaml`. Export → import → export MUST be byte-identical (testing.md).
+
+## 2. Document schemas (v1)
+
+These are the shapes of the JSON stored in `node.data`, `auth_json`, `scripts_json` and `example.data`, and of the YAML snapshot files. YAML is shown because it is easier to read; the database stores the same structure as JSON.
 
 ### 2.1 `postit.yaml`
 ```yaml
@@ -123,7 +180,7 @@ variables:
   - { key: apiKey, type: secret, enabled: true }   # value lives in SecretStore, never here
   - { key: tag, value: cat, description: default tag }
 ```
-Local overrides file `dev.local.yaml` has the same shape and only `variables`; its values win over the shared file's initial values on this device.
+Per-device overrides are the *current values* kept in the local database (§4); they win over the workspace's initial values on this device and are never exported.
 
 ### 2.5 Collection / folder meta (`_collection.yaml`, `_folder.yaml`)
 ```yaml
@@ -164,7 +221,7 @@ tls: true
 service: inventory.v1.Inventory
 method: ListItems
 descriptorSource: reflection # reflection|descriptorSet|proto
-protoFiles: [../../protos/inventory.proto]
+protoFiles: [attachment:01J9ZA...]   # attachment id (YAML snapshot: ../../protos/inventory.proto)
 metadata: [{ key: authorization, value: "Bearer {{token}}" }]
 message: |
   { "pageSize": 20 }
@@ -176,7 +233,7 @@ Auth block shapes mirror Postman's auth types (e.g. `oauth2: { grantType, access
 ## 3. Domain model (Dart, `postit_core`)
 
 ```
-Workspace(id, name, rootPath, settings, collections[], environments[], globals)
+Workspace(id, name, dbPath, settings, collections[], environments[], globals)
 Collection(id, name, auth, variables[], scripts, description, children: Node[])
 Folder(id, name, auth, variables[], scripts, description, children: Node[])
 sealed Node = Folder | RequestItem
@@ -195,7 +252,7 @@ Auth (sealed per type)
 Example(id, name, requestSnapshot?, ResponseSnapshot)
 ```
 
-Runtime (not persisted to files):
+Runtime (not persisted in the workspace database):
 ```
 ResolvedRequest(method, url, headers[], bodyBytes|bodyStream, settings, certs, proxy)
 ResponseRecord(status, reason, httpVersion, headers[], bodyRef, sizes, timings, tlsInfo, remoteAddress)
@@ -204,10 +261,14 @@ ExecutionContext(scopes: VariableScopes, cookieJar, console, testResults[])
 VariableScopes(local, data, environment, collection, global)
 ```
 
-## 4. Database schema (drift, per device)
+## 4. Local database schema (drift, per device)
+
+Holds device-local state only. Everything here is either discardable or rebuildable; deleting this database MUST NOT lose workspace content (constitution II). `search_idx` is derived from the workspace database and rebuilt when out of date.
 
 ```sql
-CREATE TABLE workspace (id TEXT PRIMARY KEY, name TEXT, root_path TEXT, bookmark BLOB, last_opened_at INTEGER);
+CREATE TABLE workspace (id TEXT PRIMARY KEY, name TEXT, db_path TEXT, bookmark BLOB, last_opened_at INTEGER);  -- recent workspaces; bookmark = security-scoped/SAF handle for externally opened files
+
+CREATE TABLE local_path (workspace_id TEXT, ref TEXT, path TEXT, PRIMARY KEY (workspace_id, ref));  -- device file paths for request file references, never shared
 
 CREATE TABLE history (
   id TEXT PRIMARY KEY, workspace_id TEXT, request_id TEXT NULL,   -- null for ad-hoc
@@ -220,7 +281,7 @@ CREATE TABLE history (
 );
 CREATE INDEX history_ws_time ON history(workspace_id, sent_at DESC);
 
-CREATE TABLE variable_current (       -- current values, never written to workspace files
+CREATE TABLE variable_current (       -- current values, never written to the workspace database
   workspace_id TEXT, scope TEXT, scope_id TEXT, key TEXT, value TEXT,
   PRIMARY KEY (workspace_id, scope, scope_id, key));
 
@@ -257,15 +318,15 @@ Drift migrations are versioned and tested (`drift_dev` schema dumps) for every r
 
 | Postman v2.1 | PostIt |
 |---|---|
-| `info` | `_collection.yaml` name/description/id (Postman `_postman_id` preserved as `postmanId`) |
-| `item[]` with `item[]` | Folder directory + `_folder.yaml` |
-| `item[]` with `request` | `*.req.yaml` |
-| `request.url` (object or string) | `url` string + `params` + `pathVars` |
-| `request.body.mode` raw + `options.raw.language` | `body.mode` json/xml/text/html/javascript |
-| `response[]` | `*.examples/` files |
-| `event[]` listen `prerequest`/`test` | `scripts.pre` / `scripts.post` |
-| `variable[]` | `variables` |
-| `auth` | `auth` (types 1:1) |
-| `protocolProfileBehavior` | `settings` (known keys mapped, rest kept under `settings.postman`) |
+| `info` | `node` row, kind `collection`: name/description (Postman `_postman_id` kept as `postmanId` in `extra`) |
+| `item[]` with `item[]` | `node` row, kind `folder`, with `parent_id` and `position` |
+| `item[]` with `request` | `node` row, kind `request`, type `http` |
+| `request.url` (object or string) | `data.url` string + `params` + `pathVars` |
+| `request.body.mode` raw + `options.raw.language` | `data.body.mode` json/xml/text/html/javascript |
+| `response[]` | `example` rows |
+| `event[]` listen `prerequest`/`test` | `scripts_json.pre` / `scripts_json.post` |
+| `variable[]` | `variable` rows (owner kind `collection` or `folder`) |
+| `auth` | `auth_json` (types 1:1) |
+| `protocolProfileBehavior` | `data.settings` (known keys mapped, rest kept under `settings.postman`) |
 
-Unknown Postman fields are kept under an `x-postman` key so export round-trips.
+Unknown Postman fields are kept under an `x-postman` key in `node.extra` so export round-trips.

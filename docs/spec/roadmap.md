@@ -8,7 +8,8 @@ Goal: a repo where contributors can build, test and ship an empty-but-real app o
 - Monorepo with pub workspaces + melos; package skeletons from architecture.md.
 - CI: analyze, test, build all five targets on every PR.
 - `test_server/` with HTTP/1.1 echo, TLS listeners, redirects, delays.
-- ADR-001 … ADR-005 written and accepted.
+- ADR-001 … ADR-005 and ADR-007 written and accepted.
+- Storage spike (e): drift + bundled SQLite with FTS5 and WAL on all five platforms; 10,000-request workspace open/search timings; crash-injection test.
 - App shell: `AdaptiveScaffold` with compact/medium/expanded layouts, theme, settings stub.
 - Spike reports: (a) custom HTTP engine timing accuracy vs. curl; (b) QuickJS-ng FFI build on all five platforms incl. iOS; (c) re_editor with 5 MB JSON on a low-end Android device; (d) secure storage on Linux without a keyring.
 
@@ -20,7 +21,7 @@ Goal: a developer can replace Postman for everyday REST work, offline, on any de
 - HTTP engine (HTTP/1.1, TLS, redirects, cancel, compression, auto headers, raw view).
 - Request editor: method, URL with vars, params, path vars, headers, all body modes, settings.
 - Response viewer: status/time/size, pretty/raw/preview (images), headers, cookies (read-only), search, save/share, large-body streaming.
-- Workspace file format v1, collections/folders, drag & drop, search (FTS5).
+- Workspace SQLite database v1 (ADR-007) with drift migrations, local database, collections/folders, drag & drop, search (FTS5), `.postit` import/export.
 - Environments, globals, collection variables, secrets in OS store, dynamic vars (core set), quick-look.
 - Auth: inherit, none, API key, bearer, basic, OAuth2 client credentials & password.
 - History with restore/save.
@@ -40,7 +41,7 @@ Goal: parity with Postman's core testing workflow.
 - Cookies manager, proxy settings, HTTP/2, timing breakdown & TLS info.
 - Import OpenAPI/Swagger, HAR, Postman data dump; code generation (all listed languages).
 - Saved examples; favourites; command palette; localisation framework.
-- Git panel on desktop (status, commit, pull, push).
+- YAML snapshot export/import (FR-WS-006) and per-request revision history (FR-WS-008).
 - Store releases: Google Play, F-Droid, App Store (iOS + macOS), Microsoft Store/winget, Flathub.
 
 **Exit:** `pm` conformance corpus ≥ 95 % passing; runner reports validated by CI tools (JUnit schema); store approvals obtained; v1.0 tagged.
@@ -74,8 +75,29 @@ Goal: make PostIt the best open source tool for remote function call testing.
 - Performance mode in runner (desktop).
 - Plugin API (auth providers, importers, visualisers); `pm.visualizer`.
 - External secret providers (HashiCorp Vault, 1Password CLI, AWS Secrets Manager).
-- Optional self-hostable sync server (only if git sync proves insufficient; requires constitution check).
+- Optional self-hostable sync server (only if file/snapshot exchange proves insufficient; requires constitution check).
 - Postbot-like assistant with bring-your-own LLM key (opt-in).
+
+## Release workflow: commit per phase, bump by change type
+
+Work is committed once per finished phase (or phase step), never mid-step. Each commit carries a change type that decides the version bump. One version covers the whole workspace and is stored in `VERSION`; `scripts/bump_version.sh` copies it into every `pubspec.yaml`.
+
+| Type | Bump | Example |
+|---|---|---|
+| `feature` | major (0.1.0 → 1.0.0) | A finished roadmap phase or a new user-facing capability |
+| `minor` | minor (0.1.0 → 0.2.0) | A smaller addition to an existing capability |
+| `fix` | patch (0.1.0 → 0.1.1) | A bug fix |
+| `chore` | none | Docs, refactors, tests, CI, tooling, dependency updates |
+
+Rules:
+1. A phase step is committed only when analyze and tests are green on the packages it touches.
+2. The build number increases after every build and never decreases. It lives in `BUILD_NUMBER`, is mirrored as the `+N` in `apps/postit_app/pubspec.yaml`, and is passed to Flutter as `--build-number`. All builds (local, CI, release) go through `scripts/build.sh`, which increments it first; a failed build still uses up its number. A version bump never resets it, because the stores require build numbers to rise across versions.
+3. Commit message: `<type>(<scope>): <summary> (v<version>)`; `chore` uses `(build <N>)` instead because its version does not change.
+4. `feature`, `minor` and `fix` commits update `CHANGELOG.md` and get an annotated tag `v<version>`; `chore` gets neither.
+5. Pushing and publishing releases stay manual.
+6. Claude Code runs this with `/phase-commit <type> <summary>` (see `.claude/commands/phase-commit.md`).
+
+Because `feature` bumps major, the first `feature` commit moves the project to 1.0.0. Treat that as the MVP release (end of Phase 1); use `minor` for steps before it.
 
 ## Milestone tracking
 - Each phase becomes a GitHub milestone; each FR becomes an issue labelled with its ID and priority.

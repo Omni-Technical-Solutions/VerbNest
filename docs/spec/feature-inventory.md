@@ -48,9 +48,9 @@ Priority key: **P0** MVP · **P1** v1 · **P2** later · **—** out of scope.
 |---|---|---|---|
 | Collections with nested folders | Yes | P0 | Stored as a directory tree of files (see data-model.md). |
 | Collection/folder-level auth, variables, scripts | Yes | P0 auth & vars, P1 scripts | Inherited down the tree. |
-| Workspaces (personal/team/public) | Partial | P0 | A workspace = a local folder. Multiple workspaces switchable. Team/public workspaces replaced by git sync. |
-| Forking, pull requests, merge of collections | Via git | P1 | Git integration covers branching and merging; no proprietary fork model. |
-| Version history of collections | Via git | P1 | Show git log for a request file if repo detected. |
+| Workspaces (personal/team/public) | Partial | P0 | A workspace = a local SQLite file (`.postit`). Multiple workspaces switchable. Team/public workspaces replaced by file/snapshot exchange. |
+| Forking, pull requests, merge of collections | Via snapshots | P1 | Export a YAML snapshot into a git repo and use normal git branching and merging; import merges back. No proprietary fork model. |
+| Version history of collections | Replaced | P1 | Built-in per-request revision history with diff and restore (FR-WS-008). |
 | Comments on requests | — | — | Use git/PR tooling instead. |
 | Search across workspace | Yes | P0 | Full-text over names, URLs, bodies (SQLite FTS5 index). |
 | Favourites / pinned requests | Yes | P1 | Especially valuable on mobile. |
@@ -156,7 +156,7 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 
 | Postman feature | PostIt | Priority | Notes |
 |---|---|---|---|
-| Cloud sync & real-time collaboration | Replaced | P1 | Git-based sync (built-in git status/commit/pull/push for workspace folder on desktop; mobile via folder sync or isomorphic git). |
+| Cloud sync & real-time collaboration | Replaced | P1 | Explicit exchange: `.postit` file export/import and YAML snapshots committed to git by the user. No in-app git. |
 | Roles, SSO, audit logs, private API network | — | — | Enterprise cloud features; out of scope. |
 | Public API Network | — | — | |
 | Integrations (Slack, GitHub, Datadog…) | — | — | Via CLI in CI. |
@@ -179,7 +179,7 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 ## PostIt differentiators (not in Postman)
 
 1. **Phone and tablet support** with a native-feeling responsive UI, e.g. test an API from the field, or hit a device-local endpoint on the LAN.
-2. **One-request-per-file, git-friendly storage** as the primary format.
+2. **A single portable SQLite workspace file** with lossless export to Postman and git-friendly YAML snapshots.
 3. **No account, ever,** for any core feature.
 4. **Exact wire view**: raw request bytes as sent, including auto headers.
 5. **Shared core between app and CLI**, guaranteeing identical results in CI.

@@ -18,12 +18,12 @@ This kit is organised in the spirit of GitHub's spec-kit: principles first, then
 
 ## One-paragraph pitch
 
-Postman became the default API tool, then moved toward mandatory cloud accounts, workspaces in the vendor's cloud and per-seat pricing. Bruno, Insomnia, Hoppscotch and Yaak showed demand for local-first, git-friendly alternatives, but none is a native-feeling, single-codebase app that also runs on **phones and tablets**. PostIt's wedge is: *every protocol you test, on every device you own, stored as plain files you can commit to git.*
+Postman became the default API tool, then moved toward mandatory cloud accounts, workspaces in the vendor's cloud and per-seat pricing. Bruno, Insomnia, Hoppscotch and Yaak showed demand for local-first, git-friendly alternatives, but none is a native-feeling, single-codebase app that also runs on **phones and tablets**. PostIt's wedge is: *every protocol you test, on every device you own, stored in a single portable SQLite file, with lossless export to Postman and git-friendly YAML.*
 
 ## Scope in one line per phase
 
-- **MVP (Phase 1):** HTTP/REST requests, collections & folders, environments & variables, common auth, history, cURL + Postman v2.1 import, response viewer, file-based storage. All five platforms.
-- **v1 (Phases 2–3):** Pre-request/test scripts (JavaScript), collection runner, GraphQL, WebSocket, SSE, OpenAPI import, code generation, cookies, certificates, proxy, git-friendly sync.
+- **MVP (Phase 1):** HTTP/REST requests, collections & folders, environments & variables, common auth, history, cURL + Postman v2.1 import, response viewer, SQLite workspace storage. All five platforms.
+- **v1 (Phases 2–3):** Pre-request/test scripts (JavaScript), collection runner, GraphQL, WebSocket, SSE, OpenAPI import, code generation, cookies, certificates, proxy, YAML snapshot export/import for git.
 - **Later (Phase 4+):** gRPC, MQTT, Socket.IO, JSON-RPC/XML-RPC/SOAP, local mock server, CLI runner, plugins, monitors-lite, optional self-hosted sync.
 
 ## Conventions used in this kit

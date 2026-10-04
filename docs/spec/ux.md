@@ -32,7 +32,7 @@ Breakpoints follow Material 3 window size classes.
 │    │              │ │ ...response...                                   │ │
 └────┴──────────────┴─┴─────────────────────────────────────────────────┴─┘
  Rail: Collections, Environments, History, (Runner, Mocks later), Settings
- Bottom status bar: console toggle, cookies, proxy/TLS state, workspace git branch
+ Bottom status bar: console toggle, cookies, proxy/TLS state, workspace name and save state
 ```
 - Panes resizable and collapsible (`multi_split_view`); layout persisted per workspace.
 - Response pane position toggles between right and bottom (Ctrl/Cmd+Alt+L).
@@ -72,7 +72,7 @@ Breakpoints follow Material 3 window size classes.
 1. **First run:** Welcome → "Start blank" / "Import (Postman, cURL, OpenAPI)" / "Open folder". No account step. Sample collection optional against the bundled echo endpoints (or the local test server on desktop).
 2. **Send a request:** new request → type URL (vars autocomplete) → Send → response. Unresolved vars highlighted before sending.
 3. **Switch environment:** env chip in header (all classes); prod-coloured env shows a confirmation on send for non-GET methods (setting).
-4. **Import Postman:** pick file(s) or paste JSON/URL → preview tree with counts and warnings (unsupported features) → choose target workspace folder → done; summary screen lists anything mapped lossy.
+4. **Import Postman:** pick file(s) or paste JSON/URL → preview tree with counts and warnings (unsupported features) → choose target workspace (or create a new one) → done; summary screen lists anything mapped lossy.
 5. **Save from history:** history item → "Save to collection" → pick folder.
 6. **Run collection (P1):** collection menu → Run → options sheet (iterations, delay, data file, env) → live results list → export report.
 7. **WebSocket session (P1):** connect → split view: composer (bottom) + message log (top) with filters; on phones, log full screen with composer pinned above keyboard.

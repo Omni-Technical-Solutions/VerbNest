@@ -1,0 +1,118 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+typedef Header = (String name, String value);
+
+/// What the user asked to send, after variable resolution.
+class HttpRequestSpec {
+  HttpRequestSpec({
+    required this.method,
+    required this.url,
+    this.headers = const [],
+    this.body,
+    this.settings = const HttpSettings(),
+  });
+
+  final String method;
+  final Uri url;
+
+  /// Order and casing are preserved on the wire (constitution V).
+  final List<Header> headers;
+  final List<int>? body;
+  final HttpSettings settings;
+}
+
+class HttpSettings {
+  const HttpSettings({
+    this.timeout = const Duration(seconds: 30),
+    this.followRedirects = true,
+    this.maxRedirects = 10,
+    this.verifyTls = true,
+    this.autoDecompress = true,
+    this.keepMethodOnRedirect = false,
+    this.stripAuthCrossOrigin = true,
+  });
+
+  final Duration timeout;
+  final bool followRedirects;
+  final int maxRedirects;
+  final bool verifyTls;
+  final bool autoDecompress;
+
+  /// Keep the original method/body on 301/302/303 instead of switching to GET.
+  final bool keepMethodOnRedirect;
+
+  /// Drop `Authorization` and `Cookie` when a redirect leaves the origin.
+  final bool stripAuthCrossOrigin;
+}
+
+class Timings {
+  const Timings({
+    required this.dns,
+    required this.connect,
+    required this.tls,
+    required this.ttfb,
+    required this.download,
+    required this.total,
+  });
+
+  final Duration dns;
+  final Duration connect;
+  final Duration tls;
+  final Duration ttfb;
+  final Duration download;
+  final Duration total;
+}
+
+/// The exact bytes written for one request/response exchange (FR-HTTP-010).
+class SentRequest {
+  const SentRequest({required this.head, required this.body, required this.url});
+
+  final String head;
+  final Uint8List body;
+  final Uri url;
+}
+
+class HttpResponseRecord {
+  HttpResponseRecord({
+    required this.status,
+    required this.reason,
+    required this.httpVersion,
+    required this.headers,
+    required this.body,
+    required this.wireBodySize,
+    required this.timings,
+    required this.finalUrl,
+    required this.sent,
+    this.redirects = const [],
+  });
+
+  final int status;
+  final String reason;
+  final String httpVersion;
+  final List<Header> headers;
+
+  /// Body after content-encoding was removed (when auto-decompress is on).
+  final Uint8List body;
+
+  /// Body bytes as received, before decoding.
+  final int wireBodySize;
+  final Timings timings;
+  final Uri finalUrl;
+
+  /// The request that produced this response (last hop).
+  final SentRequest sent;
+
+  /// Earlier hops that returned redirects, oldest first.
+  final List<HttpResponseRecord> redirects;
+
+  String? header(String name) {
+    final lower = name.toLowerCase();
+    for (final (k, v) in headers) {
+      if (k.toLowerCase() == lower) return v;
+    }
+    return null;
+  }
+
+  String get bodyText => utf8.decode(body, allowMalformed: true);
+}

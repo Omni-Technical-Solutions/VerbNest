@@ -6,17 +6,30 @@ Requirement IDs are stable. Priority: **P0** MVP, **P1** v1, **P2** later. Each 
 
 ## 1. Workspaces & storage (FR-WS)
 
-**FR-WS-001 (P0) Create/open workspace.** A workspace is a folder on disk containing `postit.yaml`. Users can create a new one, open an existing folder, or use the default workspace in app storage.
-- AC: Opening a folder without `postit.yaml` offers to initialise it.
-- AC (mobile): Default workspace lives in app documents; "Open folder" uses the platform folder picker (SAF on Android, document picker / security-scoped bookmark on iOS).
+Storage decision: ADR-007. A workspace is a SQLite database file (`.postit`); device-local state lives in a separate local database.
+
+**FR-WS-001 (P0) Create/open workspace.** A workspace is a single `.postit` SQLite file. Users can create a new one (stored in app storage), import a `.postit` file (copied into app storage), or, on desktop, open a `.postit` file in place.
+- AC: A file that is not a PostIt database, or has a newer schema version than the app, is rejected with a clear message and left untouched.
+- AC: A file with an older schema version is migrated after an automatic backup copy.
+- AC (mobile): No folder permission is required for the default flow; import/export use the platform file picker.
 
 **FR-WS-002 (P0) Recent workspaces** list with switcher; last workspace reopens on launch.
 
-**FR-WS-003 (P0) File watching.** External edits to workspace files (e.g. `git pull`) are reflected in the app within 1 s on desktop; on mobile, on app resume.
+**FR-WS-003 (withdrawn)** File watching. Replaced by reactive database queries (UI updates from drift `watch()`); no external file edits to track.
 
-**FR-WS-004 (P0) Conflict safety.** If a file changed on disk while it has unsaved edits in the app, the user chooses keep mine / take theirs / view diff.
+**FR-WS-004 (P0) Single-writer safety.** A workspace open in one PostIt process cannot be opened for writing by another; the second attempt shows "in use" and offers read-only.
+- AC: Killing the app mid-write never leaves a half-applied change (transactional); verified by crash-injection tests (NFR-REL-001).
 
-**FR-WS-005 (P1) Git integration (desktop).** Show changed files, commit, pull, push, branch switch for the workspace repo using the system `git` binary if present. Mobile: P2 via pure-Dart git or folder sync only.
+**FR-WS-005 (withdrawn)** Git integration. Replaced by the YAML snapshot workflow (FR-WS-006); in-app git UI is dropped from scope (open-questions.md #7).
+
+**FR-WS-006 (P1) YAML snapshot export/import.** Export a workspace to a folder of YAML files (data-model.md §1.2) with deterministic output so it can be committed to git; import a snapshot into a new workspace or merge into the open one with a conflict list.
+- AC: export → import → export is byte-identical; no secret values or current values are written.
+
+**FR-WS-007 (P0) Backup and share.** "Export workspace" writes a consistent `.postit` copy (no history, current values or secrets) and offers the platform share sheet.
+
+**FR-WS-008 (P1) Revision history.** Each saved edit of a request keeps a revision (default last 50); the user can view a diff and restore.
+
+**FR-WS-009 (P0) Sync-folder warning.** When a workspace path is inside a known cloud-sync folder, show a one-time warning that live syncing can corrupt the database and recommend export/import.
 
 ## 2. Collections (FR-COL)
 
@@ -57,12 +70,12 @@ Requirement IDs are stable. Priority: **P0** MVP, **P1** v1, **P2** later. Each 
 ## 5. Variables & environments (FR-VAR)
 
 **FR-VAR-001 (P0)** Scopes and precedence: local > data > environment > collection > global. Resolution is recursive (a variable may reference another) with cycle detection.
-**FR-VAR-002 (P0)** Each variable has initial value (persisted to files), current value (local only, never written to workspace files), type (default | secret), enabled flag, description.
+**FR-VAR-002 (P0)** Each variable has initial value (stored in the workspace database), current value (local database only, never written to the workspace database or exports), type (default | secret), enabled flag, description.
 **FR-VAR-003 (P0)** Secret values stored in OS secure storage keyed by workspace+scope+name; masked everywhere with reveal toggle.
 **FR-VAR-004 (P0)** Environment selector always visible; quick-look panel listing every variable in scope with resolved value and source.
 **FR-VAR-005 (P0)** Dynamic variables: `$guid`, `$timestamp`, `$isoTimestamp`, `$randomInt`, `$randomUUID`, `$randomEmail`, `$randomFirstName`… (P1: full Postman faker list).
 **FR-VAR-006 (P0)** Unresolved variables are highlighted before send; sending with unresolved vars shows a warning (dismissible, remember choice).
-**FR-VAR-007 (P1)** `.env`-style local overrides file (`*.local.yaml`, git-ignored by default template).
+**FR-VAR-007 (P1)** Per-device overrides: an environment variable's current value overrides its shared initial value on this device only. Optionally import a `.env` file into current values.
 
 ## 6. Authorization (FR-AUTH)
 
@@ -165,7 +178,7 @@ Requirement IDs are stable. Priority: **P0** MVP, **P1** v1, **P2** later. Each 
 | NFR-SEC-003 | Dependency hygiene | Automated vulnerability scanning (OSV) in CI; SBOM per release |
 | NFR-PRIV-001 | Telemetry | None by default; opt-in only |
 | NFR-A11Y-001 | Accessibility | Semantics on all controls; screen reader verified on TalkBack, VoiceOver (iOS/macOS), Narrator, Orca (best effort) |
-| NFR-REL-001 | Data durability | Atomic file writes (write temp + rename); no corruption on crash/power loss |
+| NFR-REL-001 | Data durability | All workspace writes are SQLite transactions (WAL); no corruption or partial edits on crash/power loss; migrations back up the file first |
 | NFR-COMP-001 | Postman compatibility | Round-trip import/export of v2.1 with zero semantic loss on the test corpus |
 | NFR-PORT-001 | Minimum OS versions | Android 7.0 (API 24), iOS 15, macOS 11, Windows 10 1809+, Ubuntu 22.04 / Fedora 39 (x64 + arm64) |
 | NFR-SIZE-001 | Install size | < 40 MB mobile download, < 80 MB desktop installer |
