@@ -55,6 +55,26 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     }
   }
 
+  void _newRequest() {
+    final repo = ref.read(repositoryProvider);
+    final tabs = ref.read(tabsProvider);
+    final active = tabs.active;
+    var parent = active == null ? null : repo.node(active).parentId;
+    parent ??= repo.children(null).firstOrNull?.id;
+    if (parent == null) return;
+    ref.read(treeActionsProvider).newRequest(parent);
+    setState(() => _selected = _Destination.collections);
+  }
+
+  void _saveActive() {
+    final id = ref.read(tabsProvider).active;
+    if (id != null) ref.read(editorProvider(id).notifier).flush();
+  }
+
+  void _toggleSidebar() => setState(() => _sidebarVisible = !_sidebarVisible);
+
+  bool _sidebarVisible = true;
+
   void _closeActive() {
     final id = ref.read(tabsProvider).active;
     if (id != null) ref.read(tabsProvider.notifier).close(id);
@@ -75,6 +95,22 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
             _closeActive,
         const SingleActivator(LogicalKeyboardKey.keyW, meta: true):
             _closeActive,
+        for (final (key, fn) in <(LogicalKeyboardKey, VoidCallback)>[
+          (LogicalKeyboardKey.keyN, _newRequest),
+          (LogicalKeyboardKey.keyS, _saveActive),
+          (LogicalKeyboardKey.backslash, _toggleSidebar),
+        ]) ...{
+          SingleActivator(key, control: true): fn,
+          SingleActivator(key, meta: true): fn,
+        },
+        const SingleActivator(LogicalKeyboardKey.tab, control: true): () =>
+            ref.read(tabsProvider.notifier).step(1),
+        const SingleActivator(
+          LogicalKeyboardKey.tab,
+          control: true,
+          shift: true,
+        ): () =>
+            ref.read(tabsProvider.notifier).step(-1),
       },
       child: Focus(autofocus: true, child: _layout()),
     );
@@ -133,7 +169,9 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
             ],
           ),
           const VerticalDivider(width: 1),
-          if (sidebar && _selected == _Destination.collections) ...[
+          if (sidebar &&
+              _sidebarVisible &&
+              _selected == _Destination.collections) ...[
             SizedBox(width: 280, child: _sidebar()),
             const VerticalDivider(width: 1),
           ],

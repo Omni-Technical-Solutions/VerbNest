@@ -52,6 +52,7 @@ class ResponseView extends StatefulWidget {
     required this.state,
     this.onSave,
     this.saveLabel = 'Save',
+    this.codeFontSize = 13,
   });
 
   final EditorState state;
@@ -59,6 +60,7 @@ class ResponseView extends StatefulWidget {
   /// Saves or shares the response body; the button shows only when set.
   final VoidCallback? onSave;
   final String saveLabel;
+  final double codeFontSize;
 
   @override
   State<ResponseView> createState() => _ResponseViewState();
@@ -263,6 +265,7 @@ class _ResponseViewState extends State<ResponseView> {
                 )
               : CodeView(
                   text: text,
+                  fontSize: widget.codeFontSize,
                   json:
                       _pretty &&
                       (r

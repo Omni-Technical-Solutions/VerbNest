@@ -2,6 +2,16 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.17.0
+
+- Console page: the last 200 requests of this session with the sent and received headers (secrets masked), cleared on exit.
+- History is grouped by day and pruned by age and count; settings for days kept, maximum entries, and whether bodies are recorded (FR-HIS-001..004).
+- Appearance settings: interface text scale and code font size, stored on this device.
+- Shortcuts: Ctrl/Cmd+N new request, +S save now, +\\ toggle sidebar, Ctrl+Tab / Ctrl+Shift+Tab switch tab (plus Send, Search, Close tab from before).
+- Open tabs are restored after a restart.
+- Pasting a cURL command into the URL bar fills in the whole request.
+- Not tested on a device: shortcuts on Windows/Linux, text scale with system accessibility settings on mobile.
+
 ## 0.16.0
 
 - Workspace search (Ctrl/Cmd+K or the search button): names, URLs, methods, descriptions, header names and bodies; header values are not searched (FR-COL-003).

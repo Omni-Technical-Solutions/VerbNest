@@ -29,6 +29,12 @@ CREATE TABLE variable_current (
   PRIMARY KEY (workspace_id, scope, scope_id, key)
 );
 ''',
+  '''
+CREATE TABLE kv (
+  workspace_id TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL,
+  PRIMARY KEY (workspace_id, key)
+);
+''',
 ];
 
 class HistoryEntry {
@@ -305,6 +311,33 @@ class LocalStore {
     [workspaceId, scope, scopeId, key],
   );
 
+  // ---- device-local settings ------------------------------------------------
+
+  /// A per-workspace, per-device value (UI state, history options). Unlike
+  /// workspace settings it is never shared with the workspace file.
+  String? kv(String workspaceId, String key) {
+    final rows = _db.select(
+      'SELECT value FROM kv WHERE workspace_id = ? AND key = ?',
+      [workspaceId, key],
+    );
+    return rows.isEmpty ? null : rows.first['value'] as String;
+  }
+
+  void setKv(String workspaceId, String key, String? value) {
+    if (value == null) {
+      _db.execute('DELETE FROM kv WHERE workspace_id = ? AND key = ?', [
+        workspaceId,
+        key,
+      ]);
+      return;
+    }
+    _db.execute(
+      'INSERT INTO kv(workspace_id, key, value) VALUES (?, ?, ?) '
+      'ON CONFLICT(workspace_id, key) DO UPDATE SET value = excluded.value',
+      [workspaceId, key, value],
+    );
+  }
+
   // ---- recent workspaces (FR-WS-002) --------------------------------------
 
   void touchWorkspace(String id, String name, String dbPath, {DateTime? now}) =>
@@ -335,6 +368,7 @@ class LocalStore {
     _db.execute('DELETE FROM workspace WHERE id = ?', [id]);
     _db.execute('DELETE FROM history WHERE workspace_id = ?', [id]);
     _db.execute('DELETE FROM variable_current WHERE workspace_id = ?', [id]);
+    _db.execute('DELETE FROM kv WHERE workspace_id = ?', [id]);
   }
 }
 

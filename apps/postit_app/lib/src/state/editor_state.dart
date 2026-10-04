@@ -6,7 +6,9 @@ import 'package:postit_core/postit_core.dart';
 import 'package:postit_http/postit_http.dart';
 import 'package:postit_storage/postit_storage.dart';
 
+import 'console_log.dart';
 import 'file_port.dart';
+import 'prefs.dart';
 import 'session.dart';
 import 'settings_state.dart';
 import 'variables.dart';
@@ -228,7 +230,27 @@ class EditorNotifier extends Notifier<EditorState> {
   }) {
     try {
       final session = ref.read(sessionProvider);
+      final prefs = ref.read(prefsProvider);
       final spec = p.spec;
+      ref
+          .read(consoleLogProvider.notifier)
+          .add(
+            ConsoleEntry(
+              at: DateTime.now(),
+              method: spec.method,
+              url: p.masker.maskText(spec.url.toString()),
+              sentHead: response != null
+                  ? p.masker.maskHead(response.sent.head)
+                  : '${spec.method} ${p.masker.maskText(spec.url.toString())}',
+              status: response?.status,
+              ms: response?.timings.total.inMilliseconds,
+              responseHead: response == null
+                  ? null
+                  : '${response.httpVersion} ${response.status} ${response.reason}\n'
+                        '${response.headers.map((h) => '${h.$1}: ${h.$2}').join('\n')}',
+              error: error,
+            ),
+          );
       final envName = envId == null
           ? null
           : session.repo
@@ -254,7 +276,7 @@ class EditorNotifier extends Notifier<EditorState> {
               for (final (k, v) in spec.headers)
                 [k, p.masker.headerValue(k, v)],
             ],
-            'body': spec.body == null
+            'body': spec.body == null || !prefs.historyBodies
                 ? null
                 : p.masker.maskText(
                     utf8.decode(spec.body!, allowMalformed: true),
@@ -271,6 +293,14 @@ class EditorNotifier extends Notifier<EditorState> {
           responseBody: response?.body,
           error: error,
         ),
+        storeBodies: prefs.historyBodies,
+      );
+      session.local.pruneHistory(
+        session.repo.workspaceId,
+        maxEntries: prefs.historyMax,
+        maxAge: prefs.historyDays == 0
+            ? null
+            : Duration(days: prefs.historyDays),
       );
       ref.read(historyTickProvider.notifier).bump();
     } catch (_) {

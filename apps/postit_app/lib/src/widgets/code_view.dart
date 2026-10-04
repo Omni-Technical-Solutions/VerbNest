@@ -11,12 +11,15 @@ class CodeView extends StatefulWidget {
     required this.text,
     this.json = false,
     this.query = '',
+    this.fontSize = 13,
   });
 
   final String text;
   final bool json;
   final String query;
+  final double fontSize;
 
+  /// Row height for the default font size.
   static const rowHeight = 18.0;
 
   @override
@@ -120,13 +123,14 @@ class _CodeViewState extends State<CodeView> {
     final scheme = Theme.of(context).colorScheme;
     final base = TextStyle(
       fontFamily: 'monospace',
-      fontSize: 13,
+      fontSize: widget.fontSize,
       height: 1.0,
       color: scheme.onSurface,
     );
+    final rowHeight = (widget.fontSize * 1.4).ceilToDouble();
     final visible = visibleLines(_lines.length, _folds, _collapsed);
     final gutter = '${_lines.length}'.length * 8.0 + 36;
-    final contentWidth = (_maxLen.clamp(1, 4000)) * 7.9 + 24;
+    final contentWidth = (_maxLen.clamp(1, 4000)) * widget.fontSize * 0.61 + 24;
 
     return LayoutBuilder(
       builder: (context, c) {
@@ -140,7 +144,7 @@ class _CodeViewState extends State<CodeView> {
             child: SelectionArea(
               child: ListView.builder(
                 key: const Key('response-body'),
-                itemExtent: CodeView.rowHeight,
+                itemExtent: rowHeight,
                 itemCount: visible.length,
                 itemBuilder: (context, row) {
                   final i = visible[row];

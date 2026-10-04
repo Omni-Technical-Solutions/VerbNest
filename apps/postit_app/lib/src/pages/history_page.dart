@@ -6,6 +6,7 @@ import 'package:postit_http/postit_http.dart' show Masker;
 import 'package:postit_storage/postit_storage.dart';
 
 import '../state/history_actions.dart';
+import 'console_page.dart';
 import '../state/session.dart';
 import '../state/tree_state.dart';
 import '../state/variables.dart';
@@ -50,6 +51,14 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                 ),
               ),
               IconButton(
+                key: const Key('console-open'),
+                tooltip: 'Network console',
+                icon: const Icon(Icons.terminal),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const ConsolePage()),
+                ),
+              ),
+              IconButton(
                 key: const Key('history-clear'),
                 tooltip: 'Clear history',
                 icon: const Icon(Icons.delete_sweep_outlined),
@@ -67,12 +76,35 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         : 'Nothing matches "$_query"',
                   ),
                 )
-              : ListView.builder(
-                  itemCount: entries.length,
-                  itemBuilder: (context, i) => _tile(entries[i]),
-                ),
+              : _grouped(entries),
         ),
       ],
+    );
+  }
+
+  Widget _grouped(List<HistoryEntry> entries) {
+    final now = DateTime.now();
+    final items = <Object>[];
+    String? last;
+    for (final e in entries) {
+      final label = dayLabel(e.sentAt, now);
+      if (label != last) items.add(label);
+      last = label;
+      items.add(e);
+    }
+    return ListView.builder(
+      itemCount: items.length,
+      itemBuilder: (context, i) {
+        final item = items[i];
+        if (item is String) {
+          return Padding(
+            key: Key('history-day-$item'),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(item, style: Theme.of(context).textTheme.labelLarge),
+          );
+        }
+        return _tile(item as HistoryEntry);
+      },
     );
   }
 
@@ -199,4 +231,16 @@ class HistoryDetailPage extends ConsumerWidget {
       style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
     ),
   );
+}
+
+/// "Today", "Yesterday" or the date, for grouping history (FR-HIS-002).
+String dayLabel(DateTime t, DateTime now) {
+  final local = t.toLocal();
+  final day = DateTime(local.year, local.month, local.day);
+  final today = DateTime(now.year, now.month, now.day);
+  final diff = today.difference(day).inDays;
+  if (diff == 0) return 'Today';
+  if (diff == 1) return 'Yesterday';
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${day.year}-${two(day.month)}-${two(day.day)}';
 }

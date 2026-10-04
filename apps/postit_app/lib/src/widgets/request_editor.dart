@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
+import 'package:postit_import/postit_import.dart';
 
 import '../state/editor_state.dart';
 import '../state/file_port.dart';
+import '../state/prefs.dart';
 import '../state/session.dart';
 import '../state/settings_state.dart';
 import '../state/var_text.dart';
@@ -70,6 +72,7 @@ class RequestEditor extends ConsumerWidget {
                 final r = state.response;
                 final response = ResponseView(
                   state: state,
+                  codeFontSize: ref.watch(prefsProvider).editorFontSize,
                   saveLabel: port.savesBySharing ? 'Share' : 'Save',
                   onSave: r == null
                       ? null
@@ -199,7 +202,28 @@ class RequestEditor extends ConsumerWidget {
               value: item.url,
               hint: 'https://example.com/path?query={{var}}',
               variables: true,
-              onChanged: (u) => notifier.edit((i) => _withUrl(i, u)),
+              onChanged: (u) {
+                if (looksLikeCurl(u)) {
+                  try {
+                    final c = parseCurl(u).item;
+                    notifier.edit(
+                      (i) => i.copyWith(
+                        method: c.method,
+                        url: c.url,
+                        params: c.params,
+                        headers: c.headers,
+                        body: c.body,
+                        auth: c.auth,
+                        settings: c.settings,
+                      ),
+                    );
+                    return;
+                  } on FormatException {
+                    // Still typing; keep the text as a plain URL.
+                  }
+                }
+                notifier.edit((i) => _withUrl(i, u));
+              },
             ),
           ),
           const SizedBox(width: 8),

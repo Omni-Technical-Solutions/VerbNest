@@ -120,6 +120,33 @@ void main() {
     expect(st.sending, false);
   });
 
+  testWidgets('pasting a cURL command into the URL bar fills the request', (
+    tester,
+  ) async {
+    final t = setup();
+    tester.view.physicalSize = const Size(1000, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: t.c,
+        child: MaterialApp(
+          home: Scaffold(body: RequestEditor(requestId: t.id)),
+        ),
+      ),
+    );
+    await tester.enterText(
+      find.byKey(const Key('url')),
+      "curl -X POST 'http://x.test/a?q=1' -H 'X-A: b'",
+    );
+    await tester.pump();
+    final item = t.c.read(editorProvider(t.id)).item;
+    expect(item.method, 'POST');
+    expect(item.url, startsWith('http://x.test/a'));
+    expect(item.headers.map((h) => h.key), contains('X-A'));
+    await tester.pump(EditorNotifier.saveDelay);
+  });
+
   testWidgets('url and params table stay in sync; send shows response', (
     tester,
   ) async {

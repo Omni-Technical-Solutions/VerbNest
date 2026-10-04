@@ -85,6 +85,7 @@ class SyncedTextField extends StatefulWidget {
     this.expands = false,
     this.variables = false,
     this.suggestions = const [],
+    this.fontSize,
   });
 
   final String value;
@@ -97,6 +98,7 @@ class SyncedTextField extends StatefulWidget {
   final bool expands;
   final bool variables;
   final List<String> suggestions;
+  final double? fontSize;
 
   @override
   State<SyncedTextField> createState() => _SyncedTextFieldState();
@@ -227,7 +229,9 @@ class _SyncedTextFieldState extends State<SyncedTextField> {
       maxLines: widget.expands ? null : widget.maxLines,
       expands: widget.expands,
       textAlignVertical: widget.expands ? TextAlignVertical.top : null,
-      style: widget.monospace ? const TextStyle(fontFamily: 'monospace') : null,
+      style: widget.monospace
+          ? TextStyle(fontFamily: 'monospace', fontSize: widget.fontSize)
+          : null,
       decoration: InputDecoration(
         isDense: true,
         hintText: widget.hint,

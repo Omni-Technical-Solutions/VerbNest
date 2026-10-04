@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'state/prefs.dart';
 import 'state/session.dart';
 import 'state/settings_state.dart';
 import 'state/theme_state.dart';
@@ -15,6 +16,8 @@ class SettingsPage extends ConsumerWidget {
     final s = ref.watch(httpDefaultsProvider);
     final notifier = ref.read(httpDefaultsProvider.notifier);
     final protected = ref.watch(sessionProvider).secretsProtected;
+    final prefs = ref.watch(prefsProvider);
+    final prefsNotifier = ref.read(prefsProvider.notifier);
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
@@ -82,7 +85,76 @@ class SettingsPage extends ConsumerWidget {
           value: s.followRedirects,
           onChanged: (v) => notifier.update(followRedirects: v),
         ),
+        const Divider(),
+        _section(context, 'Appearance (this device)'),
+        ListTile(
+          title: Text('Text size ${(prefs.fontScale * 100).round()}%'),
+          subtitle: Slider(
+            key: const Key('font-scale'),
+            min: Prefs.minScale,
+            max: Prefs.maxScale,
+            divisions: 8,
+            value: prefs.fontScale,
+            onChanged: (v) =>
+                prefsNotifier.update(prefs.copyWith(fontScale: v)),
+          ),
+        ),
+        ListTile(
+          title: Text('Code font size ${prefs.editorFontSize.round()}'),
+          subtitle: Slider(
+            key: const Key('editor-font-size'),
+            min: Prefs.minEditorSize,
+            max: Prefs.maxEditorSize,
+            divisions: 14,
+            value: prefs.editorFontSize,
+            onChanged: (v) =>
+                prefsNotifier.update(prefs.copyWith(editorFontSize: v)),
+          ),
+        ),
+        const Divider(),
+        _section(context, 'History (this device)'),
+        SwitchListTile(
+          key: const Key('history-bodies'),
+          title: const Text('Keep request and response bodies'),
+          subtitle: const Text('Off stores only URLs, headers and status'),
+          value: prefs.historyBodies,
+          onChanged: (v) =>
+              prefsNotifier.update(prefs.copyWith(historyBodies: v)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SyncedTextField(
+            key: const Key('history-days'),
+            label: 'Delete history older than (days, 0 = never)',
+            value: '${prefs.historyDays}',
+            onChanged: (v) {
+              final n = int.tryParse(v.trim());
+              if (n != null && n >= 0) {
+                prefsNotifier.update(prefs.copyWith(historyDays: n));
+              }
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SyncedTextField(
+            key: const Key('history-max'),
+            label: 'Keep at most this many entries',
+            value: '${prefs.historyMax}',
+            onChanged: (v) {
+              final n = int.tryParse(v.trim());
+              if (n != null && n > 0) {
+                prefsNotifier.update(prefs.copyWith(historyMax: n));
+              }
+            },
+          ),
+        ),
       ],
     );
   }
+
+  Widget _section(BuildContext context, String text) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+    child: Text(text, style: Theme.of(context).textTheme.titleSmall),
+  );
 }

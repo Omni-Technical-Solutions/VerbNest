@@ -188,4 +188,20 @@ void main() {
       },
     );
   });
+
+  test('device-local key/value settings per workspace', () {
+    final store = LocalStore.memory();
+    addTearDown(store.close);
+    expect(store.kv('w1', 'k'), isNull);
+    store.setKv('w1', 'k', 'a');
+    store.setKv('w1', 'k', 'b');
+    store.setKv('w2', 'k', 'z');
+    expect(store.kv('w1', 'k'), 'b');
+    expect(store.kv('w2', 'k'), 'z');
+    store.setKv('w1', 'k', null);
+    expect(store.kv('w1', 'k'), isNull);
+    store.touchWorkspace('w2', 'n', '/p');
+    store.forgetWorkspace('w2');
+    expect(store.kv('w2', 'k'), isNull);
+  });
 }

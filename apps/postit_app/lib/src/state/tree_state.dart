@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
 import 'package:postit_storage/postit_storage.dart';
@@ -48,7 +50,55 @@ class TabsState {
 
 class TabsNotifier extends Notifier<TabsState> {
   @override
-  TabsState build() => const TabsState();
+  TabsState build() {
+    final session = ref.read(sessionProvider);
+    final ws = session.repo.workspaceId;
+    listenSelf((_, next) {
+      session.local.setKv(
+        ws,
+        'tabs',
+        jsonEncode({'open': next.open, 'active': next.active}),
+      );
+    });
+    return _restore(session);
+  }
+
+  TabsState _restore(WorkspaceSession session) {
+    final raw = session.local.kv(session.repo.workspaceId, 'tabs');
+    if (raw == null) return const TabsState();
+    try {
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final open = <String>[
+        for (final id in (json['open'] as List).cast<String>())
+          if (_exists(session.repo, id)) id,
+      ];
+      final active = json['active'] as String?;
+      return TabsState(
+        open: open,
+        active: open.contains(active) ? active : open.lastOrNull,
+      );
+    } on Object {
+      return const TabsState();
+    }
+  }
+
+  static bool _exists(WorkspaceRepository repo, String id) {
+    try {
+      repo.node(id);
+      return true;
+    } on NotFoundError {
+      return false;
+    }
+  }
+
+  /// Moves to the next (or previous) tab, wrapping around.
+  void step(int delta) {
+    final open = state.open;
+    if (open.length < 2) return;
+    final i = open.indexOf(state.active ?? '');
+    final next = open[((i == -1 ? 0 : i) + delta) % open.length];
+    state = TabsState(open: open, active: next);
+  }
 
   void open(String id) => state = TabsState(
     open: state.open.contains(id) ? state.open : [...state.open, id],
