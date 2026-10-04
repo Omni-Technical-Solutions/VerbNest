@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.5.0
+
+- App foundations (FR-COL-001/003, FR-WS-001):
+  - Riverpod state, default workspace opened in app storage at start-up.
+  - Collections sidebar: tree with filter, new collection/folder/request, rename, duplicate, move up/down, delete with confirmation; open-request tabs state.
+  - Adaptive layout hosts the tree (sidebar on desktop, full page on phone and tablet).
+  - `NodeInfo.method` in storage so the tree shows request methods cheaply.
+- Request editor is the next step; selecting a request shows only its name for now.
+
 ## 0.4.0
 
 - `postit_http` request pipeline (FR-HTTP-002..007, FR-VAR-006, FR-AUTH-001/006):

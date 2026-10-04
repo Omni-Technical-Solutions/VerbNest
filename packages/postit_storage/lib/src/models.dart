@@ -9,6 +9,7 @@ class NodeInfo {
     required this.type,
     required this.name,
     required this.position,
+    this.method,
   });
 
   final String id;
@@ -19,6 +20,9 @@ class NodeInfo {
   final String? type;
   final String name;
   final int position;
+
+  /// HTTP method of a request, for sidebar badges; null otherwise.
+  final String? method;
 
   bool get isContainer => kind != NodeKind.request;
 }

@@ -183,6 +183,17 @@ void main() {
       expect(repo.variables(VariableOwner.folder(copy)).single.key, 'k');
     });
 
+    test('request rows expose the method for sidebar badges', () {
+      final col = repo.createCollection('C');
+      final id = repo.createRequest(
+        col,
+        HttpRequestItem(id: 'x', name: 'r', method: 'DELETE'),
+      );
+      expect(repo.children(col).single.method, 'DELETE');
+      expect(repo.node(id).method, 'DELETE');
+      expect(repo.node(col).method, isNull);
+    });
+
     test('auth chain walks up to the collection', () {
       final col = repo.createCollection('C');
       final f = repo.createFolder(col, 'f');

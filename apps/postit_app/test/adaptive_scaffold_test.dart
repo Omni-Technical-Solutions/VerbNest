@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:postit_app/src/app.dart';
 import 'package:postit_app/src/layout_class.dart';
+import 'package:postit_app/src/state/session.dart';
 
-Future<void> pumpAt(WidgetTester tester, Size size) async {
+Future<WorkspaceSession> pumpAt(WidgetTester tester, Size size) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(const PostItApp());
+  final session = WorkspaceSession.memory();
+  addTearDown(session.close);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [sessionProvider.overrideWithValue(session)],
+      child: const PostItApp(),
+    ),
+  );
+  return session;
 }
 
 void main() {
@@ -23,19 +33,23 @@ void main() {
     expect(find.byKey(const Key('layout-compact')), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationRail), findsNothing);
+    expect(find.byKey(const Key('sidebar-filter')), findsOneWidget);
   });
 
-  testWidgets('tablet width uses a rail without sidebar', (tester) async {
+  testWidgets('tablet width uses a rail with the tree as content', (
+    tester,
+  ) async {
     await pumpAt(tester, const Size(800, 1024));
     expect(find.byKey(const Key('layout-medium')), findsOneWidget);
     expect(find.byType(NavigationRail), findsOneWidget);
-    expect(find.text('Collections sidebar'), findsNothing);
+    expect(find.byKey(const Key('sidebar-filter')), findsOneWidget);
   });
 
   testWidgets('desktop width shows rail and sidebar', (tester) async {
     await pumpAt(tester, const Size(1400, 900));
     expect(find.byKey(const Key('layout-expanded')), findsOneWidget);
-    expect(find.text('Collections sidebar'), findsOneWidget);
+    expect(find.byKey(const Key('sidebar-filter')), findsOneWidget);
+    expect(find.text('Select or create a request'), findsOneWidget);
   });
 
   testWidgets('navigating to settings shows the stub page', (tester) async {
@@ -43,5 +57,28 @@ void main() {
     await tester.tap(find.text('Settings'));
     await tester.pump();
     expect(find.text('Verify TLS certificates'), findsOneWidget);
+  });
+
+  testWidgets('creating a collection and request shows them in the tree', (
+    tester,
+  ) async {
+    final session = await pumpAt(tester, const Size(1400, 900));
+    await tester.tap(find.byKey(const Key('new-collection')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Users');
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
+    expect(find.text('Users'), findsOneWidget);
+
+    final id = session.repo.children(null).single.id;
+    await tester.tap(find.byKey(Key('menu-$id')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New request'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'List users');
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
+    expect(find.text('List users'), findsWidgets);
+    expect(session.repo.children(id).single.name, 'List users');
   });
 }

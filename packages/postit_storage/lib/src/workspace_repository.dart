@@ -64,12 +64,17 @@ class WorkspaceRepository {
   // ---- tree -----------------------------------------------------------
 
   List<NodeInfo> children(String? parentId) {
+    // Selects only tree columns (plus the method for request badges) so large
+    // request bodies are not read just to draw the sidebar.
+    const cols =
+        'id, parent_id, kind, type, name, position, '
+        "json_extract(data, '\$.method') AS method";
     final rows = parentId == null
         ? _db.select(
-            'SELECT * FROM node WHERE parent_id IS NULL ORDER BY position, name',
+            'SELECT $cols FROM node WHERE parent_id IS NULL ORDER BY position, name',
           )
         : _db.select(
-            'SELECT * FROM node WHERE parent_id = ? ORDER BY position, name',
+            'SELECT $cols FROM node WHERE parent_id = ? ORDER BY position, name',
             [parentId],
           );
     return [for (final r in rows) _info(r)];
@@ -543,7 +548,10 @@ class WorkspaceRepository {
   // ---- helpers ----------------------------------------------------------
 
   Row _row(String id) {
-    final rows = _db.select('SELECT * FROM node WHERE id = ?', [id]);
+    final rows = _db.select(
+      "SELECT *, json_extract(data, '\$.method') AS method FROM node WHERE id = ?",
+      [id],
+    );
     if (rows.isEmpty) throw NotFoundError('Item $id');
     return rows.first;
   }
@@ -555,6 +563,7 @@ class WorkspaceRepository {
     type: r['type'] as String?,
     name: r['name'] as String,
     position: r['position'] as int,
+    method: r['method'] as String?,
   );
 
   Json _decode(Object? text) =>
