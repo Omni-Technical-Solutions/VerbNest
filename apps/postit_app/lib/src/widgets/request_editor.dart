@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
 
 import '../state/editor_state.dart';
+import '../state/session.dart';
 import '../state/settings_state.dart';
+import '../state/var_text.dart';
+import '../state/variables.dart';
 import 'name_dialog.dart';
 import 'auth_editor.dart';
 import 'env_selector.dart';
@@ -34,43 +37,48 @@ class RequestEditor extends ConsumerWidget {
     final state = ref.watch(editorProvider(requestId));
     final notifier = ref.read(editorProvider(requestId).notifier);
     final item = state.item;
+    final session = ref.read(sessionProvider);
+    final envId = ref.watch(activeEnvProvider);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: EnvSelector(requestId: requestId),
+    return VariableContext(
+      scopes: () => buildScopes(session, requestId: requestId, envId: envId),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: EnvSelector(requestId: requestId),
+            ),
           ),
-        ),
-        _urlBar(context, state, notifier),
-        if (state.pendingUnresolved.isNotEmpty)
-          _pendingBanner(context, ref, state, notifier),
-        if (state.unresolved.isNotEmpty)
-          _banner(
-            context,
-            'Undefined variables: ${state.unresolved.map((n) => '{{$n}}').join(', ')}',
+          _urlBar(context, state, notifier),
+          if (state.pendingUnresolved.isNotEmpty)
+            _pendingBanner(context, ref, state, notifier),
+          if (state.unresolved.isNotEmpty)
+            _banner(
+              context,
+              'Undefined variables: ${state.unresolved.map((n) => '{{$n}}').join(', ')}',
+            ),
+          for (final w in state.warnings) _banner(context, w),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final request = _requestTabs(item, notifier);
+                final response = ResponseView(state: state);
+                // Side by side is cramped below tablet width; stack instead.
+                return Column(
+                  children: [
+                    Expanded(child: request),
+                    const Divider(height: 1),
+                    Expanded(child: response),
+                  ],
+                );
+              },
+            ),
           ),
-        for (final w in state.warnings) _banner(context, w),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, c) {
-              final request = _requestTabs(item, notifier);
-              final response = ResponseView(state: state);
-              // Side by side is cramped below tablet width; stack instead.
-              return Column(
-                children: [
-                  Expanded(child: request),
-                  const Divider(height: 1),
-                  Expanded(child: response),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -166,6 +174,7 @@ class RequestEditor extends ConsumerWidget {
               key: const Key('url'),
               value: item.url,
               hint: 'https://example.com/path?query={{var}}',
+              variables: true,
               onChanged: (u) => notifier.edit((i) => _withUrl(i, u)),
             ),
           ),
@@ -228,11 +237,10 @@ class RequestEditor extends ConsumerWidget {
             child: TabBarView(
               children: [
                 _paramsTab(item, notifier),
-                KeyValueEditor(
-                  idPrefix: 'headers',
-                  rows: item.headers,
-                  onChanged: (h) =>
-                      notifier.edit((i) => i.copyWith(headers: h)),
+                _HeadersTab(
+                  item: item,
+                  notifier: notifier,
+                  requestId: requestId,
                 ),
                 AuthEditor(
                   auth: item.auth,
@@ -297,6 +305,56 @@ class RequestEditor extends ConsumerWidget {
   }
 }
 
+class _HeadersTab extends ConsumerWidget {
+  const _HeadersTab({
+    required this.item,
+    required this.notifier,
+    required this.requestId,
+  });
+
+  final HttpRequestItem item;
+  final EditorNotifier notifier;
+  final String requestId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repo = ref.read(repositoryProvider);
+    final defaults = ref.watch(httpDefaultsProvider);
+    final auto = autoHeaders(
+      item,
+      effectiveAuth(item.auth, repo.authChain(requestId)),
+      autoDecompress: item.settings.autoDecompress ?? defaults.autoDecompress,
+    );
+    return Column(
+      children: [
+        ExpansionTile(
+          key: const Key('auto-headers'),
+          dense: true,
+          title: Text('Generated headers (${auto.length})'),
+          subtitle: const Text('Add a header with the same name to override'),
+          children: [
+            for (final h in auto)
+              ListTile(
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                title: Text('${h.$1}: ${h.$2}'),
+              ),
+          ],
+        ),
+        Expanded(
+          child: KeyValueEditor(
+            idPrefix: 'headers',
+            rows: item.headers,
+            keySuggestions: headerNames,
+            valueSuggestions: const {'content-type': contentTypes},
+            onChanged: (h) => notifier.edit((i) => i.copyWith(headers: h)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _BodyTab extends StatelessWidget {
   const _BodyTab({required this.item, required this.notifier});
 
@@ -355,6 +413,7 @@ class _BodyTab extends StatelessWidget {
               child: SyncedTextField(
                 key: const Key('body-text'),
                 value: body.text,
+                variables: true,
                 monospace: true,
                 expands: true,
                 onChanged: (v) => _set(RawBody(body.language, v)),
@@ -367,6 +426,7 @@ class _BodyTab extends StatelessWidget {
             ),
             FormDataBody() => KeyValueEditor(
               idPrefix: 'form',
+              allowBulk: false,
               rows: body.fields,
               onChanged: (f) => _set(FormDataBody(f)),
             ),

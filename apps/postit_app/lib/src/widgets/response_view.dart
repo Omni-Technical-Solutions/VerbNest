@@ -119,16 +119,19 @@ class _ResponseViewState extends State<ResponseView> {
                   r.headers.map((h) => '${h.$1}: ${h.$2}').join('\n'),
                   key: const Key('response-headers'),
                 ),
-                _scroll(
-                  state.maskedSentHead ?? '',
-                  key: const Key('response-sent'),
-                ),
+                _scroll(_sentText(state), key: const Key('response-sent')),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  static String _sentText(EditorState s) {
+    final head = s.maskedSentHead ?? '';
+    final body = s.maskedSentBody ?? '';
+    return body.isEmpty ? head : '${head.trimRight()}\n\n$body';
   }
 
   Widget _body(HttpResponseRecord r) {

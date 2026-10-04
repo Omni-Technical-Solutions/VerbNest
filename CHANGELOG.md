@@ -2,6 +2,16 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.13.0
+
+- `{{variables}}` are highlighted in the URL, params, headers, form fields and raw body: defined ones in the theme colour, undefined ones underlined in red (FR-VAR-004).
+- With the caret in a variable, a line shows its resolved value and scope (secrets stay hidden); typing `{{` offers matching variable names.
+- Header name and Content-Type value suggestions.
+- Bulk edit (`key: value` lines, `//` disables) for params, headers and url-encoded bodies.
+- Headers tab lists the headers PostIt adds itself; adding the same header overrides it.
+- The Sent tab now shows the request body as sent (masked, capped at 64 KB) (FR-HTTP-010).
+- Not yet: hover tooltips, code-editor features (folding, line numbers).
+
 ## 0.12.0
 
 - Secrets are stored in the system secret store (macOS Keychain verified; other platforms not yet tested) through `flutter_secure_storage`. Existing secrets move over on first start. If the store is unavailable, PostIt falls back to the old unencrypted device store and Settings says so.

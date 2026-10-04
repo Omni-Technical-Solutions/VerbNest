@@ -46,11 +46,10 @@ class WorkspaceSession {
   /// In-memory session for tests and previews.
   factory WorkspaceSession.memory() {
     final db = WorkspaceDatabase.memory();
-    return WorkspaceSession(
-      db: db,
-      repo: WorkspaceRepository(db),
-      local: LocalStore.memory(),
-    );
+    final repo = WorkspaceRepository(db);
+    // Created on first read otherwise, which would write during a build.
+    repo.workspaceId;
+    return WorkspaceSession(db: db, repo: repo, local: LocalStore.memory());
   }
 
   /// Opens (creating if needed) the default workspace in app storage

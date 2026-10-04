@@ -28,6 +28,7 @@ class EditorState {
     this.unresolved = const {},
     this.warnings = const [],
     this.maskedSentHead,
+    this.maskedSentBody,
     this.pendingUnresolved = const {},
   });
 
@@ -43,6 +44,9 @@ class EditorState {
   /// The request head as sent, with secrets masked (FR-HTTP-010).
   final String? maskedSentHead;
 
+  /// The request body as sent, masked and capped (FR-HTTP-010).
+  final String? maskedSentBody;
+
   /// Names that stopped a send until the user confirms.
   final Set<String> pendingUnresolved;
 
@@ -54,6 +58,7 @@ class EditorState {
     Set<String>? unresolved,
     List<String>? warnings,
     String? maskedSentHead,
+    String? maskedSentBody,
     Set<String>? pendingUnresolved,
     bool clearResult = false,
   }) => EditorState(
@@ -66,6 +71,9 @@ class EditorState {
     maskedSentHead: clearResult
         ? maskedSentHead
         : (maskedSentHead ?? this.maskedSentHead),
+    maskedSentBody: clearResult
+        ? maskedSentBody
+        : (maskedSentBody ?? this.maskedSentBody),
     pendingUnresolved: clearResult
         ? (pendingUnresolved ?? const {})
         : (pendingUnresolved ?? this.pendingUnresolved),
@@ -162,6 +170,7 @@ class EditorNotifier extends Notifier<EditorState> {
         unresolved: prepared.unresolved,
         warnings: prepared.warnings,
         maskedSentHead: prepared.masker.maskHead(response.sent.head),
+        maskedSentBody: describeSentBody(response.sent.body, prepared.masker),
       );
       _record(prepared, envId, response: response);
     } on OAuth2Error catch (e) {
@@ -263,3 +272,14 @@ final editorProvider =
     NotifierProvider.family<EditorNotifier, EditorState, String>(
       EditorNotifier.new,
     );
+
+/// Printable, masked view of the bytes sent as the body; empty for no body.
+String describeSentBody(List<int> body, Masker masker, {int cap = 65536}) {
+  if (body.isEmpty) return '';
+  final shown = body.length > cap ? body.sublist(0, cap) : body;
+  final text = masker.maskText(utf8.decode(shown, allowMalformed: true));
+  final note = body.length > cap
+      ? '\n… ${body.length - cap} more bytes not shown'
+      : '';
+  return '$text$note';
+}
