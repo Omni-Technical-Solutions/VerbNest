@@ -7,5 +7,6 @@ environment:
 workspace:
   - packages/postit_core
   - packages/postit_http
+  - packages/postit_storage
   - test_server
   - apps/postit_app

@@ -58,7 +58,7 @@ CREATE TABLE environment (
 CREATE TABLE variable (                          -- initial values only; secrets store no value
   id TEXT PRIMARY KEY,
   owner_kind TEXT NOT NULL CHECK (owner_kind IN ('global','environment','collection','folder')),
-  owner_id TEXT,                                -- environment.id or node.id; NULL for global
+  owner_id TEXT NOT NULL DEFAULT '',            -- environment.id or node.id; '' for global (so UNIQUE works; SQL treats NULLs as distinct)
   key TEXT NOT NULL, value TEXT,
   type TEXT NOT NULL DEFAULT 'default' CHECK (type IN ('default','secret')),
   enabled INTEGER NOT NULL DEFAULT 1, description TEXT NOT NULL DEFAULT '',
