@@ -32,21 +32,27 @@
 
     <!-- Back leg -->
     <polyline points="432,600 332,716 226,838" fill="none" stroke-width="62"/>
-    <!-- Torso, leaning into the throw -->
-    <line x1="458" y1="400" x2="432" y2="600" stroke-width="104"/>
+    <!-- Torso, leaning into the throw: shoulders, narrow waist, hips -->
+    <path d="M410 384 Q458 364 510 392 Q500 450 482 520 Q492 560 488 600 L380 600 Q384 560 412 520 Q404 450 410 384 Z" stroke-width="10"/>
     <!-- Front leg, lunging -->
     <polyline points="440,606 570,700 616,846" fill="none" stroke-width="62"/>
     <!-- Throwing arm, cocked back, hand on the shaft -->
     <polyline points="430,420 338,372 380,246" fill="none" stroke-width="52"/>
     <!-- Head -->
     <circle cx="486" cy="322" r="56" stroke="none"/>
-    <!-- Headband plume -->
-    <path d="M446 300 Q396 262 368 280 Q404 304 444 318 Z" stroke-width="6"/>
-    <path d="M446 316 Q400 306 380 326 Q414 332 446 330 Z" stroke-width="6"/>
-    <!-- Hide skirt -->
-    <path d="M384 584 L484 584 L512 668 L360 668 Z" stroke-width="10"/>
+    <!-- Hair gathered in a high bun -->
+    <circle cx="446" cy="270" r="36" stroke="none"/>
+    <!-- Flared hide skirt -->
+    <path d="M380 580 L488 580 L540 700 L330 700 Z" stroke-width="10"/>
     <!-- Shield arm -->
     <line x1="480" y1="430" x2="590" y2="470" stroke-width="48"/>
+  </g>
+
+  <!-- Beadwork: headband, necklace, skirt hem -->
+  <g fill="none" stroke="#FFF7ED" stroke-linecap="round">
+    <path d="M434 302 Q484 284 538 308" stroke-width="12"/>
+    <path d="M440 386 Q466 404 498 392" stroke-width="10" stroke-dasharray="2 14"/>
+    <line x1="344" y1="686" x2="526" y2="686" stroke-width="10" stroke-dasharray="2 16"/>
   </g>
 
   <!-- Oval cowhide shield -->
