@@ -14,6 +14,7 @@ class KeyValueEditor extends StatefulWidget {
     this.keySuggestions = const [],
     this.valueSuggestions = const {},
     this.allowBulk = true,
+    this.onPickFile,
   });
 
   final List<KeyValue> rows;
@@ -29,6 +30,10 @@ class KeyValueEditor extends StatefulWidget {
   /// Bulk edit rewrites rows from text, so it is off where rows carry more
   /// than key and value (form-data file parts).
   final bool allowBulk;
+
+  /// When set, rows can switch between text and file. Returns the row with
+  /// the chosen file, or null when cancelled.
+  final Future<KeyValue?> Function(KeyValue row)? onPickFile;
 
   @override
   State<KeyValueEditor> createState() => _KeyValueEditorState();
@@ -53,6 +58,26 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
       _bulk = !_bulk;
       if (_bulk) _bulkController.text = formatBulk(rows);
     });
+  }
+
+  Widget _fileCell(int i) {
+    final value = rows[i].value;
+    final slash = value.indexOf('/');
+    final label = value.isEmpty
+        ? 'Choose file…'
+        : (slash < 0 ? value : value.substring(slash + 1));
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: OutlinedButton.icon(
+        key: ValueKey('$idPrefix-file-$i'),
+        icon: const Icon(Icons.upload_file, size: 18),
+        label: Text(label, overflow: TextOverflow.ellipsis),
+        onPressed: () async {
+          final next = await widget.onPickFile!(rows[i]);
+          if (next != null && mounted) _set(i, next);
+        },
+      ),
+    );
   }
 
   Widget _bulkEditor() => ListView(
@@ -125,17 +150,42 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: SyncedTextField(
-                    key: ValueKey('$idPrefix-value-$i'),
-                    value: rows[i].value,
-                    hint: 'Value',
-                    variables: true,
-                    suggestions:
-                        widget.valueSuggestions[rows[i].key.toLowerCase()] ??
-                        const [],
-                    onChanged: (v) => _set(i, rows[i].copyWith(value: v)),
-                  ),
+                  child: rows[i].type == KeyValueType.file
+                      ? _fileCell(i)
+                      : SyncedTextField(
+                          key: ValueKey('$idPrefix-value-$i'),
+                          value: rows[i].value,
+                          hint: 'Value',
+                          variables: true,
+                          suggestions:
+                              widget.valueSuggestions[rows[i].key
+                                  .toLowerCase()] ??
+                              const [],
+                          onChanged: (v) => _set(i, rows[i].copyWith(value: v)),
+                        ),
                 ),
+                if (widget.onPickFile != null)
+                  IconButton(
+                    key: ValueKey('$idPrefix-type-$i'),
+                    tooltip: rows[i].type == KeyValueType.file
+                        ? 'File (switch to text)'
+                        : 'Text (switch to file)',
+                    icon: Icon(
+                      rows[i].type == KeyValueType.file
+                          ? Icons.attach_file
+                          : Icons.text_fields,
+                      size: 18,
+                    ),
+                    onPressed: () => _set(
+                      i,
+                      rows[i].copyWith(
+                        type: rows[i].type == KeyValueType.file
+                            ? KeyValueType.text
+                            : KeyValueType.file,
+                        value: '',
+                      ),
+                    ),
+                  ),
                 IconButton(
                   tooltip: 'Remove',
                   icon: const Icon(Icons.close, size: 18),

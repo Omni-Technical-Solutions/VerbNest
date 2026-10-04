@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
 
 import '../state/editor_state.dart';
+import '../state/file_port.dart';
 import '../state/session.dart';
 import '../state/settings_state.dart';
 import '../state/var_text.dart';
@@ -65,7 +66,30 @@ class RequestEditor extends ConsumerWidget {
             child: LayoutBuilder(
               builder: (context, c) {
                 final request = _requestTabs(item, notifier);
-                final response = ResponseView(state: state);
+                final port = ref.read(filePortProvider);
+                final r = state.response;
+                final response = ResponseView(
+                  state: state,
+                  saveLabel: port.savesBySharing ? 'Share' : 'Save',
+                  onSave: r == null
+                      ? null
+                      : () async {
+                          final ok = await port.save(
+                            responseFileName(
+                              r.headers,
+                              r.finalUrl,
+                              contentType: r.header('content-type'),
+                            ),
+                            r.body,
+                            mime: r.header('content-type')?.split(';').first,
+                          );
+                          if (ok && context.mounted) {
+                            ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                              const SnackBar(content: Text('Response saved')),
+                            );
+                          }
+                        },
+                );
                 // Side by side is cramped below tablet width; stack instead.
                 return Column(
                   children: [
@@ -355,7 +379,7 @@ class _HeadersTab extends ConsumerWidget {
   }
 }
 
-class _BodyTab extends StatelessWidget {
+class _BodyTab extends ConsumerWidget {
   const _BodyTab({required this.item, required this.notifier});
 
   final HttpRequestItem item;
@@ -370,6 +394,7 @@ class _BodyTab extends StatelessWidget {
     'javascript',
     'urlencoded',
     'form',
+    'binary',
   ];
 
   RequestBody _fresh(String mode) {
@@ -379,14 +404,62 @@ class _BodyTab extends StatelessWidget {
     return switch (mode) {
       'urlencoded' => const UrlEncodedBody([]),
       'form' => const FormDataBody([]),
+      'binary' => const BinaryBody(null),
       _ => const NoBody(),
     };
   }
 
   void _set(RequestBody b) => notifier.edit((i) => i.copyWith(body: b));
 
+  /// Lets the user pick a file and stores it in the workspace.
+  Future<({String id, String name})?> _store(WidgetRef ref) async {
+    final f = await ref.read(filePortProvider).pick();
+    if (f == null) return null;
+    final name = safeFileName(f.name);
+    final id = ref
+        .read(repositoryProvider)
+        .addAttachment(name, f.bytes, mime: f.mime);
+    return (id: id, name: name);
+  }
+
+  Widget _binary(BuildContext context, WidgetRef ref, BinaryBody body) {
+    final id = body.attachmentId;
+    final info = id == null
+        ? null
+        : ref.read(repositoryProvider).attachment(id);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            key: const Key('binary-info'),
+            info == null
+                ? 'No file selected'
+                : '${info.name} (${info.size} bytes)',
+          ),
+          const SizedBox(height: 8),
+          FilledButton.tonalIcon(
+            key: const Key('binary-pick'),
+            icon: const Icon(Icons.upload_file),
+            label: Text(info == null ? 'Choose file…' : 'Replace file…'),
+            onPressed: () async {
+              final stored = await _store(ref);
+              if (stored != null) _set(BinaryBody(stored.id));
+            },
+          ),
+          if (info != null)
+            TextButton(
+              key: const Key('binary-clear'),
+              onPressed: () => _set(const BinaryBody(null)),
+              child: const Text('Remove file'),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final body = item.body;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,12 +500,18 @@ class _BodyTab extends StatelessWidget {
             FormDataBody() => KeyValueEditor(
               idPrefix: 'form',
               allowBulk: false,
+              onPickFile: (row) async {
+                final stored = await _store(ref);
+                if (stored == null) return null;
+                return row.copyWith(
+                  type: KeyValueType.file,
+                  value: attachmentRef(stored.id, stored.name),
+                );
+              },
               rows: body.fields,
               onChanged: (f) => _set(FormDataBody(f)),
             ),
-            BinaryBody() => const Center(
-              child: Text('Binary bodies are kept but not editable yet.'),
-            ),
+            BinaryBody() => _binary(context, ref, body),
             NoBody() => const Center(child: Text('This request has no body')),
           },
         ),

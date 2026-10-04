@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.14.0
+
+- Files in requests: form-data file parts and a binary body mode with a file picker. Files are stored inside the workspace, so they travel with it (FR-HTTP-005/006).
+- Save the response body to a file (desktop) or share it (mobile) (FR-RES-005).
+- Attachment storage API; unused attachments are cleaned up at startup.
+- macOS: user-selected file access entitlement.
+- Not yet tested: the picker, save dialog and share sheet on any platform; very large files are held in memory.
+
 ## 0.13.0
 
 - `{{variables}}` are highlighted in the URL, params, headers, form fields and raw body: defined ones in the theme colour, undefined ones underlined in red (FR-VAR-004).

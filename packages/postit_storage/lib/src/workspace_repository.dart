@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:postit_core/postit_core.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -566,6 +567,77 @@ class WorkspaceRepository {
     method: r['method'] as String?,
   );
 
+  // ---- attachments (files kept inside the workspace) -----------------------
+
+  /// Stores [bytes] and returns the attachment id.
+  String addAttachment(String name, Uint8List bytes, {String? mime}) {
+    final id = Ulid.generate(now: _clock());
+    _db.execute(
+      'INSERT INTO attachment(id, name, mime, content, created_at) '
+      'VALUES (?, ?, ?, ?, ?)',
+      [id, name, mime, bytes, _now],
+    );
+    return id;
+  }
+
+  AttachmentInfo? attachment(String id) {
+    final rows = _db.select(
+      'SELECT id, name, mime, length(content) AS size FROM attachment '
+      'WHERE id = ?',
+      [id],
+    );
+    if (rows.isEmpty) return null;
+    final r = rows.first;
+    return AttachmentInfo(
+      id: r['id'] as String,
+      name: r['name'] as String,
+      mime: r['mime'] as String?,
+      size: r['size'] as int,
+    );
+  }
+
+  Uint8List attachmentBytes(String id) {
+    final rows = _db.select('SELECT content FROM attachment WHERE id = ?', [
+      id,
+    ]);
+    if (rows.isEmpty) throw NotFoundError('Attachment $id');
+    return rows.first['content'] as Uint8List;
+  }
+
+  void deleteAttachment(String id) =>
+      _db.execute('DELETE FROM attachment WHERE id = ?', [id]);
+
+  /// Deletes attachments that no request, example or revision mentions.
+  /// Ids are unique strings, so a text search of the stored JSON is enough.
+  int pruneUnreferencedAttachments() {
+    final used = <String>{};
+    for (final r in _db.select('SELECT id FROM attachment')) {
+      final id = r['id'] as String;
+      final hit = _db.select(
+        'SELECT 1 FROM node WHERE instr(data, ?1) > 0 '
+        'UNION ALL SELECT 1 FROM example WHERE instr(data, ?1) > 0 '
+        'UNION ALL SELECT 1 FROM revision WHERE instr(snapshot, ?1) > 0 '
+        'LIMIT 1',
+        [id],
+      );
+      if (hit.isNotEmpty) used.add(id);
+    }
+    return pruneAttachments(used);
+  }
+
+  /// Deletes every attachment not named in [referenced]. Returns the count.
+  int pruneAttachments(Set<String> referenced) {
+    final all = [
+      for (final r in _db.select('SELECT id FROM attachment'))
+        r['id'] as String,
+    ];
+    final orphans = all.where((id) => !referenced.contains(id)).toList();
+    for (final id in orphans) {
+      deleteAttachment(id);
+    }
+    return orphans.length;
+  }
+
   Json _decode(Object? text) =>
       (jsonDecode(text as String) as Map).cast<String, Object?>();
 
@@ -585,4 +657,19 @@ class VariableOwner {
 
   final String kind;
   final String id;
+}
+
+/// Metadata of a stored attachment.
+class AttachmentInfo {
+  const AttachmentInfo({
+    required this.id,
+    required this.name,
+    required this.size,
+    this.mime,
+  });
+
+  final String id;
+  final String name;
+  final String? mime;
+  final int size;
 }

@@ -6,6 +6,7 @@ import 'package:postit_core/postit_core.dart';
 import 'package:postit_http/postit_http.dart';
 import 'package:postit_storage/postit_storage.dart';
 
+import 'file_port.dart';
 import 'session.dart';
 import 'settings_state.dart';
 import 'variables.dart';
@@ -150,8 +151,11 @@ class EditorNotifier extends Notifier<EditorState> {
       if (auth is OAuth2Auth) {
         auth = await _oauthToken(auth, resolver, defaults, token);
       }
-      prepared = await RequestBuilder(defaults: defaults)
-          .build(item, resolver, auth: auth);
+      prepared = await RequestBuilder(
+        defaults: defaults,
+        readFile: (ref) async =>
+            repo.attachmentBytes(attachmentIdOf(ref) ?? ref),
+      ).build(item, resolver, auth: auth);
       if (!force &&
           prepared.unresolved.isNotEmpty &&
           ref.read(warnUnresolvedProvider)) {

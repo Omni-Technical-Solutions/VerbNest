@@ -68,6 +68,7 @@ class WorkspaceSession {
     final repo = WorkspaceRepository(db);
     final local = LocalStore.open(p.join(support.path, 'local.db'));
     local.touchWorkspace(repo.workspaceId, repo.name, db.path!);
+    repo.pruneUnreferencedAttachments();
     final fallback = LocalDbSecretStore(local);
     final v = vault ?? PlatformSecretVault();
     if (await vaultWorks(v)) {

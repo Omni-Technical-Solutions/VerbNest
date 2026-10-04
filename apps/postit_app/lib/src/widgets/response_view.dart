@@ -36,9 +36,18 @@ Color statusColor(int status) {
 
 /// Status line plus Body / Cookies / Headers / Sent tabs (FR-RES-001..).
 class ResponseView extends StatefulWidget {
-  const ResponseView({super.key, required this.state});
+  const ResponseView({
+    super.key,
+    required this.state,
+    this.onSave,
+    this.saveLabel = 'Save',
+  });
 
   final EditorState state;
+
+  /// Saves or shares the response body; the button shows only when set.
+  final VoidCallback? onSave;
+  final String saveLabel;
 
   @override
   State<ResponseView> createState() => _ResponseViewState();
@@ -95,6 +104,18 @@ class _ResponseViewState extends State<ResponseView> {
                 ),
                 Text('${r.timings.total.inMilliseconds} ms'),
                 Text(formatBytes(r.body.length)),
+                if (widget.onSave != null)
+                  TextButton.icon(
+                    key: const Key('response-save'),
+                    icon: Icon(
+                      widget.saveLabel == 'Share'
+                          ? Icons.ios_share
+                          : Icons.save_alt,
+                      size: 18,
+                    ),
+                    label: Text(widget.saveLabel),
+                    onPressed: widget.onSave,
+                  ),
               ],
             ),
           ),
