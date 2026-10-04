@@ -131,6 +131,45 @@ class TreeActions {
     });
   }
 
+  /// Whether dropping [id] on [targetId] is allowed.
+  bool canDrop(String id, String targetId) {
+    if (id == targetId) return false;
+    final dragged = _repo.node(id);
+    final target = _repo.node(targetId);
+    if (dragged.kind == NodeKind.collection) {
+      return target.kind == NodeKind.collection;
+    }
+    // A container cannot go inside its own subtree.
+    return !_repo.ancestors(targetId).contains(id);
+  }
+
+  /// Drops [id] on [targetId]: into a folder or collection (at the end), or
+  /// before a request. A collection dropped on a collection takes its place.
+  void drop(String id, String targetId) {
+    if (!canDrop(id, targetId)) return;
+    final dragged = _repo.node(id);
+    final target = _repo.node(targetId);
+    if (dragged.kind == NodeKind.collection) {
+      final order = _repo
+          .children(null)
+          .map((n) => n.id)
+          .where((x) => x != id)
+          .toList();
+      _repo.move(id, null, order.indexOf(targetId));
+    } else if (target.isContainer) {
+      _repo.move(id, targetId, _repo.children(targetId).length);
+      _ref.read(expandedProvider.notifier).expand(targetId);
+    } else {
+      // Without the dragged item, so the index is "before the target".
+      final order = _repo
+          .children(target.parentId)
+          .map((n) => n.id)
+          .where((x) => x != id)
+          .toList();
+      _repo.move(id, target.parentId, order.indexOf(targetId));
+    }
+  }
+
   /// Moves [id] one place up (-1) or down (+1) among its siblings.
   void nudge(String id, int delta) {
     final node = _repo.node(id);

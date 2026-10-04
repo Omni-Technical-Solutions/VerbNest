@@ -1,6 +1,6 @@
 name: postit_import
 description: cURL and Postman import/export for PostIt.
-version: 0.15.0
+version: 0.16.0
 publish_to: none
 resolution: workspace
 

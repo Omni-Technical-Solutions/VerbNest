@@ -95,11 +95,15 @@ class EditorNotifier extends Notifier<EditorState> {
 
   @override
   EditorState build() {
+    final repo = ref.read(repositoryProvider);
     ref.onDispose(() {
       _timer?.cancel();
       _cancel?.cancel();
+      // Keep edits made in the last moments, e.g. when the workspace is
+      // switched or the tab is closed before the autosave fires.
+      if (_dirty) _save(repo, state.item);
     });
-    return EditorState(item: ref.read(repositoryProvider).getRequest(id));
+    return EditorState(item: repo.getRequest(id));
   }
 
   void edit(HttpRequestItem Function(HttpRequestItem) change) {
@@ -115,10 +119,13 @@ class EditorNotifier extends Notifier<EditorState> {
     _timer?.cancel();
     if (!_dirty) return;
     _dirty = false;
-    final repo = ref.read(repositoryProvider);
+    _save(ref.read(repositoryProvider), state.item);
+  }
+
+  void _save(WorkspaceRepository repo, HttpRequestItem item) {
     try {
       final name = repo.node(id).name;
-      repo.saveRequest(state.item.copyWith(name: name));
+      repo.saveRequest(item.copyWith(name: name));
     } on NotFoundError {
       // The request was deleted while it had unsaved edits.
     }

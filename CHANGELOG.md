@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.16.0
+
+- Workspace search (Ctrl/Cmd+K or the search button): names, URLs, methods, descriptions, header names and bodies; header values are not searched (FR-COL-003).
+- Drag and drop in the sidebar (long press to drag): move into a folder or collection, drop before a request, reorder collections (FR-COL-001).
+- Workspaces: switch between recent workspaces, create, rename, import and export `.postit` files (FR-WS-002..007). Imported copies get their own id.
+- Earlier versions of a request can be listed and restored (FR-WS-008).
+- Unsaved edits are saved when a tab or workspace closes.
+- Not yet tested on touch devices or non-macOS platforms.
+
 ## 0.15.0
 
 - Response body viewer rewritten: line numbers, JSON colours, fold/unfold of objects and arrays, search highlight, selectable text, virtualised so large bodies scroll (FR-RES-001..003).

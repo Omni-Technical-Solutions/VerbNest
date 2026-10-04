@@ -638,6 +638,52 @@ class WorkspaceRepository {
     return orphans.length;
   }
 
+  // ---- search documents ------------------------------------------------
+
+  /// Text of every node for [SearchIndex]. Header values are not included.
+  List<SearchDoc> searchDocuments() {
+    final out = <SearchDoc>[];
+    for (final r in _db.select(
+      'SELECT id, parent_id, kind, name, description, data FROM node',
+    )) {
+      final kind = NodeKind.values.byName(r['kind'] as String);
+      if (kind != NodeKind.request) {
+        out.add(
+          SearchDoc(
+            id: r['id'] as String,
+            parentId: r['parent_id'] as String?,
+            kind: kind,
+            name: r['name'] as String,
+            meta: r['description'] as String,
+          ),
+        );
+        continue;
+      }
+      final item = HttpRequestItem.fromData(
+        id: r['id'] as String,
+        name: r['name'] as String,
+        data: _decode(r['data']),
+        description: r['description'] as String,
+      );
+      final body = item.body;
+      out.add(
+        SearchDoc(
+          id: item.id,
+          parentId: r['parent_id'] as String?,
+          kind: kind,
+          name: item.name,
+          method: item.method,
+          url: item.url,
+          meta:
+              '${item.method} ${item.url} ${item.description} '
+              '${item.headers.map((h) => h.key).join(' ')}',
+          body: body is RawBody ? body.text : '',
+        ),
+      );
+    }
+    return out;
+  }
+
   Json _decode(Object? text) =>
       (jsonDecode(text as String) as Map).cast<String, Object?>();
 
@@ -672,4 +718,27 @@ class AttachmentInfo {
   final String name;
   final String? mime;
   final int size;
+}
+
+/// One row of searchable text.
+class SearchDoc {
+  const SearchDoc({
+    required this.id,
+    required this.parentId,
+    required this.kind,
+    required this.name,
+    this.method,
+    this.url,
+    this.meta = '',
+    this.body = '',
+  });
+
+  final String id;
+  final String? parentId;
+  final NodeKind kind;
+  final String name;
+  final String? method;
+  final String? url;
+  final String meta;
+  final String body;
 }

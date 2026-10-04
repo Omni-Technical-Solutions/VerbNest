@@ -52,19 +52,42 @@ class WorkspaceSession {
     return WorkspaceSession(db: db, repo: repo, local: LocalStore.memory());
   }
 
-  /// Opens (creating if needed) the default workspace in app storage
-  /// (FR-WS-001: no folder permission needed).
-  static Future<WorkspaceSession> openDefault({SecretVault? vault}) async {
+  /// Folder holding the workspace files (FR-WS-001: no permission needed).
+  static Future<Directory> workspacesDir() async {
     final docs = await getApplicationDocumentsDirectory();
-    final support = await getApplicationSupportDirectory();
-    final dir = Directory(p.join(docs.path, 'PostIt', 'workspaces'))
+    return Directory(p.join(docs.path, 'PostIt', 'workspaces'))
       ..createSync(recursive: true);
-    Directory(support.path).createSync(recursive: true);
+  }
 
-    final db = WorkspaceDatabase.open(
-      p.join(dir.path, 'default.postit'),
-      create: true,
+  /// Opens the most recently used workspace whose file still exists, or the
+  /// default one (created if needed).
+  static Future<WorkspaceSession> openDefault({SecretVault? vault}) async {
+    final dir = await workspacesDir();
+    final support = await getApplicationSupportDirectory();
+    Directory(support.path).createSync(recursive: true);
+    final local = LocalStore.open(p.join(support.path, 'local.db'));
+    final recent = local
+        .recentWorkspaces()
+        .where((w) => File(w.dbPath).existsSync())
+        .firstOrNull;
+    local.close();
+    return openFile(
+      recent?.dbPath ?? p.join(dir.path, 'default.postit'),
+      create: recent == null,
+      vault: vault,
     );
+  }
+
+  /// Opens the workspace file at [path]. Throws a `StorageError` when it is
+  /// missing, locked, not a workspace, or from a newer app.
+  static Future<WorkspaceSession> openFile(
+    String path, {
+    bool create = false,
+    SecretVault? vault,
+  }) async {
+    final support = await getApplicationSupportDirectory();
+    Directory(support.path).createSync(recursive: true);
+    final db = WorkspaceDatabase.open(path, create: create);
     final repo = WorkspaceRepository(db);
     final local = LocalStore.open(p.join(support.path, 'local.db'));
     local.touchWorkspace(repo.workspaceId, repo.name, db.path!);
@@ -97,7 +120,13 @@ class WorkspaceSession {
     return WorkspaceSession(db: db, repo: repo, local: local);
   }
 
+  SearchIndex? _searchIndex;
+
+  /// Full-text search over this workspace; call `rebuild()` before use.
+  SearchIndex get searchIndex => _searchIndex ??= SearchIndex(repo);
+
   void close() {
+    _searchIndex?.dispose();
     db.close();
     local.close();
   }

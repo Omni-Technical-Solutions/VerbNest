@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'src/app.dart';
 import 'src/state/session.dart';
+import 'src/workspace_host.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final session = await WorkspaceSession.openDefault();
-  runApp(
-    ProviderScope(
-      overrides: [sessionProvider.overrideWithValue(session)],
-      child: const PostItApp(),
-    ),
-  );
+  runApp(WorkspaceHost(initial: session, child: const PostItApp()));
 }

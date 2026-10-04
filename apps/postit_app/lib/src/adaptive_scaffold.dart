@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'layout_class.dart';
 import 'pages/environments_page.dart';
 import 'pages/history_page.dart';
+import 'pages/search_dialog.dart';
 import 'settings_page.dart';
 import 'state/editor_state.dart';
 import 'state/session.dart';
@@ -47,6 +48,13 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     }
   }
 
+  Future<void> _search() async {
+    final hit = await runSearch(context, ref);
+    if (hit != null && mounted) {
+      setState(() => _selected = _Destination.collections);
+    }
+  }
+
   void _closeActive() {
     final id = ref.read(tabsProvider).active;
     if (id != null) ref.read(tabsProvider.notifier).close(id);
@@ -61,6 +69,8 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
           const SingleActivator(LogicalKeyboardKey.enter, meta: true),
         ])
           mod: _sendActive,
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true): _search,
+        const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _search,
         const SingleActivator(LogicalKeyboardKey.keyW, control: true):
             _closeActive,
         const SingleActivator(LogicalKeyboardKey.keyW, meta: true):
