@@ -162,6 +162,14 @@ class _VariablesEditorState extends State<VariablesEditor> {
     widget.onChanged(next);
   }
 
+  List<String> get _duplicates {
+    final seen = <String>{};
+    return {
+      for (final v in _vars)
+        if (v.key.isNotEmpty && !seen.add(v.key)) v.key,
+    }.toList();
+  }
+
   void _set(int i, Variable v) => _update([..._vars]..[i] = v);
 
   Variable _copy(
@@ -231,6 +239,15 @@ class _VariablesEditorState extends State<VariablesEditor> {
                 onPressed: () => _update([..._vars]..removeAt(i)),
               ),
             ],
+          ),
+        if (_duplicates.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              'Duplicate names: ${_duplicates.join(', ')}. The last one is used.',
+              key: const Key('var-duplicates'),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         Align(
           alignment: Alignment.centerLeft,

@@ -43,3 +43,20 @@ final httpDefaultsProvider =
     NotifierProvider<HttpDefaultsNotifier, HttpSettings>(
       HttpDefaultsNotifier.new,
     );
+
+/// Whether sending with undefined `{{variables}}` asks first (FR-VAR-006).
+class WarnUnresolvedNotifier extends Notifier<bool> {
+  @override
+  bool build() =>
+      ref.read(repositoryProvider).settings['warnUnresolved'] as bool? ?? true;
+
+  void set(bool value) {
+    final repo = ref.read(repositoryProvider);
+    repo.settings = {...repo.settings, 'warnUnresolved': value};
+    state = value;
+  }
+}
+
+final warnUnresolvedProvider = NotifierProvider<WarnUnresolvedNotifier, bool>(
+  WarnUnresolvedNotifier.new,
+);

@@ -2,6 +2,8 @@ import 'auth.dart';
 import 'body.dart';
 import 'key_value.dart';
 
+const _unset = Object();
+
 /// Per-request overrides of the workspace HTTP defaults (FR-HTTP-007).
 /// Null means "use the default".
 class RequestSettings {
@@ -10,18 +12,62 @@ class RequestSettings {
     this.verifyTls,
     this.followRedirects,
     this.maxRedirects,
+    this.keepMethodOnRedirect,
+    this.stripAuthCrossOrigin,
+    this.autoDecompress,
   });
 
   final int? timeoutMs;
   final bool? verifyTls;
   final bool? followRedirects;
   final int? maxRedirects;
+  final bool? keepMethodOnRedirect;
+  final bool? stripAuthCrossOrigin;
+  final bool? autoDecompress;
+
+  /// Pass an explicit `null` to go back to the default for that field.
+  RequestSettings copyWith({
+    Object? timeoutMs = _unset,
+    Object? verifyTls = _unset,
+    Object? followRedirects = _unset,
+    Object? maxRedirects = _unset,
+    Object? keepMethodOnRedirect = _unset,
+    Object? stripAuthCrossOrigin = _unset,
+    Object? autoDecompress = _unset,
+  }) => RequestSettings(
+    timeoutMs: identical(timeoutMs, _unset)
+        ? this.timeoutMs
+        : timeoutMs as int?,
+    verifyTls: identical(verifyTls, _unset)
+        ? this.verifyTls
+        : verifyTls as bool?,
+    followRedirects: identical(followRedirects, _unset)
+        ? this.followRedirects
+        : followRedirects as bool?,
+    maxRedirects: identical(maxRedirects, _unset)
+        ? this.maxRedirects
+        : maxRedirects as int?,
+    keepMethodOnRedirect: identical(keepMethodOnRedirect, _unset)
+        ? this.keepMethodOnRedirect
+        : keepMethodOnRedirect as bool?,
+    stripAuthCrossOrigin: identical(stripAuthCrossOrigin, _unset)
+        ? this.stripAuthCrossOrigin
+        : stripAuthCrossOrigin as bool?,
+    autoDecompress: identical(autoDecompress, _unset)
+        ? this.autoDecompress
+        : autoDecompress as bool?,
+  );
 
   Map<String, Object?> toJson() => {
     if (timeoutMs != null) 'timeoutMs': timeoutMs,
     if (verifyTls != null) 'verifyTls': verifyTls,
     if (followRedirects != null) 'followRedirects': followRedirects,
     if (maxRedirects != null) 'maxRedirects': maxRedirects,
+    if (keepMethodOnRedirect != null)
+      'keepMethodOnRedirect': keepMethodOnRedirect,
+    if (stripAuthCrossOrigin != null)
+      'stripAuthCrossOrigin': stripAuthCrossOrigin,
+    if (autoDecompress != null) 'autoDecompress': autoDecompress,
   };
 
   factory RequestSettings.fromJson(Map<String, Object?>? json) =>
@@ -30,6 +76,9 @@ class RequestSettings {
         verifyTls: json?['verifyTls'] as bool?,
         followRedirects: json?['followRedirects'] as bool?,
         maxRedirects: json?['maxRedirects'] as int?,
+        keepMethodOnRedirect: json?['keepMethodOnRedirect'] as bool?,
+        stripAuthCrossOrigin: json?['stripAuthCrossOrigin'] as bool?,
+        autoDecompress: json?['autoDecompress'] as bool?,
       );
 }
 

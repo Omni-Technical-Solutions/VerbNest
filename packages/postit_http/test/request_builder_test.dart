@@ -40,6 +40,7 @@ Map<String, String> headerMap(PreparedRequest p) => {
 };
 
 void main() {
+  settingsMergeTests();
   group('url', () {
     test('substitutes variables and path variables', () async {
       final p = await build(
@@ -356,5 +357,46 @@ void main() {
       );
       expect(p.masker.maskHead(r.sent.head), isNot(contains('abc')));
     });
+  });
+}
+
+void settingsMergeTests() {
+  test(
+    'per-request redirect and decompress options override defaults',
+    () async {
+      final p = await RequestBuilder().build(
+        const HttpRequestItem(
+          id: '',
+          name: 'n',
+          url: 'http://h.test',
+          settings: RequestSettings(
+            maxRedirects: 2,
+            keepMethodOnRedirect: true,
+            stripAuthCrossOrigin: false,
+            autoDecompress: false,
+          ),
+        ),
+        VariableResolver(VariableScopes()),
+      );
+      final s = p.spec.settings;
+      expect(s.maxRedirects, 2);
+      expect(s.keepMethodOnRedirect, isTrue);
+      expect(s.stripAuthCrossOrigin, isFalse);
+      expect(s.autoDecompress, isFalse);
+      final d = (await RequestBuilder().build(
+        const HttpRequestItem(id: '', name: 'n', url: 'http://h.test'),
+        VariableResolver(VariableScopes()),
+      )).spec.settings;
+      expect(d.stripAuthCrossOrigin, isTrue);
+    },
+  );
+
+  test('RequestSettings copyWith can reset a field and round-trips', () {
+    const s = RequestSettings(timeoutMs: 5, autoDecompress: false);
+    expect(s.copyWith(timeoutMs: null).timeoutMs, isNull);
+    expect(s.copyWith(verifyTls: false).timeoutMs, 5);
+    final back = RequestSettings.fromJson(s.toJson());
+    expect(back.autoDecompress, false);
+    expect(back.keepMethodOnRedirect, isNull);
   });
 }

@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.11.0
+
+- Collection and folder settings page: description, auth, variables (FR-COL-002).
+- Warning before send when variables are unresolved, with "Send anyway" and "Don't warn again" (setting) (FR-VAR-006).
+- Custom HTTP method entry (FR-HTTP-001).
+- Request settings: max redirects, keep method on redirect, strip auth cross-origin, auto-decompress (FR-HTTP-007).
+- Duplicate variable names warn in the editor (last wins).
+- Not yet: scripts on containers, variable highlighting.
+
 ## 0.10.0
 
 - Response viewer: Pretty/Raw toggle, search with match count and highlight, read-only Cookies tab, copy body (FR-RES).

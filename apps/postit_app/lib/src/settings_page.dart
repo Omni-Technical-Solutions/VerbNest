@@ -52,6 +52,12 @@ class SettingsPage extends ConsumerWidget {
           onChanged: (v) => notifier.update(verifyTls: v),
         ),
         SwitchListTile(
+          key: const Key('warn-unresolved'),
+          title: const Text('Warn before sending with undefined variables'),
+          value: ref.watch(warnUnresolvedProvider),
+          onChanged: ref.read(warnUnresolvedProvider.notifier).set,
+        ),
+        SwitchListTile(
           title: const Text('Follow redirects'),
           value: s.followRedirects,
           onChanged: (v) => notifier.update(followRedirects: v),

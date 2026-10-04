@@ -260,9 +260,11 @@ class RequestBuilder {
     followRedirects: s.followRedirects ?? defaults.followRedirects,
     maxRedirects: s.maxRedirects ?? defaults.maxRedirects,
     verifyTls: s.verifyTls ?? defaults.verifyTls,
-    autoDecompress: defaults.autoDecompress,
-    keepMethodOnRedirect: defaults.keepMethodOnRedirect,
-    stripAuthCrossOrigin: defaults.stripAuthCrossOrigin,
+    autoDecompress: s.autoDecompress ?? defaults.autoDecompress,
+    keepMethodOnRedirect:
+        s.keepMethodOnRedirect ?? defaults.keepMethodOnRedirect,
+    stripAuthCrossOrigin:
+        s.stripAuthCrossOrigin ?? defaults.stripAuthCrossOrigin,
   );
 }
 

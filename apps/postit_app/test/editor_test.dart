@@ -98,7 +98,7 @@ void main() {
         auth: const BearerAuth(token: 's3cret'),
       ),
     );
-    await n.send();
+    await n.send(force: true);
     final spec = t.e.last!;
     expect(spec.url.host, 'api.test');
     final st = t.c.read(editorProvider(t.id));

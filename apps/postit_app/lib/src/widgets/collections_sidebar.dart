@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_storage/postit_storage.dart';
 
+import '../pages/container_settings_page.dart';
 import '../state/import_actions.dart';
 import '../state/session.dart';
 import '../state/sidebar_rows.dart';
@@ -13,6 +14,7 @@ enum _Action {
   newRequest,
   newFolder,
   rename,
+  settings,
   duplicate,
   moveUp,
   moveDown,
@@ -182,6 +184,8 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           PopupMenuItem(value: _Action.newFolder, child: Text('New folder')),
         ],
         const PopupMenuItem(value: _Action.rename, child: Text('Rename')),
+        if (node.isContainer)
+          const PopupMenuItem(value: _Action.settings, child: Text('Settings')),
         const PopupMenuItem(value: _Action.duplicate, child: Text('Duplicate')),
         const PopupMenuItem(value: _Action.moveUp, child: Text('Move up')),
         const PopupMenuItem(value: _Action.moveDown, child: Text('Move down')),
@@ -237,6 +241,12 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           initial: node.name,
         );
         if (name != null) actions.rename(node.id, name);
+      case _Action.settings:
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ContainerSettingsPage(containerId: node.id),
+          ),
+        );
       case _Action.duplicate:
         actions.duplicate(node.id);
       case _Action.moveUp:

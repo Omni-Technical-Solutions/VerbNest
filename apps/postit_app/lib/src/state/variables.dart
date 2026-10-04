@@ -78,17 +78,20 @@ void saveVariables(
       s.secrets.remove(ws, owner.kind, owner.id, key);
     }
   }
-  s.repo.saveVariables(owner, [
-    for (final v in vars)
-      if (v.key.isNotEmpty)
-        Variable(
-          key: v.key,
-          value: v.secret ? '' : v.value,
-          secret: v.secret,
-          enabled: v.enabled,
-          description: v.description,
-        ),
-  ]);
+  // The workspace rejects repeated names; the last row wins and the editor
+  // shows a warning for the duplicates.
+  final byKey = <String, Variable>{};
+  for (final v in vars) {
+    if (v.key.isEmpty) continue;
+    byKey[v.key] = Variable(
+      key: v.key,
+      value: v.secret ? '' : v.value,
+      secret: v.secret,
+      enabled: v.enabled,
+      description: v.description,
+    );
+  }
+  s.repo.saveVariables(owner, byKey.values.toList());
 }
 
 /// The scope stack for [requestId] (null = no request, e.g. the quick-look

@@ -217,8 +217,9 @@ class _RequestParser {
     final headers = <(String, String)>[];
     for (final line in head.skip(1)) {
       final i = line.indexOf(':');
-      if (i > 0)
+      if (i > 0) {
         headers.add((line.substring(0, i), line.substring(i + 1).trim()));
+      }
     }
     final bodyStart = end + 4;
     final body = _readBody(bytes, bodyStart, headers);

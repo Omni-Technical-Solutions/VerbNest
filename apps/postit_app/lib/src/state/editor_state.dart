@@ -28,6 +28,7 @@ class EditorState {
     this.unresolved = const {},
     this.warnings = const [],
     this.maskedSentHead,
+    this.pendingUnresolved = const {},
   });
 
   final HttpRequestItem item;
@@ -42,6 +43,9 @@ class EditorState {
   /// The request head as sent, with secrets masked (FR-HTTP-010).
   final String? maskedSentHead;
 
+  /// Names that stopped a send until the user confirms.
+  final Set<String> pendingUnresolved;
+
   EditorState copyWith({
     HttpRequestItem? item,
     bool? sending,
@@ -50,6 +54,7 @@ class EditorState {
     Set<String>? unresolved,
     List<String>? warnings,
     String? maskedSentHead,
+    Set<String>? pendingUnresolved,
     bool clearResult = false,
   }) => EditorState(
     item: item ?? this.item,
@@ -61,6 +66,9 @@ class EditorState {
     maskedSentHead: clearResult
         ? maskedSentHead
         : (maskedSentHead ?? this.maskedSentHead),
+    pendingUnresolved: clearResult
+        ? (pendingUnresolved ?? const {})
+        : (pendingUnresolved ?? this.pendingUnresolved),
   );
 }
 
@@ -109,7 +117,13 @@ class EditorNotifier extends Notifier<EditorState> {
 
   void cancel() => _cancel?.cancel();
 
-  Future<void> send() async {
+  void dismissPending() =>
+      state = state.copyWith(pendingUnresolved: const {}, clearResult: true);
+
+  /// Sends the draft. With undefined variables it stops first and sets
+  /// [EditorState.pendingUnresolved] unless [force] is true or the user
+  /// turned the warning off.
+  Future<void> send({bool force = false}) async {
     if (state.sending) return;
     flush();
     final token = _cancel = CancelToken();
@@ -130,6 +144,15 @@ class EditorNotifier extends Notifier<EditorState> {
       }
       prepared = await RequestBuilder(defaults: defaults)
           .build(item, resolver, auth: auth);
+      if (!force &&
+          prepared.unresolved.isNotEmpty &&
+          ref.read(warnUnresolvedProvider)) {
+        state = state.copyWith(
+          sending: false,
+          pendingUnresolved: prepared.unresolved,
+        );
+        return;
+      }
       final response = await ref
           .read(engineProvider)
           .send(prepared.spec, cancel: token);
