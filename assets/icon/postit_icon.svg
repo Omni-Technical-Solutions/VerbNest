@@ -5,7 +5,7 @@
       <stop offset="0.55" stop-color="#EA580C"/>
       <stop offset="1" stop-color="#9A3412"/>
     </linearGradient>
-    <radialGradient id="sun" cx="0.62" cy="0.36" r="0.42">
+    <radialGradient id="sun" cx="0.55" cy="0.4" r="0.45">
       <stop offset="0" stop-color="#FDE68A" stop-opacity="0.85"/>
       <stop offset="1" stop-color="#FDE68A" stop-opacity="0"/>
     </radialGradient>
@@ -15,53 +15,47 @@
   <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
   <rect width="1024" height="1024" rx="224" fill="url(#sun)"/>
 
-  <!-- Ground -->
-  <path d="M120 868 Q512 820 904 868" fill="none" stroke="#1C1917" stroke-opacity="0.35" stroke-width="18" stroke-linecap="round"/>
-
-  <!-- Speed lines trailing the throw -->
-  <g stroke="#FFF7ED" stroke-opacity="0.75" stroke-width="14" stroke-linecap="round">
-    <line x1="92" y1="372" x2="192" y2="340"/>
-    <line x1="112" y1="428" x2="184" y2="405"/>
-  </g>
-
+  <!-- Spear, held high and aimed forward -->
   <g fill="#1C1917" stroke="#1C1917" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Spear shaft -->
-    <line x1="180" y1="300" x2="826" y2="96" stroke-width="18"/>
-    <!-- Spear blade (leaf shaped, points up-right) -->
-    <path d="M812 101 Q846 56 918 64 Q876 112 812 101 Z" stroke-width="6"/>
-
-    <!-- Back leg -->
-    <polyline points="432,600 332,716 226,838" fill="none" stroke-width="62"/>
-    <!-- Torso, leaning into the throw: shoulders, narrow waist, hips -->
-    <path d="M410 384 Q458 364 510 392 Q500 450 482 520 Q492 560 488 600 L380 600 Q384 560 412 520 Q404 450 410 384 Z" stroke-width="10"/>
-    <!-- Front leg, lunging -->
-    <polyline points="440,606 570,700 616,846" fill="none" stroke-width="62"/>
-    <!-- Throwing arm, cocked back, hand on the shaft -->
-    <polyline points="430,420 338,372 380,246" fill="none" stroke-width="52"/>
-    <!-- Head -->
-    <circle cx="486" cy="322" r="56" stroke="none"/>
-    <!-- Hair gathered in a high bun -->
-    <circle cx="446" cy="270" r="36" stroke="none"/>
-    <!-- Flared hide skirt -->
-    <path d="M380 580 L488 580 L540 700 L330 700 Z" stroke-width="10"/>
-    <!-- Shield arm -->
-    <line x1="480" y1="430" x2="590" y2="470" stroke-width="48"/>
+    <line x1="150" y1="248" x2="830" y2="105" stroke-width="22"/>
+    <path d="M816 108 Q860 50 928 84 Q884 140 816 108 Z" stroke-width="6"/>
   </g>
 
-  <!-- Beadwork: headband, necklace, skirt hem -->
-  <g fill="none" stroke="#FFF7ED" stroke-linecap="round">
-    <path d="M434 302 Q484 284 538 308" stroke-width="12"/>
-    <path d="M440 386 Q466 404 498 392" stroke-width="10" stroke-dasharray="2 14"/>
-    <line x1="344" y1="686" x2="526" y2="686" stroke-width="10" stroke-dasharray="2 16"/>
-  </g>
+  <!-- Fighter, scaled up to fill the tile (drawn in 1024 space, zoomed 1.22x) -->
+  <g transform="translate(512 190) scale(1.22) translate(-450 -246)">
+    <g fill="#1C1917" stroke="#1C1917" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Back leg -->
+      <polyline points="432,600 332,716 226,838" fill="none" stroke-width="62"/>
+      <!-- Torso, leaning into the throw: shoulders, narrow waist, hips -->
+      <path d="M410 384 Q458 364 510 392 Q500 450 482 520 Q492 560 488 600 L380 600 Q384 560 412 520 Q404 450 410 384 Z" stroke-width="10"/>
+      <!-- Front leg, lunging -->
+      <polyline points="440,606 570,700 616,846" fill="none" stroke-width="62"/>
+      <!-- Throwing arm, cocked back, hand on the shaft -->
+      <polyline points="430,420 338,372 380,246" fill="none" stroke-width="52"/>
+      <!-- Head -->
+      <circle cx="486" cy="322" r="56" stroke="none"/>
+      <!-- Hair gathered in a bun -->
+      <circle cx="432" cy="292" r="36" stroke="none"/>
+      <!-- Flared hide skirt -->
+      <path d="M380 580 L488 580 L540 700 L330 700 Z" stroke-width="10"/>
+      <!-- Shield arm -->
+      <line x1="480" y1="430" x2="590" y2="470" stroke-width="48"/>
+    </g>
 
-  <!-- Oval cowhide shield -->
-  <g transform="rotate(-12 612 496)">
-    <ellipse cx="612" cy="496" rx="78" ry="138" fill="#FFF7ED" stroke="#1C1917" stroke-width="16"/>
-    <ellipse cx="590" cy="430" rx="22" ry="30" fill="#1C1917"/>
-    <ellipse cx="636" cy="560" rx="26" ry="36" fill="#1C1917"/>
-    <ellipse cx="588" cy="560" rx="12" ry="16" fill="#1C1917"/>
-    <!-- Central stick -->
-    <line x1="612" y1="330" x2="612" y2="662" stroke="#1C1917" stroke-width="14" stroke-linecap="round"/>
+    <!-- Beadwork: headband, necklace, skirt hem -->
+    <g fill="none" stroke="#FFF7ED" stroke-linecap="round">
+      <path d="M434 306 Q484 288 538 310" stroke-width="12"/>
+      <path d="M440 386 Q466 404 498 392" stroke-width="10" stroke-dasharray="2 14"/>
+      <line x1="344" y1="686" x2="526" y2="686" stroke-width="10" stroke-dasharray="2 16"/>
+    </g>
+
+    <!-- Oval cowhide shield -->
+    <g transform="rotate(-12 612 496)">
+      <ellipse cx="612" cy="496" rx="78" ry="138" fill="#FFF7ED" stroke="#1C1917" stroke-width="16"/>
+      <ellipse cx="590" cy="430" rx="22" ry="30" fill="#1C1917"/>
+      <ellipse cx="636" cy="560" rx="26" ry="36" fill="#1C1917"/>
+      <ellipse cx="588" cy="560" rx="12" ry="16" fill="#1C1917"/>
+      <line x1="612" y1="330" x2="612" y2="662" stroke="#1C1917" stroke-width="14" stroke-linecap="round"/>
+    </g>
   </g>
 </svg>
