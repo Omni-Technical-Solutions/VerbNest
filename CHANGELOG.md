@@ -2,6 +2,16 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.6.0
+
+- Request editor (FR-REQ, FR-HTTP-001..007, FR-RES):
+  - Method, URL bar, Params (synced with the URL query and `:path` variables), Headers, Auth (inherit/none/bearer/basic/API key), Body (raw languages, urlencoded, form; binary kept but not editable), per-request Settings.
+  - Debounced autosave of drafts; renames made in the tree are never overwritten.
+  - Send and cancel; variables resolved from global, collection and folder scopes; undefined-variable and unsupported-auth banners.
+  - Response viewer: status, time, size, pretty-printed JSON, headers and the masked request as sent.
+  - Open-request tab strip on desktop; full-screen editor on phone and tablet.
+- Not yet: environments, history recording, multipart file picking, scripts.
+
 ## 0.5.0
 
 - App foundations (FR-COL-001/003, FR-WS-001):

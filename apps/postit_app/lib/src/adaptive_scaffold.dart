@@ -6,6 +6,7 @@ import 'settings_page.dart';
 import 'state/session.dart';
 import 'state/tree_state.dart';
 import 'widgets/collections_sidebar.dart';
+import 'widgets/request_editor.dart';
 
 enum _Destination {
   collections(Icons.folder_outlined, Icons.folder, 'Collections'),
@@ -111,16 +112,100 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
       return const Center(child: Text('Select or create a request'));
     }
     ref.watch(workspaceVersionProvider);
-    final node = ref.read(repositoryProvider).node(active);
-    return Center(child: Text(node.name));
+    final tabs = ref.watch(tabsProvider);
+    final repo = ref.read(repositoryProvider);
+    return Column(
+      children: [
+        SizedBox(
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              for (final id in tabs.open)
+                _TabChip(
+                  key: Key('tab-$id'),
+                  title: repo.node(id).name,
+                  selected: id == active,
+                  onTap: () => ref.read(tabsProvider.notifier).activate(id),
+                  onClose: () => ref.read(tabsProvider.notifier).close(id),
+                ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: RequestEditor(key: ValueKey(active), requestId: active),
+        ),
+      ],
+    );
+  }
+
+  void _openFullScreen(String id) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Scaffold(
+          appBar: AppBar(
+            title: Text(ref.read(repositoryProvider).node(id).name),
+          ),
+          body: RequestEditor(requestId: id),
+        ),
+      ),
+    );
   }
 
   Widget _content() {
     return switch (_selected) {
       _Destination.settings => const SettingsPage(),
-      _Destination.collections when !_expanded => const CollectionsSidebar(),
+      _Destination.collections when !_expanded => CollectionsSidebar(
+        onOpenRequest: _openFullScreen,
+      ),
       _Destination.collections => _activeRequest(),
       _ => Center(child: Text('${_selected.label} (coming soon)')),
     };
+  }
+}
+
+class _TabChip extends StatelessWidget {
+  const _TabChip({
+    super.key,
+    required this.title,
+    required this.selected,
+    required this.onTap,
+    required this.onClose,
+  });
+
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.only(left: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              width: 2,
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.transparent,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Text(title),
+            IconButton(
+              tooltip: 'Close tab',
+              icon: const Icon(Icons.close, size: 14),
+              onPressed: onClose,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
