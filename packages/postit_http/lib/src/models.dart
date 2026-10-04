@@ -66,7 +66,11 @@ class Timings {
 
 /// The exact bytes written for one request/response exchange (FR-HTTP-010).
 class SentRequest {
-  const SentRequest({required this.head, required this.body, required this.url});
+  const SentRequest({
+    required this.head,
+    required this.body,
+    required this.url,
+  });
 
   final String head;
   final Uint8List body;

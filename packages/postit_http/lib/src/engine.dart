@@ -78,13 +78,15 @@ class HttpEngine {
 
   HttpRequestSpec? _nextHop(HttpRequestSpec spec, HttpResponseRecord r) {
     final s = spec.settings;
-    if (!s.followRedirects || !const {301, 302, 303, 307, 308}.contains(r.status)) {
+    if (!s.followRedirects ||
+        !const {301, 302, 303, 307, 308}.contains(r.status)) {
       return null;
     }
     final location = r.header('location');
     if (location == null) return null;
     final target = spec.url.resolve(location);
-    final switchToGet = !s.keepMethodOnRedirect &&
+    final switchToGet =
+        !s.keepMethodOnRedirect &&
         (r.status == 303 ||
             ((r.status == 301 || r.status == 302) && spec.method != 'HEAD'));
     final crossOrigin = _origin(target) != _origin(spec.url);
@@ -154,7 +156,8 @@ class HttpEngine {
       if (!has('accept-encoding') && spec.settings.autoDecompress)
         ('Accept-Encoding', 'gzip, deflate'),
       if (!has('content-length') &&
-          (bodyLength > 0 || const {'POST', 'PUT', 'PATCH'}.contains(spec.method)))
+          (bodyLength > 0 ||
+              const {'POST', 'PUT', 'PATCH'}.contains(spec.method)))
         ('Content-Length', '$bodyLength'),
       if (!has('connection')) ('Connection', 'close'),
     ];
@@ -293,7 +296,8 @@ class _Connection {
       return null;
     }
 
-    final noBody = spec.method == 'HEAD' ||
+    final noBody =
+        spec.method == 'HEAD' ||
         status == 204 ||
         status == 304 ||
         (status >= 100 && status < 200);

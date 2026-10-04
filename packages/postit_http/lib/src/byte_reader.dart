@@ -34,7 +34,9 @@ class ByteReader {
     while (true) {
       if (_pending.isEmpty && !await _fill()) return null;
       for (var i = 0; i < _pending.length; i++) {
-        matched = _pending[i] == term[matched] ? matched + 1 : (_pending[i] == 13 ? 1 : 0);
+        matched = _pending[i] == term[matched]
+            ? matched + 1
+            : (_pending[i] == 13 ? 1 : 0);
         if (matched == 4) {
           all.add(_take(i + 1));
           final bytes = all.toBytes();

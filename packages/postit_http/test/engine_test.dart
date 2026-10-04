@@ -30,26 +30,29 @@ void main() {
 
   group('wire fidelity', () {
     test('preserves header order and casing', () async {
-      final r = await engine.send(req('/echo', headers: [
-        ('X-Zebra', '1'),
-        ('x-apple', '2'),
-        ('X-MiXeD-Case', '3'),
-      ]));
+      final r = await engine.send(
+        req(
+          '/echo',
+          headers: [('X-Zebra', '1'), ('x-apple', '2'), ('X-MiXeD-Case', '3')],
+        ),
+      );
       final names = (echoed(r)['headers'] as List).map((h) => h[0]).toList();
       expect(names.take(3), ['X-Zebra', 'x-apple', 'X-MiXeD-Case']);
     });
 
     test('adds auto headers but lets the user override them', () async {
       final auto = await engine.send(req('/echo'));
-      final autoNames = (echoed(auto)['headers'] as List)
-          .map((h) => (h[0] as String).toLowerCase());
+      final autoNames = (echoed(auto)['headers'] as List).map(
+        (h) => (h[0] as String).toLowerCase(),
+      );
       expect(autoNames, containsAll(['host', 'user-agent', 'accept']));
 
       final custom = await engine.send(
         req('/echo', headers: [('user-agent', 'mine/1')]),
       );
-      final ua = (echoed(custom)['headers'] as List)
-          .where((h) => (h[0] as String).toLowerCase() == 'user-agent');
+      final ua = (echoed(custom)['headers'] as List).where(
+        (h) => (h[0] as String).toLowerCase() == 'user-agent',
+      );
       expect(ua.map((h) => h[1]), ['mine/1']);
     });
 
@@ -88,10 +91,9 @@ void main() {
     });
 
     test('leaves gzip untouched when auto-decompress is off', () async {
-      final r = await engine.send(req(
-        '/gzip',
-        settings: const HttpSettings(autoDecompress: false),
-      ));
+      final r = await engine.send(
+        req('/gzip', settings: const HttpSettings(autoDecompress: false)),
+      );
       expect(r.bodyText, isNot('gzipped body'));
     });
 
@@ -115,31 +117,34 @@ void main() {
     });
 
     test('does not follow when disabled', () async {
-      final r = await engine.send(req(
-        '/redirect/1',
-        settings: const HttpSettings(followRedirects: false),
-      ));
+      final r = await engine.send(
+        req(
+          '/redirect/1',
+          settings: const HttpSettings(followRedirects: false),
+        ),
+      );
       expect(r.status, 302);
       expect(r.header('location'), '/echo');
     });
 
     test('enforces the max redirect count', () async {
       expect(
-        engine.send(req(
-          '/redirect/5',
-          settings: const HttpSettings(maxRedirects: 2),
-        )),
+        engine.send(
+          req('/redirect/5', settings: const HttpSettings(maxRedirects: 2)),
+        ),
         throwsA(isA<TooManyRedirectsError>()),
       );
     });
 
     test('a 302 turns POST into GET without a body', () async {
-      final r = await engine.send(req(
-        '/redirect/1',
-        method: 'POST',
-        body: utf8.encode('x'),
-        headers: [('Content-Type', 'text/plain')],
-      ));
+      final r = await engine.send(
+        req(
+          '/redirect/1',
+          method: 'POST',
+          body: utf8.encode('x'),
+          headers: [('Content-Type', 'text/plain')],
+        ),
+      );
       expect(echoed(r)['method'], 'GET');
       expect(base64Decode(echoed(r)['bodyBase64'] as String), isEmpty);
     });
@@ -148,10 +153,12 @@ void main() {
   group('failures', () {
     test('times out', () async {
       expect(
-        engine.send(req(
-          '/delay/2000',
-          settings: const HttpSettings(timeout: Duration(milliseconds: 150)),
-        )),
+        engine.send(
+          req(
+            '/delay/2000',
+            settings: const HttpSettings(timeout: Duration(milliseconds: 150)),
+          ),
+        ),
         throwsA(isA<TimeoutError>()),
       );
     });
@@ -169,10 +176,12 @@ void main() {
       final port = server.port;
       await server.close();
       expect(
-        engine.send(HttpRequestSpec(
-          method: 'GET',
-          url: Uri.parse('http://127.0.0.1:$port/'),
-        )),
+        engine.send(
+          HttpRequestSpec(
+            method: 'GET',
+            url: Uri.parse('http://127.0.0.1:$port/'),
+          ),
+        ),
         throwsA(isA<NetworkError>()),
       );
     });
