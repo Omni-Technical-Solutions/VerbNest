@@ -12,6 +12,7 @@ import '../state/tree_state.dart';
 import '../state/variables.dart';
 import '../widgets/name_dialog.dart';
 import '../widgets/response_view.dart';
+import '../../l10n/l10n.dart';
 
 /// Sent requests, newest first, with search (FR-HIS-001/002).
 class HistoryPage extends ConsumerStatefulWidget {
@@ -42,17 +43,17 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               Expanded(
                 child: TextField(
                   key: const Key('history-search'),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     isDense: true,
-                    prefixIcon: Icon(Icons.search, size: 18),
-                    hintText: 'Search method, URL or status',
+                    prefixIcon: const Icon(Icons.search, size: 18),
+                    hintText: context.l10n.histSearchHint,
                   ),
                   onChanged: (v) => setState(() => _query = v.trim()),
                 ),
               ),
               IconButton(
                 key: const Key('console-open'),
-                tooltip: 'Network console',
+                tooltip: context.l10n.histConsole,
                 icon: const Icon(Icons.terminal),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(builder: (_) => const ConsolePage()),
@@ -60,7 +61,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               ),
               IconButton(
                 key: const Key('history-clear'),
-                tooltip: 'Clear history',
+                tooltip: context.l10n.histClear,
                 icon: const Icon(Icons.delete_sweep_outlined),
                 onPressed: entries.isEmpty ? null : () => _clear(session),
               ),
@@ -72,8 +73,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               ? Center(
                   child: Text(
                     _query.isEmpty
-                        ? 'Requests you send appear here'
-                        : 'Nothing matches "$_query"',
+                        ? context.l10n.histEmpty
+                        : context.l10n.histNoMatch(_query),
                   ),
                 )
               : _grouped(entries),
@@ -100,7 +101,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           return Padding(
             key: Key('history-day-$item'),
             padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 4),
-            child: Text(item, style: Theme.of(context).textTheme.labelLarge),
+            child: Text(switch (item) {
+              'Today' => context.l10n.today,
+              'Yesterday' => context.l10n.yesterday,
+              _ => item,
+            }, style: Theme.of(context).textTheme.labelLarge),
           );
         }
         return _tile(item as HistoryEntry);
@@ -111,8 +116,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   Future<void> _clear(WorkspaceSession session) async {
     final ok = await confirm(
       context,
-      title: 'Clear history?',
-      message: 'All stored requests and responses on this device are removed.',
+      title: context.l10n.histClearTitle,
+      message: context.l10n.histClearMessage,
     );
     if (!ok) return;
     session.local.clearHistory(session.repo.workspaceId);
@@ -127,7 +132,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       leading: SizedBox(
         width: 44,
         child: Text(
-          failed ? 'ERR' : '${e.status}',
+          failed ? context.l10n.histError : '${e.status}',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: failed ? Colors.red.shade700 : statusColor(e.status ?? 0),
@@ -177,7 +182,7 @@ class HistoryDetailPage extends ConsumerWidget {
                   ref.read(tabsProvider.notifier).open(entry.requestId!);
                   Navigator.of(context).popUntil((r) => r.isFirst);
                 },
-                child: const Text('Open request'),
+                child: Text(context.l10n.histOpenRequest),
               ),
             TextButton(
               key: const Key('history-save'),
@@ -189,20 +194,19 @@ class HistoryDetailPage extends ConsumerWidget {
                   SnackBar(
                     content: Text(
                       masked
-                          ? 'Saved to "Imported". Secrets were masked '
-                                '(${Masker.placeholder}); enter them again.'
-                          : 'Saved to "Imported"',
+                          ? context.l10n.histSavedMasked(Masker.placeholder)
+                          : context.l10n.histSaved,
                     ),
                   ),
                 );
               },
-              child: const Text('Save as new request'),
+              child: Text(context.l10n.histSaveAsNew),
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Request'),
-              Tab(text: 'Response'),
+              Tab(text: context.l10n.histTabRequest),
+              Tab(text: context.l10n.histTabResponse),
             ],
           ),
         ),
@@ -212,10 +216,10 @@ class HistoryDetailPage extends ConsumerWidget {
             _text(
               entry.error ??
                   (body == null
-                      ? 'No response body stored'
+                      ? context.l10n.histNoBody
                       : utf8.decode(body, allowMalformed: true) +
                             (entry.bodyTruncated
-                                ? '\n\n[truncated when stored]'
+                                ? '\n\n${context.l10n.histTruncated}'
                                 : '')),
             ),
           ],

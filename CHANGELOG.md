@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.32.2
+
+- UI strings: the collection runner, history (list and detail) and environments pages now use ARB (English and Arabic). Arabic texts still need a native review. The remaining files are listed in `l10n_guard_test.dart`.
+
 ## 0.32.1
 
 - UI strings: name and confirm dialogs, the environment picker, version history, the key-value table, the assertions builder and the OAuth token manager now use ARB (English and Arabic). Arabic texts still need a native review. 16 files still hold hard-coded text (see `l10n_guard_test.dart`).

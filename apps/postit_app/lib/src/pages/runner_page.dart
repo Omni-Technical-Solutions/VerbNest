@@ -9,6 +9,7 @@ import '../state/file_port.dart';
 import '../state/runner.dart';
 import '../state/session.dart';
 import '../widgets/mock_server_dialog.dart';
+import '../../l10n/l10n.dart';
 
 /// Runs the requests of a collection or folder in order (FR-RUN-001) and
 /// shows the results as they arrive (FR-RUN-002).
@@ -63,7 +64,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
       setState(() {
         _data = rows;
         _dataName = f.name;
-        _dataError = rows.isEmpty ? 'The file has no rows' : null;
+        _dataError = rows.isEmpty ? context.l10n.runNoRows : null;
       });
     } on FormatException catch (e) {
       setState(() {
@@ -113,7 +114,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
         );
     if (ok && mounted) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Report saved')));
+          .showSnackBar(SnackBar(content: Text(context.l10n.runReportSaved)));
     }
   }
 
@@ -122,7 +123,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
     final run = ref.watch(runnerProvider);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Run "$_title"'),
+        title: Text(context.l10n.runTitle(_title)),
         actions: [
           TextButton(
             key: const Key('mock-server'),
@@ -133,7 +134,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
                 child: MockServerDialog(containerId: widget.containerId),
               ),
             ),
-            child: const Text('Mock server'),
+            child: Text(context.l10n.mockTitle),
           ),
         ],
       ),
@@ -141,10 +142,10 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (!run.running) _setup(context),
-          if (run.running) _progress(run),
+          if (run.running) _progress(context, run),
           const Divider(height: 1),
           Expanded(child: _results(context, run)),
-          if (run.report != null) _summary(run.report!),
+          if (run.report != null) _summary(context, run.report!),
         ],
       ),
     );
@@ -159,7 +160,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 220),
             child: _picks.isEmpty
-                ? const Center(child: Text('No requests to run here'))
+                ? Center(child: Text(context.l10n.runNoRequests))
                 : ReorderableListView(
                     key: const Key('run-requests'),
                     buildDefaultDragHandles: true,
@@ -193,8 +194,8 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
                   initialValue: '$_iterations',
                   enabled: _data.isEmpty,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Iterations',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.runIterations,
                     isDense: true,
                   ),
                   onChanged: (v) =>
@@ -207,8 +208,8 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
                   key: const Key('run-delay'),
                   initialValue: '$_delayMs',
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Delay (ms)',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.runDelay,
                     isDense: true,
                   ),
                   onChanged: (v) =>
@@ -217,7 +218,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
               ),
               FilterChip(
                 key: const Key('run-stop-on-failure'),
-                label: const Text('Stop on first failure'),
+                label: Text(context.l10n.runStopOnFailure),
                 selected: _stopOnFailure,
                 onSelected: (v) => setState(() => _stopOnFailure = v),
               ),
@@ -227,13 +228,13 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
                 icon: const Icon(Icons.table_chart_outlined),
                 label: Text(
                   _dataName == null
-                      ? 'Data file…'
-                      : '$_dataName (${_data.length} rows)',
+                      ? context.l10n.runDataFile
+                      : context.l10n.runDataFileRows(_dataName!, _data.length),
                 ),
               ),
               if (_dataName != null)
                 IconButton(
-                  tooltip: 'Remove data file',
+                  tooltip: context.l10n.runRemoveData,
                   icon: const Icon(Icons.close, size: 18),
                   onPressed: () => setState(() {
                     _data = const [];
@@ -244,7 +245,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
                 key: const Key('run-start'),
                 onPressed: _picks.any((p) => p.on) ? _start : null,
                 icon: const Icon(Icons.play_arrow),
-                label: const Text('Run'),
+                label: Text(context.l10n.runStart),
               ),
             ],
           ),
@@ -261,7 +262,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
     );
   }
 
-  Widget _progress(RunnerState run) => Padding(
+  Widget _progress(BuildContext context, RunnerState run) => Padding(
     padding: const EdgeInsets.all(8),
     child: Row(
       children: [
@@ -273,7 +274,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            'Iteration ${run.iteration} of ${run.total}'
+            '${context.l10n.runProgress(run.iteration, run.total)}'
             '${run.currentName == null ? '' : ' · ${run.currentName}'}',
             key: const Key('run-progress'),
           ),
@@ -281,7 +282,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
         OutlinedButton(
           key: const Key('run-stop'),
           onPressed: ref.read(runnerProvider.notifier).stop,
-          child: const Text('Stop'),
+          child: Text(context.l10n.runStop),
         ),
       ],
     ),
@@ -289,7 +290,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
 
   Widget _results(BuildContext context, RunnerState run) {
     if (run.entries.isEmpty) {
-      return const Center(child: Text('Results appear here'));
+      return Center(child: Text(context.l10n.runResultsHere));
     }
     final scheme = Theme.of(context).colorScheme;
     return ListView(
@@ -315,10 +316,16 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
             ),
             subtitle: Text(
               e.skipped
-                  ? 'Skipped'
-                  : '${e.status ?? '—'} · ${e.timeMs} ms · '
-                        '${e.passedTests} passed, ${e.failedTests} failed'
-                        '${run.total > 1 ? ' · iteration ${e.iteration}' : ''}',
+                  ? context.l10n.runSkipped
+                  : context.l10n.runEntrySummary(
+                          '${e.status ?? '—'}',
+                          e.timeMs,
+                          e.passedTests,
+                          e.failedTests,
+                        ) +
+                        (run.total > 1
+                            ? ' · ${context.l10n.runIterationSuffix(e.iteration)}'
+                            : ''),
             ),
             children: [
               if (e.error != null)
@@ -345,7 +352,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
     );
   }
 
-  Widget _summary(RunReport r) => Material(
+  Widget _summary(BuildContext context, RunReport r) => Material(
     elevation: 2,
     child: Padding(
       padding: const EdgeInsets.all(8),
@@ -355,9 +362,13 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
-            '${r.requests} requests · ${r.passedTests} passed · '
-            '${r.failedTests} failed · ${r.errors} errors'
-            '${r.stoppedEarly ? ' · stopped early' : ''}',
+            context.l10n.runSummary(
+                  r.requests,
+                  r.passedTests,
+                  r.failedTests,
+                  r.errors,
+                ) +
+                (r.stoppedEarly ? ' · ${context.l10n.runStoppedEarly}' : ''),
             key: const Key('run-summary'),
           ),
           for (final (kind, label) in const [

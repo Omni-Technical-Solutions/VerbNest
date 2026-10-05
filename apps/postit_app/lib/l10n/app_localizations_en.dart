@@ -294,4 +294,189 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tokensDeleteAll => 'Delete all';
+
+  @override
+  String runTitle(String name) {
+    return 'Run \"$name\"';
+  }
+
+  @override
+  String get runNoRows => 'The file has no rows';
+
+  @override
+  String get runReportSaved => 'Report saved';
+
+  @override
+  String get runNoRequests => 'No requests to run here';
+
+  @override
+  String get runIterations => 'Iterations';
+
+  @override
+  String get runDelay => 'Delay (ms)';
+
+  @override
+  String get runStopOnFailure => 'Stop on first failure';
+
+  @override
+  String get runDataFile => 'Data file…';
+
+  @override
+  String runDataFileRows(String name, int count) {
+    return '$name ($count rows)';
+  }
+
+  @override
+  String get runRemoveData => 'Remove data file';
+
+  @override
+  String get runStart => 'Run';
+
+  @override
+  String runProgress(int iteration, int total) {
+    return 'Iteration $iteration of $total';
+  }
+
+  @override
+  String get runResultsHere => 'Results appear here';
+
+  @override
+  String get runSkipped => 'Skipped';
+
+  @override
+  String runEntrySummary(String status, int ms, int passed, int failed) {
+    return '$status · $ms ms · $passed passed, $failed failed';
+  }
+
+  @override
+  String runIterationSuffix(int n) {
+    return 'iteration $n';
+  }
+
+  @override
+  String runSummary(int requests, int passed, int failed, int errors) {
+    return '$requests requests · $passed passed · $failed failed · $errors errors';
+  }
+
+  @override
+  String get runStoppedEarly => 'stopped early';
+
+  @override
+  String get runStop => 'Stop';
+
+  @override
+  String get histSearchHint => 'Search method, URL or status';
+
+  @override
+  String get histConsole => 'Network console';
+
+  @override
+  String get histClear => 'Clear history';
+
+  @override
+  String get histEmpty => 'Requests you send appear here';
+
+  @override
+  String histNoMatch(String query) {
+    return 'Nothing matches \"$query\"';
+  }
+
+  @override
+  String get histClearTitle => 'Clear history?';
+
+  @override
+  String get histClearMessage =>
+      'All stored requests and responses on this device are removed.';
+
+  @override
+  String get histError => 'ERR';
+
+  @override
+  String get histOpenRequest => 'Open request';
+
+  @override
+  String histSavedMasked(String placeholder) {
+    return 'Saved to \"Imported\". Secrets were masked ($placeholder); enter them again.';
+  }
+
+  @override
+  String get histSaved => 'Saved to \"Imported\"';
+
+  @override
+  String get histSaveAsNew => 'Save as new request';
+
+  @override
+  String get histTabRequest => 'Request';
+
+  @override
+  String get histTabResponse => 'Response';
+
+  @override
+  String get histNoBody => 'No response body stored';
+
+  @override
+  String get histTruncated => '[truncated when stored]';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get envNew => 'New environment';
+
+  @override
+  String get envCreate => 'Create';
+
+  @override
+  String envExists(String name) {
+    return 'An environment named \"$name\" already exists';
+  }
+
+  @override
+  String get rename => 'Rename';
+
+  @override
+  String envDeleteTitle(String name) {
+    return 'Delete \"$name\"?';
+  }
+
+  @override
+  String get cannotUndo => 'This cannot be undone.';
+
+  @override
+  String get envGlobals => 'Globals';
+
+  @override
+  String get envVarName => 'Name';
+
+  @override
+  String get envSecretValue => 'Secret value';
+
+  @override
+  String get envInitialValue => 'Initial value';
+
+  @override
+  String get envHide => 'Hide';
+
+  @override
+  String get envShow => 'Show';
+
+  @override
+  String get envCurrentValue => 'Current value (this device)';
+
+  @override
+  String get envSecret => 'Secret';
+
+  @override
+  String get envMarkSecret => 'Mark as secret';
+
+  @override
+  String envDuplicates(String names) {
+    return 'Duplicate names: $names. The last one is used.';
+  }
+
+  @override
+  String get envAddVariable => 'Add variable';
 }

@@ -6,6 +6,7 @@ import 'package:postit_storage/postit_storage.dart';
 import '../state/session.dart';
 import '../state/variables.dart';
 import '../widgets/name_dialog.dart';
+import '../../l10n/l10n.dart';
 
 /// Environments and globals with their variables (FR-VAR-002..004).
 class EnvironmentsPage extends ConsumerStatefulWidget {
@@ -22,10 +23,10 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
   Future<void> _add() async {
     final name = await askName(
       context,
-      title: 'New environment',
-      action: 'Create',
+      title: context.l10n.envNew,
+      action: context.l10n.envCreate,
     );
-    if (name == null) return;
+    if (name == null || !mounted) return;
     final id = Ulid.generate();
     try {
       ref
@@ -33,25 +34,29 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
           .saveEnvironment(Environment(id: id, name: name));
       setState(() => _selected = id);
     } on DuplicateNameError {
-      _toast('An environment named "$name" already exists');
+      _toast(context.l10n.envExists(name));
     }
   }
 
   Future<void> _rename(Environment env) async {
-    final name = await askName(context, title: 'Rename', initial: env.name);
-    if (name == null) return;
+    final name = await askName(
+      context,
+      title: context.l10n.rename,
+      initial: env.name,
+    );
+    if (name == null || !mounted) return;
     try {
       ref.read(repositoryProvider).saveEnvironment(env.copyWith(name: name));
     } on DuplicateNameError {
-      _toast('An environment named "$name" already exists');
+      _toast(context.l10n.envExists(name));
     }
   }
 
   Future<void> _delete(Environment env) async {
     final ok = await confirm(
       context,
-      title: 'Delete "${env.name}"?',
-      message: 'This cannot be undone.',
+      title: context.l10n.envDeleteTitle(env.name),
+      message: context.l10n.cannotUndo,
     );
     if (!ok) return;
     ref.read(repositoryProvider).deleteEnvironment(env.id);
@@ -87,7 +92,7 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
                     children: [
                       ChoiceChip(
                         key: const Key('env-globals'),
-                        label: const Text('Globals'),
+                        label: Text(context.l10n.envGlobals),
                         selected: env == null,
                         onSelected: (_) => setState(() => _selected = null),
                       ),
@@ -107,18 +112,18 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
               ),
               IconButton(
                 key: const Key('env-add'),
-                tooltip: 'New environment',
+                tooltip: context.l10n.envNew,
                 icon: const Icon(Icons.add),
                 onPressed: _add,
               ),
               if (env != null) ...[
                 IconButton(
-                  tooltip: 'Rename',
+                  tooltip: context.l10n.rename,
                   icon: const Icon(Icons.edit_outlined),
                   onPressed: () => _rename(env),
                 ),
                 IconButton(
-                  tooltip: 'Delete',
+                  tooltip: context.l10n.delete,
                   icon: const Icon(Icons.delete_outline),
                   onPressed: () => _delete(env),
                 ),
@@ -217,9 +222,9 @@ class _VariablesEditorState extends State<VariablesEditor> {
                 child: TextFormField(
                   key: ValueKey('var-key-$i'),
                   initialValue: _vars[i].key,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     isDense: true,
-                    hintText: 'Name',
+                    hintText: context.l10n.envVarName,
                   ),
                   onChanged: (v) => _set(i, _copy(_vars[i], key: v)),
                 ),
@@ -235,8 +240,8 @@ class _VariablesEditorState extends State<VariablesEditor> {
                   decoration: InputDecoration(
                     isDense: true,
                     hintText: _vars[i].secret
-                        ? 'Secret value'
-                        : 'Initial value',
+                        ? context.l10n.envSecretValue
+                        : context.l10n.envInitialValue,
                   ),
                   onChanged: (v) => _set(i, _copy(_vars[i], value: v)),
                 ),
@@ -244,7 +249,9 @@ class _VariablesEditorState extends State<VariablesEditor> {
               if (_vars[i].secret)
                 IconButton(
                   key: ValueKey('var-reveal-$i'),
-                  tooltip: _revealed.contains(i) ? 'Hide' : 'Show',
+                  tooltip: _revealed.contains(i)
+                      ? context.l10n.envHide
+                      : context.l10n.envShow,
                   icon: Icon(
                     _revealed.contains(i)
                         ? Icons.visibility_off
@@ -263,9 +270,9 @@ class _VariablesEditorState extends State<VariablesEditor> {
                   child: TextFormField(
                     key: ValueKey('var-current-$i-${_vars[i].key}'),
                     initialValue: _current[_vars[i].key] ?? '',
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       isDense: true,
-                      hintText: 'Current value (this device)',
+                      hintText: context.l10n.envCurrentValue,
                     ),
                     onChanged: (v) => _setCurrent(_vars[i].key, v),
                   ),
@@ -273,7 +280,9 @@ class _VariablesEditorState extends State<VariablesEditor> {
               ],
               IconButton(
                 key: ValueKey('var-secret-$i'),
-                tooltip: _vars[i].secret ? 'Secret' : 'Mark as secret',
+                tooltip: _vars[i].secret
+                    ? context.l10n.envSecret
+                    : context.l10n.envMarkSecret,
                 icon: Icon(
                   _vars[i].secret ? Icons.lock : Icons.lock_open,
                   size: 18,
@@ -282,7 +291,7 @@ class _VariablesEditorState extends State<VariablesEditor> {
                     _set(i, _copy(_vars[i], secret: !_vars[i].secret)),
               ),
               IconButton(
-                tooltip: 'Remove',
+                tooltip: context.l10n.remove,
                 icon: const Icon(Icons.close, size: 18),
                 onPressed: () => _update([..._vars]..removeAt(i)),
               ),
@@ -292,7 +301,7 @@ class _VariablesEditorState extends State<VariablesEditor> {
           Padding(
             padding: const EdgeInsets.all(8),
             child: Text(
-              'Duplicate names: ${_duplicates.join(', ')}. The last one is used.',
+              context.l10n.envDuplicates(_duplicates.join(', ')),
               key: const Key('var-duplicates'),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
@@ -302,7 +311,7 @@ class _VariablesEditorState extends State<VariablesEditor> {
           child: TextButton.icon(
             key: const Key('var-add'),
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add variable'),
+            label: Text(context.l10n.envAddVariable),
             onPressed: () => _update([..._vars, const Variable(key: '')]),
           ),
         ),

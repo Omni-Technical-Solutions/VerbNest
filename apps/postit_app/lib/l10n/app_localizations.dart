@@ -619,6 +619,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete all'**
   String get tokensDeleteAll;
+
+  /// No description provided for @runTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Run \"{name}\"'**
+  String runTitle(String name);
+
+  /// No description provided for @runNoRows.
+  ///
+  /// In en, this message translates to:
+  /// **'The file has no rows'**
+  String get runNoRows;
+
+  /// No description provided for @runReportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Report saved'**
+  String get runReportSaved;
+
+  /// No description provided for @runNoRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No requests to run here'**
+  String get runNoRequests;
+
+  /// No description provided for @runIterations.
+  ///
+  /// In en, this message translates to:
+  /// **'Iterations'**
+  String get runIterations;
+
+  /// No description provided for @runDelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Delay (ms)'**
+  String get runDelay;
+
+  /// No description provided for @runStopOnFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop on first failure'**
+  String get runStopOnFailure;
+
+  /// No description provided for @runDataFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Data file…'**
+  String get runDataFile;
+
+  /// No description provided for @runDataFileRows.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} ({count} rows)'**
+  String runDataFileRows(String name, int count);
+
+  /// No description provided for @runRemoveData.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove data file'**
+  String get runRemoveData;
+
+  /// No description provided for @runStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Run'**
+  String get runStart;
+
+  /// No description provided for @runProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Iteration {iteration} of {total}'**
+  String runProgress(int iteration, int total);
+
+  /// No description provided for @runResultsHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Results appear here'**
+  String get runResultsHere;
+
+  /// No description provided for @runSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get runSkipped;
+
+  /// No description provided for @runEntrySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{status} · {ms} ms · {passed} passed, {failed} failed'**
+  String runEntrySummary(String status, int ms, int passed, int failed);
+
+  /// No description provided for @runIterationSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'iteration {n}'**
+  String runIterationSuffix(int n);
+
+  /// No description provided for @runSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{requests} requests · {passed} passed · {failed} failed · {errors} errors'**
+  String runSummary(int requests, int passed, int failed, int errors);
+
+  /// No description provided for @runStoppedEarly.
+  ///
+  /// In en, this message translates to:
+  /// **'stopped early'**
+  String get runStoppedEarly;
+
+  /// No description provided for @runStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get runStop;
+
+  /// No description provided for @histSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search method, URL or status'**
+  String get histSearchHint;
+
+  /// No description provided for @histConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'Network console'**
+  String get histConsole;
+
+  /// No description provided for @histClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear history'**
+  String get histClear;
+
+  /// No description provided for @histEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests you send appear here'**
+  String get histEmpty;
+
+  /// No description provided for @histNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches \"{query}\"'**
+  String histNoMatch(String query);
+
+  /// No description provided for @histClearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear history?'**
+  String get histClearTitle;
+
+  /// No description provided for @histClearMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'All stored requests and responses on this device are removed.'**
+  String get histClearMessage;
+
+  /// No description provided for @histError.
+  ///
+  /// In en, this message translates to:
+  /// **'ERR'**
+  String get histError;
+
+  /// No description provided for @histOpenRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Open request'**
+  String get histOpenRequest;
+
+  /// No description provided for @histSavedMasked.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to \"Imported\". Secrets were masked ({placeholder}); enter them again.'**
+  String histSavedMasked(String placeholder);
+
+  /// No description provided for @histSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to \"Imported\"'**
+  String get histSaved;
+
+  /// No description provided for @histSaveAsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as new request'**
+  String get histSaveAsNew;
+
+  /// No description provided for @histTabRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request'**
+  String get histTabRequest;
+
+  /// No description provided for @histTabResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Response'**
+  String get histTabResponse;
+
+  /// No description provided for @histNoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No response body stored'**
+  String get histNoBody;
+
+  /// No description provided for @histTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'[truncated when stored]'**
+  String get histTruncated;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @envNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New environment'**
+  String get envNew;
+
+  /// No description provided for @envCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get envCreate;
+
+  /// No description provided for @envExists.
+  ///
+  /// In en, this message translates to:
+  /// **'An environment named \"{name}\" already exists'**
+  String envExists(String name);
+
+  /// No description provided for @rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get rename;
+
+  /// No description provided for @envDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"?'**
+  String envDeleteTitle(String name);
+
+  /// No description provided for @cannotUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get cannotUndo;
+
+  /// No description provided for @envGlobals.
+  ///
+  /// In en, this message translates to:
+  /// **'Globals'**
+  String get envGlobals;
+
+  /// No description provided for @envVarName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get envVarName;
+
+  /// No description provided for @envSecretValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret value'**
+  String get envSecretValue;
+
+  /// No description provided for @envInitialValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial value'**
+  String get envInitialValue;
+
+  /// No description provided for @envHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get envHide;
+
+  /// No description provided for @envShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get envShow;
+
+  /// No description provided for @envCurrentValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Current value (this device)'**
+  String get envCurrentValue;
+
+  /// No description provided for @envSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret'**
+  String get envSecret;
+
+  /// No description provided for @envMarkSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as secret'**
+  String get envMarkSecret;
+
+  /// No description provided for @envDuplicates.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate names: {names}. The last one is used.'**
+  String envDuplicates(String names);
+
+  /// No description provided for @envAddVariable.
+  ///
+  /// In en, this message translates to:
+  /// **'Add variable'**
+  String get envAddVariable;
 }
 
 class _AppLocalizationsDelegate

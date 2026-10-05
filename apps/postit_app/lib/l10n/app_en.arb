@@ -141,5 +141,160 @@
   "tokensEmpty": "No tokens yet. They are kept in memory until you quit the app.",
   "tokenNoClientId": "no client id",
   "tokenHasRefresh": "has refresh token",
-  "tokensDeleteAll": "Delete all"
+  "tokensDeleteAll": "Delete all",
+  "runTitle": "Run \"{name}\"",
+  "@runTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "runNoRows": "The file has no rows",
+  "runReportSaved": "Report saved",
+  "runNoRequests": "No requests to run here",
+  "runIterations": "Iterations",
+  "runDelay": "Delay (ms)",
+  "runStopOnFailure": "Stop on first failure",
+  "runDataFile": "Data file…",
+  "runDataFileRows": "{name} ({count} rows)",
+  "@runDataFileRows": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runRemoveData": "Remove data file",
+  "runStart": "Run",
+  "runProgress": "Iteration {iteration} of {total}",
+  "@runProgress": {
+    "placeholders": {
+      "iteration": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "runResultsHere": "Results appear here",
+  "runSkipped": "Skipped",
+  "runEntrySummary": "{status} · {ms} ms · {passed} passed, {failed} failed",
+  "@runEntrySummary": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "ms": {
+        "type": "int"
+      },
+      "passed": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "runIterationSuffix": "iteration {n}",
+  "@runIterationSuffix": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "runSummary": "{requests} requests · {passed} passed · {failed} failed · {errors} errors",
+  "@runSummary": {
+    "placeholders": {
+      "requests": {
+        "type": "int"
+      },
+      "passed": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      },
+      "errors": {
+        "type": "int"
+      }
+    }
+  },
+  "runStoppedEarly": "stopped early",
+  "runStop": "Stop",
+  "histSearchHint": "Search method, URL or status",
+  "histConsole": "Network console",
+  "histClear": "Clear history",
+  "histEmpty": "Requests you send appear here",
+  "histNoMatch": "Nothing matches \"{query}\"",
+  "@histNoMatch": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "histClearTitle": "Clear history?",
+  "histClearMessage": "All stored requests and responses on this device are removed.",
+  "histError": "ERR",
+  "histOpenRequest": "Open request",
+  "histSavedMasked": "Saved to \"Imported\". Secrets were masked ({placeholder}); enter them again.",
+  "@histSavedMasked": {
+    "placeholders": {
+      "placeholder": {
+        "type": "String"
+      }
+    }
+  },
+  "histSaved": "Saved to \"Imported\"",
+  "histSaveAsNew": "Save as new request",
+  "histTabRequest": "Request",
+  "histTabResponse": "Response",
+  "histNoBody": "No response body stored",
+  "histTruncated": "[truncated when stored]",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "envNew": "New environment",
+  "envCreate": "Create",
+  "envExists": "An environment named \"{name}\" already exists",
+  "@envExists": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rename": "Rename",
+  "envDeleteTitle": "Delete \"{name}\"?",
+  "@envDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cannotUndo": "This cannot be undone.",
+  "envGlobals": "Globals",
+  "envVarName": "Name",
+  "envSecretValue": "Secret value",
+  "envInitialValue": "Initial value",
+  "envHide": "Hide",
+  "envShow": "Show",
+  "envCurrentValue": "Current value (this device)",
+  "envSecret": "Secret",
+  "envMarkSecret": "Mark as secret",
+  "envDuplicates": "Duplicate names: {names}. The last one is used.",
+  "@envDuplicates": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "envAddVariable": "Add variable"
 }

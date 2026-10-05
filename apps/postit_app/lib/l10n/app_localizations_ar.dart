@@ -296,4 +296,189 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tokensDeleteAll => 'حذف الكل';
+
+  @override
+  String runTitle(String name) {
+    return 'تشغيل \"$name\"';
+  }
+
+  @override
+  String get runNoRows => 'الملف لا يحتوي على صفوف';
+
+  @override
+  String get runReportSaved => 'تم حفظ التقرير';
+
+  @override
+  String get runNoRequests => 'لا توجد طلبات للتشغيل هنا';
+
+  @override
+  String get runIterations => 'التكرارات';
+
+  @override
+  String get runDelay => 'التأخير (مللي ثانية)';
+
+  @override
+  String get runStopOnFailure => 'التوقف عند أول فشل';
+
+  @override
+  String get runDataFile => 'ملف بيانات…';
+
+  @override
+  String runDataFileRows(String name, int count) {
+    return '$name ($count صفوف)';
+  }
+
+  @override
+  String get runRemoveData => 'إزالة ملف البيانات';
+
+  @override
+  String get runStart => 'تشغيل';
+
+  @override
+  String runProgress(int iteration, int total) {
+    return 'التكرار $iteration من $total';
+  }
+
+  @override
+  String get runResultsHere => 'تظهر النتائج هنا';
+
+  @override
+  String get runSkipped => 'تم التخطي';
+
+  @override
+  String runEntrySummary(String status, int ms, int passed, int failed) {
+    return '$status · $ms مللي ثانية · نجح $passed، فشل $failed';
+  }
+
+  @override
+  String runIterationSuffix(int n) {
+    return 'التكرار $n';
+  }
+
+  @override
+  String runSummary(int requests, int passed, int failed, int errors) {
+    return '$requests طلبات · نجح $passed · فشل $failed · أخطاء $errors';
+  }
+
+  @override
+  String get runStoppedEarly => 'توقف مبكرًا';
+
+  @override
+  String get runStop => 'إيقاف';
+
+  @override
+  String get histSearchHint => 'بحث بالطريقة أو العنوان أو الحالة';
+
+  @override
+  String get histConsole => 'وحدة الشبكة';
+
+  @override
+  String get histClear => 'مسح السجل';
+
+  @override
+  String get histEmpty => 'تظهر الطلبات التي ترسلها هنا';
+
+  @override
+  String histNoMatch(String query) {
+    return 'لا شيء يطابق \"$query\"';
+  }
+
+  @override
+  String get histClearTitle => 'مسح السجل؟';
+
+  @override
+  String get histClearMessage =>
+      'ستُحذف جميع الطلبات والاستجابات المخزنة على هذا الجهاز.';
+
+  @override
+  String get histError => 'خطأ';
+
+  @override
+  String get histOpenRequest => 'فتح الطلب';
+
+  @override
+  String histSavedMasked(String placeholder) {
+    return 'تم الحفظ في \"Imported\". أُخفيت الأسرار ($placeholder); أدخلها من جديد.';
+  }
+
+  @override
+  String get histSaved => 'تم الحفظ في \"Imported\"';
+
+  @override
+  String get histSaveAsNew => 'حفظ كطلب جديد';
+
+  @override
+  String get histTabRequest => 'الطلب';
+
+  @override
+  String get histTabResponse => 'الاستجابة';
+
+  @override
+  String get histNoBody => 'لا يوجد محتوى استجابة محفوظ';
+
+  @override
+  String get histTruncated => '[قُطع عند الحفظ]';
+
+  @override
+  String get today => 'اليوم';
+
+  @override
+  String get yesterday => 'أمس';
+
+  @override
+  String get envNew => 'بيئة جديدة';
+
+  @override
+  String get envCreate => 'إنشاء';
+
+  @override
+  String envExists(String name) {
+    return 'توجد بيئة باسم \"$name\" بالفعل';
+  }
+
+  @override
+  String get rename => 'إعادة تسمية';
+
+  @override
+  String envDeleteTitle(String name) {
+    return 'حذف \"$name\"؟';
+  }
+
+  @override
+  String get cannotUndo => 'لا يمكن التراجع عن هذا.';
+
+  @override
+  String get envGlobals => 'العامة';
+
+  @override
+  String get envVarName => 'الاسم';
+
+  @override
+  String get envSecretValue => 'قيمة سرية';
+
+  @override
+  String get envInitialValue => 'القيمة الأولية';
+
+  @override
+  String get envHide => 'إخفاء';
+
+  @override
+  String get envShow => 'إظهار';
+
+  @override
+  String get envCurrentValue => 'القيمة الحالية (هذا الجهاز)';
+
+  @override
+  String get envSecret => 'سري';
+
+  @override
+  String get envMarkSecret => 'تعيين كسر';
+
+  @override
+  String envDuplicates(String names) {
+    return 'أسماء مكررة: $names. يُستخدم الأخير.';
+  }
+
+  @override
+  String get envAddVariable => 'إضافة متغير';
 }
