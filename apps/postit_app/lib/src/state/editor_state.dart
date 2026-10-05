@@ -389,6 +389,7 @@ class EditorNotifier extends Notifier<EditorState> {
               method: spec.method,
               body: spec.body,
               settings: spec.settings,
+              reconnect: true,
             )
           : await connectWebSocket(
               spec.url,

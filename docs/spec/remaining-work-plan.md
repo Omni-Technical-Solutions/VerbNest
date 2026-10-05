@@ -76,3 +76,9 @@ Needs the CI to run, which needs a remote.
 
 1 and 4 are independent and can go first. 2 waits for a remote. 3 needs the
 ADR. 5 items are picked by need.
+
+## Phase 5 status
+
+- Done: mock query/body matching and delay (v0.34.0), SSE reconnect (v0.35.0).
+- Not planned: CLI history (it lives in the app's per-device store, which the CLI should not write) and CLI vault secrets (the vault is the OS keychain; the CLI uses `--var`).
+- Open: saving live messages, binary send, GraphQL GET/persisted queries, `pm.sendRequest`/`pm.cookies`, PDF preview.

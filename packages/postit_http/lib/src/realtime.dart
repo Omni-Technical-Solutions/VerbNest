@@ -59,6 +59,9 @@ class SseParser {
   /// Last event id seen, for `Last-Event-ID` on reconnect.
   String? lastId;
 
+  /// Reconnection delay the server asked for with `retry:`, in milliseconds.
+  int? retryMs;
+
   /// Feeds one line (without terminator); returns an event when a blank
   /// line completes one.
   RealtimeMessage? line(String line) {
@@ -87,6 +90,8 @@ class SseParser {
         _data.add(value);
       case 'event':
         _event = value;
+      case 'retry':
+        if (RegExp(r'^\d+$').hasMatch(value)) retryMs = int.parse(value);
       case 'id':
         if (!value.contains('\u0000')) {
           _id = value;
@@ -236,12 +241,43 @@ class _WebSocketConnection implements RealtimeConnection {
 }
 
 /// Opens an SSE stream. Non-2xx responses and wrong content types throw.
+///
+/// With [reconnect], a stream that ends without [RealtimeConnection.close]
+/// is reopened after the server's `retry:` delay (3 s by default, at most
+/// 60 s) with `Last-Event-ID`, up to [maxRetries] failed attempts in a row.
+/// [retryDelay] replaces the delay for tests.
 Future<RealtimeConnection> connectSse(
   Uri url, {
   List<Header> headers = const [],
   String method = 'GET',
   List<int>? body,
   HttpSettings settings = const HttpSettings(),
+  bool reconnect = false,
+  int maxRetries = 5,
+  Duration? retryDelay,
+}) async {
+  Future<_SseConnection> open(String? lastId) => _openSse(
+    url,
+    headers: headers,
+    method: method,
+    body: body,
+    settings: settings,
+    lastEventId: lastId,
+    quiet: reconnect,
+  );
+  final first = await open(null);
+  if (!reconnect) return first;
+  return _ReconnectingSse(first, open, maxRetries, retryDelay);
+}
+
+Future<_SseConnection> _openSse(
+  Uri url, {
+  required List<Header> headers,
+  required String method,
+  required List<int>? body,
+  required HttpSettings settings,
+  required String? lastEventId,
+  required bool quiet,
 }) async {
   final client = _client(settings, url);
   try {
@@ -252,13 +288,14 @@ Future<RealtimeConnection> connectSse(
     for (final (k, v) in headers) {
       req.headers.set(k, v);
     }
+    if (lastEventId != null) req.headers.set('Last-Event-ID', lastEventId);
     if (body != null && body.isNotEmpty) req.add(body);
     final res = await req.close().timeout(settings.timeout);
     if (res.statusCode < 200 || res.statusCode > 299) {
       await res.drain<void>();
       throw HttpException('SSE endpoint answered ${res.statusCode}', uri: url);
     }
-    return _SseConnection(res, client);
+    return _SseConnection(res, client, lastEventId, quiet: quiet);
   } catch (_) {
     client.close(force: true);
     rethrow;
@@ -266,14 +303,19 @@ Future<RealtimeConnection> connectSse(
 }
 
 class _SseConnection implements RealtimeConnection {
-  _SseConnection(HttpClientResponse res, this._client) {
+  _SseConnection(
+    HttpClientResponse res,
+    this._client,
+    String? lastId, {
+    this.quiet = false,
+  }) {
     _out.add(
       RealtimeMessage(
         direction: RealtimeDirection.system,
         data: 'Connected (${res.statusCode})',
       ),
     );
-    final parser = SseParser();
+    parser.lastId = lastId;
     _sub = res
         .cast<List<int>>()
         .transform(utf8.decoder)
@@ -292,15 +334,21 @@ class _SseConnection implements RealtimeConnection {
   }
 
   final HttpClient _client;
+  final parser = SseParser();
+
+  /// Quiet connections leave the "Closed" notice to the reconnect wrapper.
+  final bool quiet;
   late final StreamSubscription<String> _sub;
   final _out = StreamController<RealtimeMessage>.broadcast();
   final _done = Completer<void>();
 
   void _finish() {
     if (_done.isCompleted) return;
-    _out.add(
-      RealtimeMessage(direction: RealtimeDirection.system, data: 'Closed'),
-    );
+    if (!quiet) {
+      _out.add(
+        RealtimeMessage(direction: RealtimeDirection.system, data: 'Closed'),
+      );
+    }
     _out.close();
     _client.close(force: true);
     _done.complete();
@@ -323,6 +371,94 @@ class _SseConnection implements RealtimeConnection {
   Future<void> close() async {
     await _sub.cancel();
     _finish();
+  }
+}
+
+class _ReconnectingSse implements RealtimeConnection {
+  _ReconnectingSse(
+    _SseConnection first,
+    this._open,
+    this._maxRetries,
+    this._retryDelay,
+  ) {
+    _run(first);
+  }
+
+  final Future<_SseConnection> Function(String? lastId) _open;
+  final int _maxRetries;
+  final Duration? _retryDelay;
+  final _out = StreamController<RealtimeMessage>.broadcast();
+  final _done = Completer<void>();
+  _SseConnection? _current;
+  bool _closed = false;
+
+  void _say(String text) => _out.add(
+    RealtimeMessage(direction: RealtimeDirection.system, data: text),
+  );
+
+  Future<void> _run(_SseConnection first) async {
+    var conn = first;
+    var failures = 0;
+    while (true) {
+      _current = conn;
+      final sub = conn.messages.listen(_out.add);
+      await conn.done;
+      await sub.cancel();
+      if (_closed) break;
+      var delay =
+          _retryDelay ?? Duration(milliseconds: conn.parser.retryMs ?? 3000);
+      if (delay > const Duration(seconds: 60)) {
+        delay = const Duration(seconds: 60);
+      }
+      final lastId = conn.parser.lastId;
+      _SseConnection? next;
+      while (next == null && !_closed) {
+        if (failures >= _maxRetries) {
+          _say('Gave up after $_maxRetries attempts');
+          return _end();
+        }
+        _say('Disconnected; reconnecting in ${delay.inMilliseconds} ms');
+        await Future<void>.delayed(delay);
+        if (_closed) break;
+        try {
+          next = await _open(lastId);
+          failures = 0;
+        } on Object catch (e) {
+          failures++;
+          _say('Reconnect failed: $e');
+        }
+      }
+      if (next == null) break;
+      conn = next;
+    }
+    _end();
+  }
+
+  void _end() {
+    if (_done.isCompleted) return;
+    _say('Closed');
+    _out.close();
+    _done.complete();
+  }
+
+  @override
+  Stream<RealtimeMessage> get messages => _out.stream;
+
+  @override
+  Future<void> get done => _done.future;
+
+  @override
+  bool get canSend => false;
+
+  @override
+  Future<void> send(Object data) =>
+      throw UnsupportedError('SSE connections are receive-only');
+
+  @override
+  Future<void> close() async {
+    _closed = true;
+    await _current?.close();
+    _end();
   }
 }
 

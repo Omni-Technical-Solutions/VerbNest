@@ -20,6 +20,14 @@ void main() {
       expect(m.id, '7');
     });
 
+    test('reads the retry delay and ignores bad values', () {
+      final p = SseParser();
+      p.line('retry: 250');
+      expect(p.retryMs, 250);
+      p.line('retry: soon');
+      expect(p.retryMs, 250);
+    });
+
     test('defaults the event name and ignores empty events', () {
       final p = SseParser();
       expect(p.line(''), isNull);
@@ -98,6 +106,71 @@ void main() {
       expect(c.canSend, isFalse);
       expect(() => c.send('x'), throwsUnsupportedError);
       expect(utf8.encode(log.last.text), isNotEmpty);
+    });
+
+    test(
+      'reconnects with Last-Event-ID and gives up after the limit',
+      () async {
+        final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        addTearDown(() => server.close(force: true));
+        final seen = <String?>[];
+        server.listen((req) async {
+          seen.add(req.headers.value('last-event-id'));
+          if (seen.length > 2) {
+            req.response
+              ..statusCode = 503
+              ..close();
+            return;
+          }
+          req.response.headers.contentType = ContentType(
+            'text',
+            'event-stream',
+          );
+          req.response.write('id: ${seen.length}\ndata: n${seen.length}\n\n');
+          await req.response.close();
+        });
+        final c = await connectSse(
+          Uri.parse('http://127.0.0.1:${server.port}/'),
+          reconnect: true,
+          maxRetries: 2,
+          retryDelay: const Duration(milliseconds: 20),
+        );
+        final log = await c.messages.toList();
+        expect(log.where((m) => m.event != null).map((m) => m.text), [
+          'n1',
+          'n2',
+        ]);
+        expect(seen.take(3), [null, '1', '2']);
+        expect(
+          log
+              .where((m) => m.direction == RealtimeDirection.system)
+              .map((m) => m.text),
+          contains('Gave up after 2 attempts'),
+        );
+        expect(log.last.text, 'Closed');
+      },
+    );
+
+    test('closing stops reconnecting', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      var hits = 0;
+      server.listen((req) async {
+        hits++;
+        req.response.headers.contentType = ContentType('text', 'event-stream');
+        req.response.write('data: x\n\n');
+        await req.response.close();
+      });
+      final c = await connectSse(
+        Uri.parse('http://127.0.0.1:${server.port}/'),
+        reconnect: true,
+        retryDelay: const Duration(milliseconds: 500),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await c.close();
+      await c.done;
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      expect(hits, 1);
     });
 
     test('non-2xx throws', () async {
