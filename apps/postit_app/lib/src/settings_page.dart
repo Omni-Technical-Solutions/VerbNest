@@ -73,8 +73,14 @@ class SettingsPage extends ConsumerWidget {
                 value: '',
                 child: Text(context.l10n.systemDefault),
               ),
-              const DropdownMenuItem(value: 'en', child: Text('English')),
-              const DropdownMenuItem(value: 'ar', child: Text('العربية')),
+              DropdownMenuItem(
+                value: 'en',
+                child: Text(context.l10n.langEnglish),
+              ),
+              DropdownMenuItem(
+                value: 'ar',
+                child: Text(context.l10n.langArabic),
+              ),
             ],
             onChanged: (v) => ref
                 .read(localeProvider.notifier)
@@ -118,7 +124,9 @@ class SettingsPage extends ConsumerWidget {
         const Divider(),
         _section(context, context.l10n.appearanceSection),
         ListTile(
-          title: Text('Text size ${(prefs.fontScale * 100).round()}%'),
+          title: Text(
+            context.l10n.settingsTextSize((prefs.fontScale * 100).round()),
+          ),
           subtitle: Slider(
             key: const Key('font-scale'),
             min: Prefs.minScale,
@@ -130,7 +138,9 @@ class SettingsPage extends ConsumerWidget {
           ),
         ),
         ListTile(
-          title: Text('Code font size ${prefs.editorFontSize.round()}'),
+          title: Text(
+            context.l10n.settingsCodeFontSize(prefs.editorFontSize.round()),
+          ),
           subtitle: Slider(
             key: const Key('editor-font-size'),
             min: Prefs.minEditorSize,

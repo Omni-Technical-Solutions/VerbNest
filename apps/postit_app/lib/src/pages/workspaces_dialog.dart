@@ -9,6 +9,7 @@ import '../state/folder_port.dart';
 import '../state/session.dart';
 import '../widgets/name_dialog.dart';
 import '../workspace_host.dart';
+import '../../l10n/l10n.dart';
 
 /// Switch, create, import and export workspaces (FR-WS-002..007).
 Future<void> showWorkspaces(BuildContext context, WidgetRef ref) {
@@ -49,7 +50,7 @@ class _WorkspacesDialog extends ConsumerWidget {
     final recent = switcher.recent();
 
     return AlertDialog(
-      title: const Text('Workspaces'),
+      title: Text(context.l10n.wsTitle),
       content: SizedBox(
         width: 440,
         height: 360,
@@ -59,17 +60,17 @@ class _WorkspacesDialog extends ConsumerWidget {
               key: const Key('ws-current'),
               leading: const Icon(Icons.check_circle_outline),
               title: Text(session.repo.name),
-              subtitle: Text(session.db.path ?? 'In memory'),
+              subtitle: Text(session.db.path ?? context.l10n.wsInMemory),
               trailing: IconButton(
                 key: const Key('ws-rename'),
-                tooltip: 'Rename',
+                tooltip: context.l10n.wsRename,
                 icon: const Icon(Icons.edit, size: 18),
                 onPressed: () async {
                   final name = await askName(
                     context,
-                    title: 'Rename workspace',
+                    title: context.l10n.wsRenameTitle,
                     initial: session.repo.name,
-                    action: 'Rename',
+                    action: context.l10n.wsRename,
                   );
                   if (name == null || name.trim().isEmpty) return;
                   session.repo.name = name.trim();
@@ -103,7 +104,7 @@ class _WorkspacesDialog extends ConsumerWidget {
             final f = await port.pick();
             if (f != null) await switcher.importBytes(f.name, f.bytes);
           }),
-          child: const Text('Import…'),
+          child: Text(context.l10n.wsImport),
         ),
         if (ref.read(folderPortProvider).available) ...[
           TextButton(
@@ -111,6 +112,7 @@ class _WorkspacesDialog extends ConsumerWidget {
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               final nav = Navigator.of(context);
+              final l10n = context.l10n;
               try {
                 final files = await ref.read(folderPortProvider).read();
                 if (files == null) return;
@@ -119,9 +121,13 @@ class _WorkspacesDialog extends ConsumerWidget {
                 messenger.showSnackBar(
                   SnackBar(
                     content: Text(
-                      'Snapshot merged: ${r.requests} requests, '
-                      '${r.environments} environments'
-                      '${r.conflicts.isEmpty ? '' : ', ${r.conflicts.length} kept as they were (${r.conflicts.first})'}',
+                      l10n.wsSnapshotMerged(r.requests, r.environments) +
+                          (r.conflicts.isEmpty
+                              ? ''
+                              : l10n.wsSnapshotKept(
+                                  r.conflicts.length,
+                                  r.conflicts.first,
+                                )),
                     ),
                   ),
                 );
@@ -129,7 +135,7 @@ class _WorkspacesDialog extends ConsumerWidget {
                 messenger.showSnackBar(SnackBar(content: Text('$e')));
               }
             },
-            child: const Text('Import snapshot…'),
+            child: Text(context.l10n.wsImportSnapshot),
           ),
           TextButton(
             key: const Key('ws-snapshot-export'),
@@ -138,7 +144,7 @@ class _WorkspacesDialog extends ConsumerWidget {
                   .read(folderPortProvider)
                   .write(exportSnapshot(session.repo));
             }),
-            child: const Text('Export snapshot…'),
+            child: Text(context.l10n.wsExportSnapshot),
           ),
         ],
         TextButton(
@@ -147,20 +153,20 @@ class _WorkspacesDialog extends ConsumerWidget {
             final bytes = await switcher.exportCurrent();
             await port.save('${session.repo.name}.postit', bytes);
           }),
-          child: const Text('Export…'),
+          child: Text(context.l10n.wsExport),
         ),
         FilledButton(
           key: const Key('ws-new'),
           onPressed: () async {
             final name = await askName(
               context,
-              title: 'New workspace',
-              action: 'Create',
+              title: context.l10n.wsNewTitle,
+              action: context.l10n.wsCreate,
             );
             if (name == null || !context.mounted) return;
             await _guard(context, () => switcher.create(name));
           },
-          child: const Text('New'),
+          child: Text(context.l10n.wsNew),
         ),
       ],
     );

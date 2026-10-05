@@ -335,5 +335,61 @@
   "codeFillVariables": "Fill in variable values",
   "codeSecretsWarning": "Secret values will appear in the code",
   "codeCopied": "Code copied",
-  "copy": "Copy"
+  "copy": "Copy",
+  "wsTitle": "Workspaces",
+  "wsInMemory": "In memory",
+  "wsRename": "Rename",
+  "wsRenameTitle": "Rename workspace",
+  "wsImport": "Import…",
+  "wsImportSnapshot": "Import snapshot…",
+  "wsExportSnapshot": "Export snapshot…",
+  "wsExport": "Export…",
+  "wsNewTitle": "New workspace",
+  "wsCreate": "Create",
+  "wsNew": "New",
+  "wsSnapshotMerged": "Snapshot merged: {requests} requests, {environments} environments",
+  "@wsSnapshotMerged": {
+    "placeholders": {
+      "requests": {
+        "type": "int"
+      },
+      "environments": {
+        "type": "int"
+      }
+    }
+  },
+  "wsSnapshotKept": ", {count} kept as they were ({first})",
+  "@wsSnapshotKept": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "first": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTextSize": "Text size {percent}%",
+  "@settingsTextSize": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsCodeFontSize": "Code font size {size}",
+  "@settingsCodeFontSize": {
+    "placeholders": {
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "scriptPre": "Pre-request",
+  "scriptPreSet": "Pre-request •",
+  "scriptPost": "Post-response",
+  "scriptPostSet": "Post-response •",
+  "scriptHelp": "pm.variables, pm.environment, pm.collectionVariables, pm.globals, pm.request, pm.response, pm.test, pm.expect and console are available. Scripts stop after 5 s; pm.sendRequest is not supported yet.",
+  "langEnglish": "English",
+  "langArabic": "العربية"
 }

@@ -541,4 +541,79 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get copy => 'نسخ';
+
+  @override
+  String get wsTitle => 'مساحات العمل';
+
+  @override
+  String get wsInMemory => 'في الذاكرة';
+
+  @override
+  String get wsRename => 'إعادة تسمية';
+
+  @override
+  String get wsRenameTitle => 'إعادة تسمية مساحة العمل';
+
+  @override
+  String get wsImport => 'استيراد…';
+
+  @override
+  String get wsImportSnapshot => 'استيراد لقطة…';
+
+  @override
+  String get wsExportSnapshot => 'تصدير لقطة…';
+
+  @override
+  String get wsExport => 'تصدير…';
+
+  @override
+  String get wsNewTitle => 'مساحة عمل جديدة';
+
+  @override
+  String get wsCreate => 'إنشاء';
+
+  @override
+  String get wsNew => 'جديد';
+
+  @override
+  String wsSnapshotMerged(int requests, int environments) {
+    return 'تم دمج اللقطة: $requests طلبات، $environments بيئات';
+  }
+
+  @override
+  String wsSnapshotKept(int count, String first) {
+    return '، تم إبقاء $count كما هي ($first)';
+  }
+
+  @override
+  String settingsTextSize(int percent) {
+    return 'حجم النص $percent%';
+  }
+
+  @override
+  String settingsCodeFontSize(int size) {
+    return 'حجم خط الشيفرة $size';
+  }
+
+  @override
+  String get scriptPre => 'قبل الطلب';
+
+  @override
+  String get scriptPreSet => 'قبل الطلب •';
+
+  @override
+  String get scriptPost => 'بعد الاستجابة';
+
+  @override
+  String get scriptPostSet => 'بعد الاستجابة •';
+
+  @override
+  String get scriptHelp =>
+      'تتوفر pm.variables وpm.environment وpm.collectionVariables وpm.globals وpm.request وpm.response وpm.test وpm.expect وconsole. تتوقف السكربتات بعد 5 ثوانٍ؛ pm.sendRequest غير مدعوم بعد.';
+
+  @override
+  String get langEnglish => 'English';
+
+  @override
+  String get langArabic => 'العربية';
 }

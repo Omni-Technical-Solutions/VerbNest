@@ -1051,6 +1051,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy'**
   String get copy;
+
+  /// No description provided for @wsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get wsTitle;
+
+  /// No description provided for @wsInMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'In memory'**
+  String get wsInMemory;
+
+  /// No description provided for @wsRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get wsRename;
+
+  /// No description provided for @wsRenameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename workspace'**
+  String get wsRenameTitle;
+
+  /// No description provided for @wsImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import…'**
+  String get wsImport;
+
+  /// No description provided for @wsImportSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Import snapshot…'**
+  String get wsImportSnapshot;
+
+  /// No description provided for @wsExportSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Export snapshot…'**
+  String get wsExportSnapshot;
+
+  /// No description provided for @wsExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export…'**
+  String get wsExport;
+
+  /// No description provided for @wsNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New workspace'**
+  String get wsNewTitle;
+
+  /// No description provided for @wsCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get wsCreate;
+
+  /// No description provided for @wsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get wsNew;
+
+  /// No description provided for @wsSnapshotMerged.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot merged: {requests} requests, {environments} environments'**
+  String wsSnapshotMerged(int requests, int environments);
+
+  /// No description provided for @wsSnapshotKept.
+  ///
+  /// In en, this message translates to:
+  /// **', {count} kept as they were ({first})'**
+  String wsSnapshotKept(int count, String first);
+
+  /// No description provided for @settingsTextSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size {percent}%'**
+  String settingsTextSize(int percent);
+
+  /// No description provided for @settingsCodeFontSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Code font size {size}'**
+  String settingsCodeFontSize(int size);
+
+  /// No description provided for @scriptPre.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-request'**
+  String get scriptPre;
+
+  /// No description provided for @scriptPreSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-request •'**
+  String get scriptPreSet;
+
+  /// No description provided for @scriptPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-response'**
+  String get scriptPost;
+
+  /// No description provided for @scriptPostSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-response •'**
+  String get scriptPostSet;
+
+  /// No description provided for @scriptHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'pm.variables, pm.environment, pm.collectionVariables, pm.globals, pm.request, pm.response, pm.test, pm.expect and console are available. Scripts stop after 5 s; pm.sendRequest is not supported yet.'**
+  String get scriptHelp;
+
+  /// No description provided for @langEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get langEnglish;
+
+  /// No description provided for @langArabic.
+  ///
+  /// In en, this message translates to:
+  /// **'العربية'**
+  String get langArabic;
 }
 
 class _AppLocalizationsDelegate

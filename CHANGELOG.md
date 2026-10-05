@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.32.4
+
+- UI strings: the workspaces dialog, settings page and script editor now use ARB (English and Arabic). Seven files remain in `l10n_guard_test.dart`. Arabic texts still need a native review.
+
 ## 0.32.3
 
 - UI strings: the network console, cookie manager and code generation dialog now use ARB (English and Arabic). Arabic texts still need a native review.

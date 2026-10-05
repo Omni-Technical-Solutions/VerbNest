@@ -539,4 +539,79 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get copy => 'Copy';
+
+  @override
+  String get wsTitle => 'Workspaces';
+
+  @override
+  String get wsInMemory => 'In memory';
+
+  @override
+  String get wsRename => 'Rename';
+
+  @override
+  String get wsRenameTitle => 'Rename workspace';
+
+  @override
+  String get wsImport => 'Import…';
+
+  @override
+  String get wsImportSnapshot => 'Import snapshot…';
+
+  @override
+  String get wsExportSnapshot => 'Export snapshot…';
+
+  @override
+  String get wsExport => 'Export…';
+
+  @override
+  String get wsNewTitle => 'New workspace';
+
+  @override
+  String get wsCreate => 'Create';
+
+  @override
+  String get wsNew => 'New';
+
+  @override
+  String wsSnapshotMerged(int requests, int environments) {
+    return 'Snapshot merged: $requests requests, $environments environments';
+  }
+
+  @override
+  String wsSnapshotKept(int count, String first) {
+    return ', $count kept as they were ($first)';
+  }
+
+  @override
+  String settingsTextSize(int percent) {
+    return 'Text size $percent%';
+  }
+
+  @override
+  String settingsCodeFontSize(int size) {
+    return 'Code font size $size';
+  }
+
+  @override
+  String get scriptPre => 'Pre-request';
+
+  @override
+  String get scriptPreSet => 'Pre-request •';
+
+  @override
+  String get scriptPost => 'Post-response';
+
+  @override
+  String get scriptPostSet => 'Post-response •';
+
+  @override
+  String get scriptHelp =>
+      'pm.variables, pm.environment, pm.collectionVariables, pm.globals, pm.request, pm.response, pm.test, pm.expect and console are available. Scripts stop after 5 s; pm.sendRequest is not supported yet.';
+
+  @override
+  String get langEnglish => 'English';
+
+  @override
+  String get langArabic => 'العربية';
 }

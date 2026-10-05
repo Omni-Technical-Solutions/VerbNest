@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:postit_core/postit_core.dart';
 
 import 'synced_field.dart';
+import '../../l10n/l10n.dart';
 
 /// Pre-request and post-response script boxes (FR-SCR-001). Highlights
 /// JavaScript and completes `pm.` members.
@@ -49,15 +50,17 @@ class _ScriptsEditorState extends State<ScriptsEditor> {
                   ButtonSegment(
                     value: false,
                     label: Text(
-                      _scripts.pre.isEmpty ? 'Pre-request' : 'Pre-request •',
+                      _scripts.pre.isEmpty
+                          ? context.l10n.scriptPre
+                          : context.l10n.scriptPreSet,
                     ),
                   ),
                   ButtonSegment(
                     value: true,
                     label: Text(
                       _scripts.post.isEmpty
-                          ? 'Post-response'
-                          : 'Post-response •',
+                          ? context.l10n.scriptPost
+                          : context.l10n.scriptPostSet,
                     ),
                   ),
                 ],
@@ -93,10 +96,7 @@ class _ScriptsEditorState extends State<ScriptsEditor> {
           ),
           const SizedBox(height: 4),
           Text(
-            'pm.variables, pm.environment, pm.collectionVariables, pm.globals, '
-            'pm.request, pm.response, pm.test, pm.expect and console are '
-            'available. Scripts stop after 5 s; pm.sendRequest is not '
-            'supported yet.',
+            context.l10n.scriptHelp,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
