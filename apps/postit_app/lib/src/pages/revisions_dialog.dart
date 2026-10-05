@@ -5,6 +5,7 @@ import 'package:postit_core/postit_core.dart';
 
 import '../state/editor_state.dart';
 import '../state/session.dart';
+import '../../l10n/l10n.dart';
 
 /// Lists the saved versions of a request and restores one (FR-WS-008).
 Future<void> showRevisions(
@@ -19,12 +20,12 @@ Future<void> showRevisions(
   final rev = await showDialog<int>(
     context: context,
     builder: (_) => AlertDialog(
-      title: const Text('Earlier versions'),
+      title: Text(context.l10n.revisionsTitle),
       content: SizedBox(
         width: 420,
         height: 320,
         child: revs.isEmpty
-            ? const Center(child: Text('No earlier versions yet'))
+            ? Center(child: Text(context.l10n.revisionsNone))
             : ListView(
                 children: [
                   for (final r in revs)
@@ -33,7 +34,7 @@ Future<void> showRevisions(
                       dense: true,
                       title: Text(_when(r.savedAt)),
                       subtitle: Text(_summary(repo.revision(requestId, r.rev))),
-                      trailing: const Text('Restore'),
+                      trailing: Text(context.l10n.restore),
                       onTap: () => Navigator.pop(context, r.rev),
                     ),
                 ],
@@ -42,7 +43,7 @@ Future<void> showRevisions(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(context.l10n.close),
         ),
       ],
     ),

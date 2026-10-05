@@ -83,5 +83,63 @@
       }
     }
   },
-  "mockHeaderHint": "Send an X-PostIt-Example header to pick an example by name."
+  "mockHeaderHint": "Send an X-PostIt-Example header to pick an example by name.",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "nameLabel": "Name",
+  "noEnvironment": "No environment",
+  "variablesInEffect": "Variables in effect",
+  "noVariablesDefined": "No variables are defined.",
+  "revisionsTitle": "Earlier versions",
+  "revisionsNone": "No earlier versions yet",
+  "restore": "Restore",
+  "kvChooseFile": "Choose file…",
+  "kvTableEdit": "Table edit",
+  "kvBulkEdit": "Bulk edit",
+  "kvBulkHint": "key: value (one per line, // to disable)",
+  "kvKey": "Key",
+  "kvValue": "Value",
+  "kvSwitchToText": "File (switch to text)",
+  "kvSwitchToFile": "Text (switch to file)",
+  "remove": "Remove",
+  "add": "Add",
+  "asStatusCode": "Status code",
+  "asHeader": "Header",
+  "asJsonPath": "JSON path",
+  "asResponseTime": "Response time (ms)",
+  "asBody": "Body",
+  "asSchema": "JSON schema",
+  "asAdd": "Add assertion",
+  "tokenNeverExpires": "does not expire",
+  "tokenExpired": "expired",
+  "tokenExpiresSeconds": "expires in {n} s",
+  "@tokenExpiresSeconds": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "tokenExpiresMinutes": "expires in {n} min",
+  "@tokenExpiresMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "tokenExpiresHours": "expires in {n} h",
+  "@tokenExpiresHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "tokensTitle": "OAuth 2.0 tokens",
+  "tokensEmpty": "No tokens yet. They are kept in memory until you quit the app.",
+  "tokenNoClientId": "no client id",
+  "tokenHasRefresh": "has refresh token",
+  "tokensDeleteAll": "Delete all"
 }

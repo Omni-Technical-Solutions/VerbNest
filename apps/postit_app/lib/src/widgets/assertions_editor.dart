@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:postit_core/postit_core.dart';
 
-const _targetLabels = {
-  AssertionTarget.status: 'Status code',
-  AssertionTarget.header: 'Header',
-  AssertionTarget.jsonPath: 'JSON path',
-  AssertionTarget.responseTime: 'Response time (ms)',
-  AssertionTarget.body: 'Body',
-  AssertionTarget.schema: 'JSON schema',
-};
+import '../../l10n/l10n.dart';
+
+String _targetLabel(BuildContext context, AssertionTarget t) {
+  final l = context.l10n;
+  return switch (t) {
+    AssertionTarget.status => l.asStatusCode,
+    AssertionTarget.header => l.asHeader,
+    AssertionTarget.jsonPath => l.asJsonPath,
+    AssertionTarget.responseTime => l.asResponseTime,
+    AssertionTarget.body => l.asBody,
+    AssertionTarget.schema => l.asSchema,
+  };
+}
 
 /// Builder for no-code response checks (FR-SCR-006). Results show in the
 /// Tests tab next to `pm.test` results.
@@ -44,7 +49,7 @@ class AssertionsEditor extends StatelessWidget {
               const Assertion(target: AssertionTarget.status, value: '200'),
             ]),
             icon: const Icon(Icons.add),
-            label: const Text('Add assertion'),
+            label: Text(context.l10n.asAdd),
           ),
         ),
       ],
@@ -74,7 +79,10 @@ class AssertionsEditor extends StatelessWidget {
             value: a.target,
             items: [
               for (final t in AssertionTarget.values)
-                DropdownMenuItem(value: t, child: Text(_targetLabels[t]!)),
+                DropdownMenuItem(
+                  value: t,
+                  child: Text(_targetLabel(context, t)),
+                ),
             ],
             onChanged: (t) {
               if (t == null) return;
@@ -136,7 +144,7 @@ class AssertionsEditor extends StatelessWidget {
             ),
           IconButton(
             key: Key('assert-delete-$i'),
-            tooltip: 'Remove',
+            tooltip: context.l10n.remove,
             icon: const Icon(Icons.close, size: 18),
             onPressed: () => onChanged([
               for (var j = 0; j < assertions.length; j++)

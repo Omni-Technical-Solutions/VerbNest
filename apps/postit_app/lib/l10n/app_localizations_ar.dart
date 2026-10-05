@@ -178,4 +178,122 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get mockHeaderHint =>
       'أرسل الترويسة X-PostIt-Example لاختيار مثال بالاسم.';
+
+  @override
+  String get cancel => 'إلغاء';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String get nameLabel => 'الاسم';
+
+  @override
+  String get noEnvironment => 'بلا بيئة';
+
+  @override
+  String get variablesInEffect => 'المتغيرات السارية';
+
+  @override
+  String get noVariablesDefined => 'لا توجد متغيرات معرّفة.';
+
+  @override
+  String get revisionsTitle => 'الإصدارات السابقة';
+
+  @override
+  String get revisionsNone => 'لا توجد إصدارات سابقة بعد';
+
+  @override
+  String get restore => 'استعادة';
+
+  @override
+  String get kvChooseFile => 'اختر ملفًا…';
+
+  @override
+  String get kvTableEdit => 'تحرير كجدول';
+
+  @override
+  String get kvBulkEdit => 'تحرير نصي';
+
+  @override
+  String get kvBulkHint => 'مفتاح: قيمة (واحد في كل سطر، // للتعطيل)';
+
+  @override
+  String get kvKey => 'المفتاح';
+
+  @override
+  String get kvValue => 'القيمة';
+
+  @override
+  String get kvSwitchToText => 'ملف (التبديل إلى نص)';
+
+  @override
+  String get kvSwitchToFile => 'نص (التبديل إلى ملف)';
+
+  @override
+  String get remove => 'إزالة';
+
+  @override
+  String get add => 'إضافة';
+
+  @override
+  String get asStatusCode => 'رمز الحالة';
+
+  @override
+  String get asHeader => 'ترويسة';
+
+  @override
+  String get asJsonPath => 'مسار JSON';
+
+  @override
+  String get asResponseTime => 'زمن الاستجابة (مللي ثانية)';
+
+  @override
+  String get asBody => 'المحتوى';
+
+  @override
+  String get asSchema => 'مخطط JSON';
+
+  @override
+  String get asAdd => 'إضافة تحقق';
+
+  @override
+  String get tokenNeverExpires => 'لا تنتهي صلاحيته';
+
+  @override
+  String get tokenExpired => 'منتهي الصلاحية';
+
+  @override
+  String tokenExpiresSeconds(int n) {
+    return 'تنتهي خلال $n ث';
+  }
+
+  @override
+  String tokenExpiresMinutes(int n) {
+    return 'تنتهي خلال $n د';
+  }
+
+  @override
+  String tokenExpiresHours(int n) {
+    return 'تنتهي خلال $n س';
+  }
+
+  @override
+  String get tokensTitle => 'رموز OAuth 2.0';
+
+  @override
+  String get tokensEmpty =>
+      'لا توجد رموز بعد. تُحفظ في الذاكرة حتى تغلق التطبيق.';
+
+  @override
+  String get tokenNoClientId => 'بلا معرّف عميل';
+
+  @override
+  String get tokenHasRefresh => 'لديه رمز تحديث';
+
+  @override
+  String get tokensDeleteAll => 'حذف الكل';
 }

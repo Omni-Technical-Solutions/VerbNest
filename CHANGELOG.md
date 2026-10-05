@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.32.1
+
+- UI strings: name and confirm dialogs, the environment picker, version history, the key-value table, the assertions builder and the OAuth token manager now use ARB (English and Arabic). Arabic texts still need a native review. 16 files still hold hard-coded text (see `l10n_guard_test.dart`).
+
 ## 0.32.0
 
 - Scripts in the CLI: `postit run` now runs pre-request and post-response scripts, tests (`pm.test`, `pm.expect`), `pm.execution.setNextRequest` and `skipRequest`. Scripts run in `node` (change with `--js-runtime`, switch off with `--no-scripts`). Variables a script sets are kept for the run and never written to the workspace. Without a runtime, requests with scripts still run and are listed on stderr as not scripted. See ADR-010.

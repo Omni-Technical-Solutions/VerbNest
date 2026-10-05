@@ -4,6 +4,7 @@ import 'package:postit_core/postit_core.dart';
 
 import '../state/session.dart';
 import '../state/variables.dart';
+import '../../l10n/l10n.dart';
 
 /// Environment dropdown plus a quick-look of the variables in effect
 /// (FR-VAR-004).
@@ -25,7 +26,10 @@ class EnvSelector extends ConsumerWidget {
           value: envs.any((e) => e.id == active) ? active : null,
           underline: const SizedBox.shrink(),
           items: [
-            const DropdownMenuItem(value: null, child: Text('No environment')),
+            DropdownMenuItem(
+              value: null,
+              child: Text(context.l10n.noEnvironment),
+            ),
             for (final e in envs)
               DropdownMenuItem(value: e.id, child: Text(e.name)),
           ],
@@ -33,7 +37,7 @@ class EnvSelector extends ConsumerWidget {
         ),
         IconButton(
           key: const Key('quick-look'),
-          tooltip: 'Variables in effect',
+          tooltip: context.l10n.variablesInEffect,
           icon: const Icon(Icons.visibility_outlined),
           onPressed: () => showDialog<void>(
             context: context,
@@ -60,11 +64,11 @@ class _QuickLook extends ConsumerWidget {
     );
     final vars = scopes.visible();
     return AlertDialog(
-      title: const Text('Variables in effect'),
+      title: Text(context.l10n.variablesInEffect),
       content: SizedBox(
         width: 420,
         child: vars.isEmpty
-            ? const Text('No variables are defined.')
+            ? Text(context.l10n.noVariablesDefined)
             : ListView(
                 shrinkWrap: true,
                 children: [
@@ -85,7 +89,7 @@ class _QuickLook extends ConsumerWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(context.l10n.close),
         ),
       ],
     );

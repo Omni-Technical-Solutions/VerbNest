@@ -176,4 +176,122 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mockHeaderHint =>
       'Send an X-PostIt-Example header to pick an example by name.';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get nameLabel => 'Name';
+
+  @override
+  String get noEnvironment => 'No environment';
+
+  @override
+  String get variablesInEffect => 'Variables in effect';
+
+  @override
+  String get noVariablesDefined => 'No variables are defined.';
+
+  @override
+  String get revisionsTitle => 'Earlier versions';
+
+  @override
+  String get revisionsNone => 'No earlier versions yet';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get kvChooseFile => 'Choose file…';
+
+  @override
+  String get kvTableEdit => 'Table edit';
+
+  @override
+  String get kvBulkEdit => 'Bulk edit';
+
+  @override
+  String get kvBulkHint => 'key: value (one per line, // to disable)';
+
+  @override
+  String get kvKey => 'Key';
+
+  @override
+  String get kvValue => 'Value';
+
+  @override
+  String get kvSwitchToText => 'File (switch to text)';
+
+  @override
+  String get kvSwitchToFile => 'Text (switch to file)';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get asStatusCode => 'Status code';
+
+  @override
+  String get asHeader => 'Header';
+
+  @override
+  String get asJsonPath => 'JSON path';
+
+  @override
+  String get asResponseTime => 'Response time (ms)';
+
+  @override
+  String get asBody => 'Body';
+
+  @override
+  String get asSchema => 'JSON schema';
+
+  @override
+  String get asAdd => 'Add assertion';
+
+  @override
+  String get tokenNeverExpires => 'does not expire';
+
+  @override
+  String get tokenExpired => 'expired';
+
+  @override
+  String tokenExpiresSeconds(int n) {
+    return 'expires in $n s';
+  }
+
+  @override
+  String tokenExpiresMinutes(int n) {
+    return 'expires in $n min';
+  }
+
+  @override
+  String tokenExpiresHours(int n) {
+    return 'expires in $n h';
+  }
+
+  @override
+  String get tokensTitle => 'OAuth 2.0 tokens';
+
+  @override
+  String get tokensEmpty =>
+      'No tokens yet. They are kept in memory until you quit the app.';
+
+  @override
+  String get tokenNoClientId => 'no client id';
+
+  @override
+  String get tokenHasRefresh => 'has refresh token';
+
+  @override
+  String get tokensDeleteAll => 'Delete all';
 }

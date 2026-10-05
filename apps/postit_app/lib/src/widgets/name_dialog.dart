@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 /// Asks for a (non-empty) name. Returns null when cancelled.
 Future<String?> askName(
   BuildContext context, {
   required String title,
   String initial = '',
-  String action = 'Save',
+  String? action,
 }) {
   return showDialog<String>(
     context: context,
@@ -22,7 +24,7 @@ class _NameDialog extends StatefulWidget {
 
   final String title;
   final String initial;
-  final String action;
+  final String? action;
 
   @override
   State<_NameDialog> createState() => _NameDialogState();
@@ -55,14 +57,17 @@ class _NameDialogState extends State<_NameDialog> {
         controller: _controller,
         autofocus: true,
         onSubmitted: (_) => _submit(),
-        decoration: const InputDecoration(labelText: 'Name'),
+        decoration: InputDecoration(labelText: context.l10n.nameLabel),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
-        FilledButton(onPressed: _submit, child: Text(widget.action)),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(widget.action ?? context.l10n.save),
+        ),
       ],
     );
   }
@@ -72,7 +77,7 @@ Future<bool> confirm(
   BuildContext context, {
   required String title,
   required String message,
-  String action = 'Delete',
+  String? action,
 }) async {
   final result = await showDialog<bool>(
     context: context,
@@ -82,11 +87,11 @@ Future<bool> confirm(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, true),
-          child: Text(action),
+          child: Text(action ?? context.l10n.delete),
         ),
       ],
     ),

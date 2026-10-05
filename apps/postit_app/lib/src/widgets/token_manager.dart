@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/editor_state.dart';
+import '../../l10n/l10n.dart';
 
-String _when(DateTime? t) {
-  if (t == null) return 'does not expire';
+String _when(BuildContext context, DateTime? t) {
+  final l = context.l10n;
+  if (t == null) return l.tokenNeverExpires;
   final left = t.difference(DateTime.now());
-  if (left.isNegative) return 'expired';
-  if (left.inMinutes < 1) return 'expires in ${left.inSeconds} s';
-  if (left.inHours < 1) return 'expires in ${left.inMinutes} min';
-  return 'expires in ${left.inHours} h';
+  if (left.isNegative) return l.tokenExpired;
+  if (left.inMinutes < 1) return l.tokenExpiresSeconds(left.inSeconds);
+  if (left.inHours < 1) return l.tokenExpiresMinutes(left.inMinutes);
+  return l.tokenExpiresHours(left.inHours);
 }
 
 /// Lists the OAuth 2.0 tokens held for this app session and lets the user
@@ -30,14 +32,11 @@ class _TokenManagerState extends ConsumerState<_TokenManager> {
     final cache = ref.read(oauthCacheProvider);
     final tokens = cache.entries;
     return AlertDialog(
-      title: const Text('OAuth 2.0 tokens'),
+      title: Text(context.l10n.tokensTitle),
       content: SizedBox(
         width: 460,
         child: tokens.isEmpty
-            ? const Text(
-                'No tokens yet. They are kept in memory until you quit the app.',
-                key: Key('tokens-empty'),
-              )
+            ? Text(context.l10n.tokensEmpty, key: const Key('tokens-empty'))
             : ListView(
                 shrinkWrap: true,
                 children: [
@@ -47,16 +46,16 @@ class _TokenManagerState extends ConsumerState<_TokenManager> {
                       dense: true,
                       title: Text(
                         '${t.auth.grant.wire} · '
-                        '${t.auth.clientId.isEmpty ? 'no client id' : t.auth.clientId}',
+                        '${t.auth.clientId.isEmpty ? context.l10n.tokenNoClientId : t.auth.clientId}',
                       ),
                       subtitle: Text(
-                        '${_when(t.token.expiresAt)}'
-                        '${t.token.refreshToken != null ? ' · has refresh token' : ''}'
+                        '${_when(context, t.token.expiresAt)}'
+                        '${t.token.refreshToken != null ? ' · ${context.l10n.tokenHasRefresh}' : ''}'
                         '\n${t.auth.tokenUrl.isEmpty ? t.auth.authUrl : t.auth.tokenUrl}',
                       ),
                       isThreeLine: true,
                       trailing: IconButton(
-                        tooltip: 'Delete',
+                        tooltip: context.l10n.delete,
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () => setState(() => cache.remove(t.key)),
                       ),
@@ -69,11 +68,11 @@ class _TokenManagerState extends ConsumerState<_TokenManager> {
           TextButton(
             key: const Key('tokens-clear'),
             onPressed: () => setState(cache.clear),
-            child: const Text('Delete all'),
+            child: Text(context.l10n.tokensDeleteAll),
           ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(context.l10n.close),
         ),
       ],
     );

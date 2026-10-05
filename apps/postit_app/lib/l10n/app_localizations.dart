@@ -397,6 +397,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send an X-PostIt-Example header to pick an example by name.'**
   String get mockHeaderHint;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nameLabel;
+
+  /// No description provided for @noEnvironment.
+  ///
+  /// In en, this message translates to:
+  /// **'No environment'**
+  String get noEnvironment;
+
+  /// No description provided for @variablesInEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'Variables in effect'**
+  String get variablesInEffect;
+
+  /// No description provided for @noVariablesDefined.
+  ///
+  /// In en, this message translates to:
+  /// **'No variables are defined.'**
+  String get noVariablesDefined;
+
+  /// No description provided for @revisionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier versions'**
+  String get revisionsTitle;
+
+  /// No description provided for @revisionsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No earlier versions yet'**
+  String get revisionsNone;
+
+  /// No description provided for @restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restore;
+
+  /// No description provided for @kvChooseFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose file…'**
+  String get kvChooseFile;
+
+  /// No description provided for @kvTableEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Table edit'**
+  String get kvTableEdit;
+
+  /// No description provided for @kvBulkEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk edit'**
+  String get kvBulkEdit;
+
+  /// No description provided for @kvBulkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'key: value (one per line, // to disable)'**
+  String get kvBulkHint;
+
+  /// No description provided for @kvKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Key'**
+  String get kvKey;
+
+  /// No description provided for @kvValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get kvValue;
+
+  /// No description provided for @kvSwitchToText.
+  ///
+  /// In en, this message translates to:
+  /// **'File (switch to text)'**
+  String get kvSwitchToText;
+
+  /// No description provided for @kvSwitchToFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Text (switch to file)'**
+  String get kvSwitchToFile;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @asStatusCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Status code'**
+  String get asStatusCode;
+
+  /// No description provided for @asHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Header'**
+  String get asHeader;
+
+  /// No description provided for @asJsonPath.
+  ///
+  /// In en, this message translates to:
+  /// **'JSON path'**
+  String get asJsonPath;
+
+  /// No description provided for @asResponseTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Response time (ms)'**
+  String get asResponseTime;
+
+  /// No description provided for @asBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Body'**
+  String get asBody;
+
+  /// No description provided for @asSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'JSON schema'**
+  String get asSchema;
+
+  /// No description provided for @asAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add assertion'**
+  String get asAdd;
+
+  /// No description provided for @tokenNeverExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'does not expire'**
+  String get tokenNeverExpires;
+
+  /// No description provided for @tokenExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'expired'**
+  String get tokenExpired;
+
+  /// No description provided for @tokenExpiresSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'expires in {n} s'**
+  String tokenExpiresSeconds(int n);
+
+  /// No description provided for @tokenExpiresMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'expires in {n} min'**
+  String tokenExpiresMinutes(int n);
+
+  /// No description provided for @tokenExpiresHours.
+  ///
+  /// In en, this message translates to:
+  /// **'expires in {n} h'**
+  String tokenExpiresHours(int n);
+
+  /// No description provided for @tokensTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth 2.0 tokens'**
+  String get tokensTitle;
+
+  /// No description provided for @tokensEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No tokens yet. They are kept in memory until you quit the app.'**
+  String get tokensEmpty;
+
+  /// No description provided for @tokenNoClientId.
+  ///
+  /// In en, this message translates to:
+  /// **'no client id'**
+  String get tokenNoClientId;
+
+  /// No description provided for @tokenHasRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'has refresh token'**
+  String get tokenHasRefresh;
+
+  /// No description provided for @tokensDeleteAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all'**
+  String get tokensDeleteAll;
 }
 
 class _AppLocalizationsDelegate

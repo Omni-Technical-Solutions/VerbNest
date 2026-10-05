@@ -3,6 +3,7 @@ import 'package:postit_core/postit_core.dart';
 
 import '../state/var_text.dart';
 import 'synced_field.dart';
+import '../../l10n/l10n.dart';
 
 /// Editable key/value table used for params, headers and form bodies.
 class KeyValueEditor extends StatefulWidget {
@@ -64,7 +65,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
     final value = rows[i].value;
     final slash = value.indexOf('/');
     final label = value.isEmpty
-        ? 'Choose file…'
+        ? context.l10n.kvChooseFile
         : (slash < 0 ? value : value.substring(slash + 1));
     return Align(
       alignment: AlignmentDirectional.centerStart,
@@ -88,7 +89,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
         child: TextButton(
           key: Key('$idPrefix-table'),
           onPressed: _toggleBulk,
-          child: const Text('Table edit'),
+          child: Text(context.l10n.kvTableEdit),
         ),
       ),
       TextField(
@@ -97,9 +98,9 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
         minLines: 6,
         maxLines: null,
         style: const TextStyle(fontFamily: 'monospace'),
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           isDense: true,
-          hintText: 'key: value (one per line, // to disable)',
+          hintText: context.l10n.kvBulkHint,
         ),
         onChanged: (t) => onChanged(parseBulk(t)),
       ),
@@ -124,7 +125,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
             child: TextButton(
               key: Key('$idPrefix-bulk-toggle'),
               onPressed: _toggleBulk,
-              child: const Text('Bulk edit'),
+              child: Text(context.l10n.kvBulkEdit),
             ),
           ),
         for (var i = 0; i < rows.length; i++)
@@ -142,7 +143,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
                   child: SyncedTextField(
                     key: ValueKey('$idPrefix-key-$i'),
                     value: rows[i].key,
-                    hint: 'Key',
+                    hint: context.l10n.kvKey,
                     variables: true,
                     suggestions: widget.keySuggestions,
                     onChanged: (v) => _set(i, rows[i].copyWith(key: v)),
@@ -155,7 +156,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
                       : SyncedTextField(
                           key: ValueKey('$idPrefix-value-$i'),
                           value: rows[i].value,
-                          hint: 'Value',
+                          hint: context.l10n.kvValue,
                           variables: true,
                           suggestions:
                               widget.valueSuggestions[rows[i].key
@@ -168,8 +169,8 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
                   IconButton(
                     key: ValueKey('$idPrefix-type-$i'),
                     tooltip: rows[i].type == KeyValueType.file
-                        ? 'File (switch to text)'
-                        : 'Text (switch to file)',
+                        ? context.l10n.kvSwitchToText
+                        : context.l10n.kvSwitchToFile,
                     icon: Icon(
                       rows[i].type == KeyValueType.file
                           ? Icons.attach_file
@@ -187,7 +188,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
                     ),
                   ),
                 IconButton(
-                  tooltip: 'Remove',
+                  tooltip: context.l10n.remove,
                   icon: const Icon(Icons.close, size: 18),
                   onPressed: () => onChanged([...rows]..removeAt(i)),
                 ),
@@ -199,7 +200,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
           child: TextButton.icon(
             key: Key('$idPrefix-add'),
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add'),
+            label: Text(context.l10n.add),
             onPressed: () => onChanged([...rows, const KeyValue(key: '')]),
           ),
         ),
