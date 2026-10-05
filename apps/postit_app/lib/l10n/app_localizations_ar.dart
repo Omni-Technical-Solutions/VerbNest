@@ -1338,4 +1338,11 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get gqlPersistedHint =>
       'أرسل التجزئة SHA-256 أولاً، ولا يُرسل الاستعلام الكامل إلا إذا لم يعرفه الخادم';
+
+  @override
+  String get rvPdfTooLarge =>
+      'ملف PDF هذا كبير جدًا للمعاينة. استخدم الخام أو احفظه.';
+
+  @override
+  String get rvPdfError => 'تعذّر فتح ملف PDF هذا.';
 }

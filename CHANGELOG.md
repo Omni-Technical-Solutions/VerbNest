@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.41.0
+
+- Response: PDF preview. `application/pdf` responses get a "Preview" segment that renders the pages with PDFium (`pdfrx`). PDFs above 20 MB, and unreadable ones, show a message. ADR-013.
+
 ## 0.40.0
 
 - GraphQL: persisted queries (Apollo APQ). Turn on the "Persisted query" chip and the request sends only `extensions.persistedQuery.sha256Hash` (in the body, or in the URL for GET). If the server answers `PersistedQueryNotFound`, the full query goes out once. Curl and code export include both the query and the hash.

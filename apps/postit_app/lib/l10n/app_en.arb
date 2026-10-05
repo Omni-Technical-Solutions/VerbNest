@@ -799,5 +799,7 @@
   "rtHex": "Hex",
   "rtHexHint": "Bytes in hex, e.g. 0a ff 10",
   "gqlPersisted": "Persisted query",
-  "gqlPersistedHint": "Send a SHA-256 hash first; the full query is sent only if the server does not know it"
+  "gqlPersistedHint": "Send a SHA-256 hash first; the full query is sent only if the server does not know it",
+  "rvPdfTooLarge": "This PDF is too large to preview. Use Raw or Save.",
+  "rvPdfError": "This PDF could not be opened."
 }

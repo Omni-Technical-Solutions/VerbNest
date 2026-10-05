@@ -1337,4 +1337,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get gqlPersistedHint =>
       'Send a SHA-256 hash first; the full query is sent only if the server does not know it';
+
+  @override
+  String get rvPdfTooLarge =>
+      'This PDF is too large to preview. Use Raw or Save.';
+
+  @override
+  String get rvPdfError => 'This PDF could not be opened.';
 }

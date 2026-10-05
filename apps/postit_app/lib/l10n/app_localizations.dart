@@ -2509,6 +2509,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send a SHA-256 hash first; the full query is sent only if the server does not know it'**
   String get gqlPersistedHint;
+
+  /// No description provided for @rvPdfTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This PDF is too large to preview. Use Raw or Save.'**
+  String get rvPdfTooLarge;
+
+  /// No description provided for @rvPdfError.
+  ///
+  /// In en, this message translates to:
+  /// **'This PDF could not be opened.'**
+  String get rvPdfError;
 }
 
 class _AppLocalizationsDelegate

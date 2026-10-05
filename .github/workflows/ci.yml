@@ -60,11 +60,11 @@ jobs:
           - name: linux
             os: ubuntu-latest
             build: flutter build linux --release
-            test: ../../scripts/ci_integration.sh linux postit_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart
+            test: ../../scripts/ci_integration.sh linux postit_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart integration_test/pdf_test.dart
           - name: windows
             os: windows-latest
             build: flutter build windows --release
-            test: ../../scripts/ci_integration.sh windows postit_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart
+            test: ../../scripts/ci_integration.sh windows postit_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart integration_test/pdf_test.dart
           - name: macos
             os: macos-latest
             build: flutter build macos --release
@@ -119,7 +119,7 @@ jobs:
       - name: iOS integration tests
         if: matrix.name == 'ios'
         continue-on-error: true
-        run: ../../scripts/ci_integration.sh "$SIM_UDID" - integration_test/platform_test.dart integration_test/vault_test.dart
+        run: ../../scripts/ci_integration.sh "$SIM_UDID" - integration_test/platform_test.dart integration_test/vault_test.dart integration_test/pdf_test.dart
         working-directory: apps/postit_app
       - name: Enable KVM
         if: matrix.name == 'android'
@@ -136,7 +136,7 @@ jobs:
           arch: x86_64
           disk-size: 4096M
           working-directory: apps/postit_app
-          script: ../../scripts/ci_integration.sh emulator-5554 - integration_test/platform_test.dart integration_test/vault_test.dart
+          script: ../../scripts/ci_integration.sh emulator-5554 - integration_test/platform_test.dart integration_test/vault_test.dart integration_test/pdf_test.dart
       - uses: actions/upload-artifact@v4
         if: matrix.name == 'android'
         with:

@@ -10,6 +10,7 @@ import '../state/cookies.dart';
 import '../state/editor_state.dart';
 import 'code_view.dart';
 import 'html_preview.dart';
+import 'pdf_preview.dart';
 import '../../l10n/l10n.dart';
 
 String formatBytes(int n) {
@@ -34,6 +35,9 @@ String prettyBody(HttpResponseRecord r) {
 
 bool isHtmlResponse(HttpResponseRecord r) =>
     (r.header('content-type') ?? '').toLowerCase().contains('text/html');
+
+bool isPdfResponse(HttpResponseRecord r) =>
+    (r.header('content-type') ?? '').toLowerCase().contains('application/pdf');
 
 bool isImageResponse(HttpResponseRecord r) {
   final t = (r.header('content-type') ?? '').toLowerCase();
@@ -445,7 +449,9 @@ class _ResponseViewState extends State<ResponseView> {
     final isImage = isImageResponse(r);
     final isHtml = isHtmlResponse(r);
     final showImage = isImage && _preview;
+    final isPdf = isPdfResponse(r);
     final showHtml = isHtml && _preview;
+    final showPdf = isPdf && _preview;
     final kind = bodyKindOf(r.header('content-type'));
     final filtering =
         !_hex && kind != BodyKind.other && _filter.trim().isNotEmpty;
@@ -472,14 +478,14 @@ class _ResponseViewState extends State<ResponseView> {
                   ),
                   ButtonSegment(value: 'raw', label: Text(context.l10n.rvRaw)),
                   ButtonSegment(value: 'hex', label: Text(context.l10n.rvHex)),
-                  if (isImage || isHtml)
+                  if (isImage || isHtml || isPdf)
                     ButtonSegment(
                       value: 'preview',
                       label: Text(context.l10n.rvPreview),
                     ),
                 ],
                 selected: {
-                  showImage || showHtml
+                  showImage || showHtml || showPdf
                       ? 'preview'
                       : _hex
                       ? 'hex'
@@ -519,7 +525,11 @@ class _ResponseViewState extends State<ResponseView> {
             ],
           ),
         ),
-        if (kind != BodyKind.other && !_hex && !showImage && !showHtml)
+        if (kind != BodyKind.other &&
+            !_hex &&
+            !showImage &&
+            !showHtml &&
+            !showPdf)
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
             child: TextField(
@@ -536,7 +546,9 @@ class _ResponseViewState extends State<ResponseView> {
             ),
           ),
         Expanded(
-          child: showHtml
+          child: showPdf
+              ? PdfPreview(bytes: r.body)
+              : showHtml
               ? HtmlPreview(html: r.bodyText, size: r.body.length)
               : showImage
               ? Center(
