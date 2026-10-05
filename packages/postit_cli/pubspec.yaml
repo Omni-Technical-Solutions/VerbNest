@@ -1,6 +1,6 @@
 name: postit_cli
 description: Command-line runner for PostIt workspaces. No Flutter code.
-version: 0.32.7
+version: 0.32.8
 publish_to: none
 resolution: workspace
 

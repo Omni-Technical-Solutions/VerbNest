@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 const _pending = <String>{
   'lib/src/widgets/request_editor.dart',
   'lib/src/widgets/response_view.dart',
-  'lib/src/widgets/collections_sidebar.dart',
 };
 
 final _literal = RegExp(r"(Text|SelectableText)\(\s*'[^'$]*[A-Za-z]");

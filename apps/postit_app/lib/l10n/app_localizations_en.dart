@@ -895,4 +895,117 @@ class AppLocalizationsEn extends AppLocalizations {
   String gqlImplements(String interfaces) {
     return 'implements $interfaces';
   }
+
+  @override
+  String get sbFilter => 'Filter';
+
+  @override
+  String get sbWorkspaces => 'Workspaces';
+
+  @override
+  String get sbShowAll => 'Show all';
+
+  @override
+  String get sbShowFav => 'Show favourites only';
+
+  @override
+  String get sbSearch => 'Search workspace';
+
+  @override
+  String get sbImport => 'Import';
+
+  @override
+  String get sbNewCollection => 'New collection';
+
+  @override
+  String get sbNoFav => 'No favourites yet.\nStar a request to pin it here.';
+
+  @override
+  String sbNoMatch(String filter) {
+    return 'Nothing matches \"$filter\"';
+  }
+
+  @override
+  String get sbNoCollections =>
+      'No collections yet.\nCreate one to get started.';
+
+  @override
+  String get sbActions => 'Actions';
+
+  @override
+  String get sbNewRequest => 'New request';
+
+  @override
+  String get sbNewFolder => 'New folder';
+
+  @override
+  String get sbRename => 'Rename';
+
+  @override
+  String get sbRun => 'Run…';
+
+  @override
+  String get sbSettings => 'Settings';
+
+  @override
+  String get sbDuplicate => 'Duplicate';
+
+  @override
+  String get sbMoveUp => 'Move up';
+
+  @override
+  String get sbMoveDown => 'Move down';
+
+  @override
+  String get sbVersions => 'Earlier versions…';
+
+  @override
+  String get sbCopyCurl => 'Copy as cURL';
+
+  @override
+  String get sbFavRemove => 'Remove from favourites';
+
+  @override
+  String get sbFavAdd => 'Add to favourites';
+
+  @override
+  String get sbGenerateCode => 'Generate code…';
+
+  @override
+  String get sbCopyPostman => 'Copy as Postman JSON';
+
+  @override
+  String get sbDelete => 'Delete';
+
+  @override
+  String get sbCreate => 'Create';
+
+  @override
+  String get sbCurlCopied => 'cURL command copied';
+
+  @override
+  String get sbPostmanCopied => 'Postman collection copied';
+
+  @override
+  String sbDeleteTitle(String name) {
+    return 'Delete \"$name\"?';
+  }
+
+  @override
+  String get sbDeleteFolderMsg => 'This also deletes everything inside it.';
+
+  @override
+  String get sbDeleteMsg => 'This cannot be undone.';
+
+  @override
+  String sbImportNotes(int count, String first) {
+    return ' ($count notes: $first)';
+  }
+
+  @override
+  String get sbImportHint =>
+      'Paste a cURL command, a Postman collection or environment, an OpenAPI/Swagger file (JSON or YAML) or a HAR capture';
+
+  @override
+  String get sbCancel => 'Cancel';
 }

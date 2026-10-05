@@ -1699,6 +1699,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'implements {interfaces}'**
   String gqlImplements(String interfaces);
+
+  /// No description provided for @sbFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get sbFilter;
+
+  /// No description provided for @sbWorkspaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get sbWorkspaces;
+
+  /// No description provided for @sbShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get sbShowAll;
+
+  /// No description provided for @sbShowFav.
+  ///
+  /// In en, this message translates to:
+  /// **'Show favourites only'**
+  String get sbShowFav;
+
+  /// No description provided for @sbSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search workspace'**
+  String get sbSearch;
+
+  /// No description provided for @sbImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get sbImport;
+
+  /// No description provided for @sbNewCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'New collection'**
+  String get sbNewCollection;
+
+  /// No description provided for @sbNoFav.
+  ///
+  /// In en, this message translates to:
+  /// **'No favourites yet.\nStar a request to pin it here.'**
+  String get sbNoFav;
+
+  /// No description provided for @sbNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches \"{filter}\"'**
+  String sbNoMatch(String filter);
+
+  /// No description provided for @sbNoCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'No collections yet.\nCreate one to get started.'**
+  String get sbNoCollections;
+
+  /// No description provided for @sbActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions'**
+  String get sbActions;
+
+  /// No description provided for @sbNewRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'New request'**
+  String get sbNewRequest;
+
+  /// No description provided for @sbNewFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get sbNewFolder;
+
+  /// No description provided for @sbRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get sbRename;
+
+  /// No description provided for @sbRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run…'**
+  String get sbRun;
+
+  /// No description provided for @sbSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get sbSettings;
+
+  /// No description provided for @sbDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get sbDuplicate;
+
+  /// No description provided for @sbMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get sbMoveUp;
+
+  /// No description provided for @sbMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get sbMoveDown;
+
+  /// No description provided for @sbVersions.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier versions…'**
+  String get sbVersions;
+
+  /// No description provided for @sbCopyCurl.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as cURL'**
+  String get sbCopyCurl;
+
+  /// No description provided for @sbFavRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favourites'**
+  String get sbFavRemove;
+
+  /// No description provided for @sbFavAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favourites'**
+  String get sbFavAdd;
+
+  /// No description provided for @sbGenerateCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate code…'**
+  String get sbGenerateCode;
+
+  /// No description provided for @sbCopyPostman.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as Postman JSON'**
+  String get sbCopyPostman;
+
+  /// No description provided for @sbDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get sbDelete;
+
+  /// No description provided for @sbCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get sbCreate;
+
+  /// No description provided for @sbCurlCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'cURL command copied'**
+  String get sbCurlCopied;
+
+  /// No description provided for @sbPostmanCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Postman collection copied'**
+  String get sbPostmanCopied;
+
+  /// No description provided for @sbDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"?'**
+  String sbDeleteTitle(String name);
+
+  /// No description provided for @sbDeleteFolderMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'This also deletes everything inside it.'**
+  String get sbDeleteFolderMsg;
+
+  /// No description provided for @sbDeleteMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get sbDeleteMsg;
+
+  /// No description provided for @sbImportNotes.
+  ///
+  /// In en, this message translates to:
+  /// **' ({count} notes: {first})'**
+  String sbImportNotes(int count, String first);
+
+  /// No description provided for @sbImportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a cURL command, a Postman collection or environment, an OpenAPI/Swagger file (JSON or YAML) or a HAR capture'**
+  String get sbImportHint;
+
+  /// No description provided for @sbCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get sbCancel;
 }
 
 class _AppLocalizationsDelegate

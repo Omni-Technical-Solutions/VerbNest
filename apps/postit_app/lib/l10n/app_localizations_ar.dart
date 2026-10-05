@@ -896,4 +896,116 @@ class AppLocalizationsAr extends AppLocalizations {
   String gqlImplements(String interfaces) {
     return 'ينفّذ $interfaces';
   }
+
+  @override
+  String get sbFilter => 'تصفية';
+
+  @override
+  String get sbWorkspaces => 'مساحات العمل';
+
+  @override
+  String get sbShowAll => 'عرض الكل';
+
+  @override
+  String get sbShowFav => 'عرض المفضلة فقط';
+
+  @override
+  String get sbSearch => 'البحث في مساحة العمل';
+
+  @override
+  String get sbImport => 'استيراد';
+
+  @override
+  String get sbNewCollection => 'مجموعة جديدة';
+
+  @override
+  String get sbNoFav => 'لا توجد مفضلة بعد.\nضع نجمة على طلب لتثبيته هنا.';
+
+  @override
+  String sbNoMatch(String filter) {
+    return 'لا شيء يطابق \"$filter\"';
+  }
+
+  @override
+  String get sbNoCollections => 'لا توجد مجموعات بعد.\nأنشئ واحدة للبدء.';
+
+  @override
+  String get sbActions => 'الإجراءات';
+
+  @override
+  String get sbNewRequest => 'طلب جديد';
+
+  @override
+  String get sbNewFolder => 'مجلد جديد';
+
+  @override
+  String get sbRename => 'إعادة تسمية';
+
+  @override
+  String get sbRun => 'تشغيل…';
+
+  @override
+  String get sbSettings => 'الإعدادات';
+
+  @override
+  String get sbDuplicate => 'تكرار';
+
+  @override
+  String get sbMoveUp => 'نقل لأعلى';
+
+  @override
+  String get sbMoveDown => 'نقل لأسفل';
+
+  @override
+  String get sbVersions => 'الإصدارات السابقة…';
+
+  @override
+  String get sbCopyCurl => 'نسخ كـ cURL';
+
+  @override
+  String get sbFavRemove => 'إزالة من المفضلة';
+
+  @override
+  String get sbFavAdd => 'إضافة إلى المفضلة';
+
+  @override
+  String get sbGenerateCode => 'توليد الشيفرة…';
+
+  @override
+  String get sbCopyPostman => 'نسخ كـ Postman JSON';
+
+  @override
+  String get sbDelete => 'حذف';
+
+  @override
+  String get sbCreate => 'إنشاء';
+
+  @override
+  String get sbCurlCopied => 'تم نسخ أمر cURL';
+
+  @override
+  String get sbPostmanCopied => 'تم نسخ مجموعة Postman';
+
+  @override
+  String sbDeleteTitle(String name) {
+    return 'حذف \"$name\"؟';
+  }
+
+  @override
+  String get sbDeleteFolderMsg => 'سيؤدي هذا أيضاً إلى حذف كل ما بداخله.';
+
+  @override
+  String get sbDeleteMsg => 'لا يمكن التراجع عن هذا.';
+
+  @override
+  String sbImportNotes(int count, String first) {
+    return ' ($count ملاحظات: $first)';
+  }
+
+  @override
+  String get sbImportHint =>
+      'الصق أمر cURL أو مجموعة أو بيئة Postman أو ملف OpenAPI/Swagger (JSON أو YAML) أو تسجيل HAR';
+
+  @override
+  String get sbCancel => 'إلغاء';
 }

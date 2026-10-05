@@ -1,6 +1,6 @@
 name: postit_import
 description: cURL, Postman, OpenAPI and HAR import/export, code generation for PostIt.
-version: 0.32.7
+version: 0.32.8
 publish_to: none
 resolution: workspace
 

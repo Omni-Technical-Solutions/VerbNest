@@ -540,5 +540,64 @@
         "type": "String"
       }
     }
-  }
+  },
+  "sbFilter": "Filter",
+  "sbWorkspaces": "Workspaces",
+  "sbShowAll": "Show all",
+  "sbShowFav": "Show favourites only",
+  "sbSearch": "Search workspace",
+  "sbImport": "Import",
+  "sbNewCollection": "New collection",
+  "sbNoFav": "No favourites yet.\nStar a request to pin it here.",
+  "sbNoMatch": "Nothing matches \"{filter}\"",
+  "@sbNoMatch": {
+    "placeholders": {
+      "filter": {
+        "type": "String"
+      }
+    }
+  },
+  "sbNoCollections": "No collections yet.\nCreate one to get started.",
+  "sbActions": "Actions",
+  "sbNewRequest": "New request",
+  "sbNewFolder": "New folder",
+  "sbRename": "Rename",
+  "sbRun": "Run…",
+  "sbSettings": "Settings",
+  "sbDuplicate": "Duplicate",
+  "sbMoveUp": "Move up",
+  "sbMoveDown": "Move down",
+  "sbVersions": "Earlier versions…",
+  "sbCopyCurl": "Copy as cURL",
+  "sbFavRemove": "Remove from favourites",
+  "sbFavAdd": "Add to favourites",
+  "sbGenerateCode": "Generate code…",
+  "sbCopyPostman": "Copy as Postman JSON",
+  "sbDelete": "Delete",
+  "sbCreate": "Create",
+  "sbCurlCopied": "cURL command copied",
+  "sbPostmanCopied": "Postman collection copied",
+  "sbDeleteTitle": "Delete \"{name}\"?",
+  "@sbDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sbDeleteFolderMsg": "This also deletes everything inside it.",
+  "sbDeleteMsg": "This cannot be undone.",
+  "sbImportNotes": " ({count} notes: {first})",
+  "@sbImportNotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "first": {
+        "type": "String"
+      }
+    }
+  },
+  "sbImportHint": "Paste a cURL command, a Postman collection or environment, an OpenAPI/Swagger file (JSON or YAML) or a HAR capture",
+  "sbCancel": "Cancel"
 }

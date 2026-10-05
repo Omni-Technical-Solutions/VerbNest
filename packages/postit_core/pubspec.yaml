@@ -1,6 +1,6 @@
 name: postit_core
 description: Pure Dart models, variable resolution and dynamic variables for PostIt.
-version: 0.32.7
+version: 0.32.8
 publish_to: none
 resolution: workspace
 

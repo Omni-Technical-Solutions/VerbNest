@@ -15,6 +15,7 @@ import '../state/sidebar_rows.dart';
 import '../state/tree_state.dart';
 import 'code_dialog.dart';
 import 'name_dialog.dart';
+import '../../l10n/l10n.dart';
 
 enum _Action {
   newRequest,
@@ -97,10 +98,10 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           Expanded(
             child: TextField(
               key: const Key('sidebar-filter'),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 isDense: true,
-                prefixIcon: Icon(Icons.search, size: 18),
-                hintText: 'Filter',
+                prefixIcon: const Icon(Icons.search, size: 18),
+                hintText: context.l10n.sbFilter,
               ),
               onChanged: (v) => setState(() => _filter = v),
             ),
@@ -108,19 +109,19 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           if (_hasHost(context))
             IconButton(
               key: const Key('workspaces'),
-              tooltip: 'Workspaces',
+              tooltip: context.l10n.sbWorkspaces,
               icon: const Icon(Icons.workspaces_outline),
               onPressed: () => showWorkspaces(context, ref),
             ),
           IconButton(
             key: const Key('favourites-filter'),
-            tooltip: _favOnly ? 'Show all' : 'Show favourites only',
+            tooltip: _favOnly ? context.l10n.sbShowAll : context.l10n.sbShowFav,
             icon: Icon(_favOnly ? Icons.star : Icons.star_border),
             onPressed: () => setState(() => _favOnly = !_favOnly),
           ),
           IconButton(
             key: const Key('search'),
-            tooltip: 'Search workspace',
+            tooltip: context.l10n.sbSearch,
             icon: const Icon(Icons.manage_search),
             onPressed: () async {
               final hit = await runSearch(context, ref);
@@ -131,13 +132,13 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           ),
           IconButton(
             key: const Key('import'),
-            tooltip: 'Import',
+            tooltip: context.l10n.sbImport,
             icon: const Icon(Icons.file_download_outlined),
             onPressed: () => _import(context),
           ),
           IconButton(
             key: const Key('new-collection'),
-            tooltip: 'New collection',
+            tooltip: context.l10n.sbNewCollection,
             icon: const Icon(Icons.create_new_folder_outlined),
             onPressed: () => _newCollection(context),
           ),
@@ -150,9 +151,9 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
     final repo = ref.read(repositoryProvider);
     final ids = repo.favourites();
     if (ids.isEmpty) {
-      return const Center(
-        key: Key('no-favourites'),
-        child: Text('No favourites yet.\nStar a request to pin it here.'),
+      return Center(
+        key: const Key('no-favourites'),
+        child: Text(context.l10n.sbNoFav),
       );
     }
     return ListView(
@@ -170,8 +171,8 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         padding: const EdgeInsets.all(24),
         child: Text(
           filtering
-              ? 'Nothing matches "$_filter"'
-              : 'No collections yet.\nCreate one to get started.',
+              ? context.l10n.sbNoMatch(_filter)
+              : context.l10n.sbNoCollections,
           textAlign: TextAlign.center,
         ),
       ),
@@ -304,52 +305,76 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
   Widget _menu(BuildContext context, NodeInfo node) {
     return PopupMenuButton<_Action>(
       key: Key('menu-${node.id}'),
-      tooltip: 'Actions',
+      tooltip: context.l10n.sbActions,
       icon: const Icon(Icons.more_vert, size: 18),
       onSelected: (a) => _run(context, a, node),
       itemBuilder: (_) => [
-        if (node.isContainer) ...const [
-          PopupMenuItem(value: _Action.newRequest, child: Text('New request')),
-          PopupMenuItem(value: _Action.newFolder, child: Text('New folder')),
+        if (node.isContainer) ...[
+          PopupMenuItem(
+            value: _Action.newRequest,
+            child: Text(context.l10n.sbNewRequest),
+          ),
+          PopupMenuItem(
+            value: _Action.newFolder,
+            child: Text(context.l10n.sbNewFolder),
+          ),
         ],
-        const PopupMenuItem(value: _Action.rename, child: Text('Rename')),
+        PopupMenuItem(
+          value: _Action.rename,
+          child: Text(context.l10n.sbRename),
+        ),
         if (node.isContainer)
-          const PopupMenuItem(value: _Action.run, child: Text('Run…')),
+          PopupMenuItem(value: _Action.run, child: Text(context.l10n.sbRun)),
         if (node.isContainer)
-          const PopupMenuItem(value: _Action.settings, child: Text('Settings')),
-        const PopupMenuItem(value: _Action.duplicate, child: Text('Duplicate')),
-        const PopupMenuItem(value: _Action.moveUp, child: Text('Move up')),
-        const PopupMenuItem(value: _Action.moveDown, child: Text('Move down')),
+          PopupMenuItem(
+            value: _Action.settings,
+            child: Text(context.l10n.sbSettings),
+          ),
+        PopupMenuItem(
+          value: _Action.duplicate,
+          child: Text(context.l10n.sbDuplicate),
+        ),
+        PopupMenuItem(
+          value: _Action.moveUp,
+          child: Text(context.l10n.sbMoveUp),
+        ),
+        PopupMenuItem(
+          value: _Action.moveDown,
+          child: Text(context.l10n.sbMoveDown),
+        ),
         if (!node.isContainer)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: _Action.versions,
-            child: Text('Earlier versions…'),
+            child: Text(context.l10n.sbVersions),
           ),
         if (!node.isContainer)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: _Action.copyCurl,
-            child: Text('Copy as cURL'),
+            child: Text(context.l10n.sbCopyCurl),
           ),
         if (!node.isContainer)
           PopupMenuItem(
             value: _Action.toggleFavourite,
             child: Text(
               ref.read(repositoryProvider).isFavourite(node.id)
-                  ? 'Remove from favourites'
-                  : 'Add to favourites',
+                  ? context.l10n.sbFavRemove
+                  : context.l10n.sbFavAdd,
             ),
           ),
         if (!node.isContainer)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: _Action.generateCode,
-            child: Text('Generate code…'),
+            child: Text(context.l10n.sbGenerateCode),
           ),
         if (node.parentId == null)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: _Action.exportPostman,
-            child: Text('Copy as Postman JSON'),
+            child: Text(context.l10n.sbCopyPostman),
           ),
-        const PopupMenuItem(value: _Action.delete, child: Text('Delete')),
+        PopupMenuItem(
+          value: _Action.delete,
+          child: Text(context.l10n.sbDelete),
+        ),
       ],
     );
   }
@@ -357,21 +382,22 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
   Future<void> _newCollection(BuildContext context) async {
     final name = await askName(
       context,
-      title: 'New collection',
-      action: 'Create',
+      title: context.l10n.sbNewCollection,
+      action: context.l10n.sbCreate,
     );
     if (name == null) return;
     ref.read(treeActionsProvider).newCollection(name);
   }
 
   Future<void> _run(BuildContext context, _Action action, NodeInfo node) async {
+    final l10n = context.l10n;
     final actions = ref.read(treeActionsProvider);
     switch (action) {
       case _Action.newRequest:
         final name = await askName(
           context,
-          title: 'New request',
-          action: 'Create',
+          title: l10n.sbNewRequest,
+          action: l10n.sbCreate,
         );
         if (name == null) return;
         final id = actions.newRequest(node.id, name: name);
@@ -380,14 +406,14 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         if (!context.mounted) return;
         final name = await askName(
           context,
-          title: 'New folder',
-          action: 'Create',
+          title: l10n.sbNewFolder,
+          action: l10n.sbCreate,
         );
         if (name != null) actions.newFolder(node.id, name);
       case _Action.rename:
         final name = await askName(
           context,
-          title: 'Rename',
+          title: l10n.sbRename,
           initial: node.name,
         );
         if (name != null) actions.rename(node.id, name);
@@ -415,7 +441,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         await _copy(
           context,
           requestAsCurl(ref.read(sessionProvider), node.id),
-          'cURL command copied',
+          l10n.sbCurlCopied,
         );
       case _Action.toggleFavourite:
         final repo = ref.read(repositoryProvider);
@@ -429,15 +455,13 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         await _copy(
           context,
           exportCollectionJson(ref.read(sessionProvider), node.id),
-          'Postman collection copied',
+          l10n.sbPostmanCopied,
         );
       case _Action.delete:
         final ok = await confirm(
           context,
-          title: 'Delete "${node.name}"?',
-          message: node.isContainer
-              ? 'This also deletes everything inside it.'
-              : 'This cannot be undone.',
+          title: l10n.sbDeleteTitle(node.name),
+          message: node.isContainer ? l10n.sbDeleteFolderMsg : l10n.sbDeleteMsg,
         );
         if (ok) actions.delete(node.id);
     }
@@ -461,7 +485,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       final r = importText(ref.read(sessionProvider), text);
       final warn = r.warnings.isEmpty
           ? ''
-          : ' (${r.warnings.length} notes: ${r.warnings.first})';
+          : context.l10n.sbImportNotes(r.warnings.length, r.warnings.first);
       messenger.showSnackBar(SnackBar(content: Text('${r.message}$warn')));
       final id = r.nodeId;
       if (id != null) {
@@ -492,7 +516,7 @@ class _ImportDialogState extends State<_ImportDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Import'),
+      title: Text(context.l10n.sbImport),
       content: SizedBox(
         width: 520,
         child: TextField(
@@ -500,22 +524,18 @@ class _ImportDialogState extends State<_ImportDialog> {
           controller: _controller,
           autofocus: true,
           maxLines: 12,
-          decoration: const InputDecoration(
-            hintText:
-                'Paste a cURL command, a Postman collection or environment, '
-                'an OpenAPI/Swagger file (JSON or YAML) or a HAR capture',
-          ),
+          decoration: InputDecoration(hintText: context.l10n.sbImportHint),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.sbCancel),
         ),
         FilledButton(
           key: const Key('import-confirm'),
           onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Import'),
+          child: Text(context.l10n.sbImport),
         ),
       ],
     );
