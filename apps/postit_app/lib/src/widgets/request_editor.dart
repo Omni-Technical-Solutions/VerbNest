@@ -21,6 +21,7 @@ import 'request_extras.dart';
 import 'graphql_editor.dart';
 import 'realtime_dialog.dart';
 import 'synced_field.dart';
+import '../../l10n/l10n.dart';
 
 const _customMethod = '\u0000custom';
 
@@ -70,7 +71,7 @@ class RequestEditor extends ConsumerWidget {
                         child: ExamplesDialog(requestId: requestId),
                       ),
                     ),
-                    child: const Text('Examples'),
+                    child: Text(context.l10n.reExamples),
                   ),
                   EnvSelector(requestId: requestId),
                 ],
@@ -83,13 +84,15 @@ class RequestEditor extends ConsumerWidget {
           if (state.unresolved.isNotEmpty)
             _banner(
               context,
-              'Undefined variables: ${state.unresolved.map((n) => '{{$n}}').join(', ')}',
+              context.l10n.reUndefined(
+                state.unresolved.map((n) => '{{$n}}').join(', '),
+              ),
             ),
           for (final w in state.warnings) _banner(context, w),
           Expanded(
             child: LayoutBuilder(
               builder: (context, c) {
-                final request = _requestTabs(item, notifier);
+                final request = _requestTabs(context, item, notifier);
                 final port = ref.read(filePortProvider);
                 final r = state.response;
                 final response = ResponseView(
@@ -110,7 +113,9 @@ class RequestEditor extends ConsumerWidget {
                           );
                           if (ok && context.mounted) {
                             ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                              const SnackBar(content: Text('Response saved')),
+                              SnackBar(
+                                content: Text(context.l10n.reResponseSaved),
+                              ),
                             );
                           }
                         },
@@ -145,12 +150,14 @@ class RequestEditor extends ConsumerWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          'Not defined: ${state.pendingUnresolved.map((n) => '{{$n}}').join(', ')}',
+          context.l10n.reNotDefined(
+            state.pendingUnresolved.map((n) => '{{$n}}').join(', '),
+          ),
         ),
         TextButton(
           key: const Key('send-anyway'),
           onPressed: () => notifier.send(force: true),
-          child: const Text('Send anyway'),
+          child: Text(context.l10n.reSendAnyway),
         ),
         TextButton(
           key: const Key('dont-warn'),
@@ -158,12 +165,12 @@ class RequestEditor extends ConsumerWidget {
             ref.read(warnUnresolvedProvider.notifier).set(false);
             notifier.send(force: true);
           },
-          child: const Text("Don't warn again"),
+          child: Text(context.l10n.reDontWarn),
         ),
         TextButton(
           key: const Key('dismiss-pending'),
           onPressed: notifier.dismissPending,
-          child: const Text('Cancel'),
+          child: Text(context.l10n.reCancel),
         ),
       ],
     ),
@@ -193,9 +200,9 @@ class RequestEditor extends ConsumerWidget {
             items: [
               for (final m in httpMethods)
                 DropdownMenuItem(value: m, child: Text(m)),
-              const DropdownMenuItem(
+              DropdownMenuItem(
                 value: _customMethod,
-                child: Text('Custom…'),
+                child: Text(context.l10n.reCustom),
               ),
             ],
             onChanged: (m) async {
@@ -206,9 +213,9 @@ class RequestEditor extends ConsumerWidget {
               }
               final custom = await askName(
                 context,
-                title: 'Custom method',
+                title: context.l10n.reCustomMethod,
                 initial: httpMethods.contains(item.method) ? '' : item.method,
-                action: 'Set',
+                action: context.l10n.reSet,
               );
               if (custom != null) {
                 notifier.edit(
@@ -251,7 +258,7 @@ class RequestEditor extends ConsumerWidget {
           const SizedBox(width: 8),
           PopupMenuButton<LiveKind>(
             key: const Key('live'),
-            tooltip: 'Open WebSocket, SSE or GraphQL subscription',
+            tooltip: context.l10n.reLiveTooltip,
             icon: const Icon(Icons.sync_alt),
             onSelected: (kind) => showDialog<void>(
               context: context,
@@ -259,26 +266,26 @@ class RequestEditor extends ConsumerWidget {
               builder: (_) => RealtimeDialog(
                 sse: kind != LiveKind.websocket,
                 title: switch (kind) {
-                  LiveKind.websocket => 'WebSocket',
-                  LiveKind.sse => 'Server-sent events',
-                  LiveKind.graphqlSubscription => 'GraphQL subscription',
+                  LiveKind.websocket => context.l10n.reLiveWs,
+                  LiveKind.sse => context.l10n.reLiveSseTitle,
+                  LiveKind.graphqlSubscription => context.l10n.reLiveSub,
                 },
                 connect: () => notifier.connectRealtime(kind),
               ),
             ),
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: LiveKind.websocket,
-                child: Text('WebSocket'),
+                child: Text(context.l10n.reLiveWs),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: LiveKind.sse,
-                child: Text('SSE stream'),
+                child: Text(context.l10n.reLiveSse),
               ),
               if (item.body is GraphqlBody)
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: LiveKind.graphqlSubscription,
-                  child: Text('GraphQL subscription'),
+                  child: Text(context.l10n.reLiveSub),
                 ),
             ],
           ),
@@ -286,12 +293,12 @@ class RequestEditor extends ConsumerWidget {
               ? FilledButton.tonal(
                   key: const Key('cancel'),
                   onPressed: notifier.cancel,
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.reCancel),
                 )
               : FilledButton(
                   key: const Key('send'),
                   onPressed: notifier.send,
-                  child: const Text('Send'),
+                  child: Text(context.l10n.reSend),
                 ),
         ],
       ),
@@ -320,28 +327,32 @@ class RequestEditor extends ConsumerWidget {
     List<KeyValue> params,
   ) => i.copyWith(params: params, url: UrlText.withParams(i.url, params));
 
-  Widget _requestTabs(HttpRequestItem item, EditorNotifier notifier) {
+  Widget _requestTabs(
+    BuildContext context,
+    HttpRequestItem item,
+    EditorNotifier notifier,
+  ) {
     return DefaultTabController(
       length: 7,
       child: Column(
         children: [
-          const TabBar(
+          TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             tabs: [
-              Tab(text: 'Params'),
-              Tab(text: 'Headers'),
-              Tab(text: 'Auth'),
-              Tab(text: 'Body'),
-              Tab(text: 'Scripts'),
-              Tab(text: 'Assertions'),
-              Tab(text: 'Settings'),
+              Tab(text: context.l10n.reTabParams),
+              Tab(text: context.l10n.reTabHeaders),
+              Tab(text: context.l10n.reTabAuth),
+              Tab(text: context.l10n.reTabBody),
+              Tab(text: context.l10n.reTabScripts),
+              Tab(text: context.l10n.reTabAssertions),
+              Tab(text: context.l10n.reTabSettings),
             ],
           ),
           Expanded(
             child: TabBarView(
               children: [
-                _paramsTab(item, notifier),
+                _paramsTab(context, item, notifier),
                 _HeadersTab(
                   item: item,
                   notifier: notifier,
@@ -374,7 +385,11 @@ class RequestEditor extends ConsumerWidget {
     );
   }
 
-  Widget _paramsTab(HttpRequestItem item, EditorNotifier notifier) {
+  Widget _paramsTab(
+    BuildContext context,
+    HttpRequestItem item,
+    EditorNotifier notifier,
+  ) {
     return Column(
       children: [
         Expanded(
@@ -385,9 +400,9 @@ class RequestEditor extends ConsumerWidget {
           ),
         ),
         if (item.pathVars.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.all(8),
-            child: Text('Path variables'),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(context.l10n.rePathVars),
           ),
           SizedBox(
             height: 40.0 * item.pathVars.length + 8,
@@ -403,7 +418,7 @@ class RequestEditor extends ConsumerWidget {
                           child: SyncedTextField(
                             key: ValueKey('pathvar-$n'),
                             value: item.pathVars[n].value,
-                            hint: 'Value',
+                            hint: context.l10n.reValue,
                             onChanged: (v) => notifier.edit((i) {
                               final next = [...i.pathVars];
                               next[n] = next[n].copyWith(value: v);
@@ -448,8 +463,8 @@ class _HeadersTab extends ConsumerWidget {
         ExpansionTile(
           key: const Key('auto-headers'),
           dense: true,
-          title: Text('Generated headers (${auto.length})'),
-          subtitle: const Text('Add a header with the same name to override'),
+          title: Text(context.l10n.reGenerated(auto.length)),
+          subtitle: Text(context.l10n.reGeneratedHint),
           children: [
             for (final h in auto)
               ListTile(
@@ -530,14 +545,18 @@ class _BodyTab extends ConsumerWidget {
           Text(
             key: const Key('binary-info'),
             info == null
-                ? 'No file selected'
-                : '${info.name} (${info.size} bytes)',
+                ? context.l10n.reNoFile
+                : context.l10n.reFileInfo(info.name, info.size),
           ),
           const SizedBox(height: 8),
           FilledButton.tonalIcon(
             key: const Key('binary-pick'),
             icon: const Icon(Icons.upload_file),
-            label: Text(info == null ? 'Choose file…' : 'Replace file…'),
+            label: Text(
+              info == null
+                  ? context.l10n.reChooseFile
+                  : context.l10n.reReplaceFile,
+            ),
             onPressed: () async {
               final stored = await _store(ref);
               if (stored != null) _set(BinaryBody(stored.id));
@@ -547,7 +566,7 @@ class _BodyTab extends ConsumerWidget {
             TextButton(
               key: const Key('binary-clear'),
               onPressed: () => _set(const BinaryBody(null)),
-              child: const Text('Remove file'),
+              child: Text(context.l10n.reRemoveFile),
             ),
         ],
       ),
@@ -623,7 +642,7 @@ class _BodyTab extends ConsumerWidget {
               onChanged: (f) => _set(FormDataBody(f)),
             ),
             BinaryBody() => _binary(context, ref, body),
-            NoBody() => const Center(child: Text('This request has no body')),
+            NoBody() => Center(child: Text(context.l10n.reNoBody)),
           },
         ),
       ],
@@ -648,17 +667,17 @@ class _SettingsTab extends StatelessWidget {
         DropdownButtonFormField<String>(
           key: const Key('http-version'),
           initialValue: s.httpVersion ?? 'auto',
-          decoration: const InputDecoration(
-            labelText: 'HTTP version',
-            helperText: 'HTTP/2 needs an https:// URL',
+          decoration: InputDecoration(
+            labelText: context.l10n.reHttpVersion,
+            helperText: context.l10n.reHttp2Hint,
           ),
-          items: const [
+          items: [
             DropdownMenuItem(
               value: 'auto',
-              child: Text('Auto (HTTP/2 if offered)'),
+              child: Text(context.l10n.reHttpAuto),
             ),
-            DropdownMenuItem(value: '1.1', child: Text('HTTP/1.1 only')),
-            DropdownMenuItem(value: '2', child: Text('HTTP/2 only')),
+            DropdownMenuItem(value: '1.1', child: Text(context.l10n.reHttp11)),
+            DropdownMenuItem(value: '2', child: Text(context.l10n.reHttp2)),
           ],
           onChanged: (v) =>
               _set(s.copyWith(httpVersion: v == 'auto' ? null : v)),
@@ -666,58 +685,58 @@ class _SettingsTab extends StatelessWidget {
         const SizedBox(height: 8),
         SyncedTextField(
           key: const Key('timeout'),
-          label: 'Timeout (ms), empty = default',
+          label: context.l10n.reTimeout,
           value: s.timeoutMs?.toString() ?? '',
           onChanged: (v) => _set(s.copyWith(timeoutMs: int.tryParse(v.trim()))),
         ),
         const SizedBox(height: 8),
         SyncedTextField(
           key: const Key('max-redirects'),
-          label: 'Max redirects, empty = default',
+          label: context.l10n.reMaxRedirects,
           value: s.maxRedirects?.toString() ?? '',
           onChanged: (v) =>
               _set(s.copyWith(maxRedirects: int.tryParse(v.trim()))),
         ),
         SwitchListTile(
           key: const Key('verify-tls'),
-          title: const Text('Verify TLS certificates'),
+          title: Text(context.l10n.reVerifyTls),
           value: s.verifyTls ?? true,
           onChanged: (v) => _set(s.copyWith(verifyTls: v)),
         ),
         SwitchListTile(
           key: const Key('follow-redirects'),
-          title: const Text('Follow redirects'),
+          title: Text(context.l10n.reFollow),
           value: s.followRedirects ?? true,
           onChanged: (v) => _set(s.copyWith(followRedirects: v)),
         ),
         SwitchListTile(
           key: const Key('keep-method'),
-          title: const Text('Keep original method on redirect'),
+          title: Text(context.l10n.reKeepMethod),
           value: s.keepMethodOnRedirect ?? false,
           onChanged: (v) => _set(s.copyWith(keepMethodOnRedirect: v)),
         ),
         SwitchListTile(
           key: const Key('strip-auth'),
-          title: const Text('Remove auth on cross-origin redirect'),
+          title: Text(context.l10n.reStripAuth),
           value: s.stripAuthCrossOrigin ?? true,
           onChanged: (v) => _set(s.copyWith(stripAuthCrossOrigin: v)),
         ),
         SwitchListTile(
           key: const Key('send-cookies'),
-          title: const Text('Send and save cookies'),
+          title: Text(context.l10n.reCookies),
           value: s.sendCookies ?? true,
           onChanged: (v) => _set(s.copyWith(sendCookies: v)),
         ),
         SwitchListTile(
           key: const Key('use-proxy'),
-          title: const Text('Use the proxy'),
-          subtitle: const Text('Turn off to bypass the proxy for this request'),
+          title: Text(context.l10n.reUseProxy),
+          subtitle: Text(context.l10n.reUseProxyHint),
           value: s.useProxy ?? true,
           onChanged: (v) => _set(s.copyWith(useProxy: v)),
         ),
         SwitchListTile(
           key: const Key('auto-decompress'),
-          title: const Text('Decompress responses automatically'),
+          title: Text(context.l10n.reDecompress),
           value: s.autoDecompress ?? true,
           onChanged: (v) => _set(s.copyWith(autoDecompress: v)),
         ),

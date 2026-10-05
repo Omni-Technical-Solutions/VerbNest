@@ -2185,6 +2185,294 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'HTTP/{version}'**
   String rvHttpVersion(String version);
+
+  /// No description provided for @reExamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Examples'**
+  String get reExamples;
+
+  /// No description provided for @reUndefined.
+  ///
+  /// In en, this message translates to:
+  /// **'Undefined variables: {names}'**
+  String reUndefined(String names);
+
+  /// No description provided for @reResponseSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Response saved'**
+  String get reResponseSaved;
+
+  /// No description provided for @reNotDefined.
+  ///
+  /// In en, this message translates to:
+  /// **'Not defined: {names}'**
+  String reNotDefined(String names);
+
+  /// No description provided for @reSendAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Send anyway'**
+  String get reSendAnyway;
+
+  /// No description provided for @reDontWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t warn again'**
+  String get reDontWarn;
+
+  /// No description provided for @reCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get reCancel;
+
+  /// No description provided for @reCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom…'**
+  String get reCustom;
+
+  /// No description provided for @reCustomMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom method'**
+  String get reCustomMethod;
+
+  /// No description provided for @reSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get reSet;
+
+  /// No description provided for @reLiveTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Open WebSocket, SSE or GraphQL subscription'**
+  String get reLiveTooltip;
+
+  /// No description provided for @reLiveWs.
+  ///
+  /// In en, this message translates to:
+  /// **'WebSocket'**
+  String get reLiveWs;
+
+  /// No description provided for @reLiveSseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Server-sent events'**
+  String get reLiveSseTitle;
+
+  /// No description provided for @reLiveSub.
+  ///
+  /// In en, this message translates to:
+  /// **'GraphQL subscription'**
+  String get reLiveSub;
+
+  /// No description provided for @reLiveSse.
+  ///
+  /// In en, this message translates to:
+  /// **'SSE stream'**
+  String get reLiveSse;
+
+  /// No description provided for @reSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get reSend;
+
+  /// No description provided for @reTabParams.
+  ///
+  /// In en, this message translates to:
+  /// **'Params'**
+  String get reTabParams;
+
+  /// No description provided for @reTabHeaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Headers'**
+  String get reTabHeaders;
+
+  /// No description provided for @reTabAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Auth'**
+  String get reTabAuth;
+
+  /// No description provided for @reTabBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Body'**
+  String get reTabBody;
+
+  /// No description provided for @reTabScripts.
+  ///
+  /// In en, this message translates to:
+  /// **'Scripts'**
+  String get reTabScripts;
+
+  /// No description provided for @reTabAssertions.
+  ///
+  /// In en, this message translates to:
+  /// **'Assertions'**
+  String get reTabAssertions;
+
+  /// No description provided for @reTabSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get reTabSettings;
+
+  /// No description provided for @rePathVars.
+  ///
+  /// In en, this message translates to:
+  /// **'Path variables'**
+  String get rePathVars;
+
+  /// No description provided for @reValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get reValue;
+
+  /// No description provided for @reGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated headers ({count})'**
+  String reGenerated(int count);
+
+  /// No description provided for @reGeneratedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a header with the same name to override'**
+  String get reGeneratedHint;
+
+  /// No description provided for @reNoFile.
+  ///
+  /// In en, this message translates to:
+  /// **'No file selected'**
+  String get reNoFile;
+
+  /// No description provided for @reFileInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} ({size} bytes)'**
+  String reFileInfo(String name, int size);
+
+  /// No description provided for @reChooseFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose file…'**
+  String get reChooseFile;
+
+  /// No description provided for @reReplaceFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace file…'**
+  String get reReplaceFile;
+
+  /// No description provided for @reRemoveFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove file'**
+  String get reRemoveFile;
+
+  /// No description provided for @reNoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This request has no body'**
+  String get reNoBody;
+
+  /// No description provided for @reHttpVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP version'**
+  String get reHttpVersion;
+
+  /// No description provided for @reHttp2Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP/2 needs an https:// URL'**
+  String get reHttp2Hint;
+
+  /// No description provided for @reHttpAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (HTTP/2 if offered)'**
+  String get reHttpAuto;
+
+  /// No description provided for @reHttp11.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP/1.1 only'**
+  String get reHttp11;
+
+  /// No description provided for @reHttp2.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP/2 only'**
+  String get reHttp2;
+
+  /// No description provided for @reTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeout (ms), empty = default'**
+  String get reTimeout;
+
+  /// No description provided for @reMaxRedirects.
+  ///
+  /// In en, this message translates to:
+  /// **'Max redirects, empty = default'**
+  String get reMaxRedirects;
+
+  /// No description provided for @reVerifyTls.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify TLS certificates'**
+  String get reVerifyTls;
+
+  /// No description provided for @reFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow redirects'**
+  String get reFollow;
+
+  /// No description provided for @reKeepMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep original method on redirect'**
+  String get reKeepMethod;
+
+  /// No description provided for @reStripAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove auth on cross-origin redirect'**
+  String get reStripAuth;
+
+  /// No description provided for @reCookies.
+  ///
+  /// In en, this message translates to:
+  /// **'Send and save cookies'**
+  String get reCookies;
+
+  /// No description provided for @reUseProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the proxy'**
+  String get reUseProxy;
+
+  /// No description provided for @reUseProxyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off to bypass the proxy for this request'**
+  String get reUseProxyHint;
+
+  /// No description provided for @reDecompress.
+  ///
+  /// In en, this message translates to:
+  /// **'Decompress responses automatically'**
+  String get reDecompress;
 }
 
 class _AppLocalizationsDelegate

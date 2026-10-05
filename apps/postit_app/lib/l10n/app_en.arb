@@ -714,5 +714,84 @@
         "type": "String"
       }
     }
-  }
+  },
+  "reExamples": "Examples",
+  "reUndefined": "Undefined variables: {names}",
+  "@reUndefined": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "reResponseSaved": "Response saved",
+  "reNotDefined": "Not defined: {names}",
+  "@reNotDefined": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "reSendAnyway": "Send anyway",
+  "reDontWarn": "Don't warn again",
+  "reCancel": "Cancel",
+  "reCustom": "Custom…",
+  "reCustomMethod": "Custom method",
+  "reSet": "Set",
+  "reLiveTooltip": "Open WebSocket, SSE or GraphQL subscription",
+  "reLiveWs": "WebSocket",
+  "reLiveSseTitle": "Server-sent events",
+  "reLiveSub": "GraphQL subscription",
+  "reLiveSse": "SSE stream",
+  "reSend": "Send",
+  "reTabParams": "Params",
+  "reTabHeaders": "Headers",
+  "reTabAuth": "Auth",
+  "reTabBody": "Body",
+  "reTabScripts": "Scripts",
+  "reTabAssertions": "Assertions",
+  "reTabSettings": "Settings",
+  "rePathVars": "Path variables",
+  "reValue": "Value",
+  "reGenerated": "Generated headers ({count})",
+  "@reGenerated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reGeneratedHint": "Add a header with the same name to override",
+  "reNoFile": "No file selected",
+  "reFileInfo": "{name} ({size} bytes)",
+  "@reFileInfo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "reChooseFile": "Choose file…",
+  "reReplaceFile": "Replace file…",
+  "reRemoveFile": "Remove file",
+  "reNoBody": "This request has no body",
+  "reHttpVersion": "HTTP version",
+  "reHttp2Hint": "HTTP/2 needs an https:// URL",
+  "reHttpAuto": "Auto (HTTP/2 if offered)",
+  "reHttp11": "HTTP/1.1 only",
+  "reHttp2": "HTTP/2 only",
+  "reTimeout": "Timeout (ms), empty = default",
+  "reMaxRedirects": "Max redirects, empty = default",
+  "reVerifyTls": "Verify TLS certificates",
+  "reFollow": "Follow redirects",
+  "reKeepMethod": "Keep original method on redirect",
+  "reStripAuth": "Remove auth on cross-origin redirect",
+  "reCookies": "Send and save cookies",
+  "reUseProxy": "Use the proxy",
+  "reUseProxyHint": "Turn off to bypass the proxy for this request",
+  "reDecompress": "Decompress responses automatically"
 }

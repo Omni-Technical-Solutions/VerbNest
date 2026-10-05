@@ -6,9 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Files that still hold hard-coded `Text('...')` literals. Migrate a file to
 /// ARB, then delete it from this list; the test fails if a file here is clean
 /// or a file not here regains a literal.
-const _pending = <String>{
-  'lib/src/widgets/request_editor.dart',
-};
+const _pending = <String>{};
 
 final _literal = RegExp(r"(Text|SelectableText)\(\s*'[^'$]*[A-Za-z]");
 

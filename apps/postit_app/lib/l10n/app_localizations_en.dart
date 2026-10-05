@@ -1165,4 +1165,156 @@ class AppLocalizationsEn extends AppLocalizations {
   String rvHttpVersion(String version) {
     return 'HTTP/$version';
   }
+
+  @override
+  String get reExamples => 'Examples';
+
+  @override
+  String reUndefined(String names) {
+    return 'Undefined variables: $names';
+  }
+
+  @override
+  String get reResponseSaved => 'Response saved';
+
+  @override
+  String reNotDefined(String names) {
+    return 'Not defined: $names';
+  }
+
+  @override
+  String get reSendAnyway => 'Send anyway';
+
+  @override
+  String get reDontWarn => 'Don\'t warn again';
+
+  @override
+  String get reCancel => 'Cancel';
+
+  @override
+  String get reCustom => 'Custom…';
+
+  @override
+  String get reCustomMethod => 'Custom method';
+
+  @override
+  String get reSet => 'Set';
+
+  @override
+  String get reLiveTooltip => 'Open WebSocket, SSE or GraphQL subscription';
+
+  @override
+  String get reLiveWs => 'WebSocket';
+
+  @override
+  String get reLiveSseTitle => 'Server-sent events';
+
+  @override
+  String get reLiveSub => 'GraphQL subscription';
+
+  @override
+  String get reLiveSse => 'SSE stream';
+
+  @override
+  String get reSend => 'Send';
+
+  @override
+  String get reTabParams => 'Params';
+
+  @override
+  String get reTabHeaders => 'Headers';
+
+  @override
+  String get reTabAuth => 'Auth';
+
+  @override
+  String get reTabBody => 'Body';
+
+  @override
+  String get reTabScripts => 'Scripts';
+
+  @override
+  String get reTabAssertions => 'Assertions';
+
+  @override
+  String get reTabSettings => 'Settings';
+
+  @override
+  String get rePathVars => 'Path variables';
+
+  @override
+  String get reValue => 'Value';
+
+  @override
+  String reGenerated(int count) {
+    return 'Generated headers ($count)';
+  }
+
+  @override
+  String get reGeneratedHint => 'Add a header with the same name to override';
+
+  @override
+  String get reNoFile => 'No file selected';
+
+  @override
+  String reFileInfo(String name, int size) {
+    return '$name ($size bytes)';
+  }
+
+  @override
+  String get reChooseFile => 'Choose file…';
+
+  @override
+  String get reReplaceFile => 'Replace file…';
+
+  @override
+  String get reRemoveFile => 'Remove file';
+
+  @override
+  String get reNoBody => 'This request has no body';
+
+  @override
+  String get reHttpVersion => 'HTTP version';
+
+  @override
+  String get reHttp2Hint => 'HTTP/2 needs an https:// URL';
+
+  @override
+  String get reHttpAuto => 'Auto (HTTP/2 if offered)';
+
+  @override
+  String get reHttp11 => 'HTTP/1.1 only';
+
+  @override
+  String get reHttp2 => 'HTTP/2 only';
+
+  @override
+  String get reTimeout => 'Timeout (ms), empty = default';
+
+  @override
+  String get reMaxRedirects => 'Max redirects, empty = default';
+
+  @override
+  String get reVerifyTls => 'Verify TLS certificates';
+
+  @override
+  String get reFollow => 'Follow redirects';
+
+  @override
+  String get reKeepMethod => 'Keep original method on redirect';
+
+  @override
+  String get reStripAuth => 'Remove auth on cross-origin redirect';
+
+  @override
+  String get reCookies => 'Send and save cookies';
+
+  @override
+  String get reUseProxy => 'Use the proxy';
+
+  @override
+  String get reUseProxyHint => 'Turn off to bypass the proxy for this request';
+
+  @override
+  String get reDecompress => 'Decompress responses automatically';
 }

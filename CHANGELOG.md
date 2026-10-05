@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.32.10
+
+- UI strings: the request editor (URL bar, tabs, settings, banners) now uses ARB (English and Arabic). Every screen file is migrated; `l10n_guard_test.dart` has an empty pending list and fails when a new hard-coded `Text` literal appears. Arabic texts still need a native review.
+
 ## 0.32.9
 
 - UI strings: the response view (tabs, timing, TLS, tests, body tools) now uses ARB (English and Arabic). One file remains in `l10n_guard_test.dart`.

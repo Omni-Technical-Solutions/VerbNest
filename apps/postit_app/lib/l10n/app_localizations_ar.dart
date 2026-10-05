@@ -1165,4 +1165,157 @@ class AppLocalizationsAr extends AppLocalizations {
   String rvHttpVersion(String version) {
     return 'HTTP/$version';
   }
+
+  @override
+  String get reExamples => 'الأمثلة';
+
+  @override
+  String reUndefined(String names) {
+    return 'متغيرات غير معرّفة: $names';
+  }
+
+  @override
+  String get reResponseSaved => 'تم حفظ الاستجابة';
+
+  @override
+  String reNotDefined(String names) {
+    return 'غير معرّف: $names';
+  }
+
+  @override
+  String get reSendAnyway => 'أرسل على أي حال';
+
+  @override
+  String get reDontWarn => 'لا تحذّر مجدداً';
+
+  @override
+  String get reCancel => 'إلغاء';
+
+  @override
+  String get reCustom => 'مخصص…';
+
+  @override
+  String get reCustomMethod => 'طريقة مخصصة';
+
+  @override
+  String get reSet => 'تعيين';
+
+  @override
+  String get reLiveTooltip => 'فتح WebSocket أو SSE أو اشتراك GraphQL';
+
+  @override
+  String get reLiveWs => 'WebSocket';
+
+  @override
+  String get reLiveSseTitle => 'أحداث مرسلة من الخادم';
+
+  @override
+  String get reLiveSub => 'اشتراك GraphQL';
+
+  @override
+  String get reLiveSse => 'بث SSE';
+
+  @override
+  String get reSend => 'إرسال';
+
+  @override
+  String get reTabParams => 'المعاملات';
+
+  @override
+  String get reTabHeaders => 'الترويسات';
+
+  @override
+  String get reTabAuth => 'المصادقة';
+
+  @override
+  String get reTabBody => 'المتن';
+
+  @override
+  String get reTabScripts => 'السكربتات';
+
+  @override
+  String get reTabAssertions => 'التأكيدات';
+
+  @override
+  String get reTabSettings => 'الإعدادات';
+
+  @override
+  String get rePathVars => 'متغيرات المسار';
+
+  @override
+  String get reValue => 'القيمة';
+
+  @override
+  String reGenerated(int count) {
+    return 'الترويسات المولّدة ($count)';
+  }
+
+  @override
+  String get reGeneratedHint => 'أضف ترويسة بالاسم نفسه لتجاوزها';
+
+  @override
+  String get reNoFile => 'لم يتم اختيار ملف';
+
+  @override
+  String reFileInfo(String name, int size) {
+    return '$name ($size بايت)';
+  }
+
+  @override
+  String get reChooseFile => 'اختر ملفاً…';
+
+  @override
+  String get reReplaceFile => 'استبدل الملف…';
+
+  @override
+  String get reRemoveFile => 'إزالة الملف';
+
+  @override
+  String get reNoBody => 'ليس لهذا الطلب متن';
+
+  @override
+  String get reHttpVersion => 'إصدار HTTP';
+
+  @override
+  String get reHttp2Hint => 'يحتاج HTTP/2 إلى عنوان https://';
+
+  @override
+  String get reHttpAuto => 'تلقائي (HTTP/2 إن عُرض)';
+
+  @override
+  String get reHttp11 => 'HTTP/1.1 فقط';
+
+  @override
+  String get reHttp2 => 'HTTP/2 فقط';
+
+  @override
+  String get reTimeout => 'المهلة (مللي ثانية)، فارغ = الافتراضي';
+
+  @override
+  String get reMaxRedirects =>
+      'أقصى عدد لعمليات إعادة التوجيه، فارغ = الافتراضي';
+
+  @override
+  String get reVerifyTls => 'التحقق من شهادات TLS';
+
+  @override
+  String get reFollow => 'اتباع عمليات إعادة التوجيه';
+
+  @override
+  String get reKeepMethod => 'الإبقاء على الطريقة الأصلية عند إعادة التوجيه';
+
+  @override
+  String get reStripAuth => 'إزالة المصادقة عند إعادة التوجيه إلى أصل آخر';
+
+  @override
+  String get reCookies => 'إرسال ملفات الارتباط وحفظها';
+
+  @override
+  String get reUseProxy => 'استخدام الوكيل';
+
+  @override
+  String get reUseProxyHint => 'أوقفه لتجاوز الوكيل لهذا الطلب';
+
+  @override
+  String get reDecompress => 'فك ضغط الاستجابات تلقائياً';
 }
