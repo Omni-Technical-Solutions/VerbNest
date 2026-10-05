@@ -2,6 +2,7 @@ import 'package:postit_core/postit_core.dart';
 import 'package:postit_storage/postit_storage.dart';
 
 import 'script_engine.dart';
+import 'script_host.dart';
 import 'script_io.dart';
 
 /// What all scripts of one phase did, in run order.
@@ -81,6 +82,7 @@ Future<ScriptPhaseResult> runScriptPhaseWith({
   Map<String, Object?>? response,
   Map<String, String> local = const {},
   Map<String, String> data = const {},
+  ScriptHost? host,
 }) async {
   final codes = scriptsFor(repo, requestId, item.scripts, phase);
   if (codes.isEmpty) return ScriptPhaseResult(local: local);
@@ -97,8 +99,10 @@ Future<ScriptPhaseResult> runScriptPhaseWith({
       : repo.environments().where((e) => e.id == envId).firstOrNull?.name;
 
   for (final code in codes) {
-    final out = await engine.run(
-      ScriptInput(
+    final out = await _runWithSends(
+      engine,
+      host,
+      () => ScriptInput(
         code: code,
         phase: phase,
         requestName: item.name,
@@ -108,6 +112,7 @@ Future<ScriptPhaseResult> runScriptPhaseWith({
         variables: variables.values(requestId, envId, localVars),
         environmentName: envName,
         data: data,
+        cookies: host?.cookiesFor('${current['url']}') ?? const {},
       ),
     );
     flow = ScriptFlow(
@@ -135,4 +140,62 @@ Future<ScriptPhaseResult> runScriptPhaseWith({
     local: localVars,
     flow: flow,
   );
+}
+
+/// Most `pm.sendRequest` calls one script may make.
+const maxScriptRequests = 10;
+
+/// Longest a script and its requests may take together.
+const scriptRequestBudget = Duration(seconds: 60);
+
+/// Runs a script and answers its `pm.sendRequest` calls. The script is run
+/// again after each answer (see the prelude); [make] builds a fresh input
+/// each time so variable values start from the same state.
+Future<ScriptOutput> _runWithSends(
+  ScriptEngine engine,
+  ScriptHost? host,
+  ScriptInput Function() make,
+) async {
+  final results = <Map<String, Object?>>[];
+  final watch = Stopwatch()..start();
+  while (true) {
+    final base = make();
+    final out = await engine.run(
+      ScriptInput(
+        code: base.code,
+        phase: base.phase,
+        requestName: base.requestName,
+        requestId: base.requestId,
+        request: base.request,
+        response: base.response,
+        variables: base.variables,
+        environmentName: base.environmentName,
+        data: base.data,
+        cookies: base.cookies,
+        sendResults: List.of(results),
+      ),
+    );
+    final need = out.needs;
+    if (need == null) return out;
+    if (results.length >= maxScriptRequests) {
+      return out.withError(
+        'A script may make at most $maxScriptRequests pm.sendRequest calls',
+      );
+    }
+    if (watch.elapsed > scriptRequestBudget) {
+      return ScriptOutput.failed(
+        'Script requests took longer than ${scriptRequestBudget.inSeconds} s',
+        elapsed: watch.elapsed,
+      );
+    }
+    if (host == null) {
+      results.add({'error': 'pm.sendRequest is not available here'});
+      continue;
+    }
+    try {
+      results.add({'response': await host.send(need)});
+    } on Object catch (e) {
+      results.add({'error': e is FormatException ? e.message : '$e'});
+    }
+  }
 }

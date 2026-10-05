@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.39.0
+
+- Scripts: `pm.sendRequest(url | request, callback)` and `pm.cookies.get/has/toObject`, in the app, the runner and the CLI. Requests go through the engine's cookie jar, proxy and certificates, at most 10 per script. The script is replayed after each answer (ADR-012), so keep scripts repeatable. Promises and `pm.cookies.jar()` are not supported; the CLI has no cookie jar, so `pm.cookies` is empty there.
+
 ## 0.38.0
 
 - WebSocket: the live dialog can send binary frames. Tick "Hex" and type bytes such as `0a ff 10` (`parseHexBytes` in `postit_http`). Bad input shows an error and sends nothing.

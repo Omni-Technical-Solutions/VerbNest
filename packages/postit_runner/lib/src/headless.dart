@@ -100,6 +100,8 @@ class HeadlessSender {
   /// Variable values scripts set during the run (kept in memory only).
   late final _scriptVars = MemoryScriptVariables(repo);
 
+  late final _scriptHost = EngineScriptHost(engine, settings: defaults);
+
   /// Requests whose pre-request or post-response scripts were not run.
   final Set<String> scriptsSkipped = {};
 
@@ -164,6 +166,7 @@ class HeadlessSender {
           phase: ScriptPhase.pre,
           request: requestToMap(item),
           data: row,
+          host: _scriptHost,
         );
         local = pre.local;
         logs.addAll(pre.logs);
@@ -251,6 +254,7 @@ class HeadlessSender {
           response: responseToMap(response),
           local: local,
           data: row,
+          host: _scriptHost,
         );
         tests.addAll(post.tests);
         logs.addAll(post.logs);

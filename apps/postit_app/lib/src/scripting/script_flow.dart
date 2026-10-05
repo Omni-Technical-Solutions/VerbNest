@@ -57,6 +57,7 @@ Future<ScriptPhaseResult> runScriptPhase({
   Map<String, Object?>? response,
   Map<String, String> local = const {},
   Map<String, String> data = const {},
+  core.ScriptHost? host,
 }) => core.runScriptPhaseWith(
   repo: session.repo,
   variables: SessionScriptVariables(session),
@@ -69,6 +70,7 @@ Future<ScriptPhaseResult> runScriptPhase({
   response: response,
   local: local,
   data: data,
+  host: host,
 );
 
 Map<ScriptScope, Map<String, String>> _scopeValues(

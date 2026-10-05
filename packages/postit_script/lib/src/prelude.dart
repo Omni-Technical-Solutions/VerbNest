@@ -4,7 +4,7 @@
 /// touch is defined here.
 const scriptPrelude = r'''
 "use strict";
-var __UNSUPPORTED = ['sendRequest', 'cookies', 'visualizer', 'vault', 'require'];
+var __UNSUPPORTED = ['visualizer', 'vault', 'require'];
 
 function __fail(msg) { var e = new Error(msg); e.__assertion = true; throw e; }
 function __str(v) {
@@ -134,6 +134,29 @@ function __makeExpect() {
   var expect = function (v) { return new Assertion(v); };
   expect.fail = function (m) { __fail(m || 'expect.fail()'); };
   return expect;
+}
+
+function __normalizeSend(req) {
+  if (typeof req === 'string') req = { url: req };
+  if (!req || typeof req !== 'object') throw new Error('pm.sendRequest needs a URL or a request object');
+  var url = req.url;
+  if (url && typeof url === 'object') url = url.raw !== undefined ? url.raw : String(url);
+  if (typeof url !== 'string' || !url) throw new Error('pm.sendRequest needs a url');
+  var headers = [];
+  var h = req.header !== undefined ? req.header : req.headers;
+  if (Array.isArray(h)) h.forEach(function (x) { headers.push({ key: String(x.key), value: String(x.value) }); });
+  else if (h && typeof h === 'object') Object.keys(h).forEach(function (k) { headers.push({ key: k, value: String(h[k]) }); });
+  var body = null;
+  var b = req.body;
+  if (typeof b === 'string') body = b;
+  else if (b && typeof b === 'object') {
+    if (b.mode === 'raw' || b.raw !== undefined) body = String(b.raw);
+    else if (b.mode === 'urlencoded' && Array.isArray(b.urlencoded)) {
+      body = b.urlencoded.map(function (p) { return encodeURIComponent(p.key) + '=' + encodeURIComponent(p.value); }).join('&');
+      headers.push({ key: 'Content-Type', value: 'application/x-www-form-urlencoded' });
+    } else throw new Error('pm.sendRequest supports raw and urlencoded bodies');
+  }
+  return { method: String(req.method || 'GET').toUpperCase(), url: url, headers: headers, body: body };
 }
 
 function __run(inputText, code) {
@@ -304,7 +327,47 @@ function __run(inputText, code) {
   }
   test.skip = function (name) { tests.push({ name: String(name), status: 'skip' }); };
 
+  // pm.sendRequest runs by replay: a call without a stored answer records the
+  // request, unwinds the script, and the host runs the script again with the
+  // answer added. Earlier calls are answered from the stored list, so each
+  // request is sent once; effects of an unfinished pass are thrown away.
+  var sendResults = input.sendResults || [];
+  var sendIndex = 0;
+  var needs = null;
+  function sendResponse(r) {
+    var h = headerList(r.headers);
+    return {
+      code: r.code, status: r.status, headers: h,
+      responseTime: r.time, responseSize: r.size,
+      text: function () { return r.body; },
+      json: function () { return JSON.parse(r.body); },
+      reason: function () { return r.status; }
+    };
+  }
+  function sendRequest(req, cb) {
+    var i = sendIndex++;
+    if (i < sendResults.length) {
+      var got = sendResults[i];
+      if (typeof cb === 'function') {
+        if (got.error) cb(new Error(got.error), undefined);
+        else cb(null, sendResponse(got.response));
+      }
+      return;
+    }
+    if (needs === null) needs = __normalizeSend(req);
+    throw new Error('pm.sendRequest is waiting for a response');
+  }
+  var cookieVals = input.cookies || {};
+  var cookies = {
+    get: function (k) { return Object.prototype.hasOwnProperty.call(cookieVals, k) ? cookieVals[k] : undefined; },
+    has: function (k) { return Object.prototype.hasOwnProperty.call(cookieVals, k); },
+    toObject: function () { return Object.assign({}, cookieVals); },
+    jar: function () { throw new Error('pm.cookies.jar is not supported yet'); }
+  };
+
   var pmCore = {
+    sendRequest: sendRequest,
+    cookies: cookies,
     variables: variables,
     iterationData: iterationData,
     execution: execution,
@@ -344,6 +407,7 @@ function __run(inputText, code) {
   } catch (e) {
     error = (e && e.name && e.name !== 'Error' ? e.name + ': ' : '') + (e && e.message !== undefined ? e.message : String(e));
   }
+  if (needs !== null) return JSON.stringify({ needs: needs });
   return JSON.stringify({ tests: tests, logs: logs, changes: changes, request: isPre ? request : null, flow: flow, error: error });
 }
 ''';

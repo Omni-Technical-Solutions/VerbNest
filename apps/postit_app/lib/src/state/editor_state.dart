@@ -5,6 +5,8 @@ import 'dart:io' show IOException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
 import 'package:postit_http/postit_http.dart';
+import 'package:postit_script/postit_script.dart'
+    show EngineScriptHost, ScriptHost;
 import 'package:postit_storage/postit_storage.dart';
 
 import '../scripting/script_engine.dart';
@@ -123,6 +125,11 @@ class EditorState {
 /// Draft state of one open request: edits are autosaved after a short pause
 /// (FR-REQ drafts) and sending works on the draft, saved or not.
 class EditorNotifier extends Notifier<EditorState> {
+  ScriptHost _scriptHost() => EngineScriptHost(
+    ref.read(engineProvider),
+    settings: ref.read(httpDefaultsProvider),
+  );
+
   EditorNotifier(this.id);
 
   final String id;
@@ -204,6 +211,7 @@ class EditorNotifier extends Notifier<EditorState> {
         phase: ScriptPhase.pre,
         request: requestToMap(item),
         data: data,
+        host: _scriptHost(),
       );
       local = pre.local;
       if (pre.error != null) {
@@ -432,6 +440,7 @@ class EditorNotifier extends Notifier<EditorState> {
       response: responseToMap(response),
       local: pre.local,
       data: data,
+      host: _scriptHost(),
     );
     final facts = ResponseFacts(
       status: response.status,

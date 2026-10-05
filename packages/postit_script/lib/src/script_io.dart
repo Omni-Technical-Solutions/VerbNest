@@ -21,6 +21,8 @@ class ScriptInput {
     this.variables = const {},
     this.environmentName,
     this.data = const {},
+    this.sendResults = const [],
+    this.cookies = const {},
   });
 
   final String code;
@@ -41,8 +43,17 @@ class ScriptInput {
   /// The current row of a collection run's data file; read only.
   final Map<String, String> data;
 
+  /// Answers to the `pm.sendRequest` calls made so far, in call order. Each
+  /// is `{response: {...}}` or `{error: '...'}`.
+  final List<Map<String, Object?>> sendResults;
+
+  /// Cookies the jar would send to the request URL (`pm.cookies`).
+  final Map<String, String> cookies;
+
   Map<String, Object?> toJson() => {
     'data': data,
+    'sendResults': sendResults,
+    'cookies': cookies,
     'phase': phase.name,
     'requestName': requestName,
     'requestId': requestId,
@@ -97,6 +108,7 @@ class ScriptOutput {
     this.request,
     this.error,
     this.elapsed = Duration.zero,
+    this.needs,
   });
 
   final ScriptFlow flow;
@@ -106,6 +118,11 @@ class ScriptOutput {
 
   /// The request after a pre-request script ran, same shape as the input.
   final Map<String, Object?>? request;
+
+  /// A `pm.sendRequest` that has no answer yet: `{method, url, headers, body}`.
+  /// When set, the rest of the output is empty and the script must be run
+  /// again with the answer in [ScriptInput.sendResults].
+  final Map<String, Object?>? needs;
 
   /// Set when the script threw, timed out or used an unsupported API.
   final String? error;
@@ -160,6 +177,7 @@ class ScriptOutput {
       request: (j['request'] as Map?)?.cast<String, Object?>(),
       error: j['error'] as String?,
       elapsed: elapsed,
+      needs: (j['needs'] as Map?)?.cast<String, Object?>(),
     );
   }
 }

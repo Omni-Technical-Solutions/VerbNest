@@ -149,6 +149,42 @@ void main() {
       expect(sender.scriptsSkipped, isEmpty);
     });
 
+    test('pm.sendRequest fetches a value for the next step', () async {
+      if (!hasRuntime) return;
+      final a = add(
+        'chain',
+        (i) => i.copyWith(
+          url: '{{base}}/echo',
+          scripts: Scripts(
+            post:
+                'pm.sendRequest("${server.baseUrl}/echo?from=script", (err, res) => {'
+                'pm.test("got", () => pm.expect(res.code).to.equal(200));'
+                'pm.collectionVariables.set("seen", String(res.code)); });',
+          ),
+        ),
+      );
+      final b = add(
+        'use',
+        (i) => i.copyWith(url: '{{base}}/echo?seen={{seen}}'),
+      );
+      final sender = HeadlessSender(
+        repo: repo,
+        engine: HttpEngine(),
+        scripts: ProcessScriptEngine(),
+      );
+      final report = await executeRun(
+        config: RunConfig(name: 'x', requestIds: [a, b]),
+        repo: repo,
+        step: sender.step,
+      );
+      expect(report.entries.first.tests.single.passed, isTrue);
+      expect(
+        server.requests.where((r) => r.target.contains('from=script')),
+        hasLength(1),
+      );
+      expect(server.requests.last.target, contains('seen=200'));
+    });
+
     test('a pre-request script can skip; a failing one is an error', () async {
       if (!hasRuntime) return;
       final a = add(
