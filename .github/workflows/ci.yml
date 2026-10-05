@@ -95,6 +95,11 @@ jobs:
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev xvfb
       # The script engine (fjs) is Rust; Linux, Windows and Android build it
       # from source. Apple targets use its signed prebuilt binaries.
+      - name: Free disk space for the emulator
+        if: matrix.name == 'android'
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL
+          df -h /
       - name: Rust toolchain
         run: rustup toolchain install stable --profile minimal
       - run: flutter pub get
@@ -129,6 +134,7 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
+          disk-size: 4096M
           working-directory: apps/postit_app
           script: ../../scripts/ci_integration.sh emulator-5554 - integration_test/platform_test.dart integration_test/vault_test.dart
       - uses: actions/upload-artifact@v4
