@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:postit_core/postit_core.dart';
 
+import 'auth_sign.dart';
 import 'masker.dart';
 import 'models.dart';
 
@@ -28,7 +29,12 @@ class PreparedRequest {
     required this.secretNames,
     required this.masker,
     required this.warnings,
+    this.digest,
   });
+
+  /// Credentials to answer a Digest challenge with, if the request uses
+  /// Digest auth. The request itself goes out without them first.
+  final DigestAuth? digest;
 
   final HttpRequestSpec spec;
 
@@ -50,7 +56,11 @@ class RequestBuilder {
     this.defaults = const HttpSettings(),
     this.readFile,
     Random? random,
-  }) : _random = random ?? Random.secure();
+    DateTime Function()? clock,
+  }) : _random = random ?? Random.secure(),
+       _clock = clock ?? DateTime.now;
+
+  final DateTime Function() _clock;
 
   /// Workspace-level defaults that per-request settings override.
   final HttpSettings defaults;
@@ -74,10 +84,31 @@ class RequestBuilder {
     url = _applyAuthToUrl(effective, url, ctx);
     _applyAuthToHeaders(effective, headers, ctx);
     final body = await _body(item.body, headers, ctx);
+    final method = ctx.text(item.method.trim()).toUpperCase();
+    final parsed = _parse(url);
+    if (effective is AwsV4Auth && !_has(headers, 'Authorization')) {
+      final signer = effective.copyWith(
+        accessKey: ctx.text(effective.accessKey),
+        secretKey: ctx.text(effective.secretKey),
+        region: ctx.text(effective.region),
+        service: ctx.text(effective.service),
+        sessionToken: ctx.text(effective.sessionToken),
+      );
+      headers.addAll(
+        signAwsV4(
+          signer,
+          method: method,
+          url: parsed,
+          headers: headers,
+          body: body ?? const [],
+          now: _clock(),
+        ),
+      );
+    }
 
     final spec = HttpRequestSpec(
-      method: ctx.text(item.method.trim()).toUpperCase(),
-      url: _parse(url),
+      method: method,
+      url: parsed,
       headers: headers,
       body: body,
       settings: _settings(item.settings),
@@ -86,9 +117,23 @@ class RequestBuilder {
       spec: spec,
       unresolved: ctx.unresolved,
       secretNames: ctx.secretNames,
+      digest: effective is DigestAuth
+          ? DigestAuth(
+              username: ctx.text(effective.username),
+              password: ctx.text(effective.password),
+            )
+          : null,
       masker: Masker(
-        secretValues: ctx.secretValues(),
+        secretValues: [
+          ...ctx.secretValues(),
+          if (effective is JwtAuth) ctx.text(effective.secret),
+          if (effective is AwsV4Auth) ...[
+            ctx.text(effective.secretKey),
+            ctx.text(effective.sessionToken),
+          ],
+        ],
         sensitiveHeaders: [
+          if (effective is AwsV4Auth) 'X-Amz-Security-Token',
           if (effective is ApiKeyAuth &&
               effective.addTo == ApiKeyLocation.header)
             ctx.text(effective.key),
@@ -144,6 +189,10 @@ class RequestBuilder {
         'Authorization',
         'Basic ${base64Encode(utf8.encode('${ctx.text(username)}:${ctx.text(password)}'))}',
       ),
+      JwtAuth() => (
+        'Authorization',
+        '${ctx.text(auth.prefix).trim()} ${_jwt(auth, ctx)}'.trim(),
+      ),
       ApiKeyAuth(:final key, :final value, :final addTo)
           when addTo == ApiKeyLocation.header =>
         (ctx.text(key), ctx.text(value)),
@@ -151,6 +200,20 @@ class RequestBuilder {
     };
     // An explicit header from the user wins over generated auth.
     if (added != null && !_has(headers, added.$1)) headers.add(added);
+  }
+
+  String _jwt(JwtAuth auth, _Context ctx) {
+    try {
+      return signJwt(
+        auth.copyWith(
+          secret: ctx.text(auth.secret),
+          payload: ctx.text(auth.payload),
+        ),
+        now: _clock(),
+      );
+    } on FormatException catch (e) {
+      throw RequestBuildError(e.message);
+    }
   }
 
   Future<List<int>?> _body(

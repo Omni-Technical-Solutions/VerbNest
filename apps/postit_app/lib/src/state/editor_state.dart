@@ -9,6 +9,7 @@ import 'package:postit_storage/postit_storage.dart';
 import '../scripting/script_engine.dart';
 import '../scripting/script_flow.dart';
 import '../scripting/script_io.dart';
+import 'browser_port.dart';
 import 'console_log.dart';
 import 'file_port.dart';
 import 'prefs.dart';
@@ -242,9 +243,11 @@ class EditorNotifier extends Notifier<EditorState> {
         );
         return;
       }
-      final response = await ref
-          .read(engineProvider)
-          .send(prepared.spec, cancel: token);
+      final response = await sendPrepared(
+        ref.read(engineProvider),
+        prepared,
+        cancel: token,
+      );
       final post = await runScriptPhase(
         session: session,
         engine: scripts,
@@ -305,14 +308,37 @@ class EditorNotifier extends Notifier<EditorState> {
   ) async {
     final resolved = auth.mapText((t) => resolver.resolve(t).value);
     final cache = ref.read(oauthCacheProvider);
+    final engine = ref.read(engineProvider);
     var token = cache.get(resolved);
     if (token == null) {
-      token = await fetchOAuth2Token(
-        ref.read(engineProvider),
-        resolved,
-        cancel: cancel,
-        settings: defaults,
-      );
+      final stale = cache.peek(resolved);
+      if (stale?.refreshToken != null) {
+        try {
+          token = await refreshOAuth2Token(
+            engine,
+            resolved,
+            stale!.refreshToken!,
+            cancel: cancel,
+            settings: defaults,
+          );
+        } on OAuth2Error {
+          // The refresh token was refused; sign in again below.
+        }
+      }
+      token ??= resolved.interactive
+          ? await authorizeInBrowser(
+              engine,
+              resolved,
+              openUrl: ref.read(browserOpenerProvider),
+              cancel: cancel,
+              settings: defaults,
+            )
+          : await fetchOAuth2Token(
+              engine,
+              resolved,
+              cancel: cancel,
+              settings: defaults,
+            );
       cache.put(resolved, token);
     }
     return BearerAuth(token: token.accessToken);

@@ -293,8 +293,33 @@ Auth _auth(Object? a) {
           ? ApiKeyLocation.query
           : ApiKeyLocation.header,
     ),
-    'oauth2' when OAuth2Auth.supports(get('grant_type')) => OAuth2Auth(
-      grant: OAuth2Grant.fromWire(get('grant_type')),
+    'digest' => DigestAuth(
+      username: get('username'),
+      password: get('password'),
+    ),
+    'awsv4' => AwsV4Auth(
+      accessKey: get('accessKey'),
+      secretKey: get('secretKey'),
+      region: get('region'),
+      service: get('service'),
+      sessionToken: get('sessionToken'),
+    ),
+    'jwt'
+        when JwtAlgorithm.values.any(
+          (a) => a.label == get('algorithm') || a.name == get('algorithm'),
+        ) =>
+      JwtAuth(
+        algorithm: JwtAlgorithm.values.firstWhere(
+          (a) => a.label == get('algorithm') || a.name == get('algorithm'),
+        ),
+        secret: get('secret'),
+        payload: get('payload').isEmpty ? '{}' : get('payload'),
+        prefix: get('headerPrefix').isEmpty ? 'Bearer' : get('headerPrefix'),
+      ),
+    'oauth2' when OAuth2Auth.supports(_grant(get('grant_type'))) => OAuth2Auth(
+      grant: OAuth2Grant.fromWire(_grant(get('grant_type'))),
+      authUrl: get('authUrl'),
+      usePkce: get('grant_type') != 'authorization_code',
       tokenUrl: get('accessTokenUrl'),
       clientId: get('clientId'),
       clientSecret: get('clientSecret'),
@@ -307,6 +332,10 @@ Auth _auth(Object? a) {
     _ => RawAuth({'type': type, type: m[type]}),
   };
 }
+
+/// Postman names the PKCE variant of the code grant separately.
+String _grant(String g) =>
+    g == 'authorization_code_with_pkce' ? 'authorization_code' : g;
 
 // ---- export ---------------------------------------------------------------
 
@@ -468,7 +497,10 @@ Json _exportAuth(Auth a) {
     OAuth2Auth() => {
       'type': 'oauth2',
       'oauth2': kv({
-        'grant_type': a.grant.wire,
+        'grant_type': a.grant == OAuth2Grant.authorizationCode && a.usePkce
+            ? 'authorization_code_with_pkce'
+            : a.grant.wire,
+        if (a.authUrl.isNotEmpty) 'authUrl': a.authUrl,
         'accessTokenUrl': a.tokenUrl,
         'clientId': a.clientId,
         'clientSecret': a.clientSecret,
@@ -478,6 +510,30 @@ Json _exportAuth(Auth a) {
           'password': a.password,
         },
         'client_authentication': a.clientAuthInBody ? 'body' : 'header',
+      }),
+    },
+    DigestAuth(:final username, :final password) => {
+      'type': 'digest',
+      'digest': kv({'username': username, 'password': password}),
+    },
+    AwsV4Auth() => {
+      'type': 'awsv4',
+      'awsv4': kv({
+        'accessKey': a.accessKey,
+        'secretKey': a.secretKey,
+        'region': a.region,
+        'service': a.service,
+        if (a.sessionToken.isNotEmpty) 'sessionToken': a.sessionToken,
+      }),
+    },
+    JwtAuth() => {
+      'type': 'jwt',
+      'jwt': kv({
+        'algorithm': a.algorithm.label,
+        'secret': a.secret,
+        'payload': a.payload,
+        'addTokenTo': 'header',
+        'headerPrefix': a.prefix,
       }),
     },
     RawAuth(:final json) => json,

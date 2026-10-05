@@ -43,7 +43,7 @@ const sample =
        "body": {"mode": "graphql", "graphql": {"query": "{a}"}},
        "url": "{{base}}/g"}},
     {"name": "Custom auth", "request": {"method": "GET",
-       "auth": {"type": "awsv4", "awsv4": [{"key": "region", "value": "eu"}]},
+       "auth": {"type": "hawk", "hawk": [{"key": "region", "value": "eu"}]},
        "url": "{{base}}/aws"}}
   ]
 }
@@ -109,7 +109,7 @@ void main() {
     final graph = (items[2] as Map)['request'] as Map;
     expect((graph['body'] as Map)['mode'], 'graphql');
     final aws = (items[3] as Map)['request'] as Map;
-    expect((aws['auth'] as Map)['type'], 'awsv4');
+    expect((aws['auth'] as Map)['type'], 'hawk');
   });
 
   test('not a collection throws', () {
@@ -187,5 +187,35 @@ void oauthRoundTrip() {
     );
     final back = importPostmanCollection(jsonDecode(jsonEncode(doc)));
     expect(back.collection.auth.toJson(), auth.toJson());
+  });
+
+  test('digest, aws, jwt and pkce auth survive a Postman round trip', () {
+    for (final a in <Auth>[
+      const DigestAuth(username: 'u', password: 'p'),
+      const AwsV4Auth(
+        accessKey: 'a',
+        secretKey: 'k',
+        region: 'r',
+        service: 's',
+      ),
+      const JwtAuth(secret: 's', payload: '{"x":1}'),
+      const OAuth2Auth(
+        grant: OAuth2Grant.authorizationCode,
+        authUrl: 'https://a',
+        tokenUrl: 'https://t',
+        clientId: 'c',
+      ),
+      const OAuth2Auth(
+        grant: OAuth2Grant.authorizationCode,
+        usePkce: false,
+        authUrl: 'https://a',
+        tokenUrl: 'https://t',
+      ),
+      const OAuth2Auth(grant: OAuth2Grant.implicit, authUrl: 'https://a'),
+    ]) {
+      final doc = exportPostmanCollection(FolderNode('C', auth: a));
+      final back = importPostmanCollection(jsonDecode(jsonEncode(doc)));
+      expect(back.collection.auth.toJson(), a.toJson());
+    }
   });
 }

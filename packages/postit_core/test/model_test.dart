@@ -76,10 +76,44 @@ void main() {
     });
 
     test('unknown types are preserved', () {
-      final raw = {'type': 'oauth2', 'grantType': 'authorization_code'};
+      final raw = {'type': 'oauth2', 'grantType': 'device_code'};
       final auth = Auth.fromJson(raw);
       expect(auth, isA<RawAuth>());
       expect(auth.toJson(), raw);
+    });
+
+    test('new auth types round-trip through JSON', () {
+      final all = <Auth>[
+        const DigestAuth(username: 'u', password: 'p'),
+        const JwtAuth(
+          algorithm: JwtAlgorithm.hs384,
+          secret: 's',
+          payload: '{"a":1}',
+          prefix: 'JWT',
+        ),
+        const AwsV4Auth(
+          accessKey: 'a',
+          secretKey: 'k',
+          region: 'r',
+          service: 's',
+          sessionToken: 't',
+        ),
+        const OAuth2Auth(
+          grant: OAuth2Grant.authorizationCode,
+          authUrl: 'https://a',
+          tokenUrl: 'https://t',
+          clientId: 'c',
+          usePkce: false,
+        ),
+        const OAuth2Auth(grant: OAuth2Grant.implicit, authUrl: 'https://a'),
+      ];
+      for (final a in all) {
+        final back = Auth.fromJson(a.toJson());
+        expect(back.runtimeType, a.runtimeType);
+        expect(back.toJson(), a.toJson());
+      }
+      expect((Auth.fromJson(all[3].toJson()) as OAuth2Auth).usePkce, isFalse);
+      expect((all[3] as OAuth2Auth).interactive, isTrue);
     });
 
     test('inherit resolves up the chain', () {

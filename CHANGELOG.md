@@ -2,6 +2,19 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.21.0
+
+- OAuth 2.0 authorization code (with or without PKCE S256) and implicit grants through the system browser (FR-AUTH-003). The redirect is `http://127.0.0.1:<random port>/callback`, received by a short-lived local listener; the state value is checked, the sign-in can be cancelled, and it times out after 5 minutes.
+- Refresh tokens: an expired token with a refresh token is renewed without the browser; if the server refuses it, the browser sign-in runs again.
+- Token manager ("Tokens…" in the OAuth 2.0 auth editor) lists the tokens kept for this session and deletes them. Token values are never shown. Tokens are not saved to disk.
+- Digest auth (MD5 and SHA-256 families, `auth` and `auth-int`): the request is sent once, then re-sent with the computed header after a 401 challenge (FR-AUTH-004).
+- JWT bearer with HS256, HS384 and HS512; the payload may use variables, `iat` is added when missing.
+- AWS Signature V4 (header signing, optional session token). Checked against the AWS test-suite vectors.
+- Postman import/export covers digest, awsv4, jwt, authorization code (PKCE or not) and implicit.
+- Authorization, `X-Amz-Security-Token` and secrets stay masked in the console, history and sent view.
+- New dependency: `url_launcher` (opens the browser) and `crypto`. Checked to build and run the loopback tests on macOS, the iOS 18 simulator and the Android x86_64 emulator.
+- Not done: JWT with RS/ES algorithms, a fixed redirect URL option and the mobile custom-scheme redirect (loopback is used on all platforms), query-string SigV4 and chunked S3 payload signing, device code flow. The real browser launch and a real identity provider were not tested; the sign-in tests drive the redirect in-process. Windows and Linux are not verified.
+
 ## 0.20.0
 
 - No-code assertions (FR-SCR-006): status, header, JSON path, response time, body and JSON schema checks with equals, comparison, exists, contains and regex operators. Built in the new Assertions tab; values may use `{{variables}}`. Results show in the Tests tab with `pm.test` results.
