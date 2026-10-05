@@ -2,6 +2,16 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.25.1
+
+- Security: the OAuth 2.0 sign-in only opens http and https links, so an imported collection cannot make PostIt open a `file:` or app-link URL.
+- Security: when a redirect goes to another origin, headers that look like credentials (`X-Api-Key`, `X-Auth-Token`, anything with auth, token, secret, key, session or cookie in its name) are now removed as well, not just `Authorization` and `Cookie`. The existing "strip on cross-origin redirect" setting still controls this.
+- Security: writing a snapshot refuses file names that are absolute or contain `..`; reading a snapshot folder does not follow links and refuses files over 256 MB.
+- Speed: a response body is decoded once instead of on every screen update, and a large pretty-printed JSON body is formatted once per response instead of on every keystroke in the search box.
+- Speed: workspaces get an index on saved examples (schema 2, applied when a workspace is opened), which makes deleting requests and folders faster. Cleaning up unused attachments at open is now one pass over the data instead of one search per attachment.
+- Reviewed and unchanged: database queries all use bound parameters; scripts have no file or network access and are limited to 64 MB and 5 s; the OAuth redirect listener binds to the local machine only and checks `state`; secrets stay masked in history and the console.
+- Not done: no fuzzing of the importers, no limit on the size of an imported file in the UI, and no profiling with very large workspaces (tested with unit tests only).
+
 ## 0.25.0
 
 - Language setting (FR-APP-005): Settings, "Language" picks System default, English or Arabic, and is remembered in the workspace. The Settings page text is translated; other screens still have fixed English text, and the Arabic is a draft that a native speaker has not reviewed.

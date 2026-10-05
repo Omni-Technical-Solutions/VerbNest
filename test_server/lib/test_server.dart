@@ -211,6 +211,14 @@ class TestServer {
         _write(socket, 200, utf8.encode('delayed $ms'), closeAfter: closeAfter);
       case 'redirect':
         _redirect(socket, seg, closeAfter);
+      case 'redirect-to':
+        _write(
+          socket,
+          302,
+          const [],
+          extra: [('Location', req.uri.queryParameters['u'] ?? '/echo')],
+          closeAfter: closeAfter,
+        );
       case 'gzip':
         _write(
           socket,

@@ -158,8 +158,17 @@ class HttpEngine {
     if (switchToGet && (n == 'content-length' || n == 'content-type')) {
       return true;
     }
-    return stripAuth && (n == 'authorization' || n == 'cookie');
+    return stripAuth && _looksLikeCredential(n);
   }
+
+  /// Names such as `x-api-key` or `x-auth-token` carry secrets just like
+  /// `authorization`, so they must not follow a redirect to another origin.
+  static final _credentialName = RegExp(
+    r'auth|token|secret|api[-_]?key|password|credential|session|cookie',
+  );
+
+  bool _looksLikeCredential(String lowerName) =>
+      _credentialName.hasMatch(lowerName);
 
   String _origin(Uri u) => '${u.scheme}://${u.host}:${u.port}';
 

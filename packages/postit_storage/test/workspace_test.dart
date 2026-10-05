@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:postit_core/postit_core.dart';
 import 'package:postit_storage/postit_storage.dart';
+import 'package:postit_storage/src/workspace_schema.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
 
@@ -76,6 +77,22 @@ void main() {
         throwsA(isA<WorkspaceAccessError>()),
       );
     }, skip: Platform.isWindows);
+
+    test('upgrades a v1 file and adds the example index', () {
+      final path = '${dir.path}/v1.postit';
+      final raw = sqlite3.open(path)
+        ..execute(workspaceMigrations[0])
+        ..execute('PRAGMA application_id = $workspaceApplicationId')
+        ..execute('PRAGMA user_version = 1');
+      raw.close();
+      final db = WorkspaceDatabase.open(path);
+      addTearDown(db.close);
+      expect(db.schemaVersion, 2);
+      final idx = db.db.select(
+        "SELECT name FROM sqlite_master WHERE name = 'example_request'",
+      );
+      expect(idx, hasLength(1));
+    });
 
     test('rejects a foreign SQLite database', () {
       final path = '${dir.path}/other.db';
@@ -381,7 +398,7 @@ void main() {
     });
 
     test('schema version and application id are set', () {
-      expect(ws.schemaVersion, 1);
+      expect(ws.schemaVersion, 2);
       expect(
         ws.db.select('PRAGMA application_id').first.values.first,
         0x504F5354,

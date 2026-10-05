@@ -290,10 +290,25 @@ class _ResponseViewState extends State<ResponseView> {
     ],
   );
 
+  HttpResponseRecord? _textFor;
+  bool? _textPretty;
+  String _text = '';
+
+  /// Pretty-printing a large JSON body is slow, so keep the result until the
+  /// response or the toggle changes (typing in the search box rebuilds this).
+  String _bodyText(HttpResponseRecord r) {
+    if (!identical(_textFor, r) || _textPretty != _pretty) {
+      _textFor = r;
+      _textPretty = _pretty;
+      _text = _pretty ? prettyBody(r) : r.bodyText;
+    }
+    return _text;
+  }
+
   Widget _body(HttpResponseRecord r) {
     final isImage = isImageResponse(r);
     final showImage = isImage && _preview;
-    final text = _pretty ? prettyBody(r) : r.bodyText;
+    final text = _bodyText(r);
     final matches = countMatches(text, _query);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

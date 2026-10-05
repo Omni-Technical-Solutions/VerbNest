@@ -137,6 +137,43 @@ void main() {
       );
     });
 
+    test(
+      'credential-like headers do not follow a redirect to another origin',
+      () async {
+        final other = await TestServer.start();
+        addTearDown(other.close);
+        final to = Uri.encodeQueryComponent('${other.baseUrl}/echo');
+        final r = await engine.send(
+          req(
+            '/redirect-to?u=$to',
+            headers: [
+              ('Authorization', 'Bearer s'),
+              ('X-Api-Key', 'k'),
+              ('X-Auth-Token', 't'),
+              ('Cookie', 'a=b'),
+              ('X-Trace', 'keep'),
+            ],
+          ),
+        );
+        final names = [
+          for (final h in echoed(r)['headers'] as List)
+            (h as List)[0].toString().toLowerCase(),
+        ];
+        expect(names, contains('x-trace'));
+        expect(
+          names,
+          isNot(
+            anyOf(
+              contains('authorization'),
+              contains('x-api-key'),
+              contains('x-auth-token'),
+              contains('cookie'),
+            ),
+          ),
+        );
+      },
+    );
+
     test('a 302 turns POST into GET without a body', () async {
       final r = await engine.send(
         req(

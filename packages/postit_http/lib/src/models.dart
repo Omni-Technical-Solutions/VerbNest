@@ -142,5 +142,6 @@ class HttpResponseRecord {
     return null;
   }
 
-  String get bodyText => utf8.decode(body, allowMalformed: true);
+  /// Decoded once; large bodies are read several times per screen update.
+  late final String bodyText = utf8.decode(body, allowMalformed: true);
 }

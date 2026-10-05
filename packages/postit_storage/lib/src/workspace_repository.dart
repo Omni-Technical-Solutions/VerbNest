@@ -793,19 +793,27 @@ class WorkspaceRepository {
   /// Deletes attachments that no request, example or revision mentions.
   /// Ids are unique strings, so a text search of the stored JSON is enough.
   int pruneUnreferencedAttachments() {
-    final used = <String>{};
-    for (final r in _db.select('SELECT id FROM attachment')) {
-      final id = r['id'] as String;
-      final hit = _db.select(
-        'SELECT 1 FROM node WHERE instr(data, ?1) > 0 '
-        'UNION ALL SELECT 1 FROM example WHERE instr(data, ?1) > 0 '
-        'UNION ALL SELECT 1 FROM revision WHERE instr(snapshot, ?1) > 0 '
-        'LIMIT 1',
-        [id],
-      );
-      if (hit.isNotEmpty) used.add(id);
+    final unseen = {
+      for (final r in _db.select('SELECT id FROM attachment'))
+        r['id'] as String,
+    };
+    if (unseen.isEmpty) return 0;
+    final all = {...unseen};
+    // One pass over the stored JSON; an id found once need not be searched
+    // for again, and the pass ends early when every id has been seen.
+    for (final sql in const [
+      'SELECT data FROM node',
+      'SELECT data FROM example',
+      'SELECT snapshot FROM revision',
+    ]) {
+      for (final r in _db.select(sql)) {
+        final text = r.values.first as String?;
+        if (text == null) continue;
+        unseen.removeWhere(text.contains);
+        if (unseen.isEmpty) return pruneAttachments(all);
+      }
     }
-    return pruneAttachments(used);
+    return pruneAttachments(all.difference(unseen));
   }
 
   /// Deletes every attachment not named in [referenced]. Returns the count.

@@ -4,6 +4,10 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
+/// Largest single file read from a snapshot folder; attachments can be big,
+/// but a runaway file should not exhaust memory.
+const maxSnapshotFileBytes = 256 * 1024 * 1024;
+
 /// Reads and writes a whole folder, for YAML snapshots (FR-WS-006). Only
 /// desktop platforms have a folder chooser.
 abstract interface class FolderPort {
@@ -17,6 +21,21 @@ abstract interface class FolderPort {
   Future<Map<String, List<int>>?> read();
 }
 
+/// Writes [files] under [dir]. Throws [ArgumentError] for a path that is
+/// absolute or contains `..`, so a crafted name can never escape the folder.
+void writeSnapshotFiles(String dir, Map<String, List<int>> files) {
+  for (final e in files.entries) {
+    final parts = e.key.split('/');
+    if (e.key.startsWith('/') ||
+        parts.any((s) => s == '..' || s == '.' || s.isEmpty)) {
+      throw ArgumentError('Unsafe path in snapshot: ${e.key}');
+    }
+    final f = File(p.joinAll([dir, ...parts]));
+    f.parent.createSync(recursive: true);
+    f.writeAsBytesSync(e.value);
+  }
+}
+
 class PluginFolderPort implements FolderPort {
   const PluginFolderPort();
 
@@ -28,11 +47,7 @@ class PluginFolderPort implements FolderPort {
   Future<bool> write(Map<String, List<int>> files) async {
     final dir = await getDirectoryPath();
     if (dir == null) return false;
-    for (final e in files.entries) {
-      final f = File(p.joinAll([dir, ...e.key.split('/')]));
-      f.parent.createSync(recursive: true);
-      f.writeAsBytesSync(e.value);
-    }
+    writeSnapshotFiles(dir, files);
     return true;
   }
 
@@ -41,8 +56,15 @@ class PluginFolderPort implements FolderPort {
     final dir = await getDirectoryPath();
     if (dir == null) return null;
     final out = <String, List<int>>{};
-    for (final f in Directory(dir).listSync(recursive: true)) {
+    for (final f in Directory(
+      dir,
+    ).listSync(recursive: true, followLinks: false)) {
       if (f is! File) continue;
+      if (f.lengthSync() > maxSnapshotFileBytes) {
+        throw FormatException(
+          '${p.basename(f.path)} is too large for a snapshot',
+        );
+      }
       final rel = p.relative(f.path, from: dir).replaceAll(r'\', '/');
       out[rel] = f.readAsBytesSync();
     }

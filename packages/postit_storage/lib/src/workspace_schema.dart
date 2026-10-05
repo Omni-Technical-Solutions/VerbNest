@@ -71,6 +71,10 @@ CREATE TABLE attachment (
   created_at INTEGER NOT NULL
 );
 ''',
+  // v2: deleting a request looked through every example to find its own
+  '''
+CREATE INDEX example_request ON example(request_id, position);
+''',
 ];
 
 int get workspaceSchemaVersion => workspaceMigrations.length;
