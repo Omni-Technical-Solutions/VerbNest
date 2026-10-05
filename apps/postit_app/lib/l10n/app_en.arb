@@ -1,0 +1,18 @@
+{
+  "@@locale": "en",
+  "navCollections": "Collections",
+  "navHistory": "History",
+  "navEnvironments": "Environments",
+  "navSettings": "Settings",
+  "selectOrCreateRequest": "Select or create a request",
+  "paletteHint": "Type a command or request name",
+  "paletteNothing": "Nothing matches",
+  "cmdNewRequest": "New request",
+  "cmdSend": "Send request",
+  "cmdSearch": "Search workspace…",
+  "cmdToggleSidebar": "Toggle sidebar",
+  "cmdCloseTab": "Close tab",
+  "cmdGoTo": "Go to {place}",
+  "@cmdGoTo": {"placeholders": {"place": {"type": "String"}}},
+  "closeTab": "Close tab"
+}

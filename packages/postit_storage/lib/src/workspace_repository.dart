@@ -564,6 +564,171 @@ class WorkspaceRepository {
     }
   }
 
+  // ---- favourites (FR-COL-004) --------------------------------------------
+
+  bool isFavourite(String id) =>
+      _decode(_row(id)['extra'])['favourite'] == true;
+
+  void setFavourite(String id, bool value) => _ws.transaction(() {
+    final extra = _decode(_row(id)['extra']);
+    if (value) {
+      extra['favourite'] = true;
+    } else {
+      extra.remove('favourite');
+    }
+    _db.execute('UPDATE node SET extra = ? WHERE id = ?', [
+      jsonEncode(extra),
+      id,
+    ]);
+  });
+
+  /// Ids of favourite requests, in tree order of their ids.
+  List<String> favourites() => [
+    for (final r in _db.select(
+      "SELECT id FROM node WHERE kind = 'request' "
+      "AND json_extract(extra, '\$.favourite') = 1 ORDER BY name, id",
+    ))
+      r['id'] as String,
+  ];
+
+  // ---- saved examples (FR-COL-005) -----------------------------------------
+
+  List<ExampleInfo> examples(String requestId) => [
+    for (final r in _db.select(
+      'SELECT * FROM example WHERE request_id = ? ORDER BY position, id',
+      [requestId],
+    ))
+      _example(r),
+  ];
+
+  ExampleInfo example(String id) {
+    final rows = _db.select('SELECT * FROM example WHERE id = ?', [id]);
+    if (rows.isEmpty) throw NotFoundError('Example $id');
+    return _example(rows.first);
+  }
+
+  ExampleInfo _example(Row r) => ExampleInfo(
+    id: r['id'] as String,
+    requestId: r['request_id'] as String,
+    name: r['name'] as String,
+    data: _decode(r['data']),
+    body: (r['body_blob'] as Uint8List?) ?? Uint8List(0),
+  );
+
+  /// Adds a saved response for [requestId] and returns its id. [data] holds
+  /// `status`, `reason`, `headers` and optionally `request`.
+  String addExample(String requestId, String name, Json data, Uint8List body) =>
+      _ws.transaction(() {
+        _row(requestId);
+        return restoreExample(
+          ExampleInfo(
+            id: Ulid.generate(now: _clock()),
+            requestId: requestId,
+            name: name,
+            data: data,
+            body: body,
+          ),
+        );
+      });
+
+  /// Inserts or replaces an example keeping its id.
+  String restoreExample(ExampleInfo e) => _ws.transaction(() {
+    final old = _db.select('SELECT position FROM example WHERE id = ?', [e.id]);
+    final pos = old.isNotEmpty
+        ? old.first['position'] as int
+        : ((_db.select(
+                        'SELECT MAX(position) AS p FROM example WHERE request_id = ?',
+                        [e.requestId],
+                      ).first['p']
+                      as int?) ??
+                  0) +
+              _step;
+    _db.execute(
+      'INSERT INTO example(id, request_id, name, position, data, body_blob) '
+      'VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET '
+      'name = excluded.name, data = excluded.data, body_blob = excluded.body_blob',
+      [e.id, e.requestId, e.name, pos, jsonEncode(e.data), e.body],
+    );
+    return e.id;
+  });
+
+  void renameExample(String id, String name) => _ws.transaction(
+    () => _db.execute('UPDATE example SET name = ? WHERE id = ?', [name, id]),
+  );
+
+  void deleteExample(String id) => _ws.transaction(
+    () => _db.execute('DELETE FROM example WHERE id = ?', [id]),
+  );
+
+  // ---- snapshot support (FR-WS-006) -----------------------------------------
+
+  bool hasNode(String id) =>
+      _db.select('SELECT 1 FROM node WHERE id = ?', [id]).isNotEmpty;
+
+  /// Everything stored on a node, decoded, for the YAML snapshot.
+  Json rawNode(String id) {
+    final r = _row(id);
+    return {
+      'id': id,
+      'kind': r['kind'],
+      'type': r['type'],
+      'name': r['name'],
+      'description': r['description'],
+      'auth': _decodeOrNull(r['auth_json']),
+      'scripts': _decodeOrNull(r['scripts_json']),
+      'data': _decode(r['data']),
+      'extra': _decode(r['extra']),
+    };
+  }
+
+  /// Inserts a node with the id it was exported with. The position follows
+  /// the order of calls under the same parent.
+  void restoreNode(Json n, String? parentId) => _ws.transaction(() {
+    final now = _now;
+    _db.execute(
+      'INSERT INTO node(id, parent_id, kind, type, name, position, description, '
+      'auth_json, scripts_json, data, extra, created_at, updated_at) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        n['id'],
+        parentId,
+        n['kind'],
+        n['type'],
+        n['name'],
+        _nextPosition(parentId),
+        n['description'] ?? '',
+        n['auth'] == null ? null : jsonEncode(n['auth']),
+        n['scripts'] == null ? null : jsonEncode(n['scripts']),
+        jsonEncode(n['data'] ?? {}),
+        jsonEncode(n['extra'] ?? {}),
+        now,
+        now,
+      ],
+    );
+  });
+
+  /// Ids of every stored attachment.
+  List<String> attachmentIds() => [
+    for (final r in _db.select('SELECT id FROM attachment ORDER BY id'))
+      r['id'] as String,
+  ];
+
+  void restoreAttachment(
+    String id,
+    String name,
+    String? mime,
+    Uint8List b,
+  ) => _ws.transaction(
+    () => _db.execute(
+      'INSERT OR IGNORE INTO attachment(id, name, mime, content, created_at) '
+      'VALUES (?, ?, ?, ?, ?)',
+      [id, name, mime, b, _now],
+    ),
+  );
+
+  /// Replaces the workspace id (a snapshot import into a new workspace).
+  void restoreWorkspaceId(String id) => setMeta('workspace_id', id);
+
   // ---- helpers ----------------------------------------------------------
 
   Row _row(String id) {
@@ -706,6 +871,25 @@ class WorkspaceRepository {
       (jsonDecode(text as String) as Map).cast<String, Object?>();
 
   Json? _decodeOrNull(Object? text) => text == null ? null : _decode(text);
+}
+
+/// A saved request/response pair.
+class ExampleInfo {
+  const ExampleInfo({
+    required this.id,
+    required this.requestId,
+    required this.name,
+    required this.data,
+    required this.body,
+  });
+
+  final String id;
+  final String requestId;
+  final String name;
+
+  /// `status`, `reason`, `headers` (list of [name, value]), `request`.
+  final Map<String, Object?> data;
+  final Uint8List body;
 }
 
 /// Who owns a set of variables.

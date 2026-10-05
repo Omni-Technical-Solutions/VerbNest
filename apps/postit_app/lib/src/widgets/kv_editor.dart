@@ -67,7 +67,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
         ? 'Choose file…'
         : (slash < 0 ? value : value.substring(slash + 1));
     return Align(
-      alignment: Alignment.centerLeft,
+      alignment: AlignmentDirectional.centerStart,
       child: OutlinedButton.icon(
         key: ValueKey('$idPrefix-file-$i'),
         icon: const Icon(Icons.upload_file, size: 18),
@@ -84,7 +84,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
     padding: const EdgeInsets.all(8),
     children: [
       Align(
-        alignment: Alignment.centerRight,
+        alignment: AlignmentDirectional.centerEnd,
         child: TextButton(
           key: Key('$idPrefix-table'),
           onPressed: _toggleBulk,
@@ -120,7 +120,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
       children: [
         if (widget.allowBulk)
           Align(
-            alignment: Alignment.centerRight,
+            alignment: AlignmentDirectional.centerEnd,
             child: TextButton(
               key: Key('$idPrefix-bulk-toggle'),
               onPressed: _toggleBulk,
@@ -195,7 +195,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
             ),
           ),
         Align(
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerStart,
           child: TextButton.icon(
             key: Key('$idPrefix-add'),
             icon: const Icon(Icons.add, size: 18),

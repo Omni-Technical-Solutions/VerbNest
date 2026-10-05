@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_storage/postit_storage.dart';
 
+import 'package:postit_import/postit_import.dart';
+
 import '../state/file_port.dart';
+import '../state/folder_port.dart';
 import '../state/session.dart';
 import '../widgets/name_dialog.dart';
 import '../workspace_host.dart';
@@ -102,6 +105,42 @@ class _WorkspacesDialog extends ConsumerWidget {
           }),
           child: const Text('Import…'),
         ),
+        if (ref.read(folderPortProvider).available) ...[
+          TextButton(
+            key: const Key('ws-snapshot-import'),
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final nav = Navigator.of(context);
+              try {
+                final files = await ref.read(folderPortProvider).read();
+                if (files == null) return;
+                final r = importSnapshot(session.repo, files);
+                nav.pop();
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Snapshot merged: ${r.requests} requests, '
+                      '${r.environments} environments'
+                      '${r.conflicts.isEmpty ? '' : ', ${r.conflicts.length} kept as they were (${r.conflicts.first})'}',
+                    ),
+                  ),
+                );
+              } on Object catch (e) {
+                messenger.showSnackBar(SnackBar(content: Text('$e')));
+              }
+            },
+            child: const Text('Import snapshot…'),
+          ),
+          TextButton(
+            key: const Key('ws-snapshot-export'),
+            onPressed: () => _guard(context, () async {
+              await ref
+                  .read(folderPortProvider)
+                  .write(exportSnapshot(session.repo));
+            }),
+            child: const Text('Export snapshot…'),
+          ),
+        ],
         TextButton(
           key: const Key('ws-export'),
           onPressed: () => _guard(context, () async {

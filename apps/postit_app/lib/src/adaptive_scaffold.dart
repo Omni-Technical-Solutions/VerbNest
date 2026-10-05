@@ -2,28 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import 'layout_class.dart';
+import 'pages/command_palette.dart';
 import 'pages/environments_page.dart';
 import 'pages/history_page.dart';
 import 'pages/search_dialog.dart';
 import 'settings_page.dart';
 import 'state/editor_state.dart';
 import 'state/session.dart';
+
+import 'package:postit_storage/postit_storage.dart';
+
 import 'state/tree_state.dart';
 import 'widgets/collections_sidebar.dart';
 import 'widgets/request_editor.dart';
 
 enum _Destination {
-  collections(Icons.folder_outlined, Icons.folder, 'Collections'),
-  history(Icons.history, Icons.history, 'History'),
-  environments(Icons.tune_outlined, Icons.tune, 'Environments'),
-  settings(Icons.settings_outlined, Icons.settings, 'Settings');
+  collections(Icons.folder_outlined, Icons.folder),
+  history(Icons.history, Icons.history),
+  environments(Icons.tune_outlined, Icons.tune),
+  settings(Icons.settings_outlined, Icons.settings);
 
-  const _Destination(this.icon, this.selectedIcon, this.label);
+  const _Destination(this.icon, this.selectedIcon);
 
   final IconData icon;
   final IconData selectedIcon;
-  final String label;
+
+  String label(BuildContext context) {
+    final l = context.l10n;
+    return switch (this) {
+      collections => l.navCollections,
+      history => l.navHistory,
+      environments => l.navEnvironments,
+      settings => l.navSettings,
+    };
+  }
 }
 
 /// Picks navigation by form factor: bottom bar on phones, rail on tablets,
@@ -53,6 +67,62 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     if (hit != null && mounted) {
       setState(() => _selected = _Destination.collections);
     }
+  }
+
+  void _palette() {
+    final l = context.l10n;
+    final repo = ref.read(repositoryProvider);
+    final entries = <PaletteEntry>[
+      PaletteEntry(
+        id: 'cmd-new-request',
+        title: l.cmdNewRequest,
+        icon: Icons.add,
+        run: _newRequest,
+      ),
+      PaletteEntry(
+        id: 'cmd-send',
+        title: l.cmdSend,
+        icon: Icons.send,
+        run: _sendActive,
+      ),
+      PaletteEntry(
+        id: 'cmd-search',
+        title: l.cmdSearch,
+        icon: Icons.manage_search,
+        run: _search,
+      ),
+      PaletteEntry(
+        id: 'cmd-toggle-sidebar',
+        title: l.cmdToggleSidebar,
+        icon: Icons.view_sidebar_outlined,
+        run: _toggleSidebar,
+      ),
+      PaletteEntry(
+        id: 'cmd-close-tab',
+        title: l.cmdCloseTab,
+        icon: Icons.close,
+        run: _closeActive,
+      ),
+      for (final d in _Destination.values)
+        PaletteEntry(
+          id: 'go-${d.name}',
+          title: l.cmdGoTo(d.label(context)),
+          icon: d.icon,
+          run: () => setState(() => _selected = d),
+        ),
+      for (final d in repo.searchDocuments())
+        if (d.kind == NodeKind.request)
+          PaletteEntry(
+            id: 'req-${d.id}',
+            title: d.name,
+            subtitle: '${d.method ?? ''} ${d.url ?? ''}'.trim(),
+            run: () {
+              ref.read(tabsProvider.notifier).open(d.id);
+              setState(() => _selected = _Destination.collections);
+            },
+          ),
+    ];
+    showCommandPalette(context, entries);
   }
 
   void _newRequest() {
@@ -89,8 +159,15 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
           const SingleActivator(LogicalKeyboardKey.enter, meta: true),
         ])
           mod: _sendActive,
-        const SingleActivator(LogicalKeyboardKey.keyK, control: true): _search,
-        const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _search,
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true): _palette,
+        const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _palette,
+        const SingleActivator(
+          LogicalKeyboardKey.keyF,
+          control: true,
+          shift: true,
+        ): _search,
+        const SingleActivator(LogicalKeyboardKey.keyF, meta: true, shift: true):
+            _search,
         const SingleActivator(LogicalKeyboardKey.keyW, control: true):
             _closeActive,
         const SingleActivator(LogicalKeyboardKey.keyW, meta: true):
@@ -133,7 +210,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   Widget _compact() {
     return Scaffold(
       key: const Key('layout-compact'),
-      appBar: AppBar(title: Text(_selected.label)),
+      appBar: AppBar(title: Text(_selected.label(context))),
       body: _content(),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selected.index,
@@ -143,7 +220,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
             NavigationDestination(
               icon: Icon(d.icon),
               selectedIcon: Icon(d.selectedIcon),
-              label: d.label,
+              label: d.label(context),
             ),
         ],
       ),
@@ -164,7 +241,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
                 NavigationRailDestination(
                   icon: Icon(d.icon),
                   selectedIcon: Icon(d.selectedIcon),
-                  label: Text(d.label),
+                  label: Text(d.label(context)),
                 ),
             ],
           ),
@@ -188,7 +265,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   Widget _activeRequest() {
     final active = ref.watch(tabsProvider).active;
     if (active == null) {
-      return const Center(child: Text('Select or create a request'));
+      return Center(child: Text(context.l10n.selectOrCreateRequest));
     }
     ref.watch(workspaceVersionProvider);
     final tabs = ref.watch(tabsProvider);
@@ -264,7 +341,7 @@ class _TabChip extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.only(left: 12),
+        padding: const EdgeInsetsDirectional.only(start: 12),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -279,7 +356,7 @@ class _TabChip extends StatelessWidget {
           children: [
             Text(title),
             IconButton(
-              tooltip: 'Close tab',
+              tooltip: context.l10n.closeTab,
               icon: const Icon(Icons.close, size: 14),
               onPressed: onClose,
             ),

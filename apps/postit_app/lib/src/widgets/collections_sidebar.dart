@@ -28,6 +28,7 @@ enum _Action {
   delete,
   copyCurl,
   generateCode,
+  toggleFavourite,
   versions,
   exportPostman,
 }
@@ -48,6 +49,7 @@ class CollectionsSidebar extends ConsumerStatefulWidget {
 }
 
 class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
+  bool _favOnly = false;
   String _filter = '';
 
   @override
@@ -63,7 +65,9 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       children: [
         _header(context),
         Expanded(
-          child: rows.isEmpty
+          child: _favOnly
+              ? _favourites(context, active)
+              : rows.isEmpty
               ? _empty(context)
               : ListView.builder(
                   itemCount: rows.length,
@@ -87,7 +91,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
 
   Widget _header(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 4, 4),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 4, 4),
       child: Row(
         children: [
           Expanded(
@@ -108,6 +112,12 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
               icon: const Icon(Icons.workspaces_outline),
               onPressed: () => showWorkspaces(context, ref),
             ),
+          IconButton(
+            key: const Key('favourites-filter'),
+            tooltip: _favOnly ? 'Show all' : 'Show favourites only',
+            icon: Icon(_favOnly ? Icons.star : Icons.star_border),
+            onPressed: () => setState(() => _favOnly = !_favOnly),
+          ),
           IconButton(
             key: const Key('search'),
             tooltip: 'Search workspace',
@@ -133,6 +143,23 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _favourites(BuildContext context, String? active) {
+    final repo = ref.read(repositoryProvider);
+    final ids = repo.favourites();
+    if (ids.isEmpty) {
+      return const Center(
+        key: Key('no-favourites'),
+        child: Text('No favourites yet.\nStar a request to pin it here.'),
+      );
+    }
+    return ListView(
+      children: [
+        for (final id in ids)
+          _tileBody(context, SidebarRow(repo.node(id), 0), active),
+      ],
     );
   }
 
@@ -203,9 +230,27 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       key: Key('node-${node.id}'),
       dense: true,
       selected: selected,
-      contentPadding: EdgeInsets.only(left: 12.0 + row.depth * 16, right: 0),
+      contentPadding: EdgeInsetsDirectional.only(
+        start: 12.0 + row.depth * 16,
+        end: 0,
+      ),
       leading: _leading(node, row.expanded),
-      title: Text(node.name, overflow: TextOverflow.ellipsis),
+      title: Row(
+        children: [
+          Flexible(child: Text(node.name, overflow: TextOverflow.ellipsis)),
+          if (!node.isContainer &&
+              ref.read(repositoryProvider).isFavourite(node.id))
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 4),
+              child: Icon(
+                Icons.star,
+                key: Key('fav-${node.id}'),
+                size: 12,
+                color: Colors.amber.shade700,
+              ),
+            ),
+        ],
+      ),
       trailing: _menu(context, node),
       onTap: () => _onTap(node),
     );
@@ -286,6 +331,15 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
             child: Text('Copy as cURL'),
           ),
         if (!node.isContainer)
+          PopupMenuItem(
+            value: _Action.toggleFavourite,
+            child: Text(
+              ref.read(repositoryProvider).isFavourite(node.id)
+                  ? 'Remove from favourites'
+                  : 'Add to favourites',
+            ),
+          ),
+        if (!node.isContainer)
           const PopupMenuItem(
             value: _Action.generateCode,
             child: Text('Generate code…'),
@@ -363,6 +417,9 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           requestAsCurl(ref.read(sessionProvider), node.id),
           'cURL command copied',
         );
+      case _Action.toggleFavourite:
+        final repo = ref.read(repositoryProvider);
+        setState(() => repo.setFavourite(node.id, !repo.isFavourite(node.id)));
       case _Action.generateCode:
         await showDialog<void>(
           context: context,

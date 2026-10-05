@@ -157,7 +157,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   Widget _section(BuildContext context, String text) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+    padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
     child: Text(text, style: Theme.of(context).textTheme.titleSmall),
   );
 }

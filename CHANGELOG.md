@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.24.0
+
+- Favourites (FR-COL-004): star a request in the editor or from its menu; starred requests show a star in the tree, and a header button shows only favourites.
+- Saved examples (FR-COL-005): "Examples" in the request editor saves the current response (status, headers, body) with the request, and lists, shows and deletes them.
+- Command palette (FR-APP-003): Ctrl/Cmd+K, type to find commands or any request. Workspace search is now Ctrl/Cmd+Shift+F.
+- YAML snapshot export and import (FR-WS-006), desktop only: Workspaces, "Export snapshot…" writes a folder of YAML files that gives the same bytes every time, so it diffs cleanly in git. "Import snapshot…" merges by id into the open workspace and keeps anything already there.
+- Localisation-ready strings (FR-APP-005): ARB files and generated code are set up with English and an Arabic first draft for the navigation and palette. Layout paddings and alignments now follow the text direction, so right-to-left languages mirror.
+- Not done: most screens still have fixed English text, there is no language setting (the device language is used), the Arabic draft has not been reviewed by a native speaker, and snapshots cannot be imported or exported on phones. Checked with unit and widget tests on macOS; the folder picker was not used by hand.
+
 ## 0.23.0
 
 - Import OpenAPI 3.0/3.1 and Swagger 2.0 (JSON or YAML) (FR-IO-004): one folder per tag, a `baseUrl` variable from the server, query, header and path parameters, request bodies with example values built from the schema, and the first security scheme (basic, bearer, API key) as the collection's auth. Optional parameters are listed but switched off.

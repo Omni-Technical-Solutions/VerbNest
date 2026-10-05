@@ -22,7 +22,7 @@ class NetworkSettingsSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
           child: Text('Network (this device)', style: theme),
         ),
         ListTile(
@@ -99,7 +99,7 @@ class NetworkSettingsSection extends ConsumerWidget {
         ),
         const Divider(),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
           child: Text('Certificates (this device)', style: theme),
         ),
         for (var i = 0; i < c.cas.length; i++)
@@ -132,7 +132,7 @@ class NetworkSettingsSection extends ConsumerWidget {
           spacing: 8,
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 16),
+              padding: const EdgeInsetsDirectional.only(start: 16),
               child: OutlinedButton.icon(
                 key: const Key('add-ca'),
                 icon: const Icon(Icons.add),

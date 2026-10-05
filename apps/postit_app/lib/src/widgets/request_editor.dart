@@ -17,6 +17,7 @@ import 'auth_editor.dart';
 import 'env_selector.dart';
 import 'kv_editor.dart';
 import 'response_view.dart';
+import 'request_extras.dart';
 import 'synced_field.dart';
 
 const _customMethod = '\u0000custom';
@@ -51,10 +52,27 @@ class RequestEditor extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Align(
-            alignment: Alignment.centerRight,
+            alignment: AlignmentDirectional.centerEnd,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: EnvSelector(requestId: requestId),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FavouriteButton(requestId: requestId),
+                  TextButton(
+                    key: const Key('examples'),
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (_) => UncontrolledProviderScope(
+                        container: ProviderScope.containerOf(context),
+                        child: ExamplesDialog(requestId: requestId),
+                      ),
+                    ),
+                    child: const Text('Examples'),
+                  ),
+                  EnvSelector(requestId: requestId),
+                ],
+              ),
             ),
           ),
           _urlBar(context, state, notifier),

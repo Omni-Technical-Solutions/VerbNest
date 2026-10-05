@@ -1,0 +1,17 @@
+{
+  "@@locale": "ar",
+  "navCollections": "المجموعات",
+  "navHistory": "السجل",
+  "navEnvironments": "البيئات",
+  "navSettings": "الإعدادات",
+  "selectOrCreateRequest": "اختر طلبًا أو أنشئ طلبًا جديدًا",
+  "paletteHint": "اكتب أمرًا أو اسم طلب",
+  "paletteNothing": "لا توجد نتائج",
+  "cmdNewRequest": "طلب جديد",
+  "cmdSend": "إرسال الطلب",
+  "cmdSearch": "البحث في مساحة العمل…",
+  "cmdToggleSidebar": "إظهار أو إخفاء الشريط الجانبي",
+  "cmdCloseTab": "إغلاق التبويب",
+  "cmdGoTo": "الانتقال إلى {place}",
+  "closeTab": "إغلاق التبويب"
+}

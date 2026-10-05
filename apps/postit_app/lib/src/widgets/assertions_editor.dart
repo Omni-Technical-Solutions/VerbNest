@@ -36,7 +36,7 @@ class AssertionsEditor extends StatelessWidget {
         for (var i = 0; i < assertions.length; i++)
           _row(context, i, assertions[i]),
         Align(
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerStart,
           child: TextButton.icon(
             key: const Key('add-assertion'),
             onPressed: () => onChanged([

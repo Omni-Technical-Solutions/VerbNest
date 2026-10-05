@@ -295,7 +295,7 @@ extension on AuthEditor {
           ),
         ),
       Align(
-        alignment: Alignment.centerLeft,
+        alignment: AlignmentDirectional.centerStart,
         child: Consumer(
           builder: (context, ref, _) => TextButton.icon(
             key: const Key('oauth-tokens'),

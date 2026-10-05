@@ -99,7 +99,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
         if (item is String) {
           return Padding(
             key: Key('history-day-$item'),
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 4),
             child: Text(item, style: Theme.of(context).textTheme.labelLarge),
           );
         }

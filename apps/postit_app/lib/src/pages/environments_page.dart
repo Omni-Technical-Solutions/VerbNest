@@ -93,7 +93,7 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
                       ),
                       for (final e in envs)
                         Padding(
-                          padding: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsetsDirectional.only(start: 8),
                           child: ChoiceChip(
                             key: Key('env-${e.id}'),
                             label: Text(e.name),
@@ -298,7 +298,7 @@ class _VariablesEditorState extends State<VariablesEditor> {
             ),
           ),
         Align(
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerStart,
           child: TextButton.icon(
             key: const Key('var-add'),
             icon: const Icon(Icons.add, size: 18),
