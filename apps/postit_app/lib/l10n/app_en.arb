@@ -795,5 +795,7 @@
   "reUseProxyHint": "Turn off to bypass the proxy for this request",
   "reDecompress": "Decompress responses automatically",
   "rvHtmlTooLarge": "This page is too large to preview. Use Raw or Save.",
-  "rtSave": "Save log…"
+  "rtSave": "Save log…",
+  "rtHex": "Hex",
+  "rtHexHint": "Bytes in hex, e.g. 0a ff 10"
 }

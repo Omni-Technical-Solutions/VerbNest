@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.38.0
+
+- WebSocket: the live dialog can send binary frames. Tick "Hex" and type bytes such as `0a ff 10` (`parseHexBytes` in `postit_http`). Bad input shows an error and sends nothing.
+
 ## 0.37.0
 
 - GraphQL over GET: with method GET the operation is sent as `query`, `variables` (JSON) and `operationName` URL parameters and the request has no body. cURL and code export follow the same rule. Persisted queries are not supported yet.

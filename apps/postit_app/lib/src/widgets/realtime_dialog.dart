@@ -34,6 +34,7 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
   String? _error;
   bool _connecting = false;
   bool _open = false;
+  bool _hex = false;
 
   Future<void> _connect() async {
     setState(() {
@@ -69,8 +70,10 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
     final text = _input.text;
     if (text.isEmpty || _conn == null || !_conn!.canSend) return;
     try {
-      await _conn!.send(text);
+      await _conn!.send(_hex ? parseHexBytes(text) : text);
       _input.clear();
+    } on FormatException catch (e) {
+      setState(() => _error = e.message);
     } on Object catch (e) {
       setState(() => _error = '$e');
     }
@@ -180,12 +183,20 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
                       controller: _input,
                       enabled: _open,
                       decoration: InputDecoration(
-                        hintText: context.l10n.rtMessageHint,
+                        hintText: _hex
+                            ? context.l10n.rtHexHint
+                            : context.l10n.rtMessageHint,
                         isDense: true,
                       ),
                       onSubmitted: (_) => _send(),
                     ),
                   ),
+                  Checkbox(
+                    key: const Key('rt-hex'),
+                    value: _hex,
+                    onChanged: (v) => setState(() => _hex = v ?? false),
+                  ),
+                  Text(context.l10n.rtHex),
                   IconButton(
                     key: const Key('rt-send'),
                     tooltip: context.l10n.rtSendTooltip,

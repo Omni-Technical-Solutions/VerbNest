@@ -79,6 +79,6 @@ ADR. 5 items are picked by need.
 
 ## Phase 5 status
 
-- Done: mock query/body matching and delay (v0.34.0), SSE reconnect (v0.35.0), saving the live log (v0.36.0), GraphQL GET (v0.37.0).
+- Done: mock query/body matching and delay (v0.34.0), SSE reconnect (v0.35.0), saving the live log (v0.36.0), GraphQL GET (v0.37.0), binary send (v0.38.0).
 - Not planned: CLI history (it lives in the app's per-device store, which the CLI should not write) and CLI vault secrets (the vault is the OS keychain; the CLI uses `--var`).
-- Open: binary send, persisted queries, `pm.sendRequest`/`pm.cookies`, PDF preview.
+- Open: persisted queries, `pm.sendRequest`/`pm.cookies`, PDF preview.

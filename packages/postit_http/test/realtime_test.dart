@@ -36,6 +36,14 @@ void main() {
     });
   });
 
+  test('parseHexBytes accepts common spellings and rejects bad input', () {
+    expect(parseHexBytes('de ad BE:EF'), [0xde, 0xad, 0xbe, 0xef]);
+    expect(parseHexBytes('0x0102,0x03'), [1, 2, 3]);
+    expect(parseHexBytes(''), isEmpty);
+    expect(() => parseHexBytes('abc'), throwsFormatException);
+    expect(() => parseHexBytes('zz'), throwsFormatException);
+  });
+
   test('formatRealtimeLog writes one stamped entry per message', () {
     final text = formatRealtimeLog([
       RealtimeMessage(

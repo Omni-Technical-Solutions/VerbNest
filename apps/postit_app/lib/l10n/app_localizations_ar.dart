@@ -1325,4 +1325,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get rtSave => 'حفظ السجل…';
+
+  @override
+  String get rtHex => 'سداسي عشري';
+
+  @override
+  String get rtHexHint => 'بايتات بالنظام السداسي عشري، مثل 0a ff 10';
 }

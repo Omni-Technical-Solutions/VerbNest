@@ -35,6 +35,25 @@ class RealtimeMessage {
       : '<${(data as List<int>).length} bytes binary>';
 }
 
+/// Bytes from hex text such as `de ad BE:EF` or `0xdeadbeef`. Spaces, colons,
+/// commas and a `0x` prefix are ignored. Throws [FormatException] on other
+/// characters or an odd number of digits.
+Uint8List parseHexBytes(String text) {
+  final clean = text
+      .replaceAll(RegExp(r'0x', caseSensitive: false), '')
+      .replaceAll(RegExp(r'[\s:,]'), '');
+  if (!RegExp(r'^[0-9a-fA-F]*$').hasMatch(clean)) {
+    throw const FormatException('Hex bytes may only hold 0-9 and a-f');
+  }
+  if (clean.length.isOdd) {
+    throw const FormatException('Hex bytes need an even number of digits');
+  }
+  return Uint8List.fromList([
+    for (var i = 0; i < clean.length; i += 2)
+      int.parse(clean.substring(i, i + 2), radix: 16),
+  ]);
+}
+
 /// Plain-text transcript of a live session, one entry per line with an
 /// ISO-8601 UTC time. Direction is `>` sent, `<` received, `*` notice.
 String formatRealtimeLog(Iterable<RealtimeMessage> messages) {

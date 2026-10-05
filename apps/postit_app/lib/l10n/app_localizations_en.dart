@@ -1324,4 +1324,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rtSave => 'Save log…';
+
+  @override
+  String get rtHex => 'Hex';
+
+  @override
+  String get rtHexHint => 'Bytes in hex, e.g. 0a ff 10';
 }

@@ -98,6 +98,24 @@ void main() {
     expect(saved, contains('< hello'));
   });
 
+  testWidgets('hex mode sends bytes and reports bad input', (tester) async {
+    final fake = _Fake();
+    await tester.pumpWidget(_app(() async => fake));
+    await tester.tap(find.byKey(const Key('rt-connect')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('rt-hex')));
+    await tester.pump();
+    await tester.enterText(find.byKey(const Key('rt-input')), 'zz');
+    await tester.tap(find.byKey(const Key('rt-send')));
+    await tester.pump();
+    expect(find.byKey(const Key('rt-error')), findsOneWidget);
+    expect(fake.sent, isEmpty);
+    await tester.enterText(find.byKey(const Key('rt-input')), '0a ff');
+    await tester.tap(find.byKey(const Key('rt-send')));
+    await tester.pump();
+    expect(fake.sent.single, [0x0a, 0xff]);
+  });
+
   testWidgets('no save button without a callback', (tester) async {
     await tester.pumpWidget(_app(() async => _Fake()));
     expect(find.byKey(const Key('rt-save')), findsNothing);

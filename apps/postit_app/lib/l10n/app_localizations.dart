@@ -2485,6 +2485,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save log…'**
   String get rtSave;
+
+  /// No description provided for @rtHex.
+  ///
+  /// In en, this message translates to:
+  /// **'Hex'**
+  String get rtHex;
+
+  /// No description provided for @rtHexHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bytes in hex, e.g. 0a ff 10'**
+  String get rtHexHint;
 }
 
 class _AppLocalizationsDelegate
