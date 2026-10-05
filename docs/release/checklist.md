@@ -39,3 +39,6 @@ What is ready in the repository and what only the account owner can do. Nothing 
 ## Screenshots
 - `scripts/screenshots_macos.sh` writes 18 PNGs (2880x1800) to `docs/release/screenshots/macos`. Listing copy: `docs/release/app-store-post.md`.
 - Arabic screenshot omitted: the headless test has no Arabic fallback font.
+
+## Mac App Store package
+- With Xcode signed in: `xcodebuild archive` then `-exportArchive -allowProvisioningUpdates` using an `app-store-connect` export plist (team NYY6MADXHV, automatic signing) produces a signed `PostIt.pkg`. Upload it with Transporter.
