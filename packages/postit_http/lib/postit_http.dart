@@ -11,3 +11,4 @@ export 'src/oauth2_browser.dart';
 export 'src/proxy.dart';
 export 'src/send_prepared.dart';
 export 'src/tls_config.dart';
+export 'src/realtime.dart';

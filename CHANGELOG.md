@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.28.0
+
+- WebSocket and server-sent events: the new live button next to Send in the URL bar opens a message log for the request's URL. WebSocket connects with the request's headers and auth, lets you send text and shows text and binary frames, and reports the close code and reason. SSE shows each event with its name and id. Both use the request's TLS, certificate and timeout settings.
+- Built as ADR-009 says: `RealtimeConnection`, `connectWebSocket`, `connectSse` and `SseParser` are in `postit_http` with no Flutter code, so the CLI can reuse them. Tested against local servers.
+- Not done: saving messages with the request, binary sends, automatic reconnect with `Last-Event-ID`, proxy support for live connections (they connect directly), GraphQL subscriptions, collection runs do not skip live requests (a `ws://` URL in a run fails like any unsupported scheme). Windows and Linux are not verified.
+
 ## 0.27.0
 
 - GraphQL (FR-GQL-001/002): a new "graphql" body mode with a query editor and a JSON variables editor. The request is sent as a JSON POST (`{"query", "variables", "operationName"}`); `{{variables}}` work in the query and variables. Choosing the mode on a GET request switches it to POST. When the query holds several operations, a picker sets `operationName`.

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show IOException;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
@@ -329,6 +330,61 @@ class EditorNotifier extends Notifier<EditorState> {
       throw FormatException(e.message);
     } on HttpEngineError catch (e) {
       throw FormatException(e.message);
+    }
+  }
+
+  /// Opens a WebSocket (or SSE stream) to this request's URL with its
+  /// headers, auth and the active environment, running no scripts.
+  /// Throws [FormatException] with a message fit for the user.
+  Future<RealtimeConnection> connectRealtime({required bool sse}) async {
+    flush();
+    final session = ref.read(sessionProvider);
+    final repo = session.repo;
+    final envId = ref.read(activeEnvProvider);
+    final defaults = ref.read(httpDefaultsProvider);
+    try {
+      final resolver = VariableResolver(
+        buildScopes(session, requestId: id, envId: envId),
+      );
+      var auth = effectiveAuth(state.item.auth, repo.authChain(id));
+      if (auth is OAuth2Auth) {
+        auth = await _oauthToken(auth, resolver, defaults, CancelToken());
+      }
+      final prepared =
+          await RequestBuilder(
+            defaults: defaults,
+            readFile: (ref) async =>
+                repo.attachmentBytes(attachmentIdOf(ref) ?? ref),
+          ).build(
+            state.item.copyWith(method: sse ? state.item.method : 'GET'),
+            resolver,
+            auth: auth,
+          );
+      final spec = prepared.spec;
+      return sse
+          ? await connectSse(
+              spec.url,
+              headers: spec.headers,
+              method: spec.method,
+              body: spec.body,
+              settings: spec.settings,
+            )
+          : await connectWebSocket(
+              spec.url,
+              headers: [
+                for (final h in spec.headers)
+                  if (h.$1.toLowerCase() != 'content-type') h,
+              ],
+              settings: spec.settings,
+            );
+    } on OAuth2Error catch (e) {
+      throw FormatException(e.message);
+    } on RequestBuildError catch (e) {
+      throw FormatException(e.message);
+    } on HttpEngineError catch (e) {
+      throw FormatException(e.message);
+    } on IOException catch (e) {
+      throw FormatException('$e');
     }
   }
 

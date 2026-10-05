@@ -19,6 +19,7 @@ import 'kv_editor.dart';
 import 'response_view.dart';
 import 'request_extras.dart';
 import 'graphql_editor.dart';
+import 'realtime_dialog.dart';
 import 'synced_field.dart';
 
 const _customMethod = '\u0000custom';
@@ -248,6 +249,24 @@ class RequestEditor extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 8),
+          PopupMenuButton<bool>(
+            key: const Key('live'),
+            tooltip: 'Open WebSocket or SSE stream',
+            icon: const Icon(Icons.sync_alt),
+            onSelected: (sse) => showDialog<void>(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => RealtimeDialog(
+                sse: sse,
+                title: sse ? 'Server-sent events' : 'WebSocket',
+                connect: () => notifier.connectRealtime(sse: sse),
+              ),
+            ),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: false, child: Text('WebSocket')),
+              PopupMenuItem(value: true, child: Text('SSE stream')),
+            ],
+          ),
           state.sending
               ? FilledButton.tonal(
                   key: const Key('cancel'),
