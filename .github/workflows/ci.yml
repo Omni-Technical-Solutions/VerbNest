@@ -60,15 +60,15 @@ jobs:
           - name: linux
             os: ubuntu-latest
             build: flutter build linux --release
-            test: xvfb-run -a flutter test integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart -d linux
+            test: ../../scripts/ci_integration.sh linux postit_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart
           - name: windows
             os: windows-latest
             build: flutter build windows --release
-            test: flutter test integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart -d windows
+            test: ../../scripts/ci_integration.sh windows postit_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart
           - name: macos
             os: macos-latest
             build: flutter build macos --release
-            test: ../../scripts/ci_macos_integration.sh
+            test: ../../scripts/ci_integration.sh macos PostIt
           - name: android
             os: ubuntu-latest
             build: flutter build apk --release
@@ -102,6 +102,7 @@ jobs:
         working-directory: apps/postit_app
       - name: Integration tests
         if: matrix.test != ''
+        shell: bash
         run: ${{ matrix.test }}
         working-directory: apps/postit_app
       - uses: actions/upload-artifact@v4
