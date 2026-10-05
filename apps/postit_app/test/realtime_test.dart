@@ -31,9 +31,15 @@ class _Fake implements RealtimeConnection {
 Widget _app(
   Future<RealtimeConnection> Function() connect, {
   bool sse = false,
+  Future<void> Function(String)? onSave,
 }) => MaterialApp(
   home: Scaffold(
-    body: RealtimeDialog(connect: connect, sse: sse, title: 'Live'),
+    body: RealtimeDialog(
+      connect: connect,
+      sse: sse,
+      title: 'Live',
+      onSave: onSave,
+    ),
   ),
 );
 
@@ -69,5 +75,31 @@ void main() {
     expect(find.byKey(const Key('rt-error')), findsOneWidget);
     expect(find.text('refused'), findsOneWidget);
     expect(find.byKey(const Key('rt-input')), findsNothing);
+  });
+
+  testWidgets('save hands the transcript to the callback', (tester) async {
+    final fake = _Fake();
+    String? saved;
+    await tester.pumpWidget(
+      _app(() async => fake, onSave: (t) async => saved = t),
+    );
+    expect(
+      tester.widget<TextButton>(find.byKey(const Key('rt-save'))).onPressed,
+      isNull,
+    );
+    await tester.tap(find.byKey(const Key('rt-connect')));
+    await tester.pump();
+    fake.out.add(
+      RealtimeMessage(direction: RealtimeDirection.received, data: 'hello'),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('rt-save')));
+    await tester.pump();
+    expect(saved, contains('< hello'));
+  });
+
+  testWidgets('no save button without a callback', (tester) async {
+    await tester.pumpWidget(_app(() async => _Fake()));
+    expect(find.byKey(const Key('rt-save')), findsNothing);
   });
 }

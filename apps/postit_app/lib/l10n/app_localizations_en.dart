@@ -1321,4 +1321,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get rvHtmlTooLarge =>
       'This page is too large to preview. Use Raw or Save.';
+
+  @override
+  String get rtSave => 'Save log…';
 }

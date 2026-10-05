@@ -2479,6 +2479,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This page is too large to preview. Use Raw or Save.'**
   String get rvHtmlTooLarge;
+
+  /// No description provided for @rtSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save log…'**
+  String get rtSave;
 }
 
 class _AppLocalizationsDelegate

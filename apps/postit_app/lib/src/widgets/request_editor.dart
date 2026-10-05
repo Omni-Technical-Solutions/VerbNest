@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
@@ -78,7 +81,7 @@ class RequestEditor extends ConsumerWidget {
               ),
             ),
           ),
-          _urlBar(context, state, notifier),
+          _urlBar(context, ref, state, notifier),
           if (state.pendingUnresolved.isNotEmpty)
             _pendingBanner(context, ref, state, notifier),
           if (state.unresolved.isNotEmpty)
@@ -184,6 +187,7 @@ class RequestEditor extends ConsumerWidget {
 
   Widget _urlBar(
     BuildContext context,
+    WidgetRef ref,
     EditorState state,
     EditorNotifier notifier,
   ) {
@@ -271,6 +275,14 @@ class RequestEditor extends ConsumerWidget {
                   LiveKind.graphqlSubscription => context.l10n.reLiveSub,
                 },
                 connect: () => notifier.connectRealtime(kind),
+                onSave: (text) async {
+                  final port = ref.read(filePortProvider);
+                  await port.save(
+                    'live-log.txt',
+                    Uint8List.fromList(utf8.encode(text)),
+                    mime: 'text/plain',
+                  );
+                },
               ),
             ),
             itemBuilder: (_) => [

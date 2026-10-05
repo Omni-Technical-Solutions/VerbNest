@@ -36,6 +36,34 @@ void main() {
     });
   });
 
+  test('formatRealtimeLog writes one stamped entry per message', () {
+    final text = formatRealtimeLog([
+      RealtimeMessage(
+        direction: RealtimeDirection.sent,
+        data: 'hi',
+        at: DateTime.utc(2026, 1, 2, 3, 4, 5),
+      ),
+      RealtimeMessage(
+        direction: RealtimeDirection.received,
+        data: 'a\nb',
+        event: 'tick',
+        at: DateTime.utc(2026, 1, 2, 3, 4, 6),
+      ),
+      RealtimeMessage(
+        direction: RealtimeDirection.system,
+        data: [1, 2],
+        binary: true,
+        at: DateTime.utc(2026, 1, 2, 3, 4, 7),
+      ),
+    ]);
+    expect(
+      text,
+      '2026-01-02T03:04:05.000Z > hi\n'
+      '2026-01-02T03:04:06.000Z < [tick] a\n    b\n'
+      '2026-01-02T03:04:07.000Z * <2 bytes binary>\n',
+    );
+  });
+
   group('WebSocket', () {
     late HttpServer server;
     late Uri url;

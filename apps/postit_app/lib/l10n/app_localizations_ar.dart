@@ -1322,4 +1322,7 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get rvHtmlTooLarge =>
       'هذه الصفحة كبيرة جداً للمعاينة. استخدم الخام أو احفظها.';
+
+  @override
+  String get rtSave => 'حفظ السجل…';
 }

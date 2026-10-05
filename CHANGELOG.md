@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.36.0
+
+- Live dialog: "Save log…" writes the session as a text file (`formatRealtimeLog` in `postit_http`: UTC time, direction `>` `<` `*`, SSE event name). The Arabic text needs review.
+
 ## 0.35.0
 
 - SSE: the live dialog reconnects when the server ends the stream. It waits for the server's `retry:` delay (3 s by default, at most 60 s), sends `Last-Event-ID`, and gives up after 5 failed attempts in a row. Closing the dialog stops it. `connectSse(reconnect: true)` in `postit_http`.

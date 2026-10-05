@@ -1,6 +1,6 @@
 name: test_server
 description: Local echo and protocol test server used by all PostIt tests.
-version: 0.35.0
+version: 0.36.0
 publish_to: none
 resolution: workspace
 

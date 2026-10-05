@@ -35,6 +35,25 @@ class RealtimeMessage {
       : '<${(data as List<int>).length} bytes binary>';
 }
 
+/// Plain-text transcript of a live session, one entry per line with an
+/// ISO-8601 UTC time. Direction is `>` sent, `<` received, `*` notice.
+String formatRealtimeLog(Iterable<RealtimeMessage> messages) {
+  final b = StringBuffer();
+  for (final m in messages) {
+    final mark = switch (m.direction) {
+      RealtimeDirection.sent => '>',
+      RealtimeDirection.received => '<',
+      RealtimeDirection.system => '*',
+    };
+    final event = m.event == null || m.event == 'message'
+        ? ''
+        : '[${m.event}] ';
+    final text = m.text.replaceAll('\n', '\n    ');
+    b.writeln('${m.at.toUtc().toIso8601String()} $mark $event$text');
+  }
+  return b.toString();
+}
+
 /// A long-lived connection that streams messages (architecture ADR-009).
 /// WebSocket and SSE share this shape so the UI and CLI need one code path.
 abstract class RealtimeConnection {

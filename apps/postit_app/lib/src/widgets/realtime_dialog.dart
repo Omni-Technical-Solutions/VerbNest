@@ -12,11 +12,15 @@ class RealtimeDialog extends StatefulWidget {
     required this.connect,
     required this.sse,
     required this.title,
+    this.onSave,
   });
 
   final Future<RealtimeConnection> Function() connect;
   final bool sse;
   final String title;
+
+  /// Saves the transcript; the button shows only when this is set.
+  final Future<void> Function(String transcript)? onSave;
 
   @override
   State<RealtimeDialog> createState() => _RealtimeDialogState();
@@ -120,6 +124,14 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
                   onPressed: () => setState(_log.clear),
                   child: Text(context.l10n.rtClear),
                 ),
+                if (widget.onSave != null)
+                  TextButton(
+                    key: const Key('rt-save'),
+                    onPressed: _log.isEmpty
+                        ? null
+                        : () => widget.onSave!(formatRealtimeLog(_log)),
+                    child: Text(context.l10n.rtSave),
+                  ),
               ],
             ),
             if (_error != null)
