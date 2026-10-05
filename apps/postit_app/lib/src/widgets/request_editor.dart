@@ -614,6 +614,19 @@ class _SettingsTab extends StatelessWidget {
           onChanged: (v) => _set(s.copyWith(stripAuthCrossOrigin: v)),
         ),
         SwitchListTile(
+          key: const Key('send-cookies'),
+          title: const Text('Send and save cookies'),
+          value: s.sendCookies ?? true,
+          onChanged: (v) => _set(s.copyWith(sendCookies: v)),
+        ),
+        SwitchListTile(
+          key: const Key('use-proxy'),
+          title: const Text('Use the proxy'),
+          subtitle: const Text('Turn off to bypass the proxy for this request'),
+          value: s.useProxy ?? true,
+          onChanged: (v) => _set(s.copyWith(useProxy: v)),
+        ),
+        SwitchListTile(
           key: const Key('auto-decompress'),
           title: const Text('Decompress responses automatically'),
           value: s.autoDecompress ?? true,

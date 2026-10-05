@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_http/postit_http.dart';
 
+import 'network_state.dart';
 import 'session.dart';
 
 /// Workspace-wide HTTP defaults (FR-HTTP-007), stored in the workspace
@@ -10,7 +11,11 @@ class HttpDefaultsNotifier extends Notifier<HttpSettings> {
   HttpSettings build() {
     final s = ref.read(repositoryProvider).settings;
     const d = HttpSettings();
+    final net = ref.watch(networkProvider);
     return HttpSettings(
+      proxy: net.proxy,
+      useSystemProxy: net.useSystemProxy,
+      tls: net.tls,
       timeout: Duration(
         milliseconds: s['timeoutMs'] as int? ?? d.timeout.inMilliseconds,
       ),
@@ -22,6 +27,9 @@ class HttpDefaultsNotifier extends Notifier<HttpSettings> {
 
   void update({Duration? timeout, bool? verifyTls, bool? followRedirects}) {
     final next = HttpSettings(
+      proxy: state.proxy,
+      useSystemProxy: state.useSystemProxy,
+      tls: state.tls,
       timeout: timeout ?? state.timeout,
       verifyTls: verifyTls ?? state.verifyTls,
       followRedirects: followRedirects ?? state.followRedirects,

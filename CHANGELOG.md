@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.22.0
+
+- Cookie jar (FR-HTTP-011): cookies from `Set-Cookie` are saved per workspace on this device and sent to matching requests, also across redirects. Domain, path, Secure, Max-Age and Expires are honoured. Manage them in Settings, Cookies: delete one, a domain or all. A request can turn this off in its Settings tab.
+- Proxy (FR-HTTP-012): HTTP proxy (plain requests and CONNECT tunnels for HTTPS) and SOCKS5, both with optional user name and password, plus a no-proxy host list. Optionally read `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY` and `NO_PROXY` from the environment. A request can bypass the proxy. With SOCKS5 the proxy resolves the host name.
+- Certificates (FR-HTTP-013): add trusted CA certificates and client certificates (PEM with key, or PKCS#12) for chosen hosts. Private keys, passphrases and the proxy password go to the secret store. After a secure response, tap TLS to see the subject, issuer, validity, protocol and whether a client certificate was sent.
+- Not done: HTTP/2, the operating system's own proxy settings, PAC files, NTLM/Kerberos proxies. Checked with `dart test` on macOS only; the Settings screens were not tried by hand. Windows and Linux are not verified.
+
 ## 0.21.0
 
 - OAuth 2.0 authorization code (with or without PKCE S256) and implicit grants through the system browser (FR-AUTH-003). The redirect is `http://127.0.0.1:<random port>/callback`, received by a short-lived local listener; the state value is checked, the sign-in can be cancelled, and it times out after 5 minutes.

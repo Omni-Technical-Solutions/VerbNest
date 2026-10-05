@@ -3,9 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:postit_core/postit_core.dart' show CookieJar;
+
 import 'byte_reader.dart';
 import 'errors.dart';
 import 'models.dart';
+import 'proxy.dart';
+import 'tls_config.dart';
 
 /// Lets callers abort an in-flight request (FR-HTTP-009).
 class CancelToken {
@@ -34,9 +38,16 @@ class CancelToken {
 /// are under PostIt's control (architecture §3.1). Each exchange uses its own
 /// connection (`Connection: close`); pooling is a later optimisation.
 class HttpEngine {
-  HttpEngine({this.userAgent = 'PostIt/0.1'});
+  HttpEngine({this.userAgent = 'PostIt/0.1', this.cookieJar, this.environment});
 
   final String userAgent;
+
+  /// Cookies are stored from responses and sent automatically while this is
+  /// set and the request allows it (FR-HTTP-011).
+  final CookieJar? cookieJar;
+
+  /// Variables read for the system proxy; defaults to the process environment.
+  final Map<String, String>? environment;
 
   Future<HttpResponseRecord> send(
     HttpRequestSpec spec, {
@@ -46,7 +57,9 @@ class HttpEngine {
     final hops = <HttpResponseRecord>[];
     var current = spec;
     while (true) {
-      final response = await _exchange(current, token);
+      final sending = _withCookies(current);
+      final response = await _exchange(sending, token);
+      _storeCookies(current, response);
       final next = _nextHop(current, response);
       if (next == null) return _withRedirects(response, hops);
       if (hops.length >= spec.settings.maxRedirects) {
@@ -55,6 +68,41 @@ class HttpEngine {
       hops.add(response);
       current = next;
     }
+  }
+
+  HttpRequestSpec _withCookies(HttpRequestSpec spec) {
+    final jar = cookieJar;
+    if (jar == null || !spec.settings.sendCookies) return spec;
+    if (spec.headers.any((h) => h.$1.toLowerCase() == 'cookie')) return spec;
+    final value = jar.cookieHeader(spec.url);
+    if (value == null) return spec;
+    return HttpRequestSpec(
+      method: spec.method,
+      url: spec.url,
+      headers: [...spec.headers, ('Cookie', value)],
+      body: spec.body,
+      settings: spec.settings,
+    );
+  }
+
+  void _storeCookies(HttpRequestSpec spec, HttpResponseRecord r) {
+    final jar = cookieJar;
+    if (jar == null || !spec.settings.sendCookies) return;
+    jar.storeFromResponse(spec.url, [
+      for (final (k, v) in r.headers)
+        if (k.toLowerCase() == 'set-cookie') v,
+    ]);
+  }
+
+  ProxyConfig? _proxyFor(HttpRequestSpec spec) {
+    final s = spec.settings;
+    final manual = s.proxy;
+    if (manual != null) return manual.bypasses(spec.url.host) ? null : manual;
+    if (!s.useSystemProxy) return null;
+    return ProxyConfig.fromEnvironment(
+      spec.url,
+      environment ?? Platform.environment,
+    );
   }
 
   HttpResponseRecord _withRedirects(
@@ -73,6 +121,7 @@ class HttpEngine {
       finalUrl: r.finalUrl,
       sent: r.sent,
       redirects: List.unmodifiable(hops),
+      tls: r.tls,
     );
   }
 
@@ -118,18 +167,40 @@ class HttpEngine {
     HttpRequestSpec spec,
     CancelToken token,
   ) async {
-    final conn = _Connection(spec, token);
+    final proxy = _proxyFor(spec);
+    final conn = _Connection(spec, token, proxy);
     try {
-      return await conn.run(_buildRequest(spec), userAgent);
+      return await conn.run(
+        _buildRequest(
+          spec,
+          absoluteForm:
+              proxy != null &&
+              proxy.kind == ProxyKind.http &&
+              spec.url.scheme == 'http',
+          proxy: proxy,
+        ),
+        userAgent,
+      );
     } finally {
       conn.dispose();
     }
   }
 
-  _Wire _buildRequest(HttpRequestSpec spec) {
+  _Wire _buildRequest(
+    HttpRequestSpec spec, {
+    bool absoluteForm = false,
+    ProxyConfig? proxy,
+  }) {
     final body = Uint8List.fromList(spec.body ?? const []);
     final headers = _withAutoHeaders(spec, body.length);
-    final target = spec.url.hasQuery
+    if (absoluteForm &&
+        proxy!.hasAuth &&
+        !headers.any((h) => h.$1.toLowerCase() == 'proxy-authorization')) {
+      headers.add(('Proxy-Authorization', _basic(proxy)));
+    }
+    final target = absoluteForm
+        ? spec.url.removeFragment().toString()
+        : spec.url.hasQuery
         ? '${spec.url.path.isEmpty ? '/' : spec.url.path}?${spec.url.query}'
         : (spec.url.path.isEmpty ? '/' : spec.url.path);
     final head = StringBuffer('${spec.method} $target HTTP/1.1\r\n');
@@ -139,6 +210,9 @@ class HttpEngine {
     head.write('\r\n');
     return _Wire(head.toString(), body);
   }
+
+  static String _basic(ProxyConfig p) =>
+      'Basic ${base64Encode(utf8.encode('${p.username}:${p.password}'))}';
 
   List<Header> _withAutoHeaders(HttpRequestSpec spec, int bodyLength) {
     final user = spec.headers;
@@ -173,10 +247,11 @@ class _Wire {
 
 /// One TCP/TLS connection and the request/response on it.
 class _Connection {
-  _Connection(this.spec, this.token);
+  _Connection(this.spec, this.token, this.proxy);
 
   final HttpRequestSpec spec;
   final CancelToken token;
+  final ProxyConfig? proxy;
   Socket? _socket;
   Timer? _timer;
   bool _timedOut = false;
@@ -209,26 +284,62 @@ class _Connection {
     }
     final port = u.hasPort ? u.port : (u.scheme == 'https' ? 443 : 80);
 
+    final via = proxy;
     var mark = sw.elapsed;
-    final addresses = await InternetAddress.lookup(u.host);
+    final addresses = await InternetAddress.lookup(via?.host ?? u.host);
     final dns = sw.elapsed - mark;
     _checkCancelled();
 
     mark = sw.elapsed;
-    var socket = await Socket.connect(addresses.first, port);
+    var socket = await Socket.connect(addresses.first, via?.port ?? port);
     _socket = socket;
+    ByteReader? reader;
+    if (via != null) {
+      if (via.kind == ProxyKind.socks5) {
+        reader = ByteReader(socket);
+        await _socks5(socket, reader, via, u.host, port);
+      } else if (u.scheme == 'https') {
+        reader = ByteReader(socket);
+        await _httpConnect(socket, reader, via, u.host, port);
+      }
+    }
     final connect = sw.elapsed - mark;
     _checkCancelled();
 
     mark = sw.elapsed;
+    TlsInfo? tlsInfo;
     if (u.scheme == 'https') {
-      socket = await SecureSocket.secure(
+      final config = spec.settings.tls;
+      SecurityContext? context;
+      if (config != null && !config.isEmpty) {
+        try {
+          context = config.contextFor(u.host);
+        } on Object catch (e) {
+          throw TlsError('Could not load the certificates: $e');
+        }
+      }
+      final secure = await SecureSocket.secure(
         socket,
         host: u.host,
+        context: context,
         supportedProtocols: const ['http/1.1'],
         onBadCertificate: spec.settings.verifyTls ? null : (_) => true,
       );
+      socket = secure;
       _socket = socket;
+      reader = null;
+      final cert = secure.peerCertificate;
+      if (cert != null) {
+        tlsInfo = TlsInfo(
+          subject: cert.subject,
+          issuer: cert.issuer,
+          validFrom: cert.startValidity,
+          validTo: cert.endValidity,
+          protocol: secure.selectedProtocol,
+          clientCertificateSent:
+              config?.clientCertificates.any((c) => c.matches(u.host)) ?? false,
+        );
+      }
     }
     final tls = sw.elapsed - mark;
 
@@ -237,9 +348,113 @@ class _Connection {
     await socket.flush();
     final sentAt = sw.elapsed;
 
-    final reader = ByteReader(socket);
+    reader ??= ByteReader(socket);
     final parsed = await _readResponse(reader, sw, sentAt);
-    return _record(parsed, wire, dns, connect, tls, sw);
+    return _record(parsed, wire, dns, connect, tls, sw, tlsInfo);
+  }
+
+  static String _hostPort(String host, int port) =>
+      '${host.contains(':') ? '[$host]' : host}:$port';
+
+  /// Opens a tunnel through an HTTP proxy with CONNECT.
+  Future<void> _httpConnect(
+    Socket socket,
+    ByteReader reader,
+    ProxyConfig proxy,
+    String host,
+    int port,
+  ) async {
+    final hp = _hostPort(host, port);
+    socket.add(
+      utf8.encode(
+        'CONNECT $hp HTTP/1.1\r\nHost: $hp\r\n'
+        '${proxy.hasAuth ? 'Proxy-Authorization: ${HttpEngine._basic(proxy)}\r\n' : ''}'
+        '\r\n',
+      ),
+    );
+    await socket.flush();
+    final head = await reader.readHead();
+    if (head == null) {
+      throw const NetworkError('The proxy closed the connection');
+    }
+    final line = latin1.decode(head).split('\r\n').first;
+    final parts = line.split(' ');
+    final code = parts.length > 1 ? int.tryParse(parts[1]) : null;
+    if (code == null || code < 200 || code >= 300) {
+      throw NetworkError('The proxy refused the tunnel: $line');
+    }
+  }
+
+  /// SOCKS5 handshake (RFC 1928, user/password per RFC 1929). The proxy
+  /// resolves [host], so DNS does not leak.
+  Future<void> _socks5(
+    Socket socket,
+    ByteReader reader,
+    ProxyConfig proxy,
+    String host,
+    int port,
+  ) async {
+    socket.add(proxy.hasAuth ? [5, 2, 0, 2] : [5, 1, 0]);
+    await socket.flush();
+    final choice = await reader.readExact(2);
+    if (choice[0] != 5) throw const NetworkError('Not a SOCKS5 proxy');
+    if (choice[1] == 0xFF) {
+      throw const NetworkError(
+        'The SOCKS5 proxy accepts none of our log-in methods',
+      );
+    }
+    if (choice[1] == 2) {
+      if (!proxy.hasAuth) {
+        throw const NetworkError(
+          'The SOCKS5 proxy needs a user name and password',
+        );
+      }
+      final user = utf8.encode(proxy.username);
+      final pass = utf8.encode(proxy.password);
+      if (user.length > 255 || pass.length > 255) {
+        throw const NetworkError('The proxy user name or password is too long');
+      }
+      socket.add([1, user.length, ...user, pass.length, ...pass]);
+      await socket.flush();
+      final ok = await reader.readExact(2);
+      if (ok[1] != 0) {
+        throw const NetworkError(
+          'The SOCKS5 proxy rejected the user name or password',
+        );
+      }
+    }
+    final ip = InternetAddress.tryParse(host);
+    final addr = ip != null
+        ? [ip.type == InternetAddressType.IPv4 ? 1 : 4, ...ip.rawAddress]
+        : [3, utf8.encode(host).length, ...utf8.encode(host)];
+    if (ip == null && utf8.encode(host).length > 255) {
+      throw const NetworkError('The host name is too long for SOCKS5');
+    }
+    socket.add([5, 1, 0, ...addr, port >> 8, port & 0xFF]);
+    await socket.flush();
+    final reply = await reader.readExact(4);
+    if (reply[1] != 0) {
+      const reasons = {
+        1: 'general failure',
+        2: 'not allowed by the proxy rules',
+        3: 'network unreachable',
+        4: 'host unreachable',
+        5: 'connection refused',
+        6: 'TTL expired',
+        7: 'command not supported',
+        8: 'address type not supported',
+      };
+      throw NetworkError(
+        'The SOCKS5 proxy could not connect: ${reasons[reply[1]] ?? 'error ${reply[1]}'}',
+      );
+    }
+    final skip = switch (reply[3]) {
+      1 => 4,
+      4 => 16,
+      3 => (await reader.readExact(1))[0],
+      _ => throw const NetworkError('Unexpected SOCKS5 reply'),
+    };
+    await reader.readExact(skip + 2);
   }
 
   void _checkCancelled() {
@@ -332,6 +547,7 @@ class _Connection {
     Duration connect,
     Duration tls,
     Stopwatch sw,
+    TlsInfo? tlsInfo,
   ) {
     final decoded = spec.settings.autoDecompress ? _decode(p) : p.body;
     return HttpResponseRecord(
@@ -351,6 +567,7 @@ class _Connection {
       ),
       finalUrl: spec.url,
       sent: SentRequest(head: wire.head, body: wire.body, url: spec.url),
+      tls: tlsInfo,
     );
   }
 

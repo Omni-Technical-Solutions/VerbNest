@@ -118,6 +118,19 @@ class _ResponseViewState extends State<ResponseView> {
                 ),
                 Text('${r.timings.total.inMilliseconds} ms'),
                 Text(sizeLabel(r)),
+                if (r.tls != null)
+                  InkWell(
+                    key: const Key('response-tls'),
+                    onTap: () => _showTls(r.tls!),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.lock_outline, size: 16),
+                        SizedBox(width: 4),
+                        Text('TLS'),
+                      ],
+                    ),
+                  ),
                 if (widget.onSave != null)
                   TextButton.icon(
                     key: const Key('response-save'),
@@ -156,6 +169,31 @@ class _ResponseViewState extends State<ResponseView> {
                 _tests(state),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTls(TlsInfo t) {
+    String d(DateTime x) => x.toUtc().toIso8601String().substring(0, 10);
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('TLS connection'),
+        content: SelectableText(
+          [
+            'Subject: ${t.subject}',
+            'Issuer: ${t.issuer}',
+            'Valid: ${d(t.validFrom)} to ${d(t.validTo)}',
+            if (t.protocol != null) 'Protocol: ${t.protocol}',
+            'Client certificate sent: ${t.clientCertificateSent ? 'yes' : 'no'}',
+          ].join('\n'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
           ),
         ],
       ),

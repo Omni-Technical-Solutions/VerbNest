@@ -1,5 +1,6 @@
 library;
 
+export 'src/cookie_jar.dart';
 export 'src/data_file.dart';
 export 'src/dynamic_variables.dart';
 export 'src/json_path.dart';

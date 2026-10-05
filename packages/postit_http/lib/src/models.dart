@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'proxy.dart';
+import 'tls_config.dart';
+
 typedef Header = (String name, String value);
 
 /// What the user asked to send, after variable resolution.
@@ -31,6 +34,10 @@ class HttpSettings {
     this.autoDecompress = true,
     this.keepMethodOnRedirect = false,
     this.stripAuthCrossOrigin = true,
+    this.sendCookies = true,
+    this.proxy,
+    this.useSystemProxy = false,
+    this.tls,
   });
 
   final Duration timeout;
@@ -44,6 +51,19 @@ class HttpSettings {
 
   /// Drop `Authorization` and `Cookie` when a redirect leaves the origin.
   final bool stripAuthCrossOrigin;
+
+  /// Use the engine's cookie jar for this request (FR-HTTP-011).
+  final bool sendCookies;
+
+  /// A manual proxy; null sends directly (FR-HTTP-012).
+  final ProxyConfig? proxy;
+
+  /// Take the proxy from `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` when [proxy]
+  /// is not set.
+  final bool useSystemProxy;
+
+  /// Extra CA and client certificates (FR-HTTP-013).
+  final TlsConfig? tls;
 }
 
 class Timings {
@@ -89,6 +109,7 @@ class HttpResponseRecord {
     required this.finalUrl,
     required this.sent,
     this.redirects = const [],
+    this.tls,
   });
 
   final int status;
@@ -109,6 +130,9 @@ class HttpResponseRecord {
 
   /// Earlier hops that returned redirects, oldest first.
   final List<HttpResponseRecord> redirects;
+
+  /// The server certificate for HTTPS exchanges.
+  final TlsInfo? tls;
 
   String? header(String name) {
     final lower = name.toLowerCase();

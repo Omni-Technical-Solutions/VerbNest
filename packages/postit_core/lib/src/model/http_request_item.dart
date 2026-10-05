@@ -16,6 +16,8 @@ class RequestSettings {
     this.keepMethodOnRedirect,
     this.stripAuthCrossOrigin,
     this.autoDecompress,
+    this.sendCookies,
+    this.useProxy,
   });
 
   final int? timeoutMs;
@@ -26,6 +28,12 @@ class RequestSettings {
   final bool? stripAuthCrossOrigin;
   final bool? autoDecompress;
 
+  /// False turns the cookie jar off for this request (FR-HTTP-011).
+  final bool? sendCookies;
+
+  /// False bypasses the proxy for this request (FR-HTTP-012).
+  final bool? useProxy;
+
   /// Pass an explicit `null` to go back to the default for that field.
   RequestSettings copyWith({
     Object? timeoutMs = _unset,
@@ -35,6 +43,8 @@ class RequestSettings {
     Object? keepMethodOnRedirect = _unset,
     Object? stripAuthCrossOrigin = _unset,
     Object? autoDecompress = _unset,
+    Object? sendCookies = _unset,
+    Object? useProxy = _unset,
   }) => RequestSettings(
     timeoutMs: identical(timeoutMs, _unset)
         ? this.timeoutMs
@@ -57,6 +67,10 @@ class RequestSettings {
     autoDecompress: identical(autoDecompress, _unset)
         ? this.autoDecompress
         : autoDecompress as bool?,
+    sendCookies: identical(sendCookies, _unset)
+        ? this.sendCookies
+        : sendCookies as bool?,
+    useProxy: identical(useProxy, _unset) ? this.useProxy : useProxy as bool?,
   );
 
   Map<String, Object?> toJson() => {
@@ -69,6 +83,8 @@ class RequestSettings {
     if (stripAuthCrossOrigin != null)
       'stripAuthCrossOrigin': stripAuthCrossOrigin,
     if (autoDecompress != null) 'autoDecompress': autoDecompress,
+    if (sendCookies != null) 'sendCookies': sendCookies,
+    if (useProxy != null) 'useProxy': useProxy,
   };
 
   factory RequestSettings.fromJson(Map<String, Object?>? json) =>
@@ -80,6 +96,8 @@ class RequestSettings {
         keepMethodOnRedirect: json?['keepMethodOnRedirect'] as bool?,
         stripAuthCrossOrigin: json?['stripAuthCrossOrigin'] as bool?,
         autoDecompress: json?['autoDecompress'] as bool?,
+        sendCookies: json?['sendCookies'] as bool?,
+        useProxy: json?['useProxy'] as bool?,
       );
 }
 

@@ -44,7 +44,7 @@ class TestServer {
   /// localhost, so clients must opt out of verification or trust it.
   static Future<TestServer> start({bool tls = false}) async {
     if (tls) {
-      final (cert, key) = await _selfSignedCertificate();
+      final (cert, key) = await selfSignedCertificate();
       final context = SecurityContext()
         ..useCertificateChainBytes(cert)
         ..usePrivateKeyBytes(key);
@@ -68,19 +68,45 @@ class TestServer {
   /// Whether `openssl` can be run to create the TLS test certificate.
   static Future<bool> get tlsAvailable async {
     try {
-      await _selfSignedCertificate();
+      await selfSignedCertificate();
       return true;
     } on Object {
       return false;
     }
   }
 
-  static (List<int>, List<int>)? _generated;
+  static final Map<String, (List<int>, List<int>)> _generated = {};
+
+  /// Bundles a PEM certificate and key into a PKCS#12 file with `openssl`.
+  static Future<List<int>> pkcs12(
+    List<int> cert,
+    List<int> key,
+    String passphrase,
+  ) async {
+    final dir = await Directory.systemTemp.createTemp('postit-p12');
+    try {
+      await File('${dir.path}/c.pem').writeAsBytes(cert);
+      await File('${dir.path}/k.pem').writeAsBytes(key);
+      final r = await Process.run('openssl', [
+        'pkcs12', '-export', '-in', '${dir.path}/c.pem', //
+        '-inkey', '${dir.path}/k.pem', '-out', '${dir.path}/b.p12',
+        '-passout', 'pass:$passphrase',
+      ]);
+      if (r.exitCode != 0) {
+        throw StateError('openssl pkcs12 failed: ${r.stderr}');
+      }
+      return await File('${dir.path}/b.p12').readAsBytes();
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  }
 
   /// Creates a throwaway self-signed certificate for localhost with `openssl`,
   /// so no private key is stored in the repository.
-  static Future<(List<int>, List<int>)> _selfSignedCertificate() async {
-    final cached = _generated;
+  static Future<(List<int>, List<int>)> selfSignedCertificate({
+    String cn = 'localhost',
+  }) async {
+    final cached = _generated[cn];
     if (cached != null) return cached;
     final dir = await Directory.systemTemp.createTemp('postit-tls');
     try {
@@ -94,8 +120,12 @@ class TestServer {
           result = await Process.run(exe, [
             'req', '-x509', '-newkey', 'rsa:2048', '-nodes', //
             '-keyout', '${dir.path}/k.pem', '-out', '${dir.path}/c.pem',
-            '-days', '30', '-subj', '/CN=localhost',
+            '-days', '30', '-subj', '/CN=$cn',
             '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1',
+            // Without these, Dart 3.13 refuses the certificate as a trust anchor.
+            '-addext',
+            'keyUsage=critical,digitalSignature,keyEncipherment,keyCertSign',
+            '-addext', 'extendedKeyUsage=serverAuth,clientAuth',
           ]);
           if (result.exitCode == 0) break;
         } on ProcessException {
@@ -105,7 +135,7 @@ class TestServer {
       if (result == null || result.exitCode != 0) {
         throw StateError('openssl is needed for TLS tests: ${result?.stderr}');
       }
-      return _generated = (
+      return _generated[cn] = (
         await File('${dir.path}/c.pem').readAsBytes(),
         await File('${dir.path}/k.pem').readAsBytes(),
       );

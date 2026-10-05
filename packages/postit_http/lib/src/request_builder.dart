@@ -328,6 +328,10 @@ class RequestBuilder {
         s.keepMethodOnRedirect ?? defaults.keepMethodOnRedirect,
     stripAuthCrossOrigin:
         s.stripAuthCrossOrigin ?? defaults.stripAuthCrossOrigin,
+    sendCookies: s.sendCookies ?? defaults.sendCookies,
+    proxy: s.useProxy == false ? null : defaults.proxy,
+    useSystemProxy: s.useProxy == false ? false : defaults.useSystemProxy,
+    tls: defaults.tls,
   );
 }
 

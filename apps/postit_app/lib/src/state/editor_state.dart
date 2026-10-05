@@ -12,13 +12,17 @@ import '../scripting/script_io.dart';
 import 'browser_port.dart';
 import 'console_log.dart';
 import 'file_port.dart';
+import 'network_state.dart';
 import 'prefs.dart';
 import 'session.dart';
 import 'settings_state.dart';
 import 'variables.dart';
 
 /// Replaceable in tests.
-final engineProvider = Provider<HttpEngine>((ref) => HttpEngine());
+final engineProvider = Provider<HttpEngine>((ref) {
+  ref.read(cookiesProvider);
+  return HttpEngine(cookieJar: ref.read(cookiesProvider.notifier).jar);
+});
 
 /// Tokens fetched by OAuth 2.0 auth, kept for the app session only.
 final oauthCacheProvider = Provider<OAuth2TokenCache>(

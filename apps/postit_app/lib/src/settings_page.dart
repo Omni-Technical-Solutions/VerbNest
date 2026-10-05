@@ -5,6 +5,7 @@ import 'state/prefs.dart';
 import 'state/session.dart';
 import 'state/settings_state.dart';
 import 'state/theme_state.dart';
+import 'widgets/network_settings.dart';
 import 'widgets/synced_field.dart';
 
 /// Workspace HTTP defaults; requests can override them (FR-HTTP-007).
@@ -85,6 +86,8 @@ class SettingsPage extends ConsumerWidget {
           value: s.followRedirects,
           onChanged: (v) => notifier.update(followRedirects: v),
         ),
+        const Divider(),
+        const NetworkSettingsSection(),
         const Divider(),
         _section(context, 'Appearance (this device)'),
         ListTile(
