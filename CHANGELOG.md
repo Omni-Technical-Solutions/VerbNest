@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.23.0
+
+- Import OpenAPI 3.0/3.1 and Swagger 2.0 (JSON or YAML) (FR-IO-004): one folder per tag, a `baseUrl` variable from the server, query, header and path parameters, request bodies with example values built from the schema, and the first security scheme (basic, bearer, API key) as the collection's auth. Optional parameters are listed but switched off.
+- Import HAR captures: one request per entry.
+- Import a single JSON file with `collections` and `environments` lists (Postman backup shape).
+- Generate code (request menu, "Generate code…"): cURL, JavaScript (fetch), Python (requests) and Dart (http). Variables stay as `{{names}}` unless you switch on "Fill in variable values".
+- Not done: references to other files, per-operation security, OAuth 2.0 schemes, Postman's zip data dump (unzip it and import the files), OpenAPI and HTML docs export. Tested with unit tests only; not tried on large real specs.
+
 ## 0.22.0
 
 - Cookie jar (FR-HTTP-011): cookies from `Set-Cookie` are saved per workspace on this device and sent to matching requests, also across redirects. Domain, path, Secure, Max-Age and Expires are honoured. Manage them in Settings, Cookies: delete one, a domain or all. A request can turn this off in its Settings tab.

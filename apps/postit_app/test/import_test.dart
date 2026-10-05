@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:postit_app/src/state/import_actions.dart';
 import 'package:postit_app/src/state/session.dart';
+import 'package:postit_import/postit_import.dart';
+import 'package:postit_storage/postit_storage.dart';
 
 void main() {
   late WorkspaceSession s;
@@ -42,5 +44,55 @@ void main() {
     expect(() => importText(s, 'hello'), throwsFormatException);
     expect(() => importText(s, '{"a":1}'), throwsFormatException);
     expect(() => importText(s, '  '), throwsFormatException);
+  });
+
+  test('OpenAPI YAML, HAR and a Postman dump import', () {
+    final r = importText(s, '''
+openapi: 3.0.0
+info: {title: Y}
+servers: [{url: "https://y.test"}]
+paths:
+  /a:
+    get: {summary: Get a, tags: [t]}
+''');
+    final id = r.nodeId!;
+    expect(s.repo.node(id).name, 'Y');
+    final tag = s.repo.children(id).single;
+    expect(tag.name, 't');
+    expect(
+      s.repo.getRequest(s.repo.children(tag.id).single.id).url,
+      '{{baseUrl}}/a',
+    );
+    expect(
+      s.repo.variables(VariableOwner.collection(id)).single.value,
+      'https://y.test',
+    );
+
+    importText(
+      s,
+      '{"log":{"entries":[{"request":{"method":"GET","url":"http://h.test/z","headers":[]}}]}}',
+    );
+    expect(
+      s.repo.children(null).map((n) => n.name),
+      contains(startsWith('HAR import')),
+    );
+
+    final dump = importText(
+      s,
+      '{"collections":[{"info":{"name":"D","schema":"x"},"item":[]}],'
+      '"environments":[{"name":"DE","values":[]}]}',
+    );
+    expect(dump.message, 'Imported 1 collections and 1 environments');
+  });
+
+  test('generates code from a saved request, resolving on request', () {
+    final r = importText(s, 'curl -H "X-A: 1" https://a.test/x');
+    final plain = requestAsCode(s, r.nodeId!, CodeLanguage.pythonRequests);
+    expect(plain, contains("'https://a.test/x'"));
+    expect(plain, contains("'X-A': '1'"));
+    expect(
+      requestAsCode(s, r.nodeId!, CodeLanguage.curl, resolve: true),
+      contains('curl'),
+    );
   });
 }

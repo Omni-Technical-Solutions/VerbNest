@@ -13,6 +13,7 @@ import '../state/import_actions.dart';
 import '../state/session.dart';
 import '../state/sidebar_rows.dart';
 import '../state/tree_state.dart';
+import 'code_dialog.dart';
 import 'name_dialog.dart';
 
 enum _Action {
@@ -26,6 +27,7 @@ enum _Action {
   moveDown,
   delete,
   copyCurl,
+  generateCode,
   versions,
   exportPostman,
 }
@@ -283,6 +285,11 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
             value: _Action.copyCurl,
             child: Text('Copy as cURL'),
           ),
+        if (!node.isContainer)
+          const PopupMenuItem(
+            value: _Action.generateCode,
+            child: Text('Generate code…'),
+          ),
         if (node.parentId == null)
           const PopupMenuItem(
             value: _Action.exportPostman,
@@ -355,6 +362,11 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           context,
           requestAsCurl(ref.read(sessionProvider), node.id),
           'cURL command copied',
+        );
+      case _Action.generateCode:
+        await showDialog<void>(
+          context: context,
+          builder: (_) => CodeDialog(requestId: node.id),
         );
       case _Action.exportPostman:
         await _copy(
@@ -433,8 +445,8 @@ class _ImportDialogState extends State<_ImportDialog> {
           maxLines: 12,
           decoration: const InputDecoration(
             hintText:
-                'Paste a cURL command, a Postman collection or a '
-                'Postman environment',
+                'Paste a cURL command, a Postman collection or environment, '
+                'an OpenAPI/Swagger file (JSON or YAML) or a HAR capture',
           ),
         ),
       ),

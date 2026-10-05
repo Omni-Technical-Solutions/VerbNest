@@ -61,45 +61,94 @@ ImportOutcome importText(
     );
   }
 
-  Object? json;
-  try {
-    json = jsonDecode(trimmed);
-  } on FormatException {
-    throw const FormatException(
-      'Not recognised. Paste a cURL command or Postman JSON.',
-    );
-  }
+  final json = decodeJsonOrYaml(trimmed);
+  if (json == null) throw const FormatException(_notRecognised);
+
+  PostmanImport? collection;
   if (looksLikePostmanCollection(json)) {
-    final r = importPostmanCollection(json);
-    final id = saveImportedCollection(s.repo, r.collection);
+    collection = importPostmanCollection(json);
+  } else if (looksLikeOpenApi(json)) {
+    collection = importOpenApi(json);
+  } else if (looksLikeHar(json)) {
+    collection = importHar(json);
+  }
+  if (collection != null) {
+    final id = saveImportedCollection(s.repo, collection.collection);
     return ImportOutcome(
-      'Imported collection "${r.collection.name}"',
-      warnings: r.warnings,
+      'Imported collection "${collection.collection.name}"',
+      warnings: collection.warnings,
       nodeId: id,
     );
   }
   if (looksLikePostmanEnvironment(json)) {
-    final env = importPostmanEnvironment(json);
-    final id = Ulid.generate();
-    var name = env.name;
-    final taken = s.repo.environments().map((e) => e.name).toSet();
-    for (var n = 2; taken.contains(name); n++) {
-      name = '${env.name} ($n)';
-    }
-    s.repo.saveEnvironment(Environment(id: id, name: name));
-    final seen = <String>{};
-    saveVariables(
-      s,
-      VariableOwner.environment(id),
-      [
-        for (final v in env.variables.reversed)
-          if (seen.add(v.key)) v,
-      ].reversed.toList(),
-    );
+    final name = _importEnvironment(s, importPostmanEnvironment(json));
     return ImportOutcome('Imported environment "$name"');
   }
-  throw const FormatException(
-    'Not recognised. Paste a cURL command or Postman JSON.',
+  if (json is Map &&
+      (json['collections'] is List || json['environments'] is List)) {
+    return _importDump(s, json);
+  }
+  throw const FormatException(_notRecognised);
+}
+
+const _notRecognised =
+    'Not recognised. Paste a cURL command, Postman JSON, OpenAPI/Swagger '
+    '(JSON or YAML) or HAR.';
+
+String _importEnvironment(
+  WorkspaceSession s,
+  ({String name, List<Variable> variables}) env,
+) {
+  final id = Ulid.generate();
+  var name = env.name;
+  final taken = s.repo.environments().map((e) => e.name).toSet();
+  for (var n = 2; taken.contains(name); n++) {
+    name = '${env.name} ($n)';
+  }
+  s.repo.saveEnvironment(Environment(id: id, name: name));
+  final seen = <String>{};
+  saveVariables(
+    s,
+    VariableOwner.environment(id),
+    [
+      for (final v in env.variables.reversed)
+        if (seen.add(v.key)) v,
+    ].reversed.toList(),
+  );
+  return name;
+}
+
+/// A single JSON file holding `collections` and `environments` arrays (the
+/// shape of Postman's older backup). Postman's current zip data dump has to
+/// be unzipped and its files imported one by one.
+ImportOutcome _importDump(WorkspaceSession s, Map<Object?, Object?> dump) {
+  var collections = 0;
+  var environments = 0;
+  final warnings = <String>[];
+  String? firstId;
+  for (final c in (dump['collections'] as List? ?? const [])) {
+    if (!looksLikePostmanCollection(c)) {
+      warnings.add('Skipped a collection in a format PostIt does not read');
+      continue;
+    }
+    final r = importPostmanCollection(c);
+    final id = saveImportedCollection(s.repo, r.collection);
+    firstId ??= id;
+    warnings.addAll(r.warnings);
+    collections++;
+  }
+  for (final e in (dump['environments'] as List? ?? const [])) {
+    if (!looksLikePostmanEnvironment(e)) continue;
+    _importEnvironment(s, importPostmanEnvironment(e));
+    environments++;
+  }
+  if (collections + environments == 0) {
+    throw const FormatException(_notRecognised);
+  }
+  return ImportOutcome(
+    'Imported $collections collections and $environments environments',
+    warnings: warnings,
+    nodeId: firstId,
   );
 }
 
@@ -122,5 +171,28 @@ String requestAsCurl(WorkspaceSession s, String requestId) {
   return toCurl(
     item,
     auth: effectiveAuth(item.auth, s.repo.authChain(requestId)),
+  );
+}
+
+/// Code for a saved request in [language]. With [resolve] the variables of
+/// the active environment are substituted (secrets included), otherwise the
+/// `{{names}}` stay.
+String requestAsCode(
+  WorkspaceSession s,
+  String requestId,
+  CodeLanguage language, {
+  bool resolve = false,
+  String? envId,
+}) {
+  final item = s.repo.getRequest(requestId);
+  final auth = effectiveAuth(item.auth, s.repo.authChain(requestId));
+  final resolver = resolve
+      ? VariableResolver(buildScopes(s, requestId: requestId, envId: envId))
+      : null;
+  return generateCode(
+    language,
+    item,
+    auth: auth,
+    resolve: resolver == null ? null : (t) => resolver.resolve(t).value,
   );
 }
