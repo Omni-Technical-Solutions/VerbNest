@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:postit_core/postit_core.dart';
 import 'package:postit_storage/postit_storage.dart';
 
@@ -38,7 +41,17 @@ void _saveChildren(WorkspaceRepository repo, String parentId, FolderNode f) {
         _saveContainer(repo, id, child);
         _saveChildren(repo, id, child);
       case RequestNode():
-        repo.createRequest(parentId, child.item);
+        final id = repo.createRequest(parentId, child.item);
+        for (final e in child.examples) {
+          repo.addExample(id, e.name, {
+            'status': e.status,
+            'reason': e.reason,
+            'headers': [
+              for (final (k, v) in e.headers) [k, v],
+            ],
+            'request': {'method': e.method, 'url': e.url},
+          }, Uint8List.fromList(utf8.encode(e.body)));
+        }
     }
   }
 }
@@ -58,5 +71,21 @@ FolderNode loadCollectionTree(WorkspaceRepository repo, String id) {
   );
 }
 
-RequestNode _request(WorkspaceRepository repo, String id) =>
-    RequestNode(repo.getRequest(id));
+RequestNode _request(WorkspaceRepository repo, String id) => RequestNode(
+  repo.getRequest(id),
+  examples: [
+    for (final e in repo.examples(id))
+      ImportedExample(
+        name: e.name,
+        status: (e.data['status'] as int?) ?? 200,
+        reason: '${e.data['reason'] ?? ''}',
+        headers: [
+          for (final h in (e.data['headers'] as List? ?? const []))
+            ('${(h as List)[0]}', '${h[1]}'),
+        ],
+        body: utf8.decode(e.body, allowMalformed: true),
+        method: '${(e.data['request'] as Map?)?['method'] ?? 'GET'}',
+        url: '${(e.data['request'] as Map?)?['url'] ?? ''}',
+      ),
+  ],
+);

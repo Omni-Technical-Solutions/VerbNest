@@ -13,6 +13,31 @@
   "cmdToggleSidebar": "Toggle sidebar",
   "cmdCloseTab": "Close tab",
   "cmdGoTo": "Go to {place}",
-  "@cmdGoTo": {"placeholders": {"place": {"type": "String"}}},
-  "closeTab": "Close tab"
+  "@cmdGoTo": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "closeTab": "Close tab",
+  "language": "Language",
+  "systemDefault": "System default",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "secretsProtected": "Secrets are kept in the system secret store",
+  "secretsUnprotected": "Secrets are stored unencrypted on this device",
+  "secretsUnavailableHint": "The system secret store is not available (on Linux, install and unlock a keyring service).",
+  "defaultTimeout": "Default timeout (seconds)",
+  "verifyTls": "Verify TLS certificates",
+  "verifyTlsHint": "Turning this off is unsafe on public networks",
+  "warnUnresolved": "Warn before sending with undefined variables",
+  "followRedirects": "Follow redirects",
+  "appearanceSection": "Appearance (this device)",
+  "historySection": "History (this device)",
+  "historyBodies": "Keep request and response bodies",
+  "historyBodiesHint": "Off stores only URLs, headers and status",
+  "historyDays": "Delete history older than (days, 0 = never)",
+  "historyMax": "Keep at most this many entries"
 }

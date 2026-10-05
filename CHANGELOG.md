@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.25.0
+
+- Language setting (FR-APP-005): Settings, "Language" picks System default, English or Arabic, and is remembered in the workspace. The Settings page text is translated; other screens still have fixed English text, and the Arabic is a draft that a native speaker has not reviewed.
+- Postman saved responses are now imported as examples and written back on export (they were dropped before).
+- Script editor: JavaScript syntax colours (keywords, strings, numbers, comments, `pm` and `console`) and `pm.` / `console.` completion chips while typing. No full parser, so it only colours and suggests.
+- Internal clean-up with no behaviour change: snapshot import, cURL parsing, the collection runner loop and request sending were split into smaller steps.
+- Checked with unit and widget tests on macOS; not tried by hand.
+
 ## 0.24.0
 
 - Favourites (FR-COL-004): star a request in the editor or from its menu; starred requests show a star in the tree, and a header button shows only favourites.

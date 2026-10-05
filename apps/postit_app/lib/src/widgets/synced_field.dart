@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:postit_core/postit_core.dart';
 
+import '../state/js_syntax.dart';
 import '../state/var_text.dart';
 
 /// Gives text fields below it access to the variables a request resolves
@@ -26,6 +27,7 @@ class _VarController extends TextEditingController {
   _VarController(String text, this.scopes) : super(text: text);
 
   VariableScopes Function()? scopes;
+  bool script = false;
 
   @override
   TextSpan buildTextSpan({
@@ -33,6 +35,7 @@ class _VarController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
+    if (script) return _scriptSpan(context, style);
     final lookup = scopes;
     if (lookup == null || !text.contains('{{')) {
       return super.buildTextSpan(
@@ -64,6 +67,37 @@ class _VarController extends TextEditingController {
     if (at < text.length) spans.add(TextSpan(text: text.substring(at)));
     return TextSpan(style: style, children: spans);
   }
+
+  TextSpan _scriptSpan(BuildContext context, TextStyle? style) {
+    final scheme = Theme.of(context).colorScheme;
+    TextStyle? colour(JsTokenKind k) => switch (k) {
+      JsTokenKind.comment => TextStyle(
+        color: scheme.onSurfaceVariant,
+        fontStyle: FontStyle.italic,
+      ),
+      JsTokenKind.string => TextStyle(color: scheme.tertiary),
+      JsTokenKind.number => TextStyle(color: scheme.secondary),
+      JsTokenKind.keyword => TextStyle(
+        color: scheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+      JsTokenKind.api => TextStyle(
+        color: scheme.primary,
+        fontWeight: FontWeight.w700,
+      ),
+    };
+    final spans = <InlineSpan>[];
+    var at = 0;
+    for (final t in tokenizeJs(text)) {
+      if (t.start > at) spans.add(TextSpan(text: text.substring(at, t.start)));
+      spans.add(
+        TextSpan(text: text.substring(t.start, t.end), style: colour(t.kind)),
+      );
+      at = t.end;
+    }
+    if (at < text.length) spans.add(TextSpan(text: text.substring(at)));
+    return TextSpan(style: style, children: spans);
+  }
 }
 
 /// A text field that reports edits and also follows [value] when it is
@@ -84,6 +118,7 @@ class SyncedTextField extends StatefulWidget {
     this.monospace = false,
     this.expands = false,
     this.variables = false,
+    this.script = false,
     this.suggestions = const [],
     this.fontSize,
   });
@@ -97,6 +132,9 @@ class SyncedTextField extends StatefulWidget {
   final bool monospace;
   final bool expands;
   final bool variables;
+
+  /// Highlight JavaScript and offer `pm.` completion.
+  final bool script;
   final List<String> suggestions;
   final double? fontSize;
 
@@ -174,10 +212,31 @@ class _SyncedTextFieldState extends State<SyncedTextField> {
     ),
   );
 
+  void _applyScript(String name) {
+    final r = applyScriptCompletion(
+      _controller.text,
+      _controller.selection.baseOffset,
+      name,
+    );
+    _controller.value = TextEditingValue(
+      text: r.text,
+      selection: TextSelection.collapsed(offset: r.caret),
+    );
+    widget.onChanged(r.text);
+    _focus.requestFocus();
+  }
+
   Widget? _info(BuildContext context) {
     if (!_focus.hasFocus) return null;
     final text = _controller.text;
     final caret = _controller.selection.baseOffset;
+    if (widget.script) {
+      final prefix = scriptPrefix(text, caret);
+      final names = prefix == null
+          ? const <String>[]
+          : scriptCompletions(prefix);
+      return names.isEmpty ? null : _chips(names, _applyScript);
+    }
     final scheme = Theme.of(context).colorScheme;
     final ctx = widget.variables ? VariableContext.maybeOf(context) : null;
     if (ctx != null && caret >= 0) {
@@ -221,6 +280,7 @@ class _SyncedTextFieldState extends State<SyncedTextField> {
     _controller.scopes = widget.variables
         ? VariableContext.maybeOf(context)?.scopes
         : null;
+    _controller.script = widget.script;
     final field = TextField(
       controller: _controller,
       focusNode: _focus,

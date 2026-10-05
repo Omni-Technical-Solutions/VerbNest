@@ -7,10 +7,32 @@ sealed class ImportNode {
   final String name;
 }
 
+/// A saved response (Postman "example") that belongs to a request.
+class ImportedExample {
+  const ImportedExample({
+    required this.name,
+    required this.status,
+    this.reason = '',
+    this.headers = const [],
+    this.body = '',
+    this.method = 'GET',
+    this.url = '',
+  });
+
+  final String name;
+  final int status;
+  final String reason;
+  final List<(String, String)> headers;
+  final String body;
+  final String method;
+  final String url;
+}
+
 class RequestNode extends ImportNode {
-  RequestNode(this.item) : super(item.name);
+  RequestNode(this.item, {this.examples = const []}) : super(item.name);
 
   final HttpRequestItem item;
+  final List<ImportedExample> examples;
 }
 
 /// A collection (root) or folder.
@@ -34,7 +56,7 @@ class PostmanImport {
 
   final FolderNode collection;
 
-  /// Things PostIt cannot keep yet (examples, folder scripts, ...).
+  /// Things PostIt cannot keep yet (folder scripts, ...).
   final List<String> warnings;
 }
 
@@ -105,7 +127,12 @@ FolderNode _folder({
         ),
       );
     } else {
-      children.add(RequestNode(_request(itemName, item, warnings)));
+      children.add(
+        RequestNode(
+          _request(itemName, item, warnings),
+          examples: _examples(item),
+        ),
+      );
     }
   }
   return FolderNode(
@@ -125,15 +152,38 @@ FolderNode _folder({
   );
 }
 
+List<ImportedExample> _examples(Json item) {
+  return [
+    for (final raw in _list(item['response']))
+      () {
+        final r = _map(raw);
+        final original = _map(r['originalRequest']);
+        final status = r['code'] is int ? r['code'] as int : 200;
+        final (url, _, _) = _url(original['url']);
+        return ImportedExample(
+          name: _str(r['name']).isEmpty ? '$status' : _str(r['name']),
+          status: status,
+          reason: _str(r['status']),
+          headers: [
+            for (final h in _list(r['header']))
+              (_str(_map(h)['key']), _stringify(_map(h)['value'])),
+          ],
+          body: _str(r['body']),
+          method: _str(original['method']).isEmpty
+              ? 'GET'
+              : _str(original['method']),
+          url: url,
+        );
+      }(),
+  ];
+}
+
 String _stringify(Object? v) => v == null ? '' : '$v';
 
 HttpRequestItem _request(String name, Json item, List<String> warnings) {
   final req = item['request'] is String
       ? <String, Object?>{'url': item['request']}
       : _map(item['request']);
-  if (_list(item['response']).isNotEmpty) {
-    warnings.add('Saved examples of "$name" were not kept');
-  }
 
   final (url, disabledParams, pathVars) = _url(req['url']);
   final headers = [
@@ -392,7 +442,19 @@ Json _exportNode(ImportNode n) {
           'url': _exportUrl(i),
           if (i.description.isNotEmpty) 'description': i.description,
         },
-        'response': <Object?>[],
+        'response': [
+          for (final e in n.examples)
+            {
+              'name': e.name,
+              'originalRequest': {'method': e.method, 'url': e.url},
+              'status': e.reason,
+              'code': e.status,
+              'header': [
+                for (final (k, v) in e.headers) {'key': k, 'value': v},
+              ],
+              'body': e.body,
+            },
+        ],
       };
   }
 }

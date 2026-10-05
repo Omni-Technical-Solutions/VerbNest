@@ -33,6 +33,20 @@ class RunEntry {
   final String? error;
   final bool skipped;
 
+  RunEntry withError(String message) => RunEntry(
+    iteration: iteration,
+    requestId: requestId,
+    name: name,
+    method: method,
+    url: url,
+    status: status,
+    reason: reason,
+    timeMs: timeMs,
+    tests: tests,
+    error: message,
+    skipped: skipped,
+  );
+
   int get failedTests => tests.where((t) => t.failed).length;
   int get passedTests => tests.where((t) => t.passed).length;
   bool get ok => !skipped && error == null && failedTests == 0;

@@ -3,8 +3,8 @@ import 'package:postit_core/postit_core.dart';
 
 import 'synced_field.dart';
 
-/// Pre-request and post-response script boxes (FR-SCR-001). Plain text for
-/// now; highlighting and `pm.` completion come with the script editor work.
+/// Pre-request and post-response script boxes (FR-SCR-001). Highlights
+/// JavaScript and completes `pm.` members.
 class ScriptsEditor extends StatefulWidget {
   const ScriptsEditor({
     super.key,
@@ -74,6 +74,7 @@ class _ScriptsEditorState extends State<ScriptsEditor> {
                     value: _scripts.post,
                     hint: "pm.test('Status is 200', () => {\n  pm.response.to.have.status(200);\n});",
                     monospace: true,
+                    script: true,
                     expands: true,
                     fontSize: widget.fontSize,
                     onChanged: (v) => _set(Scripts(pre: _scripts.pre, post: v)),
@@ -83,6 +84,7 @@ class _ScriptsEditorState extends State<ScriptsEditor> {
                     value: _scripts.pre,
                     hint: "pm.environment.set('token', 'abc');",
                     monospace: true,
+                    script: true,
                     expands: true,
                     fontSize: widget.fontSize,
                     onChanged: (v) =>

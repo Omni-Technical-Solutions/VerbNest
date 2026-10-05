@@ -93,6 +93,33 @@ class RunnerNotifier extends Notifier<RunnerState> {
     if (!state.running) state = const RunnerState();
   }
 
+  Future<RunEntry> _send(
+    String id,
+    String name,
+    int iteration,
+    Map<String, String> row,
+  ) async {
+    _activeId = id;
+    await ref.read(editorProvider(id).notifier).send(force: true, data: row);
+    _activeId = null;
+    final s = ref.read(editorProvider(id));
+    final r = s.response;
+    final error = s.error ?? s.scriptError;
+    return RunEntry(
+      iteration: iteration,
+      requestId: id,
+      name: name,
+      method: s.item.method,
+      url: r?.sent.url.toString() ?? s.item.url,
+      status: r?.status,
+      reason: r?.reason ?? '',
+      timeMs: r?.timings.total.inMilliseconds ?? 0,
+      tests: s.tests,
+      error: _stop && error != null ? 'Stopped' : error,
+      skipped: s.flow.skip,
+    );
+  }
+
   Future<RunReport> run(RunConfig config) async {
     final session = ref.read(sessionProvider);
     final repo = session.repo;
@@ -121,7 +148,6 @@ class RunnerNotifier extends Notifier<RunnerState> {
           break iterationLoop;
         }
         final id = config.requestIds[i];
-        _activeId = id;
         state = RunnerState(
           running: true,
           entries: List.of(entries),
@@ -129,68 +155,31 @@ class RunnerNotifier extends Notifier<RunnerState> {
           total: iterations,
           currentName: names[i],
         );
-        final notifier = ref.read(editorProvider(id).notifier);
-        await notifier.send(force: true, data: row);
-        _activeId = null;
-        final s = ref.read(editorProvider(id));
-        final r = s.response;
-        final error = s.error ?? s.scriptError;
-        entries.add(
-          RunEntry(
-            iteration: it,
-            requestId: id,
-            name: names[i],
-            method: s.item.method,
-            url: r?.sent.url.toString() ?? s.item.url,
-            status: r?.status,
-            reason: r?.reason ?? '',
-            timeMs: r?.timings.total.inMilliseconds ?? 0,
-            tests: s.tests,
-            error: _stop && error != null ? 'Stopped' : error,
-            skipped: s.flow.skip,
-          ),
-        );
+        var entry = await _send(id, names[i], it, row);
+        final flow = ref.read(editorProvider(id)).flow;
+        final next = flow.next;
+        final jump = next == null ? null : names.indexOf(next);
+        final badJump = jump == -1;
+        if (badJump) {
+          entry = entry.withError(
+            'setNextRequest: no request named "$next" in this run',
+          );
+        }
+        entries.add(entry);
         state = RunnerState(
           running: true,
           entries: List.of(entries),
           iteration: it,
           total: iterations,
         );
-        if (_stop) {
+        if (_stop ||
+            (config.stopOnFailure && !entry.ok && !flow.skip) ||
+            flow.stop ||
+            badJump) {
           stoppedEarly = true;
           break iterationLoop;
         }
-        if (config.stopOnFailure && !entries.last.ok && !s.flow.skip) {
-          stoppedEarly = true;
-          break iterationLoop;
-        }
-        if (s.flow.stop) {
-          stoppedEarly = true;
-          break iterationLoop;
-        }
-        final next = s.flow.next;
-        if (next != null) {
-          final j = names.indexOf(next);
-          if (j == -1) {
-            entries[entries.length - 1] = RunEntry(
-              iteration: it,
-              requestId: id,
-              name: names[i],
-              method: entries.last.method,
-              url: entries.last.url,
-              status: entries.last.status,
-              reason: entries.last.reason,
-              timeMs: entries.last.timeMs,
-              tests: entries.last.tests,
-              error: 'setNextRequest: no request named "$next" in this run',
-            );
-            stoppedEarly = true;
-            break iterationLoop;
-          }
-          i = j;
-        } else {
-          i++;
-        }
+        i = jump ?? i + 1;
         if (config.delay > Duration.zero &&
             (i < config.requestIds.length || it < iterations)) {
           await Future<void>.delayed(config.delay);

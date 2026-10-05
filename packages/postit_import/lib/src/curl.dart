@@ -31,12 +31,19 @@ CurlImport parseCurl(String command, {String name = 'Imported request'}) {
   if (words.isEmpty || words.first != 'curl') {
     throw const FormatException('Not a cURL command');
   }
+  return _CurlParser(words).parse(name);
+}
+
+class _CurlParser {
+  _CurlParser(this.words);
+
+  final List<String> words;
   final warnings = <String>[];
-  String? method;
-  String? url;
   final headers = <KeyValue>[];
   final data = <String>[];
   final form = <KeyValue>[];
+  String? method;
+  String? url;
   Auth auth = const InheritAuth();
   var verifyTls = true;
   var head = false;
@@ -44,80 +51,91 @@ CurlImport parseCurl(String command, {String name = 'Imported request'}) {
   bool? follow;
   int? timeoutMs;
 
-  String value(List<String> w, int i, String flag) {
-    if (i + 1 >= w.length) throw FormatException('$flag needs a value');
-    return w[i + 1];
+  CurlImport parse(String name) {
+    var i = 1;
+    while (i < words.length) {
+      i = _consume(i);
+    }
+    final target = url;
+    if (target == null) {
+      throw const FormatException('No URL in the cURL command');
+    }
+    return _build(target, name);
   }
 
-  var i = 1;
-  while (i < words.length) {
+  /// Handles the word at [i] and returns the index of the next one.
+  int _consume(int i) {
     final w = words[i];
-    String? flag;
+    final isLong = w.startsWith('--') && w.length > 2;
+    if (!isLong && !(w.startsWith('-') && w.length > 1)) {
+      url ??= w;
+      if (url != w) warnings.add('Ignored extra argument "$w"');
+      return i + 1;
+    }
+    String flag;
     String? inline;
-    if (w.startsWith('--') && w.length > 2) {
+    if (isLong) {
       final eq = w.indexOf('=');
       flag = eq == -1 ? w.substring(2) : w.substring(2, eq);
       inline = eq == -1 ? null : w.substring(eq + 1);
-    } else if (w.startsWith('-') && w.length > 1) {
-      flag = w.substring(1);
     } else {
-      url ??= w;
-      if (url != w) warnings.add('Ignored extra argument "$w"');
-      i++;
-      continue;
+      flag = w.substring(1);
     }
-
-    String arg() => inline ?? value(words, i, w);
-    int step() => inline == null ? 2 : 1;
 
     // Short flags may be bundled (-sSL) or carry their value (-XPOST).
-    if (!w.startsWith('--') && flag.length > 1) {
-      final first = flag[0];
-      if (_takesArg.contains(first)) {
-        inline = flag.substring(1);
-        flag = first;
-      } else {
+    if (!isLong && flag.length > 1) {
+      if (!_takesArg.contains(flag[0])) {
         for (final ch in flag.split('')) {
-          switch (ch) {
-            case 'L':
-              follow = true;
-            case 'k':
-              verifyTls = false;
-            case 'I':
-              head = true;
-            case 'G':
-              getMode = true;
-            default:
-              if (!_noArg.contains(ch)) warnings.add('Ignored flag -$ch');
+          if (!_switchOption(ch) && !_noArg.contains(ch)) {
+            warnings.add('Ignored flag -$ch');
           }
         }
-        i++;
-        continue;
+        return i + 1;
       }
+      inline = flag.substring(1);
+      flag = flag[0];
     }
 
+    final step = inline == null ? 2 : 1;
+    String arg() {
+      if (inline != null) return inline;
+      if (i + 1 >= words.length) throw FormatException('$w needs a value');
+      return words[i + 1];
+    }
+
+    if (_switchOption(flag) || _noArg.contains(flag)) return i + 1;
+    if (_valueOption(flag, arg)) return i + step;
+    if (_takesArg.contains(flag) || _longWithArg.contains(flag)) {
+      warnings.add('Ignored option ${isLong ? '--' : '-'}$flag');
+      return i + step;
+    }
+    warnings.add('Ignored unknown option "$w"');
+    return i + 1;
+  }
+
+  bool _switchOption(String flag) {
+    switch (flag) {
+      case 'k' || 'insecure':
+        verifyTls = false;
+      case 'L' || 'location':
+        follow = true;
+      case 'I' || 'head':
+        head = true;
+      case 'G' || 'get':
+        getMode = true;
+      default:
+        return false;
+    }
+    return true;
+  }
+
+  /// Applies an option that takes a value; false when [flag] is not one.
+  bool _valueOption(String flag, String Function() arg) {
     switch (flag) {
       case 'X' || 'request':
         method = arg();
-        i += step();
       case 'H' || 'header':
-        final h = arg();
-        final colon = h.indexOf(':');
-        if (colon == -1) {
-          if (h.endsWith(';')) {
-            headers.add(KeyValue(key: h.substring(0, h.length - 1)));
-          } else {
-            warnings.add('Ignored malformed header "$h"');
-          }
-        } else {
-          headers.add(
-            KeyValue(
-              key: h.substring(0, colon).trim(),
-              value: h.substring(colon + 1).trim(),
-            ),
-          );
-        }
-        i += step();
+        _addHeader(arg());
       case 'd' ||
           'data' ||
           'data-raw' ||
@@ -125,125 +143,115 @@ CurlImport parseCurl(String command, {String name = 'Imported request'}) {
           'data-ascii' ||
           'data-urlencode':
         data.add(arg());
-        i += step();
       case 'F' || 'form' || 'form-string':
-        final f = arg();
-        final eq = f.indexOf('=');
-        if (eq == -1) {
-          warnings.add('Ignored malformed form field "$f"');
-        } else {
-          final v = f.substring(eq + 1);
-          form.add(
-            v.startsWith('@')
-                ? KeyValue(
-                    key: f.substring(0, eq),
-                    value: v.substring(1),
-                    type: KeyValueType.file,
-                  )
-                : KeyValue(key: f.substring(0, eq), value: v),
-          );
-        }
-        i += step();
+        _addForm(arg());
       case 'u' || 'user':
-        final u = arg();
-        final colon = u.indexOf(':');
-        auth = BasicAuth(
-          username: colon == -1 ? u : u.substring(0, colon),
-          password: colon == -1 ? '' : u.substring(colon + 1),
-        );
-        i += step();
+        _setUser(arg());
       case 'b' || 'cookie':
         headers.add(KeyValue(key: 'Cookie', value: arg()));
-        i += step();
       case 'A' || 'user-agent':
         headers.add(KeyValue(key: 'User-Agent', value: arg()));
-        i += step();
       case 'e' || 'referer':
         headers.add(KeyValue(key: 'Referer', value: arg()));
-        i += step();
       case 'url':
         url = arg();
-        i += step();
       case 'm' || 'max-time':
         final secs = double.tryParse(arg());
         if (secs != null) timeoutMs = (secs * 1000).round();
-        i += step();
-      case 'k' || 'insecure':
-        verifyTls = false;
-        i++;
-      case 'L' || 'location':
-        follow = true;
-        i++;
-      case 'I' || 'head':
-        head = true;
-        i++;
-      case 'G' || 'get':
-        getMode = true;
-        i++;
       default:
-        if (_noArg.contains(flag)) {
-          i++;
-        } else if (_takesArg.contains(flag) || _longWithArg.contains(flag)) {
-          warnings.add(
-            'Ignored option ${w.startsWith('--') ? '--' : '-'}$flag',
-          );
-          i += step();
-        } else {
-          warnings.add('Ignored unknown option "$w"');
-          i++;
-        }
+        return false;
+    }
+    return true;
+  }
+
+  void _addHeader(String h) {
+    final colon = h.indexOf(':');
+    if (colon != -1) {
+      headers.add(
+        KeyValue(
+          key: h.substring(0, colon).trim(),
+          value: h.substring(colon + 1).trim(),
+        ),
+      );
+    } else if (h.endsWith(';')) {
+      headers.add(KeyValue(key: h.substring(0, h.length - 1)));
+    } else {
+      warnings.add('Ignored malformed header "$h"');
     }
   }
 
-  if (url == null) throw const FormatException('No URL in the cURL command');
-  var target = url;
-
-  RequestBody body = const NoBody();
-  if (getMode && data.isNotEmpty) {
-    target += (target.contains('?') ? '&' : '?') + data.join('&');
-  } else if (form.isNotEmpty) {
-    body = FormDataBody(form);
-  } else if (data.isNotEmpty) {
-    body = _bodyFor(data.join('&'), headers);
+  void _addForm(String f) {
+    final eq = f.indexOf('=');
+    if (eq == -1) {
+      warnings.add('Ignored malformed form field "$f"');
+      return;
+    }
+    final key = f.substring(0, eq);
+    final v = f.substring(eq + 1);
+    form.add(
+      v.startsWith('@')
+          ? KeyValue(key: key, value: v.substring(1), type: KeyValueType.file)
+          : KeyValue(key: key, value: v),
+    );
   }
 
-  final resolvedMethod =
-      (method ?? (head ? 'HEAD' : (body is NoBody ? 'GET' : 'POST')))
-          .toUpperCase();
+  void _setUser(String u) {
+    final colon = u.indexOf(':');
+    auth = BasicAuth(
+      username: colon == -1 ? u : u.substring(0, colon),
+      password: colon == -1 ? '' : u.substring(colon + 1),
+    );
+  }
 
-  // A Basic Authorization header the user already typed becomes Basic auth.
-  final authHeader = headers
-      .where((h) => h.key.toLowerCase() == 'authorization')
-      .firstOrNull;
-  if (auth is InheritAuth && authHeader != null) {
-    final v = authHeader.value;
-    if (v.toLowerCase().startsWith('bearer ')) {
-      auth = BearerAuth(token: v.substring(7).trim());
+  CurlImport _build(String url, String name) {
+    var target = url;
+    RequestBody body = const NoBody();
+    if (getMode && data.isNotEmpty) {
+      target += (target.contains('?') ? '&' : '?') + data.join('&');
+    } else if (form.isNotEmpty) {
+      body = FormDataBody(form);
+    } else if (data.isNotEmpty) {
+      body = _bodyFor(data.join('&'), headers);
+    }
+
+    final resolvedMethod =
+        (method ?? (head ? 'HEAD' : (body is NoBody ? 'GET' : 'POST')))
+            .toUpperCase();
+
+    final authHeader = headers
+        .where((h) => h.key.toLowerCase() == 'authorization')
+        .firstOrNull;
+    final bearer = authHeader?.value;
+    if (auth is InheritAuth &&
+        authHeader != null &&
+        bearer!.toLowerCase().startsWith('bearer ')) {
+      auth = BearerAuth(token: bearer.substring(7).trim());
       headers.remove(authHeader);
     }
-  }
-  if (auth is InheritAuth) auth = const NoAuth();
+    if (auth is InheritAuth) auth = const NoAuth();
 
-  final pathNames = UrlText.pathVariables(target);
-  return CurlImport(
-    HttpRequestItem(
-      id: '',
-      name: name,
-      method: resolvedMethod,
-      url: target,
-      params: UrlText.params(target),
-      pathVars: [for (final n in pathNames) KeyValue(key: n)],
-      headers: headers,
-      body: body,
-      auth: auth,
-      settings: RequestSettings(
-        verifyTls: verifyTls ? null : false,
-        followRedirects: follow ?? false,
-        timeoutMs: timeoutMs,
+    return CurlImport(
+      HttpRequestItem(
+        id: '',
+        name: name,
+        method: resolvedMethod,
+        url: target,
+        params: UrlText.params(target),
+        pathVars: [
+          for (final n in UrlText.pathVariables(target)) KeyValue(key: n),
+        ],
+        headers: headers,
+        body: body,
+        auth: auth,
+        settings: RequestSettings(
+          verifyTls: verifyTls ? null : false,
+          followRedirects: follow ?? false,
+          timeoutMs: timeoutMs,
+        ),
       ),
-    ),
-    warnings,
-  );
+      warnings,
+    );
+  }
 }
 
 const _takesArg = {

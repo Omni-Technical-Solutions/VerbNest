@@ -181,6 +181,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close tab'**
   String get closeTab;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @systemDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get systemDefault;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @secretsProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Secrets are kept in the system secret store'**
+  String get secretsProtected;
+
+  /// No description provided for @secretsUnprotected.
+  ///
+  /// In en, this message translates to:
+  /// **'Secrets are stored unencrypted on this device'**
+  String get secretsUnprotected;
+
+  /// No description provided for @secretsUnavailableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The system secret store is not available (on Linux, install and unlock a keyring service).'**
+  String get secretsUnavailableHint;
+
+  /// No description provided for @defaultTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Default timeout (seconds)'**
+  String get defaultTimeout;
+
+  /// No description provided for @verifyTls.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify TLS certificates'**
+  String get verifyTls;
+
+  /// No description provided for @verifyTlsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning this off is unsafe on public networks'**
+  String get verifyTlsHint;
+
+  /// No description provided for @warnUnresolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Warn before sending with undefined variables'**
+  String get warnUnresolved;
+
+  /// No description provided for @followRedirects.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow redirects'**
+  String get followRedirects;
+
+  /// No description provided for @appearanceSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance (this device)'**
+  String get appearanceSection;
+
+  /// No description provided for @historySection.
+  ///
+  /// In en, this message translates to:
+  /// **'History (this device)'**
+  String get historySection;
+
+  /// No description provided for @historyBodies.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep request and response bodies'**
+  String get historyBodies;
+
+  /// No description provided for @historyBodiesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off stores only URLs, headers and status'**
+  String get historyBodiesHint;
+
+  /// No description provided for @historyDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete history older than (days, 0 = never)'**
+  String get historyDays;
+
+  /// No description provided for @historyMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep at most this many entries'**
+  String get historyMax;
 }
 
 class _AppLocalizationsDelegate

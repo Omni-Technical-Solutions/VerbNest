@@ -52,4 +52,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get closeTab => 'Close tab';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get systemDefault => 'System default';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get secretsProtected => 'Secrets are kept in the system secret store';
+
+  @override
+  String get secretsUnprotected =>
+      'Secrets are stored unencrypted on this device';
+
+  @override
+  String get secretsUnavailableHint =>
+      'The system secret store is not available (on Linux, install and unlock a keyring service).';
+
+  @override
+  String get defaultTimeout => 'Default timeout (seconds)';
+
+  @override
+  String get verifyTls => 'Verify TLS certificates';
+
+  @override
+  String get verifyTlsHint => 'Turning this off is unsafe on public networks';
+
+  @override
+  String get warnUnresolved => 'Warn before sending with undefined variables';
+
+  @override
+  String get followRedirects => 'Follow redirects';
+
+  @override
+  String get appearanceSection => 'Appearance (this device)';
+
+  @override
+  String get historySection => 'History (this device)';
+
+  @override
+  String get historyBodies => 'Keep request and response bodies';
+
+  @override
+  String get historyBodiesHint => 'Off stores only URLs, headers and status';
+
+  @override
+  String get historyDays => 'Delete history older than (days, 0 = never)';
+
+  @override
+  String get historyMax => 'Keep at most this many entries';
 }

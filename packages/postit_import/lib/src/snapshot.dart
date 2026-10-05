@@ -199,27 +199,88 @@ Map<String, Object?> _doc(List<int> bytes, String path) {
 String _dirOf(String p) =>
     p.contains('/') ? p.substring(0, p.lastIndexOf('/')) : '';
 
+/// Sorts [items] by their position in [order]; unknown ids go last, ties by [tie].
+List<T> _byOrder<T>(
+  Iterable<T> items,
+  List<String> order,
+  String Function(T) idOf,
+  String Function(T) tie,
+) {
+  int rank(T t) {
+    final i = order.indexOf(idOf(t));
+    return i < 0 ? order.length : i;
+  }
+
+  return items.toList()..sort((a, b) {
+    final c = rank(a).compareTo(rank(b));
+    return c != 0 ? c : tie(a).compareTo(tie(b));
+  });
+}
+
+List<String> _ids(Object? v) => [
+  for (final o in (v as List? ?? const [])) '$o',
+];
+
 /// Reads a snapshot into [repo]. In an empty workspace the workspace id, name
 /// and settings come along, so export, import, export gives identical files.
 /// Otherwise items are merged by id; anything already there is kept and
 /// listed in [SnapshotResult.conflicts].
-SnapshotResult importSnapshot(WorkspaceRepository repo, SnapshotFiles files) {
-  final manifestBytes = files['postit.yaml'];
-  if (manifestBytes == null) {
-    throw const FormatException(
-      'postit.yaml is missing: not a PostIt snapshot',
-    );
-  }
-  final manifest = _doc(manifestBytes, 'postit.yaml');
-  if ((manifest['postit'] as int? ?? 0) > snapshotVersion) {
-    throw const FormatException('This snapshot is from a newer PostIt');
-  }
+SnapshotResult importSnapshot(WorkspaceRepository repo, SnapshotFiles files) =>
+    _SnapshotImporter(repo, files).run();
+
+class _SnapshotImporter {
+  _SnapshotImporter(this.repo, this.files)
+    : manifest = _readManifest(files),
+      fresh =
+          repo.children(null).isEmpty &&
+          repo.environments().isEmpty &&
+          repo.variables(VariableOwner.global).isEmpty;
+
+  final WorkspaceRepository repo;
+  final SnapshotFiles files;
+  final Map<String, Object?> manifest;
+  final bool fresh;
   final result = SnapshotResult();
-  final fresh =
-      repo.children(null).isEmpty &&
-      repo.environments().isEmpty &&
-      repo.variables(VariableOwner.global).isEmpty;
-  if (fresh) {
+
+  final _containers = <String, Map<String, Object?>>{};
+  final _requests = <String, List<(String, Map<String, Object?>)>>{};
+  final _examples = <Map<String, Object?>>[];
+
+  static Map<String, Object?> _readManifest(SnapshotFiles files) {
+    final bytes = files['postit.yaml'];
+    if (bytes == null) {
+      throw const FormatException(
+        'postit.yaml is missing: not a PostIt snapshot',
+      );
+    }
+    final m = _doc(bytes, 'postit.yaml');
+    if ((m['postit'] as int? ?? 0) > snapshotVersion) {
+      throw const FormatException('This snapshot is from a newer PostIt');
+    }
+    return m;
+  }
+
+  SnapshotResult run() {
+    _workspace();
+    _attachments();
+    _globals();
+    _environments();
+    _scanCollections();
+    final tops = _byOrder(
+      _containers.keys.where((d) => _dirOf(d) == 'collections'),
+      _ids(manifest['collections']),
+      (d) => '${_containers[d]!['id']}',
+      (d) => d,
+    );
+    for (final d in tops) {
+      _restoreContainer(d, null);
+    }
+    _restoreExamples();
+    return result;
+  }
+
+  void _workspace() {
+    if (!fresh) return;
     if (manifest['id'] is String) {
       repo.restoreWorkspaceId(manifest['id'] as String);
     }
@@ -229,24 +290,27 @@ SnapshotResult importSnapshot(WorkspaceRepository repo, SnapshotFiles files) {
     }
   }
 
-  // attachments first so requests can refer to them
-  for (final e in files.entries) {
-    if (!e.key.startsWith('attachments/') || !e.key.endsWith('.meta.yaml')) {
-      continue;
+  /// Attachments go first so requests can refer to them.
+  void _attachments() {
+    for (final e in files.entries) {
+      if (!e.key.startsWith('attachments/') || !e.key.endsWith('.meta.yaml')) {
+        continue;
+      }
+      final meta = _doc(e.value, e.key);
+      final data = files['attachments/${meta['file']}'];
+      if (data == null) continue;
+      repo.restoreAttachment(
+        '${meta['id']}',
+        '${meta['name']}',
+        meta['mime'] as String?,
+        Uint8List.fromList(data),
+      );
     }
-    final meta = _doc(e.value, e.key);
-    final data = files['attachments/${meta['file']}'];
-    if (data == null) continue;
-    repo.restoreAttachment(
-      '${meta['id']}',
-      '${meta['name']}',
-      meta['mime'] as String?,
-      Uint8List.fromList(data),
-    );
   }
 
-  final globals = files['globals.yaml'];
-  if (globals != null) {
+  void _globals() {
+    final globals = files['globals.yaml'];
+    if (globals == null) return;
     final have = repo.variables(VariableOwner.global);
     final keys = have.map((v) => v.key).toSet();
     final add = _readVars(_doc(globals, 'globals.yaml')['variables'])
@@ -256,76 +320,66 @@ SnapshotResult importSnapshot(WorkspaceRepository repo, SnapshotFiles files) {
     }
   }
 
-  final envOrder = [
-    for (final id in (manifest['environments'] as List? ?? const [])) '$id',
-  ];
-  final envDocs =
-      <Map<String, Object?>>[
+  void _environments() {
+    final docs = _byOrder(
+      [
         for (final e in files.entries)
           if (e.key.startsWith('environments/') && e.key.endsWith('.yaml'))
             _doc(e.value, e.key),
-      ]..sort((a, b) {
-        int rank(Map<String, Object?> m) {
-          final i = envOrder.indexOf('${m['id']}');
-          return i < 0 ? envOrder.length : i;
-        }
-
-        final c = rank(a).compareTo(rank(b));
-        return c != 0 ? c : '${a['name']}'.compareTo('${b['name']}');
-      });
-  final names = repo.environments().map((e) => e.name).toSet();
-  final ids = repo.environments().map((e) => e.id).toSet();
-  for (final d in envDocs) {
-    final id = '${d['id']}';
-    final name = '${d['name']}';
-    if (ids.contains(id) || names.contains(name)) {
-      result.conflicts.add('Environment "$name" already exists');
-      continue;
-    }
-    repo.saveEnvironment(
-      Environment(
-        id: id,
-        name: name,
-        color: d['color'] as String?,
-        variables: _readVars(d['variables']),
-      ),
+      ],
+      _ids(manifest['environments']),
+      (m) => '${m['id']}',
+      (m) => '${m['name']}',
     );
-    result.environments++;
-  }
-  if (fresh && manifest['defaultEnvironment'] is String) {
-    final id = manifest['defaultEnvironment'] as String;
-    if (repo.environments().any((e) => e.id == id)) {
-      repo.defaultEnvironmentId = id;
+    final names = repo.environments().map((e) => e.name).toSet();
+    final ids = repo.environments().map((e) => e.id).toSet();
+    for (final d in docs) {
+      final id = '${d['id']}';
+      final name = '${d['name']}';
+      if (ids.contains(id) || names.contains(name)) {
+        result.conflicts.add('Environment "$name" already exists');
+        continue;
+      }
+      repo.saveEnvironment(
+        Environment(
+          id: id,
+          name: name,
+          color: d['color'] as String?,
+          variables: _readVars(d['variables']),
+        ),
+      );
+      result.environments++;
+    }
+    final def = manifest['defaultEnvironment'];
+    if (fresh && def is String && repo.environments().any((e) => e.id == def)) {
+      repo.defaultEnvironmentId = def;
     }
   }
 
-  // Containers by directory, requests by directory.
-  final containers = <String, Map<String, Object?>>{};
-  final requests = <String, List<(String, Map<String, Object?>)>>{};
-  final examples = <Map<String, Object?>>[];
-  for (final e in files.entries) {
-    final p = e.key;
-    if (!p.startsWith('collections/')) continue;
-    if (p.endsWith('/_collection.yaml') || p.endsWith('/_folder.yaml')) {
-      containers[_dirOf(p)] = {
-        ..._doc(e.value, p),
-        '_collection': p.endsWith('/_collection.yaml'),
-      };
-    } else if (p.endsWith('.req.yaml')) {
-      requests.putIfAbsent(_dirOf(p), () => []).add((p, _doc(e.value, p)));
-    } else if (p.endsWith('.example.yaml')) {
-      examples.add(_doc(e.value, p));
+  void _scanCollections() {
+    for (final e in files.entries) {
+      final p = e.key;
+      if (!p.startsWith('collections/')) continue;
+      if (p.endsWith('/_collection.yaml') || p.endsWith('/_folder.yaml')) {
+        _containers[_dirOf(p)] = {
+          ..._doc(e.value, p),
+          '_collection': p.endsWith('/_collection.yaml'),
+        };
+      } else if (p.endsWith('.req.yaml')) {
+        _requests.putIfAbsent(_dirOf(p), () => []).add((p, _doc(e.value, p)));
+      } else if (p.endsWith('.example.yaml')) {
+        _examples.add(_doc(e.value, p));
+      }
     }
   }
 
-  void restoreContainer(String dir, String? parentId) {
-    final c = containers[dir]!;
+  void _restoreContainer(String dir, String? parentId) {
+    final c = _containers[dir]!;
     final id = '${c['id']}';
     final isCollection = c['_collection'] == true;
+    final label = isCollection ? 'Collection' : 'Folder';
     if (repo.hasNode(id)) {
-      result.conflicts.add(
-        '${isCollection ? 'Collection' : 'Folder'} "${c['name']}" already exists',
-      );
+      result.conflicts.add('$label "${c['name']}" already exists');
     } else {
       repo.restoreNode({
         'id': id,
@@ -349,92 +403,63 @@ SnapshotResult importSnapshot(WorkspaceRepository repo, SnapshotFiles files) {
       }
       isCollection ? result.collections++ : result.folders++;
     }
-    final order = [for (final o in (c['order'] as List? ?? const [])) '$o'];
-    int rank(String id) {
-      final i = order.indexOf(id);
-      return i < 0 ? order.length : i;
-    }
 
-    final kids = <(int, String, void Function())>[];
-    for (final sub in containers.keys.where((d) => _dirOf(d) == dir)) {
-      kids.add((
-        rank('${containers[sub]!['id']}'),
-        sub,
-        () => restoreContainer(sub, id),
-      ));
-    }
-    for (final (path, r)
-        in requests[dir] ?? const <(String, Map<String, Object?>)>[]) {
-      kids.add((
-        rank('${r['id']}'),
-        path,
-        () {
-          final rid = '${r['id']}';
-          if (repo.hasNode(rid)) {
-            result.conflicts.add('Request "${r['name']}" already exists');
-            return;
-          }
-          repo.restoreNode({
-            'id': rid,
-            'kind': 'request',
-            'type': r['type'] ?? 'http',
-            'name': r['name'],
-            'description': r['description'],
-            'auth': r['auth'],
-            'scripts': r['scripts'],
-            'data': r['data'],
-            'extra': r['extra'],
-          }, id);
-          result.requests++;
-        },
-      ));
-    }
-    kids.sort((a, b) {
-      final c = a.$1.compareTo(b.$1);
-      return c != 0 ? c : a.$2.compareTo(b.$2);
-    });
-    for (final k in kids) {
+    final kids = <(String, String, void Function())>[
+      for (final sub in _containers.keys.where((d) => _dirOf(d) == dir))
+        ('${_containers[sub]!['id']}', sub, () => _restoreContainer(sub, id)),
+      for (final (path, r)
+          in _requests[dir] ?? <(String, Map<String, Object?>)>[])
+        ('${r['id']}', path, () => _restoreRequest(r, id)),
+    ];
+    for (final k in _byOrder(
+      kids,
+      _ids(c['order']),
+      (k) => k.$1,
+      (k) => k.$2,
+    )) {
       k.$3();
     }
   }
 
-  final topDirs = containers.keys
-      .where((d) => _dirOf(d) == 'collections')
-      .toList();
-  final collOrder = [
-    for (final id in (manifest['collections'] as List? ?? const [])) '$id',
-  ];
-  int collRank(String dir) {
-    final i = collOrder.indexOf('${containers[dir]!['id']}');
-    return i < 0 ? collOrder.length : i;
-  }
-
-  topDirs.sort((a, b) {
-    final c = collRank(a).compareTo(collRank(b));
-    return c != 0 ? c : a.compareTo(b);
-  });
-  for (final d in topDirs) {
-    restoreContainer(d, null);
-  }
-
-  for (final e in examples) {
-    final rid = '${e['requestId']}';
-    if (!repo.hasNode(rid)) continue;
-    final id = '${e['id']}';
-    if (repo.examples(rid).any((x) => x.id == id)) {
-      result.conflicts.add('Example "${e['name']}" already exists');
-      continue;
+  void _restoreRequest(Map<String, Object?> r, String parentId) {
+    final id = '${r['id']}';
+    if (repo.hasNode(id)) {
+      result.conflicts.add('Request "${r['name']}" already exists');
+      return;
     }
-    repo.restoreExample(
-      ExampleInfo(
-        id: id,
-        requestId: rid,
-        name: '${e['name']}',
-        data: (e['data'] as Map?)?.cast<String, Object?>() ?? {},
-        body: base64Decode('${e['bodyBase64'] ?? ''}'),
-      ),
-    );
-    result.examples++;
+    repo.restoreNode({
+      'id': id,
+      'kind': 'request',
+      'type': r['type'] ?? 'http',
+      'name': r['name'],
+      'description': r['description'],
+      'auth': r['auth'],
+      'scripts': r['scripts'],
+      'data': r['data'],
+      'extra': r['extra'],
+    }, parentId);
+    result.requests++;
   }
-  return result;
+
+  void _restoreExamples() {
+    for (final e in _examples) {
+      final rid = '${e['requestId']}';
+      if (!repo.hasNode(rid)) continue;
+      final id = '${e['id']}';
+      if (repo.examples(rid).any((x) => x.id == id)) {
+        result.conflicts.add('Example "${e['name']}" already exists');
+        continue;
+      }
+      repo.restoreExample(
+        ExampleInfo(
+          id: id,
+          requestId: rid,
+          name: '${e['name']}',
+          data: (e['data'] as Map?)?.cast<String, Object?>() ?? {},
+          body: base64Decode('${e['bodyBase64'] ?? ''}'),
+        ),
+      );
+      result.examples++;
+    }
+  }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
+import 'state/locale_state.dart';
 import 'state/prefs.dart';
 import 'state/session.dart';
 import 'state/settings_state.dart';
@@ -30,24 +32,30 @@ class SettingsPage extends ConsumerWidget {
           ),
           title: Text(
             protected
-                ? 'Secrets are kept in the system secret store'
-                : 'Secrets are stored unencrypted on this device',
+                ? context.l10n.secretsProtected
+                : context.l10n.secretsUnprotected,
           ),
           subtitle: protected
               ? null
-              : const Text(
-                  'The system secret store is not available '
-                  '(on Linux, install and unlock a keyring service).',
-                ),
+              : Text(context.l10n.secretsUnavailableHint),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SegmentedButton<ThemeMode>(
             key: const Key('theme-mode'),
-            segments: const [
-              ButtonSegment(value: ThemeMode.system, label: Text('System')),
-              ButtonSegment(value: ThemeMode.light, label: Text('Light')),
-              ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+            segments: [
+              ButtonSegment(
+                value: ThemeMode.system,
+                label: Text(context.l10n.themeSystem),
+              ),
+              ButtonSegment(
+                value: ThemeMode.light,
+                label: Text(context.l10n.themeLight),
+              ),
+              ButtonSegment(
+                value: ThemeMode.dark,
+                label: Text(context.l10n.themeDark),
+              ),
             ],
             selected: {ref.watch(themeModeProvider)},
             onSelectionChanged: (s) =>
@@ -56,9 +64,28 @@ class SettingsPage extends ConsumerWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: DropdownButtonFormField<String>(
+            key: const Key('language'),
+            initialValue: ref.watch(localeProvider)?.languageCode ?? '',
+            decoration: InputDecoration(labelText: context.l10n.language),
+            items: [
+              DropdownMenuItem(
+                value: '',
+                child: Text(context.l10n.systemDefault),
+              ),
+              const DropdownMenuItem(value: 'en', child: Text('English')),
+              const DropdownMenuItem(value: 'ar', child: Text('العربية')),
+            ],
+            onChanged: (v) => ref
+                .read(localeProvider.notifier)
+                .set(v == null || v.isEmpty ? null : Locale(v)),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SyncedTextField(
             key: const Key('default-timeout'),
-            label: 'Default timeout (seconds)',
+            label: context.l10n.defaultTimeout,
             value: '${s.timeout.inSeconds}',
             onChanged: (v) {
               final secs = int.tryParse(v.trim());
@@ -70,26 +97,26 @@ class SettingsPage extends ConsumerWidget {
         ),
         SwitchListTile(
           key: const Key('default-verify-tls'),
-          title: const Text('Verify TLS certificates'),
-          subtitle: const Text('Turning this off is unsafe on public networks'),
+          title: Text(context.l10n.verifyTls),
+          subtitle: Text(context.l10n.verifyTlsHint),
           value: s.verifyTls,
           onChanged: (v) => notifier.update(verifyTls: v),
         ),
         SwitchListTile(
           key: const Key('warn-unresolved'),
-          title: const Text('Warn before sending with undefined variables'),
+          title: Text(context.l10n.warnUnresolved),
           value: ref.watch(warnUnresolvedProvider),
           onChanged: ref.read(warnUnresolvedProvider.notifier).set,
         ),
         SwitchListTile(
-          title: const Text('Follow redirects'),
+          title: Text(context.l10n.followRedirects),
           value: s.followRedirects,
           onChanged: (v) => notifier.update(followRedirects: v),
         ),
         const Divider(),
         const NetworkSettingsSection(),
         const Divider(),
-        _section(context, 'Appearance (this device)'),
+        _section(context, context.l10n.appearanceSection),
         ListTile(
           title: Text('Text size ${(prefs.fontScale * 100).round()}%'),
           subtitle: Slider(
@@ -115,11 +142,11 @@ class SettingsPage extends ConsumerWidget {
           ),
         ),
         const Divider(),
-        _section(context, 'History (this device)'),
+        _section(context, context.l10n.historySection),
         SwitchListTile(
           key: const Key('history-bodies'),
-          title: const Text('Keep request and response bodies'),
-          subtitle: const Text('Off stores only URLs, headers and status'),
+          title: Text(context.l10n.historyBodies),
+          subtitle: Text(context.l10n.historyBodiesHint),
           value: prefs.historyBodies,
           onChanged: (v) =>
               prefsNotifier.update(prefs.copyWith(historyBodies: v)),
@@ -128,7 +155,7 @@ class SettingsPage extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SyncedTextField(
             key: const Key('history-days'),
-            label: 'Delete history older than (days, 0 = never)',
+            label: context.l10n.historyDays,
             value: '${prefs.historyDays}',
             onChanged: (v) {
               final n = int.tryParse(v.trim());
@@ -142,7 +169,7 @@ class SettingsPage extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SyncedTextField(
             key: const Key('history-max'),
-            label: 'Keep at most this many entries',
+            label: context.l10n.historyMax,
             value: '${prefs.historyMax}',
             onChanged: (v) {
               final n = int.tryParse(v.trim());

@@ -75,7 +75,11 @@ void main() {
     expect(get.auth, isA<NoAuth>());
     expect(get.scripts.pre, 'a();\nb();');
     expect(get.scripts.post, 'pm.test(1);');
-    expect(r.warnings.any((w) => w.contains('examples')), isTrue);
+    expect((c.children.first as FolderNode).children.first, isA<RequestNode>());
+    expect(
+      ((c.children.first as FolderNode).children.first as RequestNode).examples,
+      isNotEmpty,
+    );
 
     final upload = (c.children[1] as RequestNode).item;
     final fields = (upload.body as FormDataBody).fields;
@@ -99,7 +103,7 @@ void main() {
     final again = importPostmanCollection(exported);
 
     String dump(FolderNode f) => jsonEncode(_flat(f));
-    // Examples are dropped by design, so compare the second pass to the first.
+    // The sample has no examples, so both passes match.
     final first = importPostmanCollection(json).collection;
     expect(dump(again.collection), dump(first));
     expect(exported['info'], containsPair('schema', postmanSchema));
@@ -217,5 +221,48 @@ void oauthRoundTrip() {
       final back = importPostmanCollection(jsonDecode(jsonEncode(doc)));
       expect(back.collection.auth.toJson(), a.toJson());
     }
+  });
+
+  test('saved responses become examples and survive export', () {
+    final doc = {
+      'info': {'name': 'C', 'schema': postmanSchema},
+      'item': [
+        {
+          'name': 'r',
+          'request': {'method': 'GET', 'url': 'http://h.test/a'},
+          'response': [
+            {
+              'name': 'ok',
+              'code': 200,
+              'status': 'OK',
+              'header': [
+                {'key': 'X-A', 'value': '1'},
+              ],
+              'body': '{"a":1}',
+              'originalRequest': {'method': 'GET', 'url': 'http://h.test/a'},
+            },
+          ],
+        },
+      ],
+    };
+    final imp = importPostmanCollection(doc);
+    expect(imp.warnings, isEmpty);
+    final db = WorkspaceDatabase.memory();
+    addTearDown(db.close);
+    final repo = WorkspaceRepository(db);
+    final id = saveImportedCollection(repo, imp.collection);
+    final req = repo.children(id).single.id;
+    final ex = repo.examples(req).single;
+    expect(ex.name, 'ok');
+    expect(ex.data['status'], 200);
+    expect(utf8.decode(ex.body), '{"a":1}');
+
+    final out = exportPostmanCollection(loadCollectionTree(repo, id));
+    final resp =
+        (((out['item'] as List).single as Map)['response'] as List).single
+            as Map;
+    expect(resp['code'], 200);
+    expect(resp['body'], '{"a":1}');
+    expect((resp['header'] as List).single, {'key': 'X-A', 'value': '1'});
   });
 }

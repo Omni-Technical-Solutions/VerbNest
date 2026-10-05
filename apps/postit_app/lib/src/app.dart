@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'adaptive_scaffold.dart';
+import 'state/locale_state.dart';
 import 'state/prefs.dart';
 import 'state/theme_state.dart';
 import 'theme.dart';
@@ -17,6 +18,7 @@ class PostItApp extends ConsumerWidget {
       title: 'PostIt',
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      locale: ref.watch(localeProvider),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),

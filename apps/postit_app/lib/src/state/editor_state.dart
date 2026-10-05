@@ -252,55 +252,81 @@ class EditorNotifier extends Notifier<EditorState> {
         prepared,
         cancel: token,
       );
-      final post = await runScriptPhase(
+      await _finish(
         session: session,
-        engine: scripts,
-        requestId: id,
         item: item,
         envId: envId,
-        phase: ScriptPhase.post,
-        request: requestToMap(item),
-        response: responseToMap(response),
-        local: local,
-        data: data,
-      );
-      final facts = ResponseFacts(
-        status: response.status,
-        headers: response.headers,
-        body: response.bodyText,
-        timeMs: response.timings.total.inMilliseconds,
-      );
-      final checks = [
-        for (final a in item.assertions)
-          if (a.enabled)
-            a.evaluate(facts, resolve: (t) => resolver.resolve(t).value),
-      ];
-      state = state.copyWith(
-        sending: false,
+        pre: pre,
+        prepared: prepared,
         response: response,
-        tests: [...checks, ...post.tests],
-        flow: ScriptFlow(
-          next: post.flow.next ?? pre.flow.next,
-          stop: post.flow.stop || pre.flow.stop,
-        ),
-        scriptLogs: [...pre.logs, ...post.logs],
-        scriptError: post.error,
-        unresolved: prepared.unresolved,
-        warnings: prepared.warnings,
-        maskedSentHead: prepared.masker.maskHead(response.sent.head),
-        maskedSentBody: describeSentBody(response.sent.body, prepared.masker),
+        resolver: resolver,
+        data: data,
       );
       _record(prepared, envId, response: response);
     } on OAuth2Error catch (e) {
-      state = state.copyWith(sending: false, error: e.message);
+      _fail(e.message);
     } on RequestBuildError catch (e) {
-      state = state.copyWith(sending: false, error: e.message);
+      _fail(e.message);
     } on HttpEngineError catch (e) {
-      state = state.copyWith(sending: false, error: e.message);
+      _fail(e.message);
       if (prepared != null) _record(prepared, envId, error: e.message);
     } finally {
       if (_cancel == token) _cancel = null;
     }
+  }
+
+  void _fail(String message) =>
+      state = state.copyWith(sending: false, error: message);
+
+  /// Runs the post-response script and assertions, then publishes the result.
+  Future<void> _finish({
+    required WorkspaceSession session,
+    required HttpRequestItem item,
+    required String? envId,
+    required ScriptPhaseResult pre,
+    required PreparedRequest prepared,
+    required HttpResponseRecord response,
+    required VariableResolver resolver,
+    required Map<String, String> data,
+  }) async {
+    final post = await runScriptPhase(
+      session: session,
+      engine: ref.read(scriptEngineProvider),
+      requestId: id,
+      item: item,
+      envId: envId,
+      phase: ScriptPhase.post,
+      request: requestToMap(item),
+      response: responseToMap(response),
+      local: pre.local,
+      data: data,
+    );
+    final facts = ResponseFacts(
+      status: response.status,
+      headers: response.headers,
+      body: response.bodyText,
+      timeMs: response.timings.total.inMilliseconds,
+    );
+    final checks = [
+      for (final a in item.assertions)
+        if (a.enabled)
+          a.evaluate(facts, resolve: (t) => resolver.resolve(t).value),
+    ];
+    state = state.copyWith(
+      sending: false,
+      response: response,
+      tests: [...checks, ...post.tests],
+      flow: ScriptFlow(
+        next: post.flow.next ?? pre.flow.next,
+        stop: post.flow.stop || pre.flow.stop,
+      ),
+      scriptLogs: [...pre.logs, ...post.logs],
+      scriptError: post.error,
+      unresolved: prepared.unresolved,
+      warnings: prepared.warnings,
+      maskedSentHead: prepared.masker.maskHead(response.sent.head),
+      maskedSentBody: describeSentBody(response.sent.body, prepared.masker),
+    );
   }
 
   /// A bearer token for [auth], from the cache or the token endpoint.

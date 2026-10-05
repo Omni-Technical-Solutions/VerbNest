@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:postit_app/src/state/locale_state.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -119,6 +119,24 @@ void main() {
     final rail = tester.getTopRight(find.byType(NavigationRail));
     expect(rail.dx, closeTo(1200, 1));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('language setting switches the UI and is remembered', (
+    tester,
+  ) async {
+    final s = await pumpApp(tester, const Size(1200, 900));
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(NavigationRail)),
+    );
+    container.read(localeProvider.notifier).set(const Locale('ar'));
+    await tester.pumpAndSettle();
+    expect(find.text('الإعدادات'), findsWidgets);
+    expect(s.repo.settings['language'], 'ar');
+    container.read(localeProvider.notifier).set(null);
+    await tester.pumpAndSettle();
+    expect(find.text('Settings'), findsWidgets);
+    expect(s.repo.settings.containsKey('language'), isFalse);
   });
 
   testWidgets('favourites: star in the editor, mark in the tree, filter', (
