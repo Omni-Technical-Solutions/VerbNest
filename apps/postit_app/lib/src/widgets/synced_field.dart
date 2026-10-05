@@ -121,6 +121,7 @@ class SyncedTextField extends StatefulWidget {
     this.script = false,
     this.suggestions = const [],
     this.fontSize,
+    this.completer,
   });
 
   final String value;
@@ -137,6 +138,10 @@ class SyncedTextField extends StatefulWidget {
   final bool script;
   final List<String> suggestions;
   final double? fontSize;
+
+  /// Suggestions for the caret position, such as GraphQL fields. Overrides
+  /// the other completion modes while it returns something.
+  final GqlCompletion? Function(String text, int caret)? completer;
 
   @override
   State<SyncedTextField> createState() => _SyncedTextFieldState();
@@ -230,6 +235,25 @@ class _SyncedTextFieldState extends State<SyncedTextField> {
     if (!_focus.hasFocus) return null;
     final text = _controller.text;
     final caret = _controller.selection.baseOffset;
+    final custom = widget.completer;
+    if (custom != null && caret >= 0) {
+      final c = custom(text, caret);
+      if (c != null && c.items.isNotEmpty) {
+        final shown = c.items.take(12).toList();
+        return _chips([for (final i in shown) i.label], (label) {
+          final item = shown.firstWhere((i) => i.label == label);
+          final next = text.replaceRange(c.replaceFrom, caret, item.text);
+          _controller.value = TextEditingValue(
+            text: next,
+            selection: TextSelection.collapsed(
+              offset: c.replaceFrom + item.text.length,
+            ),
+          );
+          widget.onChanged(next);
+          _focus.requestFocus();
+        });
+      }
+    }
     if (widget.script) {
       final prefix = scriptPrefix(text, caret);
       final names = prefix == null

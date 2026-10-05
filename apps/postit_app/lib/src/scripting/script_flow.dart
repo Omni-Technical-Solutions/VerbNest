@@ -224,6 +224,7 @@ Map<String, Object?> requestToMap(HttpRequestItem item) => {
   ],
   'body': switch (item.body) {
     RawBody(:final text) => text,
+    GraphqlBody() && final g => g.toPayload(lenient: true),
     _ => '',
   },
 };
@@ -263,6 +264,12 @@ HttpRequestItem applyRequestMap(
   final current = item.body;
   if (current is RawBody && current.text != body) {
     result = result.copyWith(body: RawBody(current.language, body));
+  } else if (current is GraphqlBody) {
+    // A script that rewrites the payload turns it into a plain JSON body for
+    // this send only; an untouched payload keeps the GraphQL editor fields.
+    if (current.toPayload(lenient: true) != body) {
+      result = result.copyWith(body: RawBody(RawBodyLanguage.json, body));
+    }
   } else if (current is! RawBody && body.isNotEmpty) {
     result = result.copyWith(body: RawBody(RawBodyLanguage.text, body));
   }

@@ -278,6 +278,60 @@ class EditorNotifier extends Notifier<EditorState> {
   void _fail(String message) =>
       state = state.copyWith(sending: false, error: message);
 
+  /// Asks this request's URL for its GraphQL schema (FR-GQL-002). Uses the
+  /// request's URL, headers, auth and the active environment, but runs no
+  /// scripts. Throws [FormatException] with a message fit for the user.
+  Future<GraphqlSchema> introspect() async {
+    flush();
+    final session = ref.read(sessionProvider);
+    final repo = session.repo;
+    final envId = ref.read(activeEnvProvider);
+    final defaults = ref.read(httpDefaultsProvider);
+    final token = CancelToken();
+    try {
+      final resolver = VariableResolver(
+        buildScopes(session, requestId: id, envId: envId),
+      );
+      var auth = effectiveAuth(state.item.auth, repo.authChain(id));
+      if (auth is OAuth2Auth) {
+        auth = await _oauthToken(auth, resolver, defaults, token);
+      }
+      final prepared =
+          await RequestBuilder(
+            defaults: defaults,
+            readFile: (ref) async =>
+                repo.attachmentBytes(attachmentIdOf(ref) ?? ref),
+          ).build(
+            state.item.copyWith(
+              method: 'POST',
+              body: const GraphqlBody(query: graphqlIntrospectionQuery),
+            ),
+            resolver,
+            auth: auth,
+          );
+      final response = await sendPrepared(
+        ref.read(engineProvider),
+        prepared,
+        cancel: token,
+      );
+      final Object? json;
+      try {
+        json = jsonDecode(response.bodyText);
+      } on FormatException {
+        throw FormatException(
+          'The server answered ${response.status} and not with JSON',
+        );
+      }
+      return GraphqlSchema.fromIntrospection(json);
+    } on OAuth2Error catch (e) {
+      throw FormatException(e.message);
+    } on RequestBuildError catch (e) {
+      throw FormatException(e.message);
+    } on HttpEngineError catch (e) {
+      throw FormatException(e.message);
+    }
+  }
+
   /// Runs the post-response script and assertions, then publishes the result.
   Future<void> _finish({
     required WorkspaceSession session,

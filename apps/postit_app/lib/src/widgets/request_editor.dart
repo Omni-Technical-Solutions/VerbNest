@@ -18,6 +18,7 @@ import 'env_selector.dart';
 import 'kv_editor.dart';
 import 'response_view.dart';
 import 'request_extras.dart';
+import 'graphql_editor.dart';
 import 'synced_field.dart';
 
 const _customMethod = '\u0000custom';
@@ -451,6 +452,7 @@ class _BodyTab extends ConsumerWidget {
     'xml',
     'html',
     'javascript',
+    'graphql',
     'urlencoded',
     'form',
     'binary',
@@ -461,6 +463,7 @@ class _BodyTab extends ConsumerWidget {
       if (l.name == mode) return RawBody(l, '');
     }
     return switch (mode) {
+      'graphql' => const GraphqlBody(),
       'urlencoded' => const UrlEncodedBody([]),
       'form' => const FormDataBody([]),
       'binary' => const BinaryBody(null),
@@ -534,7 +537,16 @@ class _BodyTab extends ConsumerWidget {
                 DropdownMenuItem(value: m, child: Text(m)),
             ],
             onChanged: (m) {
-              if (m != null && m != body.mode) _set(_fresh(m));
+              if (m == null || m == body.mode) return;
+              // A GraphQL operation is a POST; a GET with a body is rarely meant.
+              notifier.edit(
+                (i) => i.copyWith(
+                  body: _fresh(m),
+                  method: m == 'graphql' && i.method == 'GET'
+                      ? 'POST'
+                      : i.method,
+                ),
+              );
             },
           ),
         ),
@@ -550,6 +562,12 @@ class _BodyTab extends ConsumerWidget {
                 expands: true,
                 onChanged: (v) => _set(RawBody(body.language, v)),
               ),
+            ),
+            GraphqlBody() => GraphqlEditor(
+              body: body,
+              url: item.url,
+              notifier: notifier,
+              onChanged: _set,
             ),
             UrlEncodedBody() => KeyValueEditor(
               idPrefix: 'urlencoded',

@@ -227,6 +227,13 @@ class RequestBuilder {
       case RawBody(:final text):
         _defaultContentType(headers, body.defaultContentType);
         return utf8.encode(ctx.text(text));
+      case GraphqlBody():
+        _defaultContentType(headers, body.defaultContentType);
+        try {
+          return utf8.encode(body.toPayload(resolve: ctx.text));
+        } on FormatException catch (e) {
+          throw RequestBuildError(e.message);
+        }
       case UrlEncodedBody(:final fields):
         _defaultContentType(headers, body.defaultContentType);
         return utf8.encode(_urlEncode(fields, ctx));

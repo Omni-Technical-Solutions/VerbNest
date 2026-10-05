@@ -102,6 +102,9 @@ class _Plan {
       case RawBody(text: final t):
         kind = _BodyKind.text;
         text = r(t);
+      case GraphqlBody() && final g:
+        kind = _BodyKind.text;
+        text = g.toPayload(resolve: r, lenient: true);
       case UrlEncodedBody(fields: final f):
         kind = _BodyKind.form;
         fields = [

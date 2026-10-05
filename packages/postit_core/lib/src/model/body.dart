@@ -1,3 +1,4 @@
+import '../graphql/payload.dart';
 import 'key_value.dart';
 
 enum RawBodyLanguage {
@@ -32,6 +33,7 @@ sealed class RequestBody {
       }
     }
     return switch (mode) {
+      'graphql' => GraphqlBody.fromJson(json['graphql']),
       'urlencoded' => UrlEncodedBody(KeyValue.listFromJson(json['urlencoded'])),
       'form' => FormDataBody(KeyValue.listFromJson(json['form'])),
       'binary' => BinaryBody(
@@ -69,6 +71,75 @@ class RawBody extends RequestBody {
 
   @override
   Map<String, Object?> toJson() => {'mode': mode, mode: text};
+}
+
+/// A GraphQL operation sent as a JSON POST body (FR-GQL-001). All three
+/// fields may hold `{{variables}}`; they are resolved before the payload is
+/// built, so [variables] only has to be valid JSON after resolution.
+class GraphqlBody extends RequestBody {
+  const GraphqlBody({
+    this.query = '',
+    this.variables = '',
+    this.operationName = '',
+  });
+
+  final String query;
+
+  /// JSON object text; empty means no variables.
+  final String variables;
+  final String operationName;
+
+  GraphqlBody copyWith({
+    String? query,
+    String? variables,
+    String? operationName,
+  }) => GraphqlBody(
+    query: query ?? this.query,
+    variables: variables ?? this.variables,
+    operationName: operationName ?? this.operationName,
+  );
+
+  /// The JSON request body. [resolve] replaces `{{variables}}` in each field
+  /// first. With [lenient], variables that are not valid JSON are left out
+  /// instead of throwing; exports use this so they never fail.
+  String toPayload({String Function(String)? resolve, bool lenient = false}) {
+    String r(String s) => resolve == null ? s : resolve(s);
+    try {
+      return graphqlPayload(
+        query: r(query),
+        variables: r(variables),
+        operationName: r(operationName),
+      );
+    } on FormatException {
+      if (!lenient) rethrow;
+      return graphqlPayload(query: r(query), operationName: r(operationName));
+    }
+  }
+
+  @override
+  String get mode => 'graphql';
+
+  @override
+  String? get defaultContentType => 'application/json';
+
+  @override
+  Map<String, Object?> toJson() => {
+    'mode': mode,
+    mode: {
+      if (query.isNotEmpty) 'query': query,
+      if (variables.isNotEmpty) 'variables': variables,
+      if (operationName.isNotEmpty) 'operationName': operationName,
+    },
+  };
+
+  factory GraphqlBody.fromJson(Object? json) {
+    final m = json is Map ? json : const {};
+    return GraphqlBody(
+      query: m['query'] as String? ?? '',
+      variables: m['variables'] as String? ?? '',
+      operationName: m['operationName'] as String? ?? '',
+    );
+  }
 }
 
 class UrlEncodedBody extends RequestBody {

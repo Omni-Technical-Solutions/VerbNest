@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:postit_core/postit_core.dart';
 
 /// A node of an imported or exported collection tree.
@@ -294,6 +296,16 @@ RequestBody _body(
         _ => RawBodyLanguage.text,
       };
       return RawBody(language, _str(b['raw']));
+    case 'graphql':
+      final g = _map(b['graphql']);
+      final vars = g['variables'];
+      return GraphqlBody(
+        query: _str(g['query']),
+        variables: vars is String
+            ? vars
+            : (vars is Map && vars.isNotEmpty ? jsonEncode(vars) : ''),
+        operationName: _str(g['operationName']),
+      );
     case 'urlencoded':
       return UrlEncodedBody(_fields(b['urlencoded']));
     case 'formdata':
@@ -509,6 +521,10 @@ Json? _exportBody(HttpRequestItem i) {
           'language': language == RawBodyLanguage.text ? 'text' : language.name,
         },
       },
+    },
+    GraphqlBody(:final query, :final variables) => {
+      'mode': 'graphql',
+      'graphql': {'query': query, 'variables': variables},
     },
     UrlEncodedBody(:final fields) => {
       'mode': 'urlencoded',

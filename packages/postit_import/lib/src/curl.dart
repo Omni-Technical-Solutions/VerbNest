@@ -362,6 +362,11 @@ String toCurl(
         parts.addAll(['-H', _q('Content-Type: $contentType')]);
       }
       parts.addAll(['--data-raw', _q(r(text))]);
+    case GraphqlBody() && final g:
+      if (contentType != null && !hasTypeHeader) {
+        parts.addAll(['-H', _q('Content-Type: $contentType')]);
+      }
+      parts.addAll(['--data-raw', _q(g.toPayload(resolve: r, lenient: true))]);
     case UrlEncodedBody(:final fields):
       final enabled = fields.where((f) => f.enabled);
       parts.addAll([

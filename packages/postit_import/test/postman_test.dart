@@ -40,7 +40,7 @@ const sample =
          {"key": "f", "src": "/tmp/f", "type": "file"}]},
        "url": {"raw": "{{base}}/up"}}},
     {"name": "Graph", "request": {"method": "POST",
-       "body": {"mode": "graphql", "graphql": {"query": "{a}"}},
+       "body": {"mode": "protobuf", "protobuf": {"x": 1}},
        "url": "{{base}}/g"}},
     {"name": "Custom auth", "request": {"method": "GET",
        "auth": {"type": "hawk", "hawk": [{"key": "region", "value": "eu"}]},
@@ -111,7 +111,7 @@ void main() {
     // Unsupported body and auth are written back unchanged.
     final items = exported['item'] as List;
     final graph = (items[2] as Map)['request'] as Map;
-    expect((graph['body'] as Map)['mode'], 'graphql');
+    expect((graph['body'] as Map)['mode'], 'protobuf');
     final aws = (items[3] as Map)['request'] as Map;
     expect((aws['auth'] as Map)['type'], 'hawk');
   });

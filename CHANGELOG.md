@@ -2,6 +2,16 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.27.0
+
+- GraphQL (FR-GQL-001/002): a new "graphql" body mode with a query editor and a JSON variables editor. The request is sent as a JSON POST (`{"query", "variables", "operationName"}`); `{{variables}}` work in the query and variables. Choosing the mode on a GET request switches it to POST. When the query holds several operations, a picker sets `operationName`.
+- Schema: "Fetch schema" sends the introspection query to the request's URL with its headers, auth and environment (no scripts run). "Import SDL…" reads a pasted schema or a `.graphql` file. The schema is kept in the workspace per URL as typed, so `{{baseUrl}}/graphql` keeps it across environments.
+- Completion: with a schema, chips under the query editor suggest fields (inside selection sets, inline fragments and unions) and argument names, filtered by what you typed. Choosing an object field also opens its selection set.
+- Schema explorer: "Explore" browses root operations and types, follows field types, and filters by name.
+- Postman graphql bodies import and export (they were kept as an unsupported body before). cURL and code generation (JavaScript, Python, Dart) send the JSON payload. A script sees the payload as `pm.request.body`; if it rewrites it, that send uses a plain JSON body.
+- Built as ADR-009 says: the body model, payload builder, SDL parser and introspection model, and completion are in `postit_core` with no Flutter code, so the future CLI and runner reuse them.
+- Not done: subscriptions (need WebSocket, next), GraphQL over GET, persisted queries, query formatting, `@directive` and variable-name completion, `extend schema`, SDL features beyond what is listed (`interface implements interface` is read but not shown). Introspection does not run pre-request scripts, so APIs that need a script-made token must have it in a variable. Tested with unit and widget tests against hand-made schemas, not against real servers. Windows and Linux are not verified.
+
 ## 0.26.0
 
 - HTTP/2 (FR-HTTP-007): HTTPS requests offer `h2` and `http/1.1` through ALPN and use HTTP/2 when the server picks it. Request Settings has a new "HTTP version" choice: Auto, HTTP/1.1 only, HTTP/2 only. The response shows the protocol. Built on the `http2` package (ADR-008). The "Sent" view for HTTP/2 lists the pseudo-headers and lower-case fields as encoded, not raw bytes. Not done: HTTP/2 over plain `http://`, connection reuse, server push.

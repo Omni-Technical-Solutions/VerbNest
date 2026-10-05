@@ -868,7 +868,11 @@ class WorkspaceRepository {
           meta:
               '${item.method} ${item.url} ${item.description} '
               '${item.headers.map((h) => h.key).join(' ')}',
-          body: body is RawBody ? body.text : '',
+          body: switch (body) {
+            RawBody(:final text) => text,
+            GraphqlBody(:final query) => query,
+            _ => '',
+          },
         ),
       );
     }
