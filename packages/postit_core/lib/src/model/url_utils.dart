@@ -43,6 +43,17 @@ class UrlText {
         : KeyValue(key: pair.substring(0, eq), value: pair.substring(eq + 1));
   }
 
+  /// Adds an already encoded [query] after the existing one, before any
+  /// fragment.
+  static String appendQuery(String url, String query) {
+    if (query.isEmpty) return url;
+    final (base, existing, fragment) = split(url);
+    final joined = existing == null || existing.isEmpty
+        ? query
+        : '$existing&$query';
+    return '$base?$joined${fragment == null ? '' : '#$fragment'}';
+  }
+
   /// Rebuilds [url] so its query holds exactly the enabled [params].
   static String withParams(String url, List<KeyValue> params) {
     final (base, _, fragment) = split(url);

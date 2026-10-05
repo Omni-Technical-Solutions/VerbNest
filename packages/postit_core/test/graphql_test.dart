@@ -367,4 +367,29 @@ subscription { y }
       expect(at('|'), isEmpty);
     });
   });
+
+  group('GET form', () {
+    test('toQueryString encodes the three fields', () {
+      const b = GraphqlBody(
+        query: '{ a(x: "&") }',
+        variables: '{"n": 1}',
+        operationName: 'Q',
+      );
+      final q = Uri.splitQueryString(b.toQueryString());
+      expect(q['query'], '{ a(x: "&") }');
+      expect(q['variables'], '{"n":1}');
+      expect(q['operationName'], 'Q');
+      expect(b.sentInUrl('get'), isTrue);
+      expect(b.sentInUrl('POST'), isFalse);
+    });
+
+    test('appendQuery keeps the existing query and the fragment', () {
+      expect(UrlText.appendQuery('http://h/p', 'a=1'), 'http://h/p?a=1');
+      expect(
+        UrlText.appendQuery('http://h/p?x=1#f', 'a=1'),
+        'http://h/p?x=1&a=1#f',
+      );
+      expect(UrlText.appendQuery('http://h/p', ''), 'http://h/p');
+    });
+  });
 }

@@ -327,6 +327,14 @@ String toCurl(
     url +=
         '${url.contains('?') ? '&' : '?'}${r(effective.key)}=${r(effective.value)}';
   }
+  final gqlBody = item.body;
+  final gqlInUrl = gqlBody is GraphqlBody && gqlBody.sentInUrl(method);
+  if (gqlBody is GraphqlBody && gqlInUrl) {
+    url = UrlText.appendQuery(
+      url,
+      gqlBody.toQueryString(resolve: r, lenient: true),
+    );
+  }
   if (method == 'HEAD') {
     parts.add('-I');
   } else if (method != 'GET' && !(method == 'POST' && hasBody)) {
@@ -362,6 +370,8 @@ String toCurl(
         parts.addAll(['-H', _q('Content-Type: $contentType')]);
       }
       parts.addAll(['--data-raw', _q(r(text))]);
+    case GraphqlBody() when gqlInUrl:
+      break;
     case GraphqlBody() && final g:
       if (contentType != null && !hasTypeHeader) {
         parts.addAll(['-H', _q('Content-Type: $contentType')]);

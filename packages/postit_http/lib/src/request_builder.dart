@@ -83,8 +83,19 @@ class RequestBuilder {
     var url = _url(item, ctx);
     url = _applyAuthToUrl(effective, url, ctx);
     _applyAuthToHeaders(effective, headers, ctx);
-    final body = await _body(item.body, headers, ctx);
     final method = ctx.text(item.method.trim()).toUpperCase();
+    final gql = item.body;
+    final List<int>? body;
+    if (gql is GraphqlBody && gql.sentInUrl(method)) {
+      try {
+        url = UrlText.appendQuery(url, gql.toQueryString(resolve: ctx.text));
+      } on FormatException catch (e) {
+        throw RequestBuildError(e.message);
+      }
+      body = null;
+    } else {
+      body = await _body(item.body, headers, ctx);
+    }
     final parsed = _parse(url);
     if (effective is AwsV4Auth && !_has(headers, 'Authorization')) {
       final signer = effective.copyWith(

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../graphql/payload.dart';
 import 'key_value.dart';
 
@@ -114,6 +116,26 @@ class GraphqlBody extends RequestBody {
       if (!lenient) rethrow;
       return graphqlPayload(query: r(query), operationName: r(operationName));
     }
+  }
+
+  /// A GET carries the operation in the URL, as the GraphQL-over-HTTP spec
+  /// describes, because a GET has no body.
+  bool sentInUrl(String method) => method.trim().toUpperCase() == 'GET';
+
+  /// `query=...&variables=...&operationName=...`, percent-encoded, ready to
+  /// append to a URL. Same [resolve] and [lenient] rules as [toPayload].
+  String toQueryString({
+    String Function(String)? resolve,
+    bool lenient = false,
+  }) {
+    final payload = jsonDecode(
+      toPayload(resolve: resolve, lenient: lenient),
+    ) as Map<String, Object?>;
+    return [
+      for (final e in payload.entries)
+        '${Uri.encodeQueryComponent(e.key)}='
+            '${Uri.encodeQueryComponent(e.value is String ? e.value as String : jsonEncode(e.value))}',
+    ].join('&');
   }
 
   @override

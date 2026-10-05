@@ -118,4 +118,19 @@ void main() {
     expect(b.operationName, 'X');
     expect(b.query, (item.body as GraphqlBody).query);
   });
+
+  test('GET exports carry the operation in the URL', () {
+    final get = item.copyWith(method: 'GET');
+    final curl = toCurl(get, resolve: resolve);
+    expect(curl, contains('graphql?query='));
+    expect(curl, contains('operationName=U'));
+    expect(curl, isNot(contains('--data-raw')));
+    final code = generateCode(
+      CodeLanguage.pythonRequests,
+      get,
+      resolve: resolve,
+    );
+    expect(code, contains('graphql?query='));
+    expect(code, isNot(contains('data=')));
+  });
 }

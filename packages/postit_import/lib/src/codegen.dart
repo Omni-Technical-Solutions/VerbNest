@@ -99,6 +99,11 @@ class _Plan {
     var text = '';
     var fields = <KeyValue>[];
     switch (item.body) {
+      case GraphqlBody() && final g when g.sentInUrl(item.method):
+        url = UrlText.appendQuery(
+          url,
+          g.toQueryString(resolve: r, lenient: true),
+        );
       case RawBody(text: final t):
         kind = _BodyKind.text;
         text = r(t);

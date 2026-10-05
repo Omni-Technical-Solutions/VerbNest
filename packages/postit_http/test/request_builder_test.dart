@@ -40,6 +40,7 @@ Map<String, String> headerMap(PreparedRequest p) => {
 };
 
 void main() {
+  graphqlGetTests();
   settingsMergeTests();
   group('url', () {
     test('substitutes variables and path variables', () async {
@@ -398,5 +399,49 @@ void settingsMergeTests() {
     final back = RequestSettings.fromJson(s.toJson());
     expect(back.autoDecompress, false);
     expect(back.keepMethodOnRedirect, isNull);
+  });
+}
+
+void graphqlGetTests() {
+  group('GraphQL over GET', () {
+    const gql = GraphqlBody(
+      query: 'query U(\$n: Int) { users(first: \$n) { name } }',
+      variables: '{"n": {{count}}}',
+      operationName: 'U',
+    );
+
+    test(
+      'a GET puts the operation in the query string, with no body',
+      () async {
+        final p = await build(
+          item(method: 'GET', url: 'http://h.test/graphql?x=1#f', body: gql),
+          env: [const Variable(key: 'count', value: '5')],
+        );
+        expect(p.spec.body, isNull);
+        expect(headerMap(p).containsKey('content-type'), isFalse);
+        final q = p.spec.url.queryParameters;
+        expect(q['x'], '1');
+        expect(q['query'], contains('users(first: \$n)'));
+        expect(jsonDecode(q['variables']!), {'n': 5});
+        expect(q['operationName'], 'U');
+        expect(p.spec.url.fragment, 'f');
+      },
+    );
+
+    test('a POST still sends the JSON body', () async {
+      final p = await build(
+        item(method: 'POST', url: 'http://h.test/graphql', body: gql),
+        env: [const Variable(key: 'count', value: '5')],
+      );
+      expect(p.spec.url.hasQuery, isFalse);
+      expect(jsonDecode(utf8.decode(p.spec.body!))['operationName'], 'U');
+    });
+
+    test('bad variables fail the build with a clear message', () {
+      expect(
+        build(item(method: 'GET', url: 'http://h.test/graphql', body: gql)),
+        throwsA(isA<RequestBuildError>()),
+      );
+    });
   });
 }
