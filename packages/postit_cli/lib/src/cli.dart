@@ -10,11 +10,16 @@ const _usage = '''
 PostIt CLI
 
 Usage: postit run <workspace.postit> [options]
+       postit mock <workspace.postit> [options]
 
 Runs the requests of a collection or folder and exits 0 when every request
 and test passed, 1 when something failed, 2 on a usage or file error.
 Scripts (pre-request and post-response) are not run: the CLI has no
 JavaScript runtime. No-code assertions do run.
+
+`postit mock` serves the saved examples of a collection over HTTP until
+stopped (Ctrl+C). Each request answers on its method and URL path; send an
+X-PostIt-Example header to pick an example by name.
 ''';
 
 ArgParser _runParser() => ArgParser()
@@ -70,26 +75,29 @@ Future<int> runCli(
   required IOSink out,
   required IOSink err,
   Map<String, String>? environment,
+  Future<void>? stop,
+  void Function(int port)? onReady,
 }) async {
   if (args.isEmpty || args.first == '--help' || args.first == '-h') {
     out.writeln(_usage);
     out.writeln(_runParser().usage);
     return args.isEmpty ? 2 : 0;
   }
-  if (args.first != 'run') {
+  final isMock = args.first == 'mock';
+  if (args.first != 'run' && !isMock) {
     err.writeln('Unknown command "${args.first}". Try: postit run --help');
     return 2;
   }
   final ArgResults r;
   try {
-    r = _runParser().parse(args.skip(1));
+    r = (isMock ? _mockParser() : _runParser()).parse(args.skip(1));
   } on FormatException catch (e) {
     err.writeln(e.message);
     return 2;
   }
   if (r['help'] as bool) {
     out.writeln(_usage);
-    out.writeln(_runParser().usage);
+    out.writeln((isMock ? _mockParser() : _runParser()).usage);
     return 0;
   }
   if (r.rest.length != 1) {
@@ -106,7 +114,10 @@ Future<int> runCli(
     return 2;
   }
   try {
-    return await _run(r, WorkspaceRepository(db), out, err, environment);
+    final repo = WorkspaceRepository(db);
+    return isMock
+        ? await _mock(r, repo, out, err, environment, stop, onReady)
+        : await _run(r, repo, out, err, environment);
   } on StorageError catch (e) {
     err.writeln(e.message);
     return 2;
@@ -317,3 +328,88 @@ String _summary(RunReport r) =>
     '\n${r.requests} requests, ${r.passedTests} tests passed, '
     '${r.failedTests} failed, ${r.errors} errors in ${r.duration.inMilliseconds} ms'
     '${r.stoppedEarly ? ' (stopped early)' : ''}';
+
+ArgParser _mockParser() => ArgParser()
+  ..addOption('collection', abbr: 'c', help: 'Collection or folder to serve.')
+  ..addOption('env', abbr: 'e', help: 'Environment used to resolve URLs.')
+  ..addMultiOption('var', abbr: 'v', help: 'Variable override, name=value.')
+  ..addOption('port', abbr: 'p', defaultsTo: '3000')
+  ..addFlag('help', abbr: 'h', negatable: false);
+
+Future<int> _mock(
+  ArgResults r,
+  WorkspaceRepository repo,
+  IOSink out,
+  IOSink err,
+  Map<String, String>? environment,
+  Future<void>? stop,
+  void Function(int port)? onReady,
+) async {
+  final spec = r['collection'] as String?;
+  final roots = repo.children(null).where((n) => n.isContainer).toList();
+  final NodeInfo? container = spec == null
+      ? (roots.length == 1 ? roots.single : null)
+      : _findContainer(repo, spec);
+  if (container == null) {
+    err.writeln(
+      spec == null
+          ? 'Pick a collection with --collection.'
+          : 'No collection or folder "$spec".',
+    );
+    return 2;
+  }
+  final envSpec = r['env'] as String?;
+  String? envId = repo.defaultEnvironmentId;
+  if (envSpec != null) {
+    envId = repo
+        .environments()
+        .where((e) => e.id == envSpec || e.name == envSpec)
+        .firstOrNull
+        ?.id;
+    if (envId == null) {
+      err.writeln('No environment "$envSpec".');
+      return 2;
+    }
+  }
+  final overrides = <String, String>{};
+  for (final v in r['var'] as List<String>) {
+    final i = v.indexOf('=');
+    if (i <= 0) {
+      err.writeln('--var expects name=value, got "$v".');
+      return 2;
+    }
+    overrides[v.substring(0, i)] = v.substring(i + 1);
+  }
+  final port = int.tryParse(r['port'] as String);
+  if (port == null || port < 0 || port > 65535) {
+    err.writeln('--port must be 0-65535.');
+    return 2;
+  }
+  final routes = MockServer.routesFor(
+    repo,
+    container.id,
+    envId: envId,
+    overrides: overrides,
+  );
+  if (routes.isEmpty) {
+    err.writeln('No request under "${container.name}" has a saved example.');
+    return 2;
+  }
+  final MockServer server;
+  try {
+    server = await MockServer.start(routes, port: port);
+  } on SocketException catch (e) {
+    err.writeln('Cannot listen on port $port: ${e.message}');
+    return 2;
+  }
+  out.writeln(
+    'Serving ${routes.length} routes on http://127.0.0.1:${server.port}',
+  );
+  for (final route in routes) {
+    out.writeln('  ${route.method} ${route.path}  (${route.requestName})');
+  }
+  onReady?.call(server.port);
+  await (stop ?? ProcessSignal.sigint.watch().first);
+  await server.close();
+  return 0;
+}

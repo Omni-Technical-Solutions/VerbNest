@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:io';
 
 import 'package:postit_cli/postit_cli.dart';
@@ -149,5 +151,41 @@ void main() {
       (await cli(['run', file, '-e', 'prod'])).$3,
       contains('No environment'),
     );
+  });
+
+  test('mock serves saved examples until stopped', () async {
+    final wdb = WorkspaceDatabase.open(file);
+    final repo = WorkspaceRepository(wdb);
+    final col = repo.children(null).single.id;
+    final req = repo.children(col).firstWhere((n) => !n.isContainer);
+    repo.addExample(req.id, 'ok', {
+      'status': 200,
+      'reason': 'OK',
+      'headers': [
+        ['Content-Type', 'text/plain'],
+      ],
+    }, Uint8List.fromList(utf8.encode('mocked')));
+    wdb.close();
+
+    final stop = Completer<void>();
+    final ready = Completer<int>();
+    final out = _Sink();
+    final done = runCli(
+      ['mock', file, '-p', '0', '-v', 'who=x'],
+      out: out,
+      err: _Sink(),
+      environment: const {},
+      stop: stop.future,
+      onReady: ready.complete,
+    );
+    final port = await ready.future;
+    final c = HttpClient();
+    final res = await (await c.getUrl(Uri.parse('http://127.0.0.1:$port/echo')))
+        .close();
+    expect(await utf8.decodeStream(res), 'mocked');
+    c.close();
+    stop.complete();
+    expect(await done, 0);
+    expect('$out', contains('GET /echo'));
   });
 }

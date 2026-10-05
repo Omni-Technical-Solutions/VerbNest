@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.30.0
+
+- Mock server: `postit mock <workspace.postit>` serves the saved examples (FR-COL-005) of a collection or folder over HTTP until Ctrl+C. Each request with examples answers on its method and URL path (variables resolved from the workspace, `--env` and `--var`; `:id` and `{{var}}` segments match anything). The first example answers; an `X-PostIt-Example: <name>` header picks another. Other requests get a 404 listing the routes. Options: `--collection`, `--env`, `--var`, `--port` (default 3000).
+- Built in `postit_runner` (`MockServer`, `workspaceScopes`) so the app can offer it later with no new logic. Query strings, request-body matching, response delays and templating are not done. Listens on 127.0.0.1 only. Tested against a local client; Windows and Linux are not verified.
+
 ## 0.29.0
 
 - Command-line runner: `postit run <workspace.postit>` runs a collection or folder and exits 0 when every request and test passed, 1 on any failure, 2 on a usage or file error. Options: `--collection` (name, id or `Collection/Folder`), `--env`, `--var name=value` (also `POSTIT_VAR_<name>` in the environment), `--data` (CSV or JSON), `--iterations`, `--delay`, `--bail`, `--insecure`, and `--reporter cli|json|junit|html` with `--out`.

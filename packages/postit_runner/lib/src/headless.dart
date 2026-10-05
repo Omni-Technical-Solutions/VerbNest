@@ -6,6 +6,55 @@ import 'package:postit_storage/postit_storage.dart';
 
 import 'runner.dart';
 
+/// The variable scopes of [requestId] as the app builds them, minus the
+/// device-local current values. Secret variables are empty unless [secrets]
+/// or [overrides] supply them.
+VariableScopes workspaceScopes(
+  WorkspaceRepository repo,
+  String requestId, {
+  String? envId,
+  Map<String, String> overrides = const {},
+  Map<String, String> data = const {},
+  SecretStore? secrets,
+}) {
+  List<Variable> vars(VariableOwner owner) {
+    final stored =
+        secrets?.values(repo.workspaceId, owner.kind, owner.id) ?? const {};
+    return [
+      for (final v in repo.variables(owner))
+        v.secret
+            ? Variable(
+                key: v.key,
+                value: stored[v.key] ?? '',
+                secret: true,
+                enabled: v.enabled,
+                description: v.description,
+              )
+            : v,
+    ];
+  }
+
+  final containers = repo.ancestors(requestId).reversed.toList();
+  return VariableScopes(
+    local: [
+      for (final e in overrides.entries) Variable(key: e.key, value: e.value),
+    ],
+    data: [for (final e in data.entries) Variable(key: e.key, value: e.value)],
+    global: vars(VariableOwner.global),
+    environment: envId == null
+        ? const []
+        : vars(VariableOwner.environment(envId)),
+    collection: [
+      for (var i = 0; i < containers.length; i++)
+        ...vars(
+          i == 0
+              ? VariableOwner.collection(containers[i])
+              : VariableOwner.folder(containers[i]),
+        ),
+    ],
+  );
+}
+
 /// Sends requests of a run without a UI and without scripts (no JavaScript
 /// runtime outside the app). Variables come from the workspace file plus
 /// [overrides]; secret variables are empty unless [overrides] or [secrets]
@@ -34,46 +83,15 @@ class HeadlessSender {
   /// Requests whose pre-request or post-response scripts were not run.
   final Set<String> scriptsSkipped = {};
 
-  List<Variable> _vars(VariableOwner owner) {
-    final stored =
-        secrets?.values(repo.workspaceId, owner.kind, owner.id) ?? const {};
-    return [
-      for (final v in repo.variables(owner))
-        v.secret
-            ? Variable(
-                key: v.key,
-                value: stored[v.key] ?? '',
-                secret: true,
-                enabled: v.enabled,
-                description: v.description,
-              )
-            : v,
-    ];
-  }
-
-  VariableScopes scopesFor(String requestId, Map<String, String> data) {
-    final containers = repo.ancestors(requestId).reversed.toList();
-    return VariableScopes(
-      local: [
-        for (final e in overrides.entries) Variable(key: e.key, value: e.value),
-      ],
-      data: [
-        for (final e in data.entries) Variable(key: e.key, value: e.value),
-      ],
-      global: _vars(VariableOwner.global),
-      environment: envId == null
-          ? const []
-          : _vars(VariableOwner.environment(envId!)),
-      collection: [
-        for (var i = 0; i < containers.length; i++)
-          ..._vars(
-            i == 0
-                ? VariableOwner.collection(containers[i])
-                : VariableOwner.folder(containers[i]),
-          ),
-      ],
-    );
-  }
+  VariableScopes scopesFor(String requestId, Map<String, String> data) =>
+      workspaceScopes(
+        repo,
+        requestId,
+        envId: envId,
+        overrides: overrides,
+        data: data,
+        secrets: secrets,
+      );
 
   static String? _attachmentId(String ref) {
     if (!ref.startsWith('attachment:')) return null;
