@@ -31,7 +31,7 @@ for f in "${files[@]}"; do
     kill_app
     sleep 3
     echo "== $f (attempt $attempt)"
-    if "${runner[@]}" flutter test "$f" -d "$device"; then ok=1; break; fi
+    if ${runner[@]+"${runner[@]}"} flutter test "$f" -d "$device"; then ok=1; break; fi
   done
   if [ "$ok" -ne 1 ]; then echo "FAILED: $f"; status=1; fi
 done
