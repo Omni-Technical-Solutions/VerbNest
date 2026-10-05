@@ -95,7 +95,7 @@ class RequestEditor extends ConsumerWidget {
                 final response = ResponseView(
                   state: state,
                   codeFontSize: ref.watch(prefsProvider).editorFontSize,
-                  saveLabel: port.savesBySharing ? 'Share' : 'Save',
+                  share: port.savesBySharing,
                   onSave: r == null
                       ? null
                       : () async {

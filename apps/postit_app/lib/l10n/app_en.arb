@@ -599,5 +599,120 @@
     }
   },
   "sbImportHint": "Paste a cURL command, a Postman collection or environment, an OpenAPI/Swagger file (JSON or YAML) or a HAR capture",
-  "sbCancel": "Cancel"
+  "sbCancel": "Cancel",
+  "rvOnWire": "on the wire",
+  "rvSave": "Save",
+  "rvShare": "Share",
+  "rvEmpty": "Send the request to see a response",
+  "rvTabBody": "Body",
+  "rvTabCookies": "Cookies",
+  "rvTabCookiesN": "Cookies ({count})",
+  "@rvTabCookiesN": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rvTabHeaders": "Headers",
+  "rvTabSent": "Sent",
+  "rvTabTests": "Tests",
+  "rvTabTestsN": "Tests ({passed}/{counted})",
+  "@rvTabTestsN": {
+    "placeholders": {
+      "passed": {
+        "type": "int"
+      },
+      "counted": {
+        "type": "int"
+      }
+    }
+  },
+  "rvTiming": "Timing",
+  "rvTotal": "Total",
+  "rvDns": "DNS lookup",
+  "rvTcp": "TCP connect",
+  "rvTlsHandshake": "TLS handshake",
+  "rvTtfb": "Waiting (TTFB)",
+  "rvDownload": "Download",
+  "rvOther": "Other",
+  "rvClose": "Close",
+  "rvTlsTitle": "TLS connection",
+  "rvTlsSubject": "Subject: {value}",
+  "@rvTlsSubject": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "rvTlsIssuer": "Issuer: {value}",
+  "@rvTlsIssuer": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "rvTlsValid": "Valid: {from} to {to}",
+  "@rvTlsValid": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "rvTlsProtocol": "Protocol: {value}",
+  "@rvTlsProtocol": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "rvTlsClientCert": "Client certificate sent: {answer}",
+  "@rvTlsClientCert": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "rvYes": "yes",
+  "rvNo": "no",
+  "rvNoTests": "No tests ran. Add pm.test() to a post-response script.",
+  "rvScriptError": "Script error",
+  "rvConsole": "Console",
+  "rvCopyValue": "Copy value",
+  "rvHeaderCopied": "{name} copied",
+  "@rvHeaderCopied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rvPretty": "Pretty",
+  "rvRaw": "Raw",
+  "rvHex": "Hex",
+  "rvPreview": "Preview",
+  "rvSearch": "Search",
+  "rvCopyBody": "Copy body",
+  "rvBodyCopied": "Body copied",
+  "rvFilterJson": "Filter with JSONPath, e.g. $.items[*].id",
+  "rvFilterXml": "Filter with XPath, e.g. //item/@id",
+  "rvImageError": "This image cannot be displayed",
+  "rvNoCookies": "This response set no cookies",
+  "rvTls": "TLS",
+  "rvHttpVersion": "HTTP/{version}",
+  "@rvHttpVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -1909,6 +1909,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get sbCancel;
+
+  /// No description provided for @rvOnWire.
+  ///
+  /// In en, this message translates to:
+  /// **'on the wire'**
+  String get rvOnWire;
+
+  /// No description provided for @rvSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get rvSave;
+
+  /// No description provided for @rvShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get rvShare;
+
+  /// No description provided for @rvEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the request to see a response'**
+  String get rvEmpty;
+
+  /// No description provided for @rvTabBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Body'**
+  String get rvTabBody;
+
+  /// No description provided for @rvTabCookies.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies'**
+  String get rvTabCookies;
+
+  /// No description provided for @rvTabCookiesN.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies ({count})'**
+  String rvTabCookiesN(int count);
+
+  /// No description provided for @rvTabHeaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Headers'**
+  String get rvTabHeaders;
+
+  /// No description provided for @rvTabSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get rvTabSent;
+
+  /// No description provided for @rvTabTests.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests'**
+  String get rvTabTests;
+
+  /// No description provided for @rvTabTestsN.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests ({passed}/{counted})'**
+  String rvTabTestsN(int passed, int counted);
+
+  /// No description provided for @rvTiming.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing'**
+  String get rvTiming;
+
+  /// No description provided for @rvTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get rvTotal;
+
+  /// No description provided for @rvDns.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS lookup'**
+  String get rvDns;
+
+  /// No description provided for @rvTcp.
+  ///
+  /// In en, this message translates to:
+  /// **'TCP connect'**
+  String get rvTcp;
+
+  /// No description provided for @rvTlsHandshake.
+  ///
+  /// In en, this message translates to:
+  /// **'TLS handshake'**
+  String get rvTlsHandshake;
+
+  /// No description provided for @rvTtfb.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting (TTFB)'**
+  String get rvTtfb;
+
+  /// No description provided for @rvDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get rvDownload;
+
+  /// No description provided for @rvOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get rvOther;
+
+  /// No description provided for @rvClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get rvClose;
+
+  /// No description provided for @rvTlsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'TLS connection'**
+  String get rvTlsTitle;
+
+  /// No description provided for @rvTlsSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject: {value}'**
+  String rvTlsSubject(String value);
+
+  /// No description provided for @rvTlsIssuer.
+  ///
+  /// In en, this message translates to:
+  /// **'Issuer: {value}'**
+  String rvTlsIssuer(String value);
+
+  /// No description provided for @rvTlsValid.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid: {from} to {to}'**
+  String rvTlsValid(String from, String to);
+
+  /// No description provided for @rvTlsProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'Protocol: {value}'**
+  String rvTlsProtocol(String value);
+
+  /// No description provided for @rvTlsClientCert.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificate sent: {answer}'**
+  String rvTlsClientCert(String answer);
+
+  /// No description provided for @rvYes.
+  ///
+  /// In en, this message translates to:
+  /// **'yes'**
+  String get rvYes;
+
+  /// No description provided for @rvNo.
+  ///
+  /// In en, this message translates to:
+  /// **'no'**
+  String get rvNo;
+
+  /// No description provided for @rvNoTests.
+  ///
+  /// In en, this message translates to:
+  /// **'No tests ran. Add pm.test() to a post-response script.'**
+  String get rvNoTests;
+
+  /// No description provided for @rvScriptError.
+  ///
+  /// In en, this message translates to:
+  /// **'Script error'**
+  String get rvScriptError;
+
+  /// No description provided for @rvConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'Console'**
+  String get rvConsole;
+
+  /// No description provided for @rvCopyValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy value'**
+  String get rvCopyValue;
+
+  /// No description provided for @rvHeaderCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} copied'**
+  String rvHeaderCopied(String name);
+
+  /// No description provided for @rvPretty.
+  ///
+  /// In en, this message translates to:
+  /// **'Pretty'**
+  String get rvPretty;
+
+  /// No description provided for @rvRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw'**
+  String get rvRaw;
+
+  /// No description provided for @rvHex.
+  ///
+  /// In en, this message translates to:
+  /// **'Hex'**
+  String get rvHex;
+
+  /// No description provided for @rvPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get rvPreview;
+
+  /// No description provided for @rvSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get rvSearch;
+
+  /// No description provided for @rvCopyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy body'**
+  String get rvCopyBody;
+
+  /// No description provided for @rvBodyCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Body copied'**
+  String get rvBodyCopied;
+
+  /// No description provided for @rvFilterJson.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter with JSONPath, e.g. \$.items[*].id'**
+  String get rvFilterJson;
+
+  /// No description provided for @rvFilterXml.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter with XPath, e.g. //item/@id'**
+  String get rvFilterXml;
+
+  /// No description provided for @rvImageError.
+  ///
+  /// In en, this message translates to:
+  /// **'This image cannot be displayed'**
+  String get rvImageError;
+
+  /// No description provided for @rvNoCookies.
+  ///
+  /// In en, this message translates to:
+  /// **'This response set no cookies'**
+  String get rvNoCookies;
+
+  /// No description provided for @rvTls.
+  ///
+  /// In en, this message translates to:
+  /// **'TLS'**
+  String get rvTls;
+
+  /// No description provided for @rvHttpVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP/{version}'**
+  String rvHttpVersion(String version);
 }
 
 class _AppLocalizationsDelegate

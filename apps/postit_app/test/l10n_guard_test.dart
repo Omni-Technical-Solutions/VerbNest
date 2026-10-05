@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 /// or a file not here regains a literal.
 const _pending = <String>{
   'lib/src/widgets/request_editor.dart',
-  'lib/src/widgets/response_view.dart',
 };
 
 final _literal = RegExp(r"(Text|SelectableText)\(\s*'[^'$]*[A-Za-z]");

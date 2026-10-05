@@ -1008,4 +1008,161 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sbCancel => 'إلغاء';
+
+  @override
+  String get rvOnWire => 'على الشبكة';
+
+  @override
+  String get rvSave => 'حفظ';
+
+  @override
+  String get rvShare => 'مشاركة';
+
+  @override
+  String get rvEmpty => 'أرسل الطلب لرؤية الاستجابة';
+
+  @override
+  String get rvTabBody => 'المتن';
+
+  @override
+  String get rvTabCookies => 'ملفات الارتباط';
+
+  @override
+  String rvTabCookiesN(int count) {
+    return 'ملفات الارتباط ($count)';
+  }
+
+  @override
+  String get rvTabHeaders => 'الترويسات';
+
+  @override
+  String get rvTabSent => 'المُرسل';
+
+  @override
+  String get rvTabTests => 'الاختبارات';
+
+  @override
+  String rvTabTestsN(int passed, int counted) {
+    return 'الاختبارات ($passed/$counted)';
+  }
+
+  @override
+  String get rvTiming => 'التوقيت';
+
+  @override
+  String get rvTotal => 'الإجمالي';
+
+  @override
+  String get rvDns => 'استعلام DNS';
+
+  @override
+  String get rvTcp => 'اتصال TCP';
+
+  @override
+  String get rvTlsHandshake => 'مصافحة TLS';
+
+  @override
+  String get rvTtfb => 'الانتظار (TTFB)';
+
+  @override
+  String get rvDownload => 'التنزيل';
+
+  @override
+  String get rvOther => 'أخرى';
+
+  @override
+  String get rvClose => 'إغلاق';
+
+  @override
+  String get rvTlsTitle => 'اتصال TLS';
+
+  @override
+  String rvTlsSubject(String value) {
+    return 'الموضوع: $value';
+  }
+
+  @override
+  String rvTlsIssuer(String value) {
+    return 'المُصدر: $value';
+  }
+
+  @override
+  String rvTlsValid(String from, String to) {
+    return 'صالحة: من $from إلى $to';
+  }
+
+  @override
+  String rvTlsProtocol(String value) {
+    return 'البروتوكول: $value';
+  }
+
+  @override
+  String rvTlsClientCert(String answer) {
+    return 'أُرسلت شهادة العميل: $answer';
+  }
+
+  @override
+  String get rvYes => 'نعم';
+
+  @override
+  String get rvNo => 'لا';
+
+  @override
+  String get rvNoTests =>
+      'لم يتم تشغيل أي اختبار. أضف pm.test() إلى سكربت ما بعد الاستجابة.';
+
+  @override
+  String get rvScriptError => 'خطأ في السكربت';
+
+  @override
+  String get rvConsole => 'وحدة التحكم';
+
+  @override
+  String get rvCopyValue => 'نسخ القيمة';
+
+  @override
+  String rvHeaderCopied(String name) {
+    return 'تم نسخ $name';
+  }
+
+  @override
+  String get rvPretty => 'منسّق';
+
+  @override
+  String get rvRaw => 'خام';
+
+  @override
+  String get rvHex => 'سداسي عشري';
+
+  @override
+  String get rvPreview => 'معاينة';
+
+  @override
+  String get rvSearch => 'بحث';
+
+  @override
+  String get rvCopyBody => 'نسخ المتن';
+
+  @override
+  String get rvBodyCopied => 'تم نسخ المتن';
+
+  @override
+  String get rvFilterJson => 'صفِّ باستخدام JSONPath، مثل \$.items[*].id';
+
+  @override
+  String get rvFilterXml => 'صفِّ باستخدام XPath، مثل //item/@id';
+
+  @override
+  String get rvImageError => 'تعذّر عرض هذه الصورة';
+
+  @override
+  String get rvNoCookies => 'لم تضبط هذه الاستجابة أي ملفات ارتباط';
+
+  @override
+  String get rvTls => 'TLS';
+
+  @override
+  String rvHttpVersion(String version) {
+    return 'HTTP/$version';
+  }
 }

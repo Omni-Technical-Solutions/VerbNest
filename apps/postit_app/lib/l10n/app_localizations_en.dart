@@ -1008,4 +1008,161 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sbCancel => 'Cancel';
+
+  @override
+  String get rvOnWire => 'on the wire';
+
+  @override
+  String get rvSave => 'Save';
+
+  @override
+  String get rvShare => 'Share';
+
+  @override
+  String get rvEmpty => 'Send the request to see a response';
+
+  @override
+  String get rvTabBody => 'Body';
+
+  @override
+  String get rvTabCookies => 'Cookies';
+
+  @override
+  String rvTabCookiesN(int count) {
+    return 'Cookies ($count)';
+  }
+
+  @override
+  String get rvTabHeaders => 'Headers';
+
+  @override
+  String get rvTabSent => 'Sent';
+
+  @override
+  String get rvTabTests => 'Tests';
+
+  @override
+  String rvTabTestsN(int passed, int counted) {
+    return 'Tests ($passed/$counted)';
+  }
+
+  @override
+  String get rvTiming => 'Timing';
+
+  @override
+  String get rvTotal => 'Total';
+
+  @override
+  String get rvDns => 'DNS lookup';
+
+  @override
+  String get rvTcp => 'TCP connect';
+
+  @override
+  String get rvTlsHandshake => 'TLS handshake';
+
+  @override
+  String get rvTtfb => 'Waiting (TTFB)';
+
+  @override
+  String get rvDownload => 'Download';
+
+  @override
+  String get rvOther => 'Other';
+
+  @override
+  String get rvClose => 'Close';
+
+  @override
+  String get rvTlsTitle => 'TLS connection';
+
+  @override
+  String rvTlsSubject(String value) {
+    return 'Subject: $value';
+  }
+
+  @override
+  String rvTlsIssuer(String value) {
+    return 'Issuer: $value';
+  }
+
+  @override
+  String rvTlsValid(String from, String to) {
+    return 'Valid: $from to $to';
+  }
+
+  @override
+  String rvTlsProtocol(String value) {
+    return 'Protocol: $value';
+  }
+
+  @override
+  String rvTlsClientCert(String answer) {
+    return 'Client certificate sent: $answer';
+  }
+
+  @override
+  String get rvYes => 'yes';
+
+  @override
+  String get rvNo => 'no';
+
+  @override
+  String get rvNoTests =>
+      'No tests ran. Add pm.test() to a post-response script.';
+
+  @override
+  String get rvScriptError => 'Script error';
+
+  @override
+  String get rvConsole => 'Console';
+
+  @override
+  String get rvCopyValue => 'Copy value';
+
+  @override
+  String rvHeaderCopied(String name) {
+    return '$name copied';
+  }
+
+  @override
+  String get rvPretty => 'Pretty';
+
+  @override
+  String get rvRaw => 'Raw';
+
+  @override
+  String get rvHex => 'Hex';
+
+  @override
+  String get rvPreview => 'Preview';
+
+  @override
+  String get rvSearch => 'Search';
+
+  @override
+  String get rvCopyBody => 'Copy body';
+
+  @override
+  String get rvBodyCopied => 'Body copied';
+
+  @override
+  String get rvFilterJson => 'Filter with JSONPath, e.g. \$.items[*].id';
+
+  @override
+  String get rvFilterXml => 'Filter with XPath, e.g. //item/@id';
+
+  @override
+  String get rvImageError => 'This image cannot be displayed';
+
+  @override
+  String get rvNoCookies => 'This response set no cookies';
+
+  @override
+  String get rvTls => 'TLS';
+
+  @override
+  String rvHttpVersion(String version) {
+    return 'HTTP/$version';
+  }
 }

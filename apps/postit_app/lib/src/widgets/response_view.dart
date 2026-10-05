@@ -9,6 +9,7 @@ import 'package:postit_http/postit_http.dart';
 import '../state/cookies.dart';
 import '../state/editor_state.dart';
 import 'code_view.dart';
+import '../../l10n/l10n.dart';
 
 String formatBytes(int n) {
   if (n < 1024) return '$n B';
@@ -36,9 +37,10 @@ bool isImageResponse(HttpResponseRecord r) {
 }
 
 /// Decoded size, plus the size on the wire when compression changed it.
-String sizeLabel(HttpResponseRecord r) => r.wireBodySize == r.body.length
+String sizeLabel(HttpResponseRecord r, {String onWire = 'on the wire'}) =>
+    r.wireBodySize == r.body.length
     ? formatBytes(r.body.length)
-    : '${formatBytes(r.body.length)} (${formatBytes(r.wireBodySize)} on the wire)';
+    : '${formatBytes(r.body.length)} (${formatBytes(r.wireBodySize)} $onWire)';
 
 /// The phases of one exchange in order. Phases that did not happen (plain
 /// HTTP has no TLS) are left out. "Other" is time outside the measured phases,
@@ -75,7 +77,7 @@ class ResponseView extends StatefulWidget {
     super.key,
     required this.state,
     this.onSave,
-    this.saveLabel = 'Save',
+    this.share = false,
     this.codeFontSize = 13,
   });
 
@@ -83,7 +85,7 @@ class ResponseView extends StatefulWidget {
 
   /// Saves or shares the response body; the button shows only when set.
   final VoidCallback? onSave;
-  final String saveLabel;
+  final bool share;
   final double codeFontSize;
 
   @override
@@ -117,7 +119,7 @@ class _ResponseViewState extends State<ResponseView> {
     }
     final r = state.response;
     if (r == null) {
-      return const Center(child: Text('Send the request to see a response'));
+      return Center(child: Text(context.l10n.rvEmpty));
     }
     final cookies = [
       for (final (k, v) in r.headers)
@@ -147,18 +149,21 @@ class _ResponseViewState extends State<ResponseView> {
                   onTap: () => _showTiming(r),
                   child: Text('${r.timings.total.inMilliseconds} ms'),
                 ),
-                Text('HTTP/${r.httpVersion}', key: const Key('response-http')),
-                Text(sizeLabel(r)),
+                Text(
+                  context.l10n.rvHttpVersion(r.httpVersion),
+                  key: const Key('response-http'),
+                ),
+                Text(sizeLabel(r, onWire: context.l10n.rvOnWire)),
                 if (r.tls != null)
                   InkWell(
                     key: const Key('response-tls'),
                     onTap: () => _showTls(r.tls!),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.lock_outline, size: 16),
-                        SizedBox(width: 4),
-                        Text('TLS'),
+                        const Icon(Icons.lock_outline, size: 16),
+                        const SizedBox(width: 4),
+                        Text(context.l10n.rvTls),
                       ],
                     ),
                   ),
@@ -166,12 +171,12 @@ class _ResponseViewState extends State<ResponseView> {
                   TextButton.icon(
                     key: const Key('response-save'),
                     icon: Icon(
-                      widget.saveLabel == 'Share'
-                          ? Icons.ios_share
-                          : Icons.save_alt,
+                      widget.share ? Icons.ios_share : Icons.save_alt,
                       size: 18,
                     ),
-                    label: Text(widget.saveLabel),
+                    label: Text(
+                      widget.share ? context.l10n.rvShare : context.l10n.rvSave,
+                    ),
                     onPressed: widget.onSave,
                   ),
               ],
@@ -179,15 +184,15 @@ class _ResponseViewState extends State<ResponseView> {
           ),
           TabBar(
             tabs: [
-              const Tab(text: 'Body'),
+              Tab(text: context.l10n.rvTabBody),
               Tab(
                 text: cookies.isEmpty
-                    ? 'Cookies'
-                    : 'Cookies (${cookies.length})',
+                    ? context.l10n.rvTabCookies
+                    : context.l10n.rvTabCookiesN(cookies.length),
               ),
-              const Tab(text: 'Headers'),
-              const Tab(text: 'Sent'),
-              Tab(text: _testsLabel(state)),
+              Tab(text: context.l10n.rvTabHeaders),
+              Tab(text: context.l10n.rvTabSent),
+              Tab(text: _testsLabel(context, state)),
             ],
           ),
           Expanded(
@@ -212,7 +217,7 @@ class _ResponseViewState extends State<ResponseView> {
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Timing'),
+        title: Text(context.l10n.rvTiming),
         content: SizedBox(
           width: 360,
           child: Column(
@@ -227,7 +232,7 @@ class _ResponseViewState extends State<ResponseView> {
                     children: [
                       Row(
                         children: [
-                          Expanded(child: Text(label)),
+                          Expanded(child: Text(_timingLabel(context, label))),
                           Text(formatDuration(d)),
                         ],
                       ),
@@ -240,7 +245,7 @@ class _ResponseViewState extends State<ResponseView> {
               const Divider(),
               Row(
                 children: [
-                  const Expanded(child: Text('Total')),
+                  Expanded(child: Text(context.l10n.rvTotal)),
                   Text(formatDuration(r.timings.total)),
                 ],
               ),
@@ -250,7 +255,7 @@ class _ResponseViewState extends State<ResponseView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(context.l10n.rvClose),
           ),
         ],
       ),
@@ -262,38 +267,53 @@ class _ResponseViewState extends State<ResponseView> {
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('TLS connection'),
+        title: Text(context.l10n.rvTlsTitle),
         content: SelectableText(
           [
-            'Subject: ${t.subject}',
-            'Issuer: ${t.issuer}',
-            'Valid: ${d(t.validFrom)} to ${d(t.validTo)}',
-            if (t.protocol != null) 'Protocol: ${t.protocol}',
-            'Client certificate sent: ${t.clientCertificateSent ? 'yes' : 'no'}',
+            context.l10n.rvTlsSubject(t.subject),
+            context.l10n.rvTlsIssuer(t.issuer),
+            context.l10n.rvTlsValid(d(t.validFrom), d(t.validTo)),
+            if (t.protocol != null) context.l10n.rvTlsProtocol(t.protocol!),
+            context.l10n.rvTlsClientCert(
+              t.clientCertificateSent ? context.l10n.rvYes : context.l10n.rvNo,
+            ),
           ].join('\n'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(context.l10n.rvClose),
           ),
         ],
       ),
     );
   }
 
-  static String _testsLabel(EditorState s) {
-    if (s.tests.isEmpty && s.scriptError == null) return 'Tests';
+  static String _timingLabel(BuildContext context, String id) {
+    final l = context.l10n;
+    return switch (id) {
+      'DNS lookup' => l.rvDns,
+      'TCP connect' => l.rvTcp,
+      'TLS handshake' => l.rvTlsHandshake,
+      'Waiting (TTFB)' => l.rvTtfb,
+      'Download' => l.rvDownload,
+      'Other' => l.rvOther,
+      _ => id,
+    };
+  }
+
+  static String _testsLabel(BuildContext context, EditorState s) {
+    if (s.tests.isEmpty && s.scriptError == null) {
+      return context.l10n.rvTabTests;
+    }
     final passed = s.tests.where((t) => t.passed).length;
     final counted = s.tests.where((t) => !t.status.startsWith('skip')).length;
-    return 'Tests ($passed/$counted)';
+    return context.l10n.rvTabTestsN(passed, counted);
   }
 
   Widget _tests(EditorState s) {
     if (s.tests.isEmpty && s.scriptError == null && s.scriptLogs.isEmpty) {
-      return const Center(
-        child: Text('No tests ran. Add pm.test() to a post-response script.'),
-      );
+      return Center(child: Text(context.l10n.rvNoTests));
     }
     final scheme = Theme.of(context).colorScheme;
     return ListView(
@@ -304,7 +324,10 @@ class _ResponseViewState extends State<ResponseView> {
           ListTile(
             key: const Key('script-error'),
             leading: Icon(Icons.error_outline, color: scheme.error),
-            title: Text('Script error', style: TextStyle(color: scheme.error)),
+            title: Text(
+              context.l10n.rvScriptError,
+              style: TextStyle(color: scheme.error),
+            ),
             subtitle: SelectableText(s.scriptError!),
           ),
         for (final t in s.tests)
@@ -328,7 +351,10 @@ class _ResponseViewState extends State<ResponseView> {
           ),
         if (s.scriptLogs.isNotEmpty) ...[
           const Divider(),
-          Text('Console', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            context.l10n.rvConsole,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           for (final l in s.scriptLogs)
             SelectableText(
               '${l.level == 'log' ? '' : '${l.level}: '}${l.text}',
@@ -358,13 +384,15 @@ class _ResponseViewState extends State<ResponseView> {
           ),
           trailing: IconButton(
             key: ValueKey('copy-header-$i'),
-            tooltip: 'Copy value',
+            tooltip: context.l10n.rvCopyValue,
             icon: const Icon(Icons.copy, size: 16),
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: r.headers[i].$2));
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${r.headers[i].$1} copied')),
+                SnackBar(
+                  content: Text(context.l10n.rvHeaderCopied(r.headers[i].$1)),
+                ),
               );
             },
           ),
@@ -432,13 +460,16 @@ class _ResponseViewState extends State<ResponseView> {
                 key: const Key('body-view'),
                 showSelectedIcon: false,
                 segments: [
-                  const ButtonSegment(value: 'pretty', label: Text('Pretty')),
-                  const ButtonSegment(value: 'raw', label: Text('Raw')),
-                  const ButtonSegment(value: 'hex', label: Text('Hex')),
+                  ButtonSegment(
+                    value: 'pretty',
+                    label: Text(context.l10n.rvPretty),
+                  ),
+                  ButtonSegment(value: 'raw', label: Text(context.l10n.rvRaw)),
+                  ButtonSegment(value: 'hex', label: Text(context.l10n.rvHex)),
                   if (isImage)
-                    const ButtonSegment(
+                    ButtonSegment(
                       value: 'preview',
-                      label: Text('Preview'),
+                      label: Text(context.l10n.rvPreview),
                     ),
                 ],
                 selected: {
@@ -460,7 +491,7 @@ class _ResponseViewState extends State<ResponseView> {
                   key: const Key('response-search'),
                   decoration: InputDecoration(
                     isDense: true,
-                    hintText: 'Search',
+                    hintText: context.l10n.rvSearch,
                     prefixIcon: const Icon(Icons.search, size: 18),
                     suffixText: _query.isEmpty ? null : '$matches',
                   ),
@@ -469,14 +500,14 @@ class _ResponseViewState extends State<ResponseView> {
               ),
               IconButton(
                 key: const Key('copy-body'),
-                tooltip: 'Copy body',
+                tooltip: context.l10n.rvCopyBody,
                 icon: const Icon(Icons.copy, size: 18),
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: text));
                   if (!mounted) return;
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Body copied')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.rvBodyCopied)),
+                  );
                 },
               ),
             ],
@@ -490,8 +521,8 @@ class _ResponseViewState extends State<ResponseView> {
               decoration: InputDecoration(
                 isDense: true,
                 hintText: kind == BodyKind.json
-                    ? r'Filter with JSONPath, e.g. $.items[*].id'
-                    : 'Filter with XPath, e.g. //item/@id',
+                    ? context.l10n.rvFilterJson
+                    : context.l10n.rvFilterXml,
                 prefixIcon: const Icon(Icons.filter_alt_outlined, size: 18),
                 errorText: filtering ? _filterError : null,
               ),
@@ -504,8 +535,7 @@ class _ResponseViewState extends State<ResponseView> {
                   child: Image.memory(
                     r.body,
                     key: const Key('response-image'),
-                    errorBuilder: (_, _, _) =>
-                        const Text('This image cannot be displayed'),
+                    errorBuilder: (_, _, _) => Text(context.l10n.rvImageError),
                   ),
                 )
               : CodeView(
@@ -528,7 +558,7 @@ class _ResponseViewState extends State<ResponseView> {
 
   Widget _cookies(List<SetCookie> cookies) {
     if (cookies.isEmpty) {
-      return const Center(child: Text('This response set no cookies'));
+      return Center(child: Text(context.l10n.rvNoCookies));
     }
     return ListView(
       key: const Key('response-cookies'),
