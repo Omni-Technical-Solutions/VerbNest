@@ -4,6 +4,7 @@ import 'package:args/args.dart';
 import 'package:postit_core/postit_core.dart';
 import 'package:postit_http/postit_http.dart';
 import 'package:postit_runner/postit_runner.dart';
+import 'package:postit_script/postit_script.dart';
 import 'package:postit_storage/postit_storage.dart';
 
 const _usage = '''
@@ -14,8 +15,9 @@ Usage: postit run <workspace.postit> [options]
 
 Runs the requests of a collection or folder and exits 0 when every request
 and test passed, 1 when something failed, 2 on a usage or file error.
-Scripts (pre-request and post-response) are not run: the CLI has no
-JavaScript runtime. No-code assertions do run.
+Pre-request and post-response scripts run in an external JavaScript runtime
+(see --js-runtime). Without one they are skipped and reported. Variables
+scripts set last for the run only; nothing is written to the workspace file.
 
 `postit mock` serves the saved examples of a collection over HTTP until
 stopped (Ctrl+C). Each request answers on its method and URL path; send an
@@ -67,6 +69,12 @@ ArgParser _runParser() => ArgParser()
     abbr: 'o',
     help: 'Write the report to this file instead of stdout.',
   )
+  ..addOption(
+    'js-runtime',
+    defaultsTo: 'node',
+    help: 'Program that runs scripts.',
+  )
+  ..addFlag('no-scripts', help: 'Do not run scripts.', negatable: false)
   ..addFlag('help', abbr: 'h', negatable: false);
 
 /// Runs the CLI; returns the process exit code.
@@ -257,6 +265,7 @@ Future<int> _run(
     defaults: defaults,
     envId: envId,
     overrides: overrides,
+    scripts: await _scriptEngine(r),
   );
   final reporter = r['reporter'] as String;
   final live = reporter == 'cli' && r['out'] == null;
@@ -284,7 +293,7 @@ Future<int> _run(
 
   if (sender.scriptsSkipped.isNotEmpty) {
     err.writeln(
-      'Scripts were not run (the CLI has no JavaScript runtime) for: '
+      'Scripts were not run (no JavaScript runtime; see --js-runtime) for: '
       '${sender.scriptsSkipped.join(', ')}',
     );
   }
@@ -412,4 +421,12 @@ Future<int> _mock(
   await (stop ?? ProcessSignal.sigint.watch().first);
   await server.close();
   return 0;
+}
+
+Future<ScriptEngine?> _scriptEngine(ArgResults r) async {
+  if (r['no-scripts'] as bool) return null;
+  final exe = r['js-runtime'] as String;
+  return await ProcessScriptEngine.available(exe)
+      ? ProcessScriptEngine(executable: exe)
+      : null;
 }

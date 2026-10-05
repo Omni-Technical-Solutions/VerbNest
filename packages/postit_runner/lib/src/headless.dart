@@ -2,6 +2,7 @@ import 'dart:io' show IOException;
 
 import 'package:postit_core/postit_core.dart';
 import 'package:postit_http/postit_http.dart';
+import 'package:postit_script/postit_script.dart';
 import 'package:postit_storage/postit_storage.dart';
 
 import 'runner.dart';
@@ -16,6 +17,7 @@ VariableScopes workspaceScopes(
   Map<String, String> overrides = const {},
   Map<String, String> data = const {},
   SecretStore? secrets,
+  Map<ScriptScope, Map<String, String>> scriptValues = const {},
 }) {
   List<Variable> vars(VariableOwner owner) {
     final stored =
@@ -34,16 +36,24 @@ VariableScopes workspaceScopes(
     ];
   }
 
+  List<Variable> extra(ScriptScope scope) => [
+    for (final e in (scriptValues[scope] ?? const <String, String>{}).entries)
+      Variable(key: e.key, value: e.value),
+  ];
+
   final containers = repo.ancestors(requestId).reversed.toList();
   return VariableScopes(
     local: [
       for (final e in overrides.entries) Variable(key: e.key, value: e.value),
     ],
     data: [for (final e in data.entries) Variable(key: e.key, value: e.value)],
-    global: vars(VariableOwner.global),
+    global: [...vars(VariableOwner.global), ...extra(ScriptScope.globals)],
     environment: envId == null
         ? const []
-        : vars(VariableOwner.environment(envId)),
+        : [
+            ...vars(VariableOwner.environment(envId)),
+            ...extra(ScriptScope.environment),
+          ],
     collection: [
       for (var i = 0; i < containers.length; i++)
         ...vars(
@@ -51,6 +61,8 @@ VariableScopes workspaceScopes(
               ? VariableOwner.collection(containers[i])
               : VariableOwner.folder(containers[i]),
         ),
+      ...extra(ScriptScope.collection),
+      ...extra(ScriptScope.collection),
     ],
   );
 }
@@ -68,6 +80,7 @@ class HeadlessSender {
     this.overrides = const {},
     this.secrets,
     OAuth2TokenCache? oauthCache,
+    this.scripts,
   }) : _oauthCache = oauthCache ?? OAuth2TokenCache();
 
   final WorkspaceRepository repo;
@@ -80,6 +93,13 @@ class HeadlessSender {
   final SecretStore? secrets;
   final OAuth2TokenCache _oauthCache;
 
+  /// Runs pre-request and post-response scripts when set; without it,
+  /// requests that have scripts are listed in [scriptsSkipped].
+  final ScriptEngine? scripts;
+
+  /// Variable values scripts set during the run (kept in memory only).
+  late final _scriptVars = MemoryScriptVariables(repo);
+
   /// Requests whose pre-request or post-response scripts were not run.
   final Set<String> scriptsSkipped = {};
 
@@ -91,6 +111,7 @@ class HeadlessSender {
         overrides: overrides,
         data: data,
         secrets: secrets,
+        scriptValues: _scriptVars.state,
       );
 
   static String? _attachmentId(String ref) {
@@ -107,10 +128,11 @@ class HeadlessSender {
     int iteration,
     Map<String, String> row,
   ) async {
-    final item = repo.getRequest(id);
-    if (!item.scripts.isEmpty || repo.scriptsChain(id).any((s) => !s.isEmpty)) {
-      scriptsSkipped.add(name);
-    }
+    var item = repo.getRequest(id);
+    final hasScripts =
+        !item.scripts.isEmpty || repo.scriptsChain(id).any((s) => !s.isEmpty);
+    if (hasScripts && scripts == null) scriptsSkipped.add(name);
+    final logs = <ConsoleLine>[];
     RunEntry entry({
       HttpResponseRecord? response,
       List<TestResult> tests = const [],
@@ -128,7 +150,57 @@ class HeadlessSender {
       error: error,
     );
     try {
-      final resolver = VariableResolver(scopesFor(id, row));
+      var local = <String, String>{};
+      var flow = const ScriptFlow();
+      final engineForScripts = scripts;
+      if (engineForScripts != null && hasScripts) {
+        final pre = await runScriptPhaseWith(
+          repo: repo,
+          variables: _scriptVars,
+          engine: engineForScripts,
+          requestId: id,
+          item: item,
+          envId: envId,
+          phase: ScriptPhase.pre,
+          request: requestToMap(item),
+          data: row,
+        );
+        local = pre.local;
+        logs.addAll(pre.logs);
+        if (pre.error != null) {
+          return RunStepResult(
+            entry(error: 'Pre-request script failed: ${pre.error}'),
+            RunFlow(next: pre.flow.next, stop: pre.flow.stop),
+          );
+        }
+        if (pre.request != null) item = applyRequestMap(item, pre.request!);
+        flow = pre.flow;
+        if (flow.skip) {
+          return RunStepResult(
+            RunEntry(
+              iteration: iteration,
+              requestId: id,
+              name: name,
+              method: item.method,
+              url: item.url,
+              timeMs: 0,
+              skipped: true,
+            ),
+            RunFlow(next: flow.next, stop: flow.stop, skip: true),
+          );
+        }
+      }
+      final resolver = VariableResolver(
+        workspaceScopes(
+          repo,
+          id,
+          envId: envId,
+          overrides: {...overrides, ...local},
+          data: row,
+          secrets: secrets,
+          scriptValues: _scriptVars.state,
+        ),
+      );
       if (isLiveUrl(resolver.resolve(item.url).value)) {
         return RunStepResult(
           RunEntry(
@@ -160,15 +232,40 @@ class HeadlessSender {
         body: response.bodyText,
         timeMs: response.timings.total.inMilliseconds,
       );
+      final tests = [
+        for (final a in item.assertions)
+          if (a.enabled)
+            a.evaluate(facts, resolve: (t) => resolver.resolve(t).value),
+      ];
+      String? scriptError;
+      if (engineForScripts != null && hasScripts) {
+        final post = await runScriptPhaseWith(
+          repo: repo,
+          variables: _scriptVars,
+          engine: engineForScripts,
+          requestId: id,
+          item: item,
+          envId: envId,
+          phase: ScriptPhase.post,
+          request: requestToMap(item),
+          response: responseToMap(response),
+          local: local,
+          data: row,
+        );
+        tests.addAll(post.tests);
+        logs.addAll(post.logs);
+        scriptError = post.error == null
+            ? null
+            : 'Post-response script failed: ${post.error}';
+        flow = ScriptFlow(
+          next: post.flow.next ?? flow.next,
+          stop: post.flow.stop || flow.stop,
+        );
+      }
+      lastLogs[id] = logs;
       return RunStepResult(
-        entry(
-          response: response,
-          tests: [
-            for (final a in item.assertions)
-              if (a.enabled)
-                a.evaluate(facts, resolve: (t) => resolver.resolve(t).value),
-          ],
-        ),
+        entry(response: response, tests: tests, error: scriptError),
+        RunFlow(next: flow.next, stop: flow.stop),
       );
     } on OAuth2Error catch (e) {
       return RunStepResult(entry(error: e.message));
@@ -180,6 +277,9 @@ class HeadlessSender {
       return RunStepResult(entry(error: '$e'));
     }
   }
+
+  /// Console output of each request's scripts from its latest run.
+  final Map<String, List<ConsoleLine>> lastLogs = {};
 
   Future<Auth> _oauthToken(OAuth2Auth auth, VariableResolver resolver) async {
     final resolved = auth.mapText((t) => resolver.resolve(t).value);
@@ -204,3 +304,82 @@ bool isLiveUrl(String url) =>
     RegExp(r'^\s*wss?://', caseSensitive: false).hasMatch(url);
 
 const liveSkipNote = 'Skipped: WebSocket requests are not run by the runner';
+
+/// Script variable changes kept for the length of a run, never written to
+/// the workspace file.
+class MemoryScriptVariables implements ScriptVariables {
+  MemoryScriptVariables(this.repo);
+
+  final WorkspaceRepository repo;
+
+  /// Values scripts set, by scope; unset names are removed.
+  final Map<ScriptScope, Map<String, String>> state = {};
+
+  /// Names scripts removed, hidden from the workspace values below.
+  final Map<ScriptScope, Set<String>> _unset = {};
+
+  Map<String, String> _of(Iterable<Variable> vars) => {
+    for (final v in vars)
+      if (v.enabled) v.key: v.value,
+  };
+
+  @override
+  Map<ScriptScope, Map<String, String>> values(
+    String requestId,
+    String? envId,
+    Map<String, String> local,
+  ) {
+    final containers = repo.ancestors(requestId).reversed.toList();
+    final base = {
+      ScriptScope.globals: _of(repo.variables(VariableOwner.global)),
+      ScriptScope.environment: envId == null
+          ? <String, String>{}
+          : _of(repo.variables(VariableOwner.environment(envId))),
+      ScriptScope.collection: _of([
+        for (var i = 0; i < containers.length; i++)
+          ...repo.variables(
+            i == 0
+                ? VariableOwner.collection(containers[i])
+                : VariableOwner.folder(containers[i]),
+          ),
+      ]),
+    };
+    return {
+      ScriptScope.local: local,
+      for (final e in base.entries)
+        e.key: {
+          for (final kv in {...e.value, ...?state[e.key]}.entries)
+            if (!(_unset[e.key]?.contains(kv.key) ?? false)) kv.key: kv.value,
+        },
+    };
+  }
+
+  @override
+  void apply(
+    String requestId,
+    String? envId,
+    Map<ScriptScope, List<VariableChange>> changes,
+    Map<String, String> local,
+    List<ConsoleLine> logs,
+  ) {
+    for (final e in changes.entries) {
+      if (e.key == ScriptScope.local) {
+        for (final c in e.value) {
+          c.value == null ? local.remove(c.key) : local[c.key] = c.value!;
+        }
+        continue;
+      }
+      final target = state[e.key] ??= {};
+      final unset = _unset[e.key] ??= {};
+      for (final c in e.value) {
+        if (c.value == null) {
+          target.remove(c.key);
+          unset.add(c.key);
+        } else {
+          target[c.key] = c.value!;
+          unset.remove(c.key);
+        }
+      }
+    }
+  }
+}

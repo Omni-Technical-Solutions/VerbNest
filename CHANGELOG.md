@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.32.0
+
+- Scripts in the CLI: `postit run` now runs pre-request and post-response scripts, tests (`pm.test`, `pm.expect`), `pm.execution.setNextRequest` and `skipRequest`. Scripts run in `node` (change with `--js-runtime`, switch off with `--no-scripts`). Variables a script sets are kept for the run and never written to the workspace. Without a runtime, requests with scripts still run and are listed on stderr as not scripted. See ADR-010.
+- New package `postit_script` (no Flutter code): the script contract, `pm` runtime, phase runner and request mapping moved out of the app. The app keeps its embedded engine behind the same interface and its tests are unchanged.
+- Not done: `pm.sendRequest` and `pm.cookies` (unsupported in the app too). Node differs from QuickJS in rare language edge cases. Windows and Linux are not verified.
+
 ## 0.31.1
 
 - UI strings: the realtime and mock-server dialogs now use ARB (English and Arabic). New guard test `l10n_guard_test.dart` lists the files that still hold hard-coded `Text` literals (22 files) and fails when a migrated file regains one, a pending file is already clean, or the Arabic file lacks a key. Found that `context.l10n` already falls back to English in bare-`MaterialApp` widget tests, so migrating needs no test changes. The Arabic texts need review by a native speaker.

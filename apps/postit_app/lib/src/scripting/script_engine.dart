@@ -3,21 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fjs/fjs.dart';
 
-import 'script_io.dart';
+import 'package:postit_script/postit_script.dart';
 
-/// Runs one script. Replaceable in tests (the real engine needs the native
-/// library, which `flutter test` does not load).
-abstract class ScriptEngine {
-  Future<ScriptOutput> run(
-    ScriptInput input, {
-    Duration timeout = defaultScriptTimeout,
-  });
-}
-
-const defaultScriptTimeout = Duration(seconds: 5);
-
-/// 64 MB, the memory cap per script run (FR-SCR-004).
-const scriptMemoryLimit = 64 * 1024 * 1024;
+export 'package:postit_script/postit_script.dart'
+    show ScriptEngine, defaultScriptTimeout, scriptMemoryLimit;
 
 final scriptEngineProvider = Provider<ScriptEngine>((ref) => FjsScriptEngine());
 

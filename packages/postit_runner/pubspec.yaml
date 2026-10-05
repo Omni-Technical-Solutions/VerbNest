@@ -1,6 +1,6 @@
 name: postit_runner
 description: Collection runner for PostIt, shared by the app and the CLI. No Flutter code.
-version: 0.31.1
+version: 0.32.0
 publish_to: none
 resolution: workspace
 
@@ -10,6 +10,7 @@ environment:
 dependencies:
   postit_core: any
   postit_http: any
+  postit_script: any
   postit_storage: any
 
 dev_dependencies:

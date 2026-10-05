@@ -17,7 +17,7 @@ resolution: workspace
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.31.1+7
+version: 0.32.0+7
 
 environment:
   sdk: ^3.13.4
@@ -45,6 +45,7 @@ dependencies:
   postit_http: any
   postit_import: any
   postit_runner: any
+  postit_script: any
   postit_storage: any
   flutter_secure_storage: ^11.2.0
   file_selector: ^1.1.0

@@ -44,7 +44,7 @@ Needs the CI to run, which needs a remote.
   `application/pdf`; size cap (10 MB) with a message above it.
 - 3c. Widget tests with a fake preview builder; manual checks per platform.
 
-## Phase 4: Scripts in the CLI (minor)
+## Phase 4: Scripts in the CLI (minor) - done in v0.32.0, see ADR-010
 
 - 4a. Spike (1 day): can the QuickJS library behind `fjs` load in a plain Dart
   process through `dart:ffi`? If yes, a `postit_script` package wraps it for

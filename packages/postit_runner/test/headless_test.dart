@@ -1,5 +1,6 @@
 import 'package:postit_core/postit_core.dart';
 import 'package:postit_http/postit_http.dart';
+import 'package:postit_script/postit_script.dart';
 import 'package:postit_runner/postit_runner.dart';
 import 'package:postit_storage/postit_storage.dart';
 import 'package:test/test.dart';
@@ -113,5 +114,70 @@ void main() {
     );
     expect(report.entries.single.skipped, isTrue);
     expect(report.ok, isTrue);
+  });
+
+  group('scripts', () {
+    late bool hasRuntime;
+    setUpAll(() async => hasRuntime = await ProcessScriptEngine.available());
+
+    test('a post-response script feeds the next request', () async {
+      if (!hasRuntime) return;
+      final a = add(
+        'login',
+        (i) => i.copyWith(
+          url: '{{base}}/echo',
+          scripts: const Scripts(
+            post:
+                'pm.collectionVariables.set("who", "from-script");'
+                'pm.test("ran", () => pm.expect(pm.response.code).to.equal(200));',
+          ),
+        ),
+      );
+      final b = add('use', (i) => i.copyWith(url: '{{base}}/echo?w={{who}}'));
+      final sender = HeadlessSender(
+        repo: repo,
+        engine: HttpEngine(),
+        scripts: ProcessScriptEngine(),
+      );
+      final report = await executeRun(
+        config: RunConfig(name: 'x', requestIds: [a, b]),
+        repo: repo,
+        step: sender.step,
+      );
+      expect(report.entries.first.tests.single.passed, isTrue);
+      expect(server.requests.last.target, contains('w=from-script'));
+      expect(sender.scriptsSkipped, isEmpty);
+    });
+
+    test('a pre-request script can skip; a failing one is an error', () async {
+      if (!hasRuntime) return;
+      final a = add(
+        'skipme',
+        (i) => i.copyWith(
+          url: '{{base}}/echo',
+          scripts: const Scripts(pre: 'pm.execution.skipRequest();'),
+        ),
+      );
+      final b = add(
+        'broken',
+        (i) => i.copyWith(
+          url: '{{base}}/echo',
+          scripts: const Scripts(pre: 'throw new Error("nope")'),
+        ),
+      );
+      final sender = HeadlessSender(
+        repo: repo,
+        engine: HttpEngine(),
+        scripts: ProcessScriptEngine(),
+      );
+      final report = await executeRun(
+        config: RunConfig(name: 'x', requestIds: [a, b]),
+        repo: repo,
+        step: sender.step,
+      );
+      expect(report.entries.first.skipped, isTrue);
+      expect(report.entries.last.error, contains('nope'));
+      expect(server.requests, isEmpty);
+    });
   });
 }
