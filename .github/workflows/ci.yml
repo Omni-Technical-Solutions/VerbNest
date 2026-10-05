@@ -68,7 +68,7 @@ jobs:
           - name: macos
             os: macos-latest
             build: flutter build macos --release
-            test: flutter test integration_test -d macos
+            test: ../../scripts/ci_macos_integration.sh
           - name: android
             os: ubuntu-latest
             build: flutter build apk --release
