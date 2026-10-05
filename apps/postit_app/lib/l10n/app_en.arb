@@ -439,5 +439,45 @@
   "nsChooseKey": "Choose private key (.pem)",
   "nsPassphrase": "Passphrase (optional)",
   "nsCancel": "Cancel",
-  "nsAdd": "Add"
+  "nsAdd": "Add",
+  "authInherit": "Uses the auth of the enclosing folder or collection.",
+  "authToken": "Token",
+  "authUsername": "Username",
+  "authPassword": "Password",
+  "authKey": "Key",
+  "authValue": "Value",
+  "authHeader": "Header",
+  "authQuery": "Query",
+  "authDigestHint": "The request is sent once without credentials; the server challenge is answered automatically.",
+  "authAccessKey": "Access key",
+  "authSecretKey": "Secret key",
+  "authRegion": "Region",
+  "authService": "Service",
+  "authSessionToken": "Session token",
+  "authNone": "No authorization is added.",
+  "authRaw": "Auth type \"{type}\" is kept but not editable yet.",
+  "@authRaw": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "authSecret": "Secret",
+  "authPayload": "Payload (JSON)",
+  "authHeaderPrefix": "Header prefix",
+  "authJwtHint": "A token is signed for each send; iat is added if missing.",
+  "oauthClientCredentials": "Client credentials",
+  "oauthPassword": "Password",
+  "oauthAuthCode": "Authorization code (browser)",
+  "oauthImplicit": "Implicit (browser)",
+  "oauthAuthUrl": "Auth URL",
+  "oauthTokenUrl": "Token URL",
+  "oauthClientId": "Client ID",
+  "oauthClientSecret": "Client secret",
+  "oauthScope": "Scope",
+  "oauthPkce": "Use PKCE",
+  "oauthBrowserHint": "Sending opens your browser to sign in. The redirect URL is http://127.0.0.1:<port>/callback with a random port; if your provider needs a fixed redirect URL, register the loopback address with a wildcard port.",
+  "oauthTokens": "Tokens…",
+  "oauthBodyCreds": "Send client credentials in the body"
 }

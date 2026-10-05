@@ -1387,6 +1387,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add'**
   String get nsAdd;
+
+  /// No description provided for @authInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the auth of the enclosing folder or collection.'**
+  String get authInherit;
+
+  /// No description provided for @authToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Token'**
+  String get authToken;
+
+  /// No description provided for @authUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get authUsername;
+
+  /// No description provided for @authPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get authPassword;
+
+  /// No description provided for @authKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Key'**
+  String get authKey;
+
+  /// No description provided for @authValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get authValue;
+
+  /// No description provided for @authHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Header'**
+  String get authHeader;
+
+  /// No description provided for @authQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'Query'**
+  String get authQuery;
+
+  /// No description provided for @authDigestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The request is sent once without credentials; the server challenge is answered automatically.'**
+  String get authDigestHint;
+
+  /// No description provided for @authAccessKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Access key'**
+  String get authAccessKey;
+
+  /// No description provided for @authSecretKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret key'**
+  String get authSecretKey;
+
+  /// No description provided for @authRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Region'**
+  String get authRegion;
+
+  /// No description provided for @authService.
+  ///
+  /// In en, this message translates to:
+  /// **'Service'**
+  String get authService;
+
+  /// No description provided for @authSessionToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Session token'**
+  String get authSessionToken;
+
+  /// No description provided for @authNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No authorization is added.'**
+  String get authNone;
+
+  /// No description provided for @authRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Auth type \"{type}\" is kept but not editable yet.'**
+  String authRaw(String type);
+
+  /// No description provided for @authSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret'**
+  String get authSecret;
+
+  /// No description provided for @authPayload.
+  ///
+  /// In en, this message translates to:
+  /// **'Payload (JSON)'**
+  String get authPayload;
+
+  /// No description provided for @authHeaderPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Header prefix'**
+  String get authHeaderPrefix;
+
+  /// No description provided for @authJwtHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A token is signed for each send; iat is added if missing.'**
+  String get authJwtHint;
+
+  /// No description provided for @oauthClientCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Client credentials'**
+  String get oauthClientCredentials;
+
+  /// No description provided for @oauthPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get oauthPassword;
+
+  /// No description provided for @oauthAuthCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorization code (browser)'**
+  String get oauthAuthCode;
+
+  /// No description provided for @oauthImplicit.
+  ///
+  /// In en, this message translates to:
+  /// **'Implicit (browser)'**
+  String get oauthImplicit;
+
+  /// No description provided for @oauthAuthUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Auth URL'**
+  String get oauthAuthUrl;
+
+  /// No description provided for @oauthTokenUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Token URL'**
+  String get oauthTokenUrl;
+
+  /// No description provided for @oauthClientId.
+  ///
+  /// In en, this message translates to:
+  /// **'Client ID'**
+  String get oauthClientId;
+
+  /// No description provided for @oauthClientSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Client secret'**
+  String get oauthClientSecret;
+
+  /// No description provided for @oauthScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope'**
+  String get oauthScope;
+
+  /// No description provided for @oauthPkce.
+  ///
+  /// In en, this message translates to:
+  /// **'Use PKCE'**
+  String get oauthPkce;
+
+  /// No description provided for @oauthBrowserHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending opens your browser to sign in. The redirect URL is http://127.0.0.1:<port>/callback with a random port; if your provider needs a fixed redirect URL, register the loopback address with a wildcard port.'**
+  String get oauthBrowserHint;
+
+  /// No description provided for @oauthTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens…'**
+  String get oauthTokens;
+
+  /// No description provided for @oauthBodyCreds.
+  ///
+  /// In en, this message translates to:
+  /// **'Send client credentials in the body'**
+  String get oauthBodyCreds;
 }
 
 class _AppLocalizationsDelegate

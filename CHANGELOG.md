@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.32.6
+
+- UI strings: the authorization editor (all auth types and OAuth 2.0) now uses ARB (English and Arabic). Four files remain in `l10n_guard_test.dart`.
+
 ## 0.32.5
 
 - UI strings: network settings (proxy, certificates), the client certificate dialog, favourites and examples now use ARB (English and Arabic). Five files remain in `l10n_guard_test.dart`.

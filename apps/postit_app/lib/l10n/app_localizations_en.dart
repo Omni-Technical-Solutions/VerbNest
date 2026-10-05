@@ -721,4 +721,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nsAdd => 'Add';
+
+  @override
+  String get authInherit =>
+      'Uses the auth of the enclosing folder or collection.';
+
+  @override
+  String get authToken => 'Token';
+
+  @override
+  String get authUsername => 'Username';
+
+  @override
+  String get authPassword => 'Password';
+
+  @override
+  String get authKey => 'Key';
+
+  @override
+  String get authValue => 'Value';
+
+  @override
+  String get authHeader => 'Header';
+
+  @override
+  String get authQuery => 'Query';
+
+  @override
+  String get authDigestHint =>
+      'The request is sent once without credentials; the server challenge is answered automatically.';
+
+  @override
+  String get authAccessKey => 'Access key';
+
+  @override
+  String get authSecretKey => 'Secret key';
+
+  @override
+  String get authRegion => 'Region';
+
+  @override
+  String get authService => 'Service';
+
+  @override
+  String get authSessionToken => 'Session token';
+
+  @override
+  String get authNone => 'No authorization is added.';
+
+  @override
+  String authRaw(String type) {
+    return 'Auth type \"$type\" is kept but not editable yet.';
+  }
+
+  @override
+  String get authSecret => 'Secret';
+
+  @override
+  String get authPayload => 'Payload (JSON)';
+
+  @override
+  String get authHeaderPrefix => 'Header prefix';
+
+  @override
+  String get authJwtHint =>
+      'A token is signed for each send; iat is added if missing.';
+
+  @override
+  String get oauthClientCredentials => 'Client credentials';
+
+  @override
+  String get oauthPassword => 'Password';
+
+  @override
+  String get oauthAuthCode => 'Authorization code (browser)';
+
+  @override
+  String get oauthImplicit => 'Implicit (browser)';
+
+  @override
+  String get oauthAuthUrl => 'Auth URL';
+
+  @override
+  String get oauthTokenUrl => 'Token URL';
+
+  @override
+  String get oauthClientId => 'Client ID';
+
+  @override
+  String get oauthClientSecret => 'Client secret';
+
+  @override
+  String get oauthScope => 'Scope';
+
+  @override
+  String get oauthPkce => 'Use PKCE';
+
+  @override
+  String get oauthBrowserHint =>
+      'Sending opens your browser to sign in. The redirect URL is http://127.0.0.1:<port>/callback with a random port; if your provider needs a fixed redirect URL, register the loopback address with a wildcard port.';
+
+  @override
+  String get oauthTokens => 'Tokens…';
+
+  @override
+  String get oauthBodyCreds => 'Send client credentials in the body';
 }

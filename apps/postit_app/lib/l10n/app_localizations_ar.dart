@@ -723,4 +723,108 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get nsAdd => 'إضافة';
+
+  @override
+  String get authInherit => 'يستخدم مصادقة المجلد أو المجموعة الحاوية.';
+
+  @override
+  String get authToken => 'الرمز';
+
+  @override
+  String get authUsername => 'اسم المستخدم';
+
+  @override
+  String get authPassword => 'كلمة المرور';
+
+  @override
+  String get authKey => 'المفتاح';
+
+  @override
+  String get authValue => 'القيمة';
+
+  @override
+  String get authHeader => 'الترويسة';
+
+  @override
+  String get authQuery => 'الاستعلام';
+
+  @override
+  String get authDigestHint =>
+      'يُرسل الطلب مرة دون بيانات اعتماد، ويُجاب على تحدي الخادم تلقائياً.';
+
+  @override
+  String get authAccessKey => 'مفتاح الوصول';
+
+  @override
+  String get authSecretKey => 'المفتاح السري';
+
+  @override
+  String get authRegion => 'المنطقة';
+
+  @override
+  String get authService => 'الخدمة';
+
+  @override
+  String get authSessionToken => 'رمز الجلسة';
+
+  @override
+  String get authNone => 'لا تتم إضافة أي تفويض.';
+
+  @override
+  String authRaw(String type) {
+    return 'نوع المصادقة \"$type\" محفوظ لكنه غير قابل للتحرير بعد.';
+  }
+
+  @override
+  String get authSecret => 'السر';
+
+  @override
+  String get authPayload => 'الحمولة (JSON)';
+
+  @override
+  String get authHeaderPrefix => 'بادئة الترويسة';
+
+  @override
+  String get authJwtHint =>
+      'يُوقَّع رمز عند كل إرسال؛ وتُضاف iat إن لم تكن موجودة.';
+
+  @override
+  String get oauthClientCredentials => 'بيانات اعتماد العميل';
+
+  @override
+  String get oauthPassword => 'كلمة المرور';
+
+  @override
+  String get oauthAuthCode => 'رمز التفويض (المتصفح)';
+
+  @override
+  String get oauthImplicit => 'ضمني (المتصفح)';
+
+  @override
+  String get oauthAuthUrl => 'عنوان التفويض';
+
+  @override
+  String get oauthTokenUrl => 'عنوان الرمز';
+
+  @override
+  String get oauthClientId => 'معرّف العميل';
+
+  @override
+  String get oauthClientSecret => 'سر العميل';
+
+  @override
+  String get oauthScope => 'النطاق';
+
+  @override
+  String get oauthPkce => 'استخدام PKCE';
+
+  @override
+  String get oauthBrowserHint =>
+      'يفتح الإرسال المتصفح لتسجيل الدخول. عنوان إعادة التوجيه هو http://127.0.0.1:<port>/callback بمنفذ عشوائي؛ إن احتاج مزودك إلى عنوان ثابت فسجّل عنوان الحلقة المحلية بمنفذ عام.';
+
+  @override
+  String get oauthTokens => 'الرموز…';
+
+  @override
+  String get oauthBodyCreds => 'إرسال بيانات اعتماد العميل في المتن';
 }
