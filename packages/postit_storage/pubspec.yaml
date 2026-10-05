@@ -1,6 +1,6 @@
 name: postit_storage
 description: SQLite workspace and local databases for PostIt.
-version: 0.33.0
+version: 0.34.0
 publish_to: none
 resolution: workspace
 

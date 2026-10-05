@@ -21,7 +21,10 @@ scripts set last for the run only; nothing is written to the workspace file.
 
 `postit mock` serves the saved examples of a collection over HTTP until
 stopped (Ctrl+C). Each request answers on its method and URL path; send an
-X-PostIt-Example header to pick an example by name.
+X-PostIt-Example header to pick an example by name. A request that saves
+query parameters or a raw body only answers matching calls when another
+request shares its path; otherwise it answers any call on that path.
+X-PostIt-Delay (ms) or --delay slows replies.
 ''';
 
 ArgParser _runParser() => ArgParser()
@@ -343,6 +346,11 @@ ArgParser _mockParser() => ArgParser()
   ..addOption('env', abbr: 'e', help: 'Environment used to resolve URLs.')
   ..addMultiOption('var', abbr: 'v', help: 'Variable override, name=value.')
   ..addOption('port', abbr: 'p', defaultsTo: '3000')
+  ..addOption(
+    'delay',
+    defaultsTo: '0',
+    help: 'Milliseconds to wait before every reply (X-PostIt-Delay overrides).',
+  )
   ..addFlag('help', abbr: 'h', negatable: false);
 
 Future<int> _mock(
@@ -394,6 +402,11 @@ Future<int> _mock(
     err.writeln('--port must be 0-65535.');
     return 2;
   }
+  final delayMs = int.tryParse(r['delay'] as String);
+  if (delayMs == null || delayMs < 0) {
+    err.writeln('--delay must be a number of milliseconds.');
+    return 2;
+  }
   final routes = MockServer.routesFor(
     repo,
     container.id,
@@ -406,7 +419,11 @@ Future<int> _mock(
   }
   final MockServer server;
   try {
-    server = await MockServer.start(routes, port: port);
+    server = await MockServer.start(
+      routes,
+      port: port,
+      delay: Duration(milliseconds: delayMs),
+    );
   } on SocketException catch (e) {
     err.writeln('Cannot listen on port $port: ${e.message}');
     return 2;
@@ -415,7 +432,14 @@ Future<int> _mock(
     'Serving ${routes.length} routes on http://127.0.0.1:${server.port}',
   );
   for (final route in routes) {
-    out.writeln('  ${route.method} ${route.path}  (${route.requestName})');
+    final pins = [
+      if (route.query.isNotEmpty) 'query ${route.query.keys.join(', ')}',
+      if (route.body != null) 'body',
+    ];
+    out.writeln(
+      '  ${route.method} ${route.path}  (${route.requestName})'
+      '${pins.isEmpty ? '' : ' [${pins.join('; ')}]'}',
+    );
   }
   onReady?.call(server.port);
   await (stop ?? ProcessSignal.sigint.watch().first);

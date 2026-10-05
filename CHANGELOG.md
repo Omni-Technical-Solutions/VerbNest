@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.34.0
+
+- Mock server: routes now pin the query parameters (a fixed value, or presence only when the saved value is empty or a variable) and the raw body (JSON compared by value) of the saved request. The most specific match wins; if nothing matches exactly, the least specific route on that method and path answers. `X-PostIt-Delay: <ms>` delays one reply and `postit mock --delay <ms>` sets a default (capped at 30 s).
+
 ## 0.33.0
 
 - Response view: a "Preview" segment for `text/html` responses. The page is rendered as static widgets (no scripts, no network, links ignored); pages above 2 MB show a message. PDF preview is not included yet (ADR-011).
