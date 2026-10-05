@@ -169,10 +169,8 @@ void main() {
   testWidgets('unsupported APIs and errors are reported by name', (
     tester,
   ) async {
-    var o = await run('pm.sendRequest("https://x.test", function () {});');
-    expect(o.error, contains('pm.sendRequest is not supported'));
-    o = await run('pm.cookies.get("a")');
-    expect(o.error, contains('pm.cookies is not supported'));
+    var o = await run('pm.cookies.jar()');
+    expect(o.error, contains('pm.cookies.jar is not supported'));
     o = await run('require("fs")');
     expect(o.error, contains("require('fs') is not supported"));
     o = await run('pm.response.json(', phase: ScriptPhase.post);
