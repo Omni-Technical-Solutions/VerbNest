@@ -56,11 +56,13 @@ class WorkspaceDatabase {
   }
 
   static StorageError _translate(SqliteException e, String path) {
-    // 5 = SQLITE_BUSY, 6 = SQLITE_LOCKED, 26 = SQLITE_NOTADB
-    if (e.resultCode == 5 || e.resultCode == 6) {
-      return WorkspaceLockedError(path);
-    }
-    return NotAWorkspaceError(path);
+    // 3 = PERM, 5 = BUSY, 6 = LOCKED, 8 = READONLY, 14 = CANTOPEN,
+    // 23 = AUTH, 26 = NOTADB
+    return switch (e.resultCode) {
+      5 || 6 => WorkspaceLockedError(path),
+      3 || 8 || 14 || 23 => WorkspaceAccessError(path),
+      _ => NotAWorkspaceError(path),
+    };
   }
 
   void _configure({bool exclusive = false}) {

@@ -66,6 +66,17 @@ void main() {
       expect(f.readAsBytesSync(), before);
     });
 
+    test('reports a file the OS will not let us open as an access error', () {
+      final path = '${dir.path}/locked.postit';
+      WorkspaceDatabase.open(path, create: true).close();
+      Process.runSync('chmod', ['000', path]);
+      addTearDown(() => Process.runSync('chmod', ['600', path]));
+      expect(
+        () => WorkspaceDatabase.open(path),
+        throwsA(isA<WorkspaceAccessError>()),
+      );
+    }, skip: Platform.isWindows);
+
     test('rejects a foreign SQLite database', () {
       final path = '${dir.path}/other.db';
       sqlite3.open(path)

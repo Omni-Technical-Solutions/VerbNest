@@ -31,6 +31,16 @@ class WorkspaceLockedError extends StorageError {
     : super('$path is in use by another PostIt window or process');
 }
 
+/// The operating system refused access to the file or its folder.
+class WorkspaceAccessError extends StorageError {
+  const WorkspaceAccessError(String path)
+    : super(
+        'PostIt cannot read or write $path. Check the folder permissions '
+        '(on macOS, allow access to the Documents folder in System Settings, '
+        'Privacy & Security).',
+      );
+}
+
 class NotFoundError extends StorageError {
   const NotFoundError(String what) : super('$what not found');
 }

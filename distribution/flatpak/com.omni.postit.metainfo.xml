@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>org.postit.postit_app</id>
+  <id>com.omni.postit</id>
   <name>PostIt</name>
   <summary>Local-first API client</summary>
   <metadata_license>CC0-1.0</metadata_license>

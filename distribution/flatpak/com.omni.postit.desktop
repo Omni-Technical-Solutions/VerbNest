@@ -3,6 +3,6 @@ Type=Application
 Name=PostIt
 Comment=Local-first API client
 Exec=postit_app
-Icon=org.postit.postit_app
+Icon=com.omni.postit
 Categories=Development;Network;
 Terminal=false

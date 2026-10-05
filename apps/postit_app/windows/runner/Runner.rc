@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "org.postit" "\0"
+            VALUE "CompanyName", "Omni" "\0"
             VALUE "FileDescription", "postit_app" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "postit_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 org.postit. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Omni. All rights reserved." "\0"
             VALUE "OriginalFilename", "postit_app.exe" "\0"
             VALUE "ProductName", "postit_app" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
