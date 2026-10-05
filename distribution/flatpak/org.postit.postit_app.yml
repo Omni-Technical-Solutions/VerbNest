@@ -1,0 +1,29 @@
+# Draft Flathub manifest. Not built yet: needs a Linux machine, a real source
+# URL and commit, and the offline Dart/Flutter dependency sources that Flathub
+# requires (see https://docs.flathub.org/docs/for-app-authors/ and the
+# flatpak-flutter helper).
+app-id: org.postit.postit_app
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: postit_app
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --talk-name=org.freedesktop.secrets
+modules:
+  - name: postit
+    buildsystem: simple
+    build-commands:
+      - cp -r bundle /app/postit
+      - install -Dm644 distribution/flatpak/org.postit.postit_app.desktop /app/share/applications/org.postit.postit_app.desktop
+      - install -Dm644 distribution/flatpak/org.postit.postit_app.metainfo.xml /app/share/metainfo/org.postit.postit_app.metainfo.xml
+      - install -Dm644 assets/icon/postit_icon_512.png /app/share/icons/hicolor/512x512/apps/org.postit.postit_app.png
+      - mkdir -p /app/bin && ln -s /app/postit/postit_app /app/bin/postit_app
+    sources:
+      - type: git
+        url: https://example.invalid/postit.git   # replace
+        tag: v0.24.0

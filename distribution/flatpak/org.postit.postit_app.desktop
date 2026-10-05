@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PostIt
+Comment=Local-first API client
+Exec=postit_app
+Icon=org.postit.postit_app
+Categories=Development;Network;
+Terminal=false

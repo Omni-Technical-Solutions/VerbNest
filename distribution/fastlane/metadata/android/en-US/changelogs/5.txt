@@ -1,0 +1,3 @@
+- Cookie jar, HTTP and SOCKS5 proxy, custom CA and client certificates
+- OpenAPI, HAR and Postman import, code generation
+- Favourites, saved examples, command palette, YAML snapshots

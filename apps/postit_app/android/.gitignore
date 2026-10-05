@@ -12,3 +12,10 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Release signing material
+key.properties
+*.jks
+*.keystore
+*.p12
+*.mobileprovision

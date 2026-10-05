@@ -1,0 +1,7 @@
+PostIt is an API client that keeps your work on your own device.
+
+Build requests with variables, environments and collections. Send them with Basic, Bearer, API key, Digest, JWT, AWS Signature V4 or OAuth 2.0 (client credentials, password, authorization code with PKCE, implicit). Check responses with pretty-printed bodies, headers, cookies, timings and TLS details. Write pre-request and post-response scripts, assertions and run whole collections with data files.
+
+Import cURL, Postman, OpenAPI/Swagger and HAR. Export Postman collections and run reports (JSON, JUnit, HTML). Use a proxy (HTTP or SOCKS5), your own CA and client certificates.
+
+Your workspace is a single file on your device. Secrets go to the system secret store. There is no account, no sync service and no tracking.

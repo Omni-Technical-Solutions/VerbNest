@@ -1,0 +1,1 @@
+Local-first API client: send HTTP requests, keep everything on your device.
