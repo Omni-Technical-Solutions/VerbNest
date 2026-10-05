@@ -27,3 +27,7 @@ Build in this order, and keep every new feature in a Flutter-free package from t
 - GraphQL and WebSocket need no refactor when the CLI arrives. Only the existing runner is moved.
 - The CLI comes last because its blocker is the script engine, not the protocols.
 - Rule for all new features: models and logic go in `postit_core`, `postit_http`, `postit_import`; `apps/postit_app` holds widgets and Riverpod glue only.
+
+## Outcome (v0.29.0)
+
+The runner loop now lives in `postit_runner` and the CLI in `postit_cli`. The CLI does not run scripts because `fjs` is a Flutter plugin; adding scripting to the CLI needs its own decision.

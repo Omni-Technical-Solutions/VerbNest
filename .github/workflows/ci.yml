@@ -26,7 +26,7 @@ jobs:
       - name: Package tests
         shell: bash
         run: |
-          for p in postit_core postit_http postit_storage postit_import; do
+          for p in postit_core postit_http postit_storage postit_import postit_runner postit_cli; do
             (cd packages/$p && dart test)
           done
 

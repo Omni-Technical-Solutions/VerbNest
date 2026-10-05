@@ -1,56 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_core/postit_core.dart';
-import 'package:postit_storage/postit_storage.dart';
+import 'package:postit_runner/postit_runner.dart';
 
+import '../scripting/script_io.dart' show ScriptFlow;
 import 'editor_state.dart';
 import 'session.dart';
 import 'variables.dart';
 
-/// What to run (FR-RUN-001).
-class RunConfig {
-  const RunConfig({
-    required this.name,
-    required this.requestIds,
-    this.iterations = 1,
-    this.delay = Duration.zero,
-    this.stopOnFailure = false,
-    this.data = const [],
-    this.maxSteps = maxRunSteps,
-  });
-
-  final String name;
-
-  /// In run order. Hand-picked and reordered lists are fine.
-  final List<String> requestIds;
-  final int iterations;
-  final Duration delay;
-  final bool stopOnFailure;
-
-  /// One row per iteration; when set it decides the iteration count.
-  final List<DataRow> data;
-
-  /// Requests run in total before giving up; see [maxRunSteps].
-  final int maxSteps;
-
-  int get totalIterations => data.isEmpty ? iterations : data.length;
-}
-
-/// Every HTTP request below [containerId], depth first in tree order.
-List<NodeInfo> requestsUnder(WorkspaceRepository repo, String containerId) {
-  final out = <NodeInfo>[];
-  void walk(String id) {
-    for (final n in repo.children(id)) {
-      if (n.isContainer) {
-        walk(n.id);
-      } else if (n.type == 'http') {
-        out.add(n);
-      }
-    }
-  }
-
-  walk(containerId);
-  return out;
-}
+export 'package:postit_runner/postit_runner.dart'
+    show RunConfig, requestsUnder, maxRunSteps;
 
 class RunnerState {
   const RunnerState({
@@ -72,10 +30,6 @@ class RunnerState {
   final String? currentName;
 }
 
-/// Longest chain of `setNextRequest` jumps allowed before the run gives up,
-/// so a script that points at itself cannot run forever.
-const maxRunSteps = 10000;
-
 class RunnerNotifier extends Notifier<RunnerState> {
   bool _stop = false;
   String? _activeId;
@@ -93,7 +47,7 @@ class RunnerNotifier extends Notifier<RunnerState> {
     if (!state.running) state = const RunnerState();
   }
 
-  Future<RunEntry> _send(
+  Future<RunStepResult> _send(
     String id,
     String name,
     int iteration,
@@ -105,101 +59,56 @@ class RunnerNotifier extends Notifier<RunnerState> {
     final s = ref.read(editorProvider(id));
     final r = s.response;
     final error = s.error ?? s.scriptError;
-    return RunEntry(
-      iteration: iteration,
-      requestId: id,
-      name: name,
-      method: s.item.method,
-      url: r?.sent.url.toString() ?? s.item.url,
-      status: r?.status,
-      reason: r?.reason ?? '',
-      timeMs: r?.timings.total.inMilliseconds ?? 0,
-      tests: s.tests,
-      error: _stop && error != null ? 'Stopped' : error,
-      skipped: s.flow.skip,
+    final ScriptFlow flow = s.flow;
+    return RunStepResult(
+      RunEntry(
+        iteration: iteration,
+        requestId: id,
+        name: name,
+        method: s.item.method,
+        url: r?.sent.url.toString() ?? s.item.url,
+        status: r?.status,
+        reason: r?.reason ?? '',
+        timeMs: r?.timings.total.inMilliseconds ?? 0,
+        tests: s.tests,
+        error: _stop && error != null ? 'Stopped' : error,
+        skipped: flow.skip,
+      ),
+      RunFlow(next: flow.next, stop: flow.stop, skip: flow.skip),
     );
   }
 
   Future<RunReport> run(RunConfig config) async {
     final session = ref.read(sessionProvider);
-    final repo = session.repo;
     final envId = ref.read(activeEnvProvider);
     final envName = envId == null
         ? null
-        : repo.environments().where((e) => e.id == envId).firstOrNull?.name;
-    final started = DateTime.now();
-    final iterations = config.totalIterations;
-    final entries = <RunEntry>[];
+        : session.repo
+              .environments()
+              .where((e) => e.id == envId)
+              .firstOrNull
+              ?.name;
     _stop = false;
-    var stoppedEarly = false;
-    var steps = 0;
-    state = RunnerState(running: true, total: iterations);
-
-    iterationLoop:
-    for (var it = 1; it <= iterations; it++) {
-      final row = config.data.isEmpty
-          ? const <String, String>{}
-          : config.data[it - 1];
-      final names = [for (final id in config.requestIds) repo.node(id).name];
-      var i = 0;
-      while (i < config.requestIds.length) {
-        if (_stop || ++steps > config.maxSteps) {
-          stoppedEarly = true;
-          break iterationLoop;
-        }
-        final id = config.requestIds[i];
-        state = RunnerState(
-          running: true,
-          entries: List.of(entries),
-          iteration: it,
-          total: iterations,
-          currentName: names[i],
-        );
-        var entry = await _send(id, names[i], it, row);
-        final flow = ref.read(editorProvider(id)).flow;
-        final next = flow.next;
-        final jump = next == null ? null : names.indexOf(next);
-        final badJump = jump == -1;
-        if (badJump) {
-          entry = entry.withError(
-            'setNextRequest: no request named "$next" in this run',
-          );
-        }
-        entries.add(entry);
-        state = RunnerState(
-          running: true,
-          entries: List.of(entries),
-          iteration: it,
-          total: iterations,
-        );
-        if (_stop ||
-            (config.stopOnFailure && !entry.ok && !flow.skip) ||
-            flow.stop ||
-            badJump) {
-          stoppedEarly = true;
-          break iterationLoop;
-        }
-        i = jump ?? i + 1;
-        if (config.delay > Duration.zero &&
-            (i < config.requestIds.length || it < iterations)) {
-          await Future<void>.delayed(config.delay);
-        }
-      }
-    }
-    final report = RunReport(
-      name: config.name,
-      startedAt: started,
-      finishedAt: DateTime.now(),
+    state = RunnerState(running: true, total: config.totalIterations);
+    final report = await executeRun(
+      config: config,
+      repo: session.repo,
+      step: _send,
+      shouldStop: () => _stop,
       environment: envName,
-      iterations: iterations,
-      entries: entries,
-      stoppedEarly: stoppedEarly,
+      onProgress: (p) => state = RunnerState(
+        running: true,
+        entries: p.entries,
+        iteration: p.iteration,
+        total: p.total,
+        currentName: p.currentName,
+      ),
     );
     state = RunnerState(
-      entries: entries,
+      entries: report.entries,
       report: report,
-      iteration: iterations,
-      total: iterations,
+      iteration: report.iterations,
+      total: report.iterations,
     );
     return report;
   }
