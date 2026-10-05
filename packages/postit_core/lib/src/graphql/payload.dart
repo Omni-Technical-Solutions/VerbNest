@@ -1,14 +1,22 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 /// The JSON a GraphQL server expects in a POST body:
 /// `{"query": …, "variables": {…}, "operationName": …}`.
 ///
 /// [variables] must be empty or a JSON object. A [FormatException] explains
 /// what is wrong, so a typo is reported before anything is sent.
+///
+/// With [persisted], the payload carries the Apollo persisted-query
+/// extension (the SHA-256 of [query]). [omitQuery] then leaves the document
+/// out so only the hash goes on the wire.
 String graphqlPayload({
   required String query,
   String variables = '',
   String operationName = '',
+  bool persisted = false,
+  bool omitQuery = false,
 }) {
   Object? vars;
   if (variables.trim().isNotEmpty) {
@@ -24,11 +32,28 @@ String graphqlPayload({
     }
   }
   return jsonEncode({
-    'query': query,
+    if (!(persisted && omitQuery)) 'query': query,
     'variables': ?vars,
     if (operationName.trim().isNotEmpty) 'operationName': operationName.trim(),
+    if (persisted)
+      'extensions': {
+        'persistedQuery': {
+          'version': 1,
+          'sha256Hash': persistedQueryHash(query),
+        },
+      },
   });
 }
+
+/// Lowercase hex SHA-256 of the UTF-8 query text, as Apollo's automatic
+/// persisted queries expect.
+String persistedQueryHash(String query) =>
+    sha256.convert(utf8.encode(query)).toString();
+
+/// True when a GraphQL response says the server does not know the hash.
+bool isPersistedQueryNotFound(String responseBody) =>
+    responseBody.contains('PersistedQueryNotFound') ||
+    responseBody.contains('PERSISTED_QUERY_NOT_FOUND');
 
 /// Names of the operations in [query], in order. Used to pick
 /// `operationName` when a document holds several. A cheap scan, not a parser:

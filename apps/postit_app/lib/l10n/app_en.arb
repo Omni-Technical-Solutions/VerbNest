@@ -797,5 +797,7 @@
   "rvHtmlTooLarge": "This page is too large to preview. Use Raw or Save.",
   "rtSave": "Save log…",
   "rtHex": "Hex",
-  "rtHexHint": "Bytes in hex, e.g. 0a ff 10"
+  "rtHexHint": "Bytes in hex, e.g. 0a ff 10",
+  "gqlPersisted": "Persisted query",
+  "gqlPersistedHint": "Send a SHA-256 hash first; the full query is sent only if the server does not know it"
 }

@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:postit_core/postit_core.dart' show isPersistedQueryNotFound;
+
 import 'auth_sign.dart';
 import 'engine.dart';
 import 'models.dart';
@@ -12,7 +16,12 @@ Future<HttpResponseRecord> sendPrepared(
   CancelToken? cancel,
 }) async {
   final spec = prepared.spec;
-  final first = await engine.send(spec, cancel: cancel);
+  var first = await engine.send(spec, cancel: cancel);
+  final fallback = prepared.persistedFallback;
+  if (fallback != null &&
+      isPersistedQueryNotFound(utf8.decode(first.body, allowMalformed: true))) {
+    first = await engine.send(fallback, cancel: cancel);
+  }
   final digest = prepared.digest;
   if (digest == null || first.status != 401) return first;
   final challenge = DigestChallenge.find(

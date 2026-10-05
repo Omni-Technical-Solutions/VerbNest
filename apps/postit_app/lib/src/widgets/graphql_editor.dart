@@ -133,6 +133,16 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
                   onChanged: (v) =>
                       widget.onChanged(body.copyWith(operationName: v ?? '')),
                 ),
+              Tooltip(
+                message: context.l10n.gqlPersistedHint,
+                child: FilterChip(
+                  key: const Key('gql-persisted'),
+                  label: Text(context.l10n.gqlPersisted),
+                  selected: body.persisted,
+                  onSelected: (v) =>
+                      widget.onChanged(body.copyWith(persisted: v)),
+                ),
+              ),
             ],
           ),
         ),

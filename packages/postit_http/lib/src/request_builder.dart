@@ -30,6 +30,7 @@ class PreparedRequest {
     required this.masker,
     required this.warnings,
     this.digest,
+    this.persistedFallback,
   });
 
   /// Credentials to answer a Digest challenge with, if the request uses
@@ -37,6 +38,10 @@ class PreparedRequest {
   final DigestAuth? digest;
 
   final HttpRequestSpec spec;
+
+  /// The same request with the full GraphQL document, sent once if the
+  /// server answers the hash-only [spec] with PersistedQueryNotFound.
+  final HttpRequestSpec? persistedFallback;
 
   /// `{{names}}` no scope defines (FR-VAR-006).
   final Set<String> unresolved;
@@ -85,47 +90,61 @@ class RequestBuilder {
     _applyAuthToHeaders(effective, headers, ctx);
     final method = ctx.text(item.method.trim()).toUpperCase();
     final gql = item.body;
-    final List<int>? body;
-    if (gql is GraphqlBody && gql.sentInUrl(method)) {
-      try {
-        url = UrlText.appendQuery(url, gql.toQueryString(resolve: ctx.text));
-      } on FormatException catch (e) {
-        throw RequestBuildError(e.message);
+    final persisted = gql is GraphqlBody && gql.persisted;
+    final baseHeaders = headers;
+    final baseUrl = url;
+
+    Future<HttpRequestSpec> compose({required bool hashOnly}) async {
+      final headers = [...baseHeaders];
+      var url = baseUrl;
+      final List<int>? body;
+      if (gql is GraphqlBody && gql.sentInUrl(method)) {
+        try {
+          url = UrlText.appendQuery(
+            url,
+            gql.toQueryString(resolve: ctx.text, hashOnly: hashOnly),
+          );
+        } on FormatException catch (e) {
+          throw RequestBuildError(e.message);
+        }
+        body = null;
+      } else {
+        body = await _body(item.body, headers, ctx, hashOnly: hashOnly);
       }
-      body = null;
-    } else {
-      body = await _body(item.body, headers, ctx);
-    }
-    final parsed = _parse(url);
-    if (effective is AwsV4Auth && !_has(headers, 'Authorization')) {
-      final signer = effective.copyWith(
-        accessKey: ctx.text(effective.accessKey),
-        secretKey: ctx.text(effective.secretKey),
-        region: ctx.text(effective.region),
-        service: ctx.text(effective.service),
-        sessionToken: ctx.text(effective.sessionToken),
-      );
-      headers.addAll(
-        signAwsV4(
-          signer,
-          method: method,
-          url: parsed,
-          headers: headers,
-          body: body ?? const [],
-          now: _clock(),
-        ),
+      final parsed = _parse(url);
+      if (effective is AwsV4Auth && !_has(headers, 'Authorization')) {
+        final signer = effective.copyWith(
+          accessKey: ctx.text(effective.accessKey),
+          secretKey: ctx.text(effective.secretKey),
+          region: ctx.text(effective.region),
+          service: ctx.text(effective.service),
+          sessionToken: ctx.text(effective.sessionToken),
+        );
+        headers.addAll(
+          signAwsV4(
+            signer,
+            method: method,
+            url: parsed,
+            headers: headers,
+            body: body ?? const [],
+            now: _clock(),
+          ),
+        );
+      }
+      return HttpRequestSpec(
+        method: method,
+        url: parsed,
+        headers: headers,
+        body: body,
+        settings: _settings(item.settings),
       );
     }
 
-    final spec = HttpRequestSpec(
-      method: method,
-      url: parsed,
-      headers: headers,
-      body: body,
-      settings: _settings(item.settings),
-    );
+    final spec = await compose(hashOnly: persisted);
+    final fallback = persisted ? await compose(hashOnly: false) : null;
     return PreparedRequest(
       spec: spec,
+      persistedFallback: fallback,
       unresolved: ctx.unresolved,
       secretNames: ctx.secretNames,
       digest: effective is DigestAuth
@@ -230,8 +249,9 @@ class RequestBuilder {
   Future<List<int>?> _body(
     RequestBody body,
     List<Header> headers,
-    _Context ctx,
-  ) async {
+    _Context ctx, {
+    bool hashOnly = false,
+  }) async {
     switch (body) {
       case NoBody():
         return null;
@@ -241,7 +261,9 @@ class RequestBuilder {
       case GraphqlBody():
         _defaultContentType(headers, body.defaultContentType);
         try {
-          return utf8.encode(body.toPayload(resolve: ctx.text));
+          return utf8.encode(
+            body.toPayload(resolve: ctx.text, hashOnly: hashOnly),
+          );
         } on FormatException catch (e) {
           throw RequestBuildError(e.message);
         }

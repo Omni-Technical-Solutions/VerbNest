@@ -1330,4 +1330,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rtHexHint => 'Bytes in hex, e.g. 0a ff 10';
+
+  @override
+  String get gqlPersisted => 'Persisted query';
+
+  @override
+  String get gqlPersistedHint =>
+      'Send a SHA-256 hash first; the full query is sent only if the server does not know it';
 }

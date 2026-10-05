@@ -1331,4 +1331,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get rtHexHint => 'بايتات بالنظام السداسي عشري، مثل 0a ff 10';
+
+  @override
+  String get gqlPersisted => 'استعلام محفوظ';
+
+  @override
+  String get gqlPersistedHint =>
+      'أرسل التجزئة SHA-256 أولاً، ولا يُرسل الاستعلام الكامل إلا إذا لم يعرفه الخادم';
 }

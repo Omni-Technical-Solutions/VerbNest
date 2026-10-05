@@ -83,9 +83,14 @@ class GraphqlBody extends RequestBody {
     this.query = '',
     this.variables = '',
     this.operationName = '',
+    this.persisted = false,
   });
 
   final String query;
+
+  /// Send an Apollo persisted-query hash instead of the document, falling
+  /// back to the full query when the server has not seen it yet.
+  final bool persisted;
 
   /// JSON object text; empty means no variables.
   final String variables;
@@ -95,7 +100,9 @@ class GraphqlBody extends RequestBody {
     String? query,
     String? variables,
     String? operationName,
+    bool? persisted,
   }) => GraphqlBody(
+    persisted: persisted ?? this.persisted,
     query: query ?? this.query,
     variables: variables ?? this.variables,
     operationName: operationName ?? this.operationName,
@@ -103,18 +110,30 @@ class GraphqlBody extends RequestBody {
 
   /// The JSON request body. [resolve] replaces `{{variables}}` in each field
   /// first. With [lenient], variables that are not valid JSON are left out
-  /// instead of throwing; exports use this so they never fail.
-  String toPayload({String Function(String)? resolve, bool lenient = false}) {
+  /// instead of throwing; exports use this so they never fail. With
+  /// [hashOnly] and [persisted], the query text is replaced by its hash.
+  String toPayload({
+    String Function(String)? resolve,
+    bool lenient = false,
+    bool hashOnly = false,
+  }) {
     String r(String s) => resolve == null ? s : resolve(s);
     try {
       return graphqlPayload(
         query: r(query),
         variables: r(variables),
         operationName: r(operationName),
+        persisted: persisted,
+        omitQuery: hashOnly,
       );
     } on FormatException {
       if (!lenient) rethrow;
-      return graphqlPayload(query: r(query), operationName: r(operationName));
+      return graphqlPayload(
+        query: r(query),
+        operationName: r(operationName),
+        persisted: persisted,
+        omitQuery: hashOnly,
+      );
     }
   }
 
@@ -127,9 +146,10 @@ class GraphqlBody extends RequestBody {
   String toQueryString({
     String Function(String)? resolve,
     bool lenient = false,
+    bool hashOnly = false,
   }) {
     final payload = jsonDecode(
-      toPayload(resolve: resolve, lenient: lenient),
+      toPayload(resolve: resolve, lenient: lenient, hashOnly: hashOnly),
     ) as Map<String, Object?>;
     return [
       for (final e in payload.entries)
@@ -151,6 +171,7 @@ class GraphqlBody extends RequestBody {
       if (query.isNotEmpty) 'query': query,
       if (variables.isNotEmpty) 'variables': variables,
       if (operationName.isNotEmpty) 'operationName': operationName,
+      if (persisted) 'persisted': true,
     },
   };
 
@@ -160,6 +181,7 @@ class GraphqlBody extends RequestBody {
       query: m['query'] as String? ?? '',
       variables: m['variables'] as String? ?? '',
       operationName: m['operationName'] as String? ?? '',
+      persisted: m['persisted'] == true,
     );
   }
 }

@@ -257,6 +257,18 @@ void main() {
     await tester.pump(EditorNotifier.saveDelay);
   });
 
+  testWidgets('the persisted-query chip is stored on the body', (tester) async {
+    final t = setup();
+    await openGraphql(tester, t.c, t.id);
+    await tester.tap(find.byKey(const Key('gql-persisted')));
+    await tester.pump();
+    expect(
+      (t.c.read(editorProvider(t.id)).item.body as GraphqlBody).persisted,
+      isTrue,
+    );
+    await tester.pump(EditorNotifier.saveDelay);
+  });
+
   testWidgets('import SDL enables completion and the explorer', (tester) async {
     final t = setup();
     await openGraphql(tester, t.c, t.id);

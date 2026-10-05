@@ -2497,6 +2497,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bytes in hex, e.g. 0a ff 10'**
   String get rtHexHint;
+
+  /// No description provided for @gqlPersisted.
+  ///
+  /// In en, this message translates to:
+  /// **'Persisted query'**
+  String get gqlPersisted;
+
+  /// No description provided for @gqlPersistedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a SHA-256 hash first; the full query is sent only if the server does not know it'**
+  String get gqlPersistedHint;
 }
 
 class _AppLocalizationsDelegate
