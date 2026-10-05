@@ -2,6 +2,17 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.26.0
+
+- HTTP/2 (FR-HTTP-007): HTTPS requests offer `h2` and `http/1.1` through ALPN and use HTTP/2 when the server picks it. Request Settings has a new "HTTP version" choice: Auto, HTTP/1.1 only, HTTP/2 only. The response shows the protocol. Built on the `http2` package (ADR-008). The "Sent" view for HTTP/2 lists the pseudo-headers and lower-case fields as encoded, not raw bytes. Not done: HTTP/2 over plain `http://`, connection reuse, server push.
+- Timing breakdown (FR-RES-005): tap the time in the response status line to see DNS, TCP connect, TLS handshake, waiting (TTFB), download and other time. The engine already measured these; they were not shown before.
+- Response filter: JSON bodies take a JSONPath, XML bodies take an XPath. A bad expression shows the reason and keeps the body. Uses the existing JSONPath subset and the `xml` package's XPath.
+- Hex view of the response body (first 64 KB).
+- Import safety: a file or pasted text over 64 MB is refused with a clear message. New fuzz tests feed mutated Postman, OpenAPI, HAR and cURL input to the importers; they found no crashes.
+- CI now runs package tests on Linux, Windows and macOS, and app tests on Linux and Windows. The workflow has still never run.
+- New test server listener for HTTP/2 (`test_server/lib/h2_server.dart`).
+- Not done: moving the remaining UI strings to ARB (tests build the widgets without localisation delegates, so each screen needs its tests changed too), HTML preview, PDF preview, profiling very large workspaces. Checked with unit and widget tests on macOS, and by hand against `nghttp2.org` and `cloudflare.com` over HTTP/2. Windows and Linux are not verified.
+
 ## 0.25.2
 
 - Fix: in right-to-left languages, code and JSON in the response, code generator and similar views, and fields for URLs, headers and variables, were mirrored. They now always read left to right.

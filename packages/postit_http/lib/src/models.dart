@@ -25,8 +25,30 @@ class HttpRequestSpec {
   final HttpSettings settings;
 }
 
+/// Which HTTP version to offer (FR-HTTP-007). HTTP/2 needs `https://`.
+enum HttpVersionPref {
+  /// Offer both through ALPN and use what the server picks.
+  auto,
+  http1,
+  http2;
+
+  /// The stored form: `auto`, `1.1` or `2`.
+  String get code => switch (this) {
+    auto => 'auto',
+    http1 => '1.1',
+    http2 => '2',
+  };
+
+  static HttpVersionPref fromCode(String? code) => switch (code) {
+    '1.1' => http1,
+    '2' => http2,
+    _ => auto,
+  };
+}
+
 class HttpSettings {
   const HttpSettings({
+    this.httpVersion = HttpVersionPref.auto,
     this.timeout = const Duration(seconds: 30),
     this.followRedirects = true,
     this.maxRedirects = 10,
@@ -40,6 +62,7 @@ class HttpSettings {
     this.tls,
   });
 
+  final HttpVersionPref httpVersion;
   final Duration timeout;
   final bool followRedirects;
   final int maxRedirects;

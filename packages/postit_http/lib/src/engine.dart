@@ -7,6 +7,7 @@ import 'package:postit_core/postit_core.dart' show CookieJar;
 
 import 'byte_reader.dart';
 import 'errors.dart';
+import 'http2_exchange.dart';
 import 'models.dart';
 import 'proxy.dart';
 import 'tls_config.dart';
@@ -217,7 +218,7 @@ class HttpEngine {
       head.write('$k: $v\r\n');
     }
     head.write('\r\n');
-    return _Wire(head.toString(), body);
+    return _Wire(head.toString(), body, spec.method, target, headers);
   }
 
   static String _basic(ProxyConfig p) =>
@@ -248,10 +249,13 @@ class HttpEngine {
 }
 
 class _Wire {
-  _Wire(this.head, this.body);
+  _Wire(this.head, this.body, this.method, this.target, this.headers);
 
   final String head;
   final Uint8List body;
+  final String method;
+  final String target;
+  final List<Header> headers;
 }
 
 /// One TCP/TLS connection and the request/response on it.
@@ -292,6 +296,10 @@ class _Connection {
       throw ProtocolError('Unsupported URL: $u');
     }
     final port = u.hasPort ? u.port : (u.scheme == 'https' ? 443 : 80);
+    final wanted = spec.settings.httpVersion;
+    if (wanted == HttpVersionPref.http2 && u.scheme != 'https') {
+      throw const ProtocolError('HTTP/2 needs an https:// URL');
+    }
 
     final via = proxy;
     var mark = sw.elapsed;
@@ -317,6 +325,7 @@ class _Connection {
 
     mark = sw.elapsed;
     TlsInfo? tlsInfo;
+    String? negotiated;
     if (u.scheme == 'https') {
       final config = spec.settings.tls;
       SecurityContext? context;
@@ -331,12 +340,17 @@ class _Connection {
         socket,
         host: u.host,
         context: context,
-        supportedProtocols: const ['http/1.1'],
+        supportedProtocols: switch (wanted) {
+          HttpVersionPref.http1 => const ['http/1.1'],
+          HttpVersionPref.http2 => const ['h2'],
+          HttpVersionPref.auto => const ['h2', 'http/1.1'],
+        },
         onBadCertificate: spec.settings.verifyTls ? null : (_) => true,
       );
       socket = secure;
       _socket = socket;
       reader = null;
+      negotiated = secure.selectedProtocol;
       final cert = secure.peerCertificate;
       if (cert != null) {
         tlsInfo = TlsInfo(
@@ -351,6 +365,31 @@ class _Connection {
       }
     }
     final tls = sw.elapsed - mark;
+
+    if (negotiated == 'h2') {
+      final fields = h2Fields(wire.method, u, wire.target, wire.headers);
+      final h2Wire = _Wire(
+        h2HeadText(wire.method, fields),
+        wire.body,
+        wire.method,
+        wire.target,
+        wire.headers,
+      );
+      final r = await h2Exchange(socket, fields, wire.body, sw);
+      final parsed = _Parsed(
+        httpVersion: '2',
+        status: r.status,
+        reason: '',
+        headers: r.headers,
+        body: r.body,
+        ttfb: r.ttfb,
+        download: r.download,
+      );
+      return _record(parsed, h2Wire, dns, connect, tls, sw, tlsInfo);
+    }
+    if (wanted == HttpVersionPref.http2) {
+      throw const ProtocolError('The server does not support HTTP/2');
+    }
 
     socket.add(utf8.encode(wire.head));
     if (wire.body.isNotEmpty) socket.add(wire.body);

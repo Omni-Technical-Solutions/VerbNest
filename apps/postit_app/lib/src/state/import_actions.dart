@@ -17,6 +17,10 @@ class ImportOutcome {
   final String? nodeId;
 }
 
+/// Largest import accepted, in characters. Parsing builds the whole document
+/// in memory, so a huge file could exhaust it on a phone.
+const maxImportChars = 64 * 1024 * 1024;
+
 /// Imports pasted [text]: a cURL command, a Postman collection or a Postman
 /// environment (FR-IO-001/002). Throws [FormatException] with a message fit
 /// for the user when nothing is recognised.
@@ -25,6 +29,11 @@ ImportOutcome importText(
   String text, {
   String? intoCollection,
 }) {
+  if (text.length > maxImportChars) {
+    throw const FormatException(
+      'This file is too large to import (over 64 MB)',
+    );
+  }
   final trimmed = text.trim();
   if (trimmed.isEmpty) throw const FormatException('Nothing to import');
 

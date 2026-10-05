@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:postit_core/postit_core.dart'
+    show BodyKind, bodyKindOf, filterBody, hexDump;
 import 'package:postit_http/postit_http.dart';
 
 import '../state/cookies.dart';
@@ -38,6 +40,28 @@ String sizeLabel(HttpResponseRecord r) => r.wireBodySize == r.body.length
     ? formatBytes(r.body.length)
     : '${formatBytes(r.body.length)} (${formatBytes(r.wireBodySize)} on the wire)';
 
+/// The phases of one exchange in order. Phases that did not happen (plain
+/// HTTP has no TLS) are left out. "Other" is time outside the measured phases,
+/// such as writing the request.
+List<(String, Duration)> timingRows(Timings t) {
+  final measured = t.dns + t.connect + t.tls + t.ttfb + t.download;
+  final other = t.total - measured;
+  return [
+    ('DNS lookup', t.dns),
+    ('TCP connect', t.connect),
+    if (t.tls > Duration.zero) ('TLS handshake', t.tls),
+    ('Waiting (TTFB)', t.ttfb),
+    ('Download', t.download),
+    if (other > const Duration(milliseconds: 1)) ('Other', other),
+  ];
+}
+
+String formatDuration(Duration d) => d.inMicroseconds < 1000
+    ? '${d.inMicroseconds} µs'
+    : d.inMilliseconds < 1000
+    ? '${(d.inMicroseconds / 1000).toStringAsFixed(1)} ms'
+    : '${(d.inMilliseconds / 1000).toStringAsFixed(2)} s';
+
 Color statusColor(int status) {
   if (status >= 500) return Colors.red.shade700;
   if (status >= 400) return Colors.orange.shade800;
@@ -69,7 +93,9 @@ class ResponseView extends StatefulWidget {
 class _ResponseViewState extends State<ResponseView> {
   bool _pretty = true;
   bool _preview = false;
+  bool _hex = false;
   String _query = '';
+  String _filter = '';
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +142,12 @@ class _ResponseViewState extends State<ResponseView> {
                     color: statusColor(r.status),
                   ),
                 ),
-                Text('${r.timings.total.inMilliseconds} ms'),
+                InkWell(
+                  key: const Key('response-timing'),
+                  onTap: () => _showTiming(r),
+                  child: Text('${r.timings.total.inMilliseconds} ms'),
+                ),
+                Text('HTTP/${r.httpVersion}', key: const Key('response-http')),
                 Text(sizeLabel(r)),
                 if (r.tls != null)
                   InkWell(
@@ -169,6 +200,57 @@ class _ResponseViewState extends State<ResponseView> {
                 _tests(state),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTiming(HttpResponseRecord r) {
+    final rows = timingRows(r.timings);
+    final total = r.timings.total.inMicroseconds;
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Timing'),
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            key: const Key('timing-rows'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final (label, d) in rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: Text(label)),
+                          Text(formatDuration(d)),
+                        ],
+                      ),
+                      LinearProgressIndicator(
+                        value: total == 0 ? 0 : d.inMicroseconds / total,
+                      ),
+                    ],
+                  ),
+                ),
+              const Divider(),
+              Row(
+                children: [
+                  const Expanded(child: Text('Total')),
+                  Text(formatDuration(r.timings.total)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
           ),
         ],
       ),
@@ -305,10 +387,39 @@ class _ResponseViewState extends State<ResponseView> {
     return _text;
   }
 
+  HttpResponseRecord? _filteredFor;
+  String? _filteredBy;
+  String _filtered = '';
+  String? _filterError;
+
+  /// JSONPath/XPath over a large body is slow, so keep the result until the
+  /// response or the expression changes.
+  String _applyFilter(HttpResponseRecord r, BodyKind kind) {
+    if (!identical(_filteredFor, r) || _filteredBy != _filter) {
+      _filteredFor = r;
+      _filteredBy = _filter;
+      try {
+        _filtered = filterBody(r.bodyText, kind, _filter);
+        _filterError = null;
+      } on FormatException catch (e) {
+        _filtered = '';
+        _filterError = e.message;
+      }
+    }
+    return _filtered;
+  }
+
   Widget _body(HttpResponseRecord r) {
     final isImage = isImageResponse(r);
     final showImage = isImage && _preview;
-    final text = _bodyText(r);
+    final kind = bodyKindOf(r.header('content-type'));
+    final filtering =
+        !_hex && kind != BodyKind.other && _filter.trim().isNotEmpty;
+    final text = _hex
+        ? hexDump(r.body)
+        : filtering
+        ? _applyFilter(r, kind)
+        : _bodyText(r);
     final matches = countMatches(text, _query);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -323,6 +434,7 @@ class _ResponseViewState extends State<ResponseView> {
                 segments: [
                   const ButtonSegment(value: 'pretty', label: Text('Pretty')),
                   const ButtonSegment(value: 'raw', label: Text('Raw')),
+                  const ButtonSegment(value: 'hex', label: Text('Hex')),
                   if (isImage)
                     const ButtonSegment(
                       value: 'preview',
@@ -330,11 +442,16 @@ class _ResponseViewState extends State<ResponseView> {
                     ),
                 ],
                 selected: {
-                  showImage ? 'preview' : (_pretty ? 'pretty' : 'raw'),
+                  showImage
+                      ? 'preview'
+                      : _hex
+                      ? 'hex'
+                      : (_pretty ? 'pretty' : 'raw'),
                 },
                 onSelectionChanged: (s) => setState(() {
                   _preview = s.first == 'preview';
-                  if (!_preview) _pretty = s.first == 'pretty';
+                  _hex = s.first == 'hex';
+                  if (!_preview && !_hex) _pretty = s.first == 'pretty';
                 }),
               ),
               const SizedBox(width: 8),
@@ -365,6 +482,22 @@ class _ResponseViewState extends State<ResponseView> {
             ],
           ),
         ),
+        if (kind != BodyKind.other && !_hex && !showImage)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            child: TextField(
+              key: const Key('response-filter'),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: kind == BodyKind.json
+                    ? r'Filter with JSONPath, e.g. $.items[*].id'
+                    : 'Filter with XPath, e.g. //item/@id',
+                prefixIcon: const Icon(Icons.filter_alt_outlined, size: 18),
+                errorText: filtering ? _filterError : null,
+              ),
+              onChanged: (v) => setState(() => _filter = v),
+            ),
+          ),
         Expanded(
           child: showImage
               ? Center(
@@ -380,6 +513,7 @@ class _ResponseViewState extends State<ResponseView> {
                   fontSize: widget.codeFontSize,
                   json:
                       _pretty &&
+                      !_hex &&
                       (r
                               .header('content-type')
                               ?.toLowerCase()

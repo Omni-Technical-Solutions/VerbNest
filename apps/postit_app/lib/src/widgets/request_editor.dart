@@ -593,6 +593,25 @@ class _SettingsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
+        DropdownButtonFormField<String>(
+          key: const Key('http-version'),
+          initialValue: s.httpVersion ?? 'auto',
+          decoration: const InputDecoration(
+            labelText: 'HTTP version',
+            helperText: 'HTTP/2 needs an https:// URL',
+          ),
+          items: const [
+            DropdownMenuItem(
+              value: 'auto',
+              child: Text('Auto (HTTP/2 if offered)'),
+            ),
+            DropdownMenuItem(value: '1.1', child: Text('HTTP/1.1 only')),
+            DropdownMenuItem(value: '2', child: Text('HTTP/2 only')),
+          ],
+          onChanged: (v) =>
+              _set(s.copyWith(httpVersion: v == 'auto' ? null : v)),
+        ),
+        const SizedBox(height: 8),
         SyncedTextField(
           key: const Key('timeout'),
           label: 'Timeout (ms), empty = default',

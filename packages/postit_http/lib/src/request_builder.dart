@@ -317,6 +317,9 @@ class RequestBuilder {
   }
 
   HttpSettings _settings(RequestSettings s) => HttpSettings(
+    httpVersion: s.httpVersion == null
+        ? defaults.httpVersion
+        : HttpVersionPref.fromCode(s.httpVersion),
     timeout: s.timeoutMs == null
         ? defaults.timeout
         : Duration(milliseconds: s.timeoutMs!),

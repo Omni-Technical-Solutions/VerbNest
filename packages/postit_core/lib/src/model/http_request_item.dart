@@ -18,8 +18,11 @@ class RequestSettings {
     this.autoDecompress,
     this.sendCookies,
     this.useProxy,
+    this.httpVersion,
   });
 
+  /// `auto`, `1.1` or `2`; null uses the default.
+  final String? httpVersion;
   final int? timeoutMs;
   final bool? verifyTls;
   final bool? followRedirects;
@@ -45,7 +48,11 @@ class RequestSettings {
     Object? autoDecompress = _unset,
     Object? sendCookies = _unset,
     Object? useProxy = _unset,
+    Object? httpVersion = _unset,
   }) => RequestSettings(
+    httpVersion: identical(httpVersion, _unset)
+        ? this.httpVersion
+        : httpVersion as String?,
     timeoutMs: identical(timeoutMs, _unset)
         ? this.timeoutMs
         : timeoutMs as int?,
@@ -85,6 +92,7 @@ class RequestSettings {
     if (autoDecompress != null) 'autoDecompress': autoDecompress,
     if (sendCookies != null) 'sendCookies': sendCookies,
     if (useProxy != null) 'useProxy': useProxy,
+    if (httpVersion != null) 'httpVersion': httpVersion,
   };
 
   factory RequestSettings.fromJson(Map<String, Object?>? json) =>
@@ -98,6 +106,7 @@ class RequestSettings {
         autoDecompress: json?['autoDecompress'] as bool?,
         sendCookies: json?['sendCookies'] as bool?,
         useProxy: json?['useProxy'] as bool?,
+        httpVersion: json?['httpVersion'] as String?,
       );
 }
 

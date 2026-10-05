@@ -46,6 +46,11 @@ void main() {
     expect(() => importText(s, '  '), throwsFormatException);
   });
 
+  test('an oversized import is refused before parsing', () {
+    final big = 'a' * (maxImportChars + 1);
+    expect(() => importText(s, big), throwsFormatException);
+  });
+
   test('OpenAPI YAML, HAR and a Postman dump import', () {
     final r = importText(s, '''
 openapi: 3.0.0
