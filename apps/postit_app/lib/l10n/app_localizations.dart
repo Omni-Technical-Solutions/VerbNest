@@ -1585,6 +1585,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send client credentials in the body'**
   String get oauthBodyCreds;
+
+  /// No description provided for @gqlLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Schema loaded: {count} types'**
+  String gqlLoaded(int count);
+
+  /// No description provided for @gqlLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the schema: {message}'**
+  String gqlLoadFailed(String message);
+
+  /// No description provided for @gqlImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Schema imported: {count} types'**
+  String gqlImported(int count);
+
+  /// No description provided for @gqlReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read the schema: {message}'**
+  String gqlReadFailed(String message);
+
+  /// No description provided for @gqlFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch schema'**
+  String get gqlFetch;
+
+  /// No description provided for @gqlImportSdl.
+  ///
+  /// In en, this message translates to:
+  /// **'Import SDL…'**
+  String get gqlImportSdl;
+
+  /// No description provided for @gqlExplore.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore'**
+  String get gqlExplore;
+
+  /// No description provided for @gqlNoSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'No schema loaded'**
+  String get gqlNoSchema;
+
+  /// No description provided for @gqlTypeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} types'**
+  String gqlTypeCount(int count);
+
+  /// No description provided for @gqlOperation.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation'**
+  String get gqlOperation;
+
+  /// No description provided for @gqlQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'Query'**
+  String get gqlQuery;
+
+  /// No description provided for @gqlVariables.
+  ///
+  /// In en, this message translates to:
+  /// **'Variables (JSON)'**
+  String get gqlVariables;
+
+  /// No description provided for @gqlSdlTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import schema (SDL)'**
+  String get gqlSdlTitle;
+
+  /// No description provided for @gqlChooseFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a .graphql file…'**
+  String get gqlChooseFile;
+
+  /// No description provided for @gqlCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get gqlCancel;
+
+  /// No description provided for @gqlImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get gqlImport;
+
+  /// No description provided for @gqlSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'Schema'**
+  String get gqlSchema;
+
+  /// No description provided for @gqlFindType.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a type'**
+  String get gqlFindType;
+
+  /// No description provided for @gqlImplements.
+  ///
+  /// In en, this message translates to:
+  /// **'implements {interfaces}'**
+  String gqlImplements(String interfaces);
 }
 
 class _AppLocalizationsDelegate

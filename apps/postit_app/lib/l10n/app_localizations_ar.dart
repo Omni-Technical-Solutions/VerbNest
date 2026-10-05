@@ -827,4 +827,73 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get oauthBodyCreds => 'إرسال بيانات اعتماد العميل في المتن';
+
+  @override
+  String gqlLoaded(int count) {
+    return 'تم تحميل المخطط: $count أنواع';
+  }
+
+  @override
+  String gqlLoadFailed(String message) {
+    return 'تعذّر تحميل المخطط: $message';
+  }
+
+  @override
+  String gqlImported(int count) {
+    return 'تم استيراد المخطط: $count أنواع';
+  }
+
+  @override
+  String gqlReadFailed(String message) {
+    return 'تعذّرت قراءة المخطط: $message';
+  }
+
+  @override
+  String get gqlFetch => 'جلب المخطط';
+
+  @override
+  String get gqlImportSdl => 'استيراد SDL…';
+
+  @override
+  String get gqlExplore => 'استكشاف';
+
+  @override
+  String get gqlNoSchema => 'لم يتم تحميل مخطط';
+
+  @override
+  String gqlTypeCount(int count) {
+    return '$count أنواع';
+  }
+
+  @override
+  String get gqlOperation => 'العملية';
+
+  @override
+  String get gqlQuery => 'الاستعلام';
+
+  @override
+  String get gqlVariables => 'المتغيرات (JSON)';
+
+  @override
+  String get gqlSdlTitle => 'استيراد المخطط (SDL)';
+
+  @override
+  String get gqlChooseFile => 'اختر ملف .graphql…';
+
+  @override
+  String get gqlCancel => 'إلغاء';
+
+  @override
+  String get gqlImport => 'استيراد';
+
+  @override
+  String get gqlSchema => 'المخطط';
+
+  @override
+  String get gqlFindType => 'ابحث عن نوع';
+
+  @override
+  String gqlImplements(String interfaces) {
+    return 'ينفّذ $interfaces';
+  }
 }

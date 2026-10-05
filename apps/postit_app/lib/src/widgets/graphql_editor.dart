@@ -8,6 +8,7 @@ import '../state/editor_state.dart';
 import '../state/file_port.dart';
 import '../state/graphql_state.dart';
 import 'synced_field.dart';
+import '../../l10n/l10n.dart';
 
 /// Query and variables editors for a GraphQL body, with schema loading,
 /// completion and an explorer (FR-GQL-001/002).
@@ -39,19 +40,21 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
   }
 
   Future<void> _fetch() async {
+    final l10n = context.l10n;
     setState(() => _fetching = true);
     try {
       final schema = await widget.notifier.introspect();
       ref.read(graphqlSchemaProvider(widget.url).notifier).set(schema);
-      _say('Schema loaded: ${schema.userTypes.length} types');
+      _say(l10n.gqlLoaded(schema.userTypes.length));
     } on FormatException catch (e) {
-      _say('Could not load the schema: ${e.message}');
+      _say(l10n.gqlLoadFailed(e.message));
     } finally {
       if (mounted) setState(() => _fetching = false);
     }
   }
 
   Future<void> _importSdl() async {
+    final l10n = context.l10n;
     final text = await showDialog<String>(
       context: context,
       builder: (_) => const _SdlDialog(),
@@ -60,9 +63,9 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
     try {
       final schema = GraphqlSchema.fromSdl(text);
       ref.read(graphqlSchemaProvider(widget.url).notifier).set(schema);
-      _say('Schema imported: ${schema.userTypes.length} types');
+      _say(l10n.gqlImported(schema.userTypes.length));
     } on FormatException catch (e) {
-      _say('Could not read the schema: ${e.message}');
+      _say(l10n.gqlReadFailed(e.message));
     }
   }
 
@@ -89,7 +92,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.cloud_download_outlined, size: 18),
-                label: const Text('Fetch schema'),
+                label: Text(context.l10n.gqlFetch),
                 onPressed: _fetching || widget.url.trim().isEmpty
                     ? null
                     : _fetch,
@@ -97,7 +100,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
               TextButton(
                 key: const Key('gql-import-sdl'),
                 onPressed: _importSdl,
-                child: const Text('Import SDL…'),
+                child: Text(context.l10n.gqlImportSdl),
               ),
               TextButton(
                 key: const Key('gql-explore'),
@@ -107,13 +110,13 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
                         context: context,
                         builder: (_) => GraphqlExplorer(schema: schema),
                       ),
-                child: const Text('Explore'),
+                child: Text(context.l10n.gqlExplore),
               ),
               Text(
                 key: const Key('gql-status'),
                 schema == null
-                    ? 'No schema loaded'
-                    : '${schema.userTypes.length} types',
+                    ? context.l10n.gqlNoSchema
+                    : context.l10n.gqlTypeCount(schema.userTypes.length),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               if (ops.length > 1)
@@ -122,7 +125,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
                   value: ops.contains(body.operationName)
                       ? body.operationName
                       : null,
-                  hint: const Text('Operation'),
+                  hint: Text(context.l10n.gqlOperation),
                   items: [
                     for (final o in ops)
                       DropdownMenuItem(value: o, child: Text(o)),
@@ -139,7 +142,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
             child: SyncedTextField(
               key: const Key('gql-query'),
-              label: 'Query',
+              label: context.l10n.gqlQuery,
               value: body.query,
               variables: true,
               monospace: true,
@@ -157,7 +160,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             child: SyncedTextField(
               key: const Key('gql-variables'),
-              label: 'Variables (JSON)',
+              label: context.l10n.gqlVariables,
               value: body.variables,
               variables: true,
               monospace: true,
@@ -199,7 +202,7 @@ class _SdlDialogState extends ConsumerState<_SdlDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Import schema (SDL)'),
+      title: Text(context.l10n.gqlSdlTitle),
       content: SizedBox(
         width: 520,
         child: Column(
@@ -209,7 +212,7 @@ class _SdlDialogState extends ConsumerState<_SdlDialog> {
             TextButton.icon(
               key: const Key('gql-sdl-file'),
               icon: const Icon(Icons.upload_file, size: 18),
-              label: const Text('Choose a .graphql file…'),
+              label: Text(context.l10n.gqlChooseFile),
               onPressed: _pick,
             ),
             TextField(
@@ -229,12 +232,12 @@ class _SdlDialogState extends ConsumerState<_SdlDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.gqlCancel),
         ),
         FilledButton(
           key: const Key('gql-sdl-ok'),
           onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Import'),
+          child: Text(context.l10n.gqlImport),
         ),
       ],
     );
@@ -281,7 +284,7 @@ class _GraphqlExplorerState extends State<GraphqlExplorer> {
                     ),
                   Expanded(
                     child: Text(
-                      current?.name ?? 'Schema',
+                      current?.name ?? context.l10n.gqlSchema,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
@@ -330,10 +333,10 @@ class _GraphqlExplorerState extends State<GraphqlExplorer> {
           padding: const EdgeInsets.all(8),
           child: TextField(
             key: const Key('gql-type-filter'),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               isDense: true,
-              hintText: 'Find a type',
-              prefixIcon: Icon(Icons.search, size: 18),
+              hintText: context.l10n.gqlFindType,
+              prefixIcon: const Icon(Icons.search, size: 18),
             ),
             onChanged: (v) => setState(() => _filter = v),
           ),
@@ -382,7 +385,7 @@ class _GraphqlExplorerState extends State<GraphqlExplorer> {
         ),
         if (t.description.isNotEmpty) Text(t.description),
         if (t.interfaces.isNotEmpty)
-          Text('implements ${t.interfaces.join(', ')}'),
+          Text(context.l10n.gqlImplements(t.interfaces.join(', '))),
         const SizedBox(height: 8),
         for (final f in t.fields)
           ListTile(

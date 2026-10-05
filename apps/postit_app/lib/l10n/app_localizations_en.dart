@@ -826,4 +826,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get oauthBodyCreds => 'Send client credentials in the body';
+
+  @override
+  String gqlLoaded(int count) {
+    return 'Schema loaded: $count types';
+  }
+
+  @override
+  String gqlLoadFailed(String message) {
+    return 'Could not load the schema: $message';
+  }
+
+  @override
+  String gqlImported(int count) {
+    return 'Schema imported: $count types';
+  }
+
+  @override
+  String gqlReadFailed(String message) {
+    return 'Could not read the schema: $message';
+  }
+
+  @override
+  String get gqlFetch => 'Fetch schema';
+
+  @override
+  String get gqlImportSdl => 'Import SDL…';
+
+  @override
+  String get gqlExplore => 'Explore';
+
+  @override
+  String get gqlNoSchema => 'No schema loaded';
+
+  @override
+  String gqlTypeCount(int count) {
+    return '$count types';
+  }
+
+  @override
+  String get gqlOperation => 'Operation';
+
+  @override
+  String get gqlQuery => 'Query';
+
+  @override
+  String get gqlVariables => 'Variables (JSON)';
+
+  @override
+  String get gqlSdlTitle => 'Import schema (SDL)';
+
+  @override
+  String get gqlChooseFile => 'Choose a .graphql file…';
+
+  @override
+  String get gqlCancel => 'Cancel';
+
+  @override
+  String get gqlImport => 'Import';
+
+  @override
+  String get gqlSchema => 'Schema';
+
+  @override
+  String get gqlFindType => 'Find a type';
+
+  @override
+  String gqlImplements(String interfaces) {
+    return 'implements $interfaces';
+  }
 }

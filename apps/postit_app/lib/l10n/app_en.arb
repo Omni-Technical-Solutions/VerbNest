@@ -479,5 +479,66 @@
   "oauthPkce": "Use PKCE",
   "oauthBrowserHint": "Sending opens your browser to sign in. The redirect URL is http://127.0.0.1:<port>/callback with a random port; if your provider needs a fixed redirect URL, register the loopback address with a wildcard port.",
   "oauthTokens": "Tokens…",
-  "oauthBodyCreds": "Send client credentials in the body"
+  "oauthBodyCreds": "Send client credentials in the body",
+  "gqlLoaded": "Schema loaded: {count} types",
+  "@gqlLoaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gqlLoadFailed": "Could not load the schema: {message}",
+  "@gqlLoadFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "gqlImported": "Schema imported: {count} types",
+  "@gqlImported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gqlReadFailed": "Could not read the schema: {message}",
+  "@gqlReadFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "gqlFetch": "Fetch schema",
+  "gqlImportSdl": "Import SDL…",
+  "gqlExplore": "Explore",
+  "gqlNoSchema": "No schema loaded",
+  "gqlTypeCount": "{count} types",
+  "@gqlTypeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gqlOperation": "Operation",
+  "gqlQuery": "Query",
+  "gqlVariables": "Variables (JSON)",
+  "gqlSdlTitle": "Import schema (SDL)",
+  "gqlChooseFile": "Choose a .graphql file…",
+  "gqlCancel": "Cancel",
+  "gqlImport": "Import",
+  "gqlSchema": "Schema",
+  "gqlFindType": "Find a type",
+  "gqlImplements": "implements {interfaces}",
+  "@gqlImplements": {
+    "placeholders": {
+      "interfaces": {
+        "type": "String"
+      }
+    }
+  }
 }
