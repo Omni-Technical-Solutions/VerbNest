@@ -8,6 +8,7 @@ import '../state/file_port.dart';
 import '../state/network_state.dart';
 import 'cookie_manager.dart';
 import 'synced_field.dart';
+import '../../l10n/l10n.dart';
 
 /// Proxy, certificates and cookies (FR-HTTP-011..013), shown in Settings.
 class NetworkSettingsSection extends ConsumerWidget {
@@ -23,13 +24,15 @@ class NetworkSettingsSection extends ConsumerWidget {
       children: [
         Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-          child: Text('Network (this device)', style: theme),
+          child: Text(context.l10n.nsTitle, style: theme),
         ),
         ListTile(
           key: const Key('open-cookies'),
           leading: const Icon(Icons.cookie_outlined),
-          title: Text('Cookies (${ref.watch(cookiesProvider).length})'),
-          subtitle: const Text('Saved from responses and sent automatically'),
+          title: Text(
+            context.l10n.nsCookies(ref.watch(cookiesProvider).length),
+          ),
+          subtitle: Text(context.l10n.nsCookiesHint),
           onTap: () => showDialog<void>(
             context: context,
             builder: (_) => const CookieManagerDialog(),
@@ -37,7 +40,7 @@ class NetworkSettingsSection extends ConsumerWidget {
         ),
         SwitchListTile(
           key: const Key('proxy-enabled'),
-          title: const Text('Use a proxy'),
+          title: Text(context.l10n.nsUseProxy),
           value: c.proxyEnabled,
           onChanged: (v) => n.update((x) => x.copyWith(proxyEnabled: v)),
         ),
@@ -46,9 +49,15 @@ class NetworkSettingsSection extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: SegmentedButton<ProxyKind>(
               key: const Key('proxy-kind'),
-              segments: const [
-                ButtonSegment(value: ProxyKind.http, label: Text('HTTP')),
-                ButtonSegment(value: ProxyKind.socks5, label: Text('SOCKS5')),
+              segments: [
+                ButtonSegment(
+                  value: ProxyKind.http,
+                  label: Text(context.l10n.nsProxyHttp),
+                ),
+                ButtonSegment(
+                  value: ProxyKind.socks5,
+                  label: Text(context.l10n.nsProxySocks),
+                ),
               ],
               selected: {c.proxyKind},
               onSelectionChanged: (s) =>
@@ -57,11 +66,11 @@ class NetworkSettingsSection extends ConsumerWidget {
           ),
           _field(
             'proxy-host',
-            'Proxy host',
+            context.l10n.nsProxyHost,
             c.proxyHost,
             (v) => n.update((x) => x.copyWith(proxyHost: v.trim())),
           ),
-          _field('proxy-port', 'Proxy port', '${c.proxyPort}', (v) {
+          _field('proxy-port', context.l10n.nsProxyPort, '${c.proxyPort}', (v) {
             final p = int.tryParse(v.trim());
             if (p != null && p > 0 && p < 65536) {
               n.update((x) => x.copyWith(proxyPort: p));
@@ -69,38 +78,35 @@ class NetworkSettingsSection extends ConsumerWidget {
           }),
           _field(
             'proxy-user',
-            'Proxy user name (optional)',
+            context.l10n.nsProxyUser,
             c.proxyUser,
             (v) => n.update((x) => x.copyWith(proxyUser: v)),
           ),
           _field(
             'proxy-password',
-            'Proxy password (optional)',
+            context.l10n.nsProxyPassword,
             c.proxyPassword,
             (v) => n.update((x) => x.copyWith(proxyPassword: v)),
             obscure: true,
           ),
           _field(
             'proxy-bypass',
-            'No proxy for (comma separated hosts)',
+            context.l10n.nsProxyBypass,
             c.bypass,
             (v) => n.update((x) => x.copyWith(bypass: v)),
           ),
         ],
         SwitchListTile(
           key: const Key('system-proxy'),
-          title: const Text('Use HTTP_PROXY / HTTPS_PROXY / NO_PROXY'),
-          subtitle: const Text(
-            'Read from the environment when no proxy is set above. '
-            'The operating system proxy settings are not read.',
-          ),
+          title: Text(context.l10n.nsSystemProxy),
+          subtitle: Text(context.l10n.nsSystemProxyHint),
           value: c.useSystemProxy,
           onChanged: (v) => n.update((x) => x.copyWith(useSystemProxy: v)),
         ),
         const Divider(),
         Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-          child: Text('Certificates (this device)', style: theme),
+          child: Text(context.l10n.nsCertsTitle, style: theme),
         ),
         for (var i = 0; i < c.cas.length; i++)
           ListTile(
@@ -108,9 +114,9 @@ class NetworkSettingsSection extends ConsumerWidget {
             dense: true,
             leading: const Icon(Icons.verified_user_outlined),
             title: Text(c.cas[i].name),
-            subtitle: const Text('Trusted certificate authority'),
+            subtitle: Text(context.l10n.nsCaHint),
             trailing: IconButton(
-              tooltip: 'Remove',
+              tooltip: context.l10n.nsRemove,
               icon: const Icon(Icons.delete_outline),
               onPressed: () => n.removeCa(i),
             ),
@@ -121,9 +127,9 @@ class NetworkSettingsSection extends ConsumerWidget {
             dense: true,
             leading: const Icon(Icons.badge_outlined),
             title: Text(cert.name),
-            subtitle: Text('Client certificate for ${cert.pattern}'),
+            subtitle: Text(context.l10n.nsClientCertFor(cert.pattern)),
             trailing: IconButton(
-              tooltip: 'Remove',
+              tooltip: context.l10n.nsRemove,
               icon: const Icon(Icons.delete_outline),
               onPressed: () => n.removeClientCert(cert.id),
             ),
@@ -136,7 +142,7 @@ class NetworkSettingsSection extends ConsumerWidget {
               child: OutlinedButton.icon(
                 key: const Key('add-ca'),
                 icon: const Icon(Icons.add),
-                label: const Text('Add trusted CA'),
+                label: Text(context.l10n.nsAddCa),
                 onPressed: () async {
                   final err = await n.addCa(ref.read(filePortProvider));
                   if (err != null && context.mounted) {
@@ -149,7 +155,7 @@ class NetworkSettingsSection extends ConsumerWidget {
             OutlinedButton.icon(
               key: const Key('add-client-cert'),
               icon: const Icon(Icons.add),
-              label: const Text('Add client certificate'),
+              label: Text(context.l10n.nsAddClientCert),
               onPressed: () => showDialog<void>(
                 context: context,
                 builder: (_) => const _ClientCertDialog(),
@@ -216,7 +222,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
   Widget build(BuildContext context) {
     final needsKey = _isPem;
     return AlertDialog(
-      title: const Text('Client certificate'),
+      title: Text(context.l10n.nsClientCertTitle),
       content: SizedBox(
         width: 420,
         child: Column(
@@ -225,14 +231,12 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
             TextField(
               key: const Key('cert-host'),
               controller: _host,
-              decoration: const InputDecoration(
-                labelText: 'Hosts (api.example.com, *.example.com or *)',
-              ),
+              decoration: InputDecoration(labelText: context.l10n.nsCertHosts),
             ),
             ListTile(
               key: const Key('pick-cert'),
               contentPadding: EdgeInsets.zero,
-              title: Text(_cert?.name ?? 'Choose certificate (.pem, .p12)'),
+              title: Text(_cert?.name ?? context.l10n.nsChooseCert),
               trailing: const Icon(Icons.folder_open),
               onTap: () => _pick(false),
             ),
@@ -240,7 +244,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
               ListTile(
                 key: const Key('pick-key'),
                 contentPadding: EdgeInsets.zero,
-                title: Text(_key?.name ?? 'Choose private key (.pem)'),
+                title: Text(_key?.name ?? context.l10n.nsChooseKey),
                 trailing: const Icon(Icons.folder_open),
                 onTap: () => _pick(true),
               ),
@@ -248,9 +252,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
               key: const Key('cert-pass'),
               controller: _pass,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Passphrase (optional)',
-              ),
+              decoration: InputDecoration(labelText: context.l10n.nsPassphrase),
             ),
           ],
         ),
@@ -258,7 +260,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.nsCancel),
         ),
         FilledButton(
           key: const Key('save-cert'),
@@ -276,7 +278,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
                       );
                   Navigator.pop(context);
                 },
-          child: const Text('Add'),
+          child: Text(context.l10n.nsAdd),
         ),
       ],
     );

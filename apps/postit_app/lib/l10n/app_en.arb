@@ -391,5 +391,53 @@
   "scriptPostSet": "Post-response •",
   "scriptHelp": "pm.variables, pm.environment, pm.collectionVariables, pm.globals, pm.request, pm.response, pm.test, pm.expect and console are available. Scripts stop after 5 s; pm.sendRequest is not supported yet.",
   "langEnglish": "English",
-  "langArabic": "العربية"
+  "langArabic": "العربية",
+  "exFavRemove": "Remove from favourites",
+  "exFavAdd": "Add to favourites",
+  "exTitle": "Examples",
+  "exEmpty": "No examples yet",
+  "exSave": "Save current response",
+  "exClose": "Close",
+  "exSelect": "Select an example",
+  "exDelete": "Delete example",
+  "nsTitle": "Network (this device)",
+  "nsCookies": "Cookies ({count})",
+  "@nsCookies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nsCookiesHint": "Saved from responses and sent automatically",
+  "nsUseProxy": "Use a proxy",
+  "nsProxyHttp": "HTTP",
+  "nsProxySocks": "SOCKS5",
+  "nsProxyHost": "Proxy host",
+  "nsProxyPort": "Proxy port",
+  "nsProxyUser": "Proxy user name (optional)",
+  "nsProxyPassword": "Proxy password (optional)",
+  "nsProxyBypass": "No proxy for (comma separated hosts)",
+  "nsSystemProxy": "Use HTTP_PROXY / HTTPS_PROXY / NO_PROXY",
+  "nsSystemProxyHint": "Read from the environment when no proxy is set above. The operating system proxy settings are not read.",
+  "nsCertsTitle": "Certificates (this device)",
+  "nsCaHint": "Trusted certificate authority",
+  "nsRemove": "Remove",
+  "nsClientCertFor": "Client certificate for {pattern}",
+  "@nsClientCertFor": {
+    "placeholders": {
+      "pattern": {
+        "type": "String"
+      }
+    }
+  },
+  "nsAddCa": "Add trusted CA",
+  "nsAddClientCert": "Add client certificate",
+  "nsClientCertTitle": "Client certificate",
+  "nsCertHosts": "Hosts (api.example.com, *.example.com or *)",
+  "nsChooseCert": "Choose certificate (.pem, .p12)",
+  "nsChooseKey": "Choose private key (.pem)",
+  "nsPassphrase": "Passphrase (optional)",
+  "nsCancel": "Cancel",
+  "nsAdd": "Add"
 }

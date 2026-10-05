@@ -616,4 +616,111 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get langArabic => 'العربية';
+
+  @override
+  String get exFavRemove => 'إزالة من المفضلة';
+
+  @override
+  String get exFavAdd => 'إضافة إلى المفضلة';
+
+  @override
+  String get exTitle => 'الأمثلة';
+
+  @override
+  String get exEmpty => 'لا توجد أمثلة بعد';
+
+  @override
+  String get exSave => 'حفظ الاستجابة الحالية';
+
+  @override
+  String get exClose => 'إغلاق';
+
+  @override
+  String get exSelect => 'اختر مثالاً';
+
+  @override
+  String get exDelete => 'حذف المثال';
+
+  @override
+  String get nsTitle => 'الشبكة (هذا الجهاز)';
+
+  @override
+  String nsCookies(int count) {
+    return 'ملفات الارتباط ($count)';
+  }
+
+  @override
+  String get nsCookiesHint => 'تُحفظ من الاستجابات وتُرسل تلقائياً';
+
+  @override
+  String get nsUseProxy => 'استخدام وكيل';
+
+  @override
+  String get nsProxyHttp => 'HTTP';
+
+  @override
+  String get nsProxySocks => 'SOCKS5';
+
+  @override
+  String get nsProxyHost => 'مضيف الوكيل';
+
+  @override
+  String get nsProxyPort => 'منفذ الوكيل';
+
+  @override
+  String get nsProxyUser => 'اسم مستخدم الوكيل (اختياري)';
+
+  @override
+  String get nsProxyPassword => 'كلمة مرور الوكيل (اختياري)';
+
+  @override
+  String get nsProxyBypass => 'بلا وكيل لـ (مضيفون مفصولون بفواصل)';
+
+  @override
+  String get nsSystemProxy => 'استخدام HTTP_PROXY / HTTPS_PROXY / NO_PROXY';
+
+  @override
+  String get nsSystemProxyHint =>
+      'تُقرأ من البيئة عند عدم تعيين وكيل أعلاه. لا تُقرأ إعدادات وكيل نظام التشغيل.';
+
+  @override
+  String get nsCertsTitle => 'الشهادات (هذا الجهاز)';
+
+  @override
+  String get nsCaHint => 'جهة إصدار شهادات موثوقة';
+
+  @override
+  String get nsRemove => 'إزالة';
+
+  @override
+  String nsClientCertFor(String pattern) {
+    return 'شهادة العميل لـ $pattern';
+  }
+
+  @override
+  String get nsAddCa => 'إضافة جهة موثوقة';
+
+  @override
+  String get nsAddClientCert => 'إضافة شهادة عميل';
+
+  @override
+  String get nsClientCertTitle => 'شهادة العميل';
+
+  @override
+  String get nsCertHosts => 'المضيفون (api.example.com أو *.example.com أو *)';
+
+  @override
+  String get nsChooseCert => 'اختر الشهادة (.pem, .p12)';
+
+  @override
+  String get nsChooseKey => 'اختر المفتاح الخاص (.pem)';
+
+  @override
+  String get nsPassphrase => 'عبارة المرور (اختياري)';
+
+  @override
+  String get nsCancel => 'إلغاء';
+
+  @override
+  String get nsAdd => 'إضافة';
 }

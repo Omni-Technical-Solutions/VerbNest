@@ -1183,6 +1183,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'العربية'**
   String get langArabic;
+
+  /// No description provided for @exFavRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favourites'**
+  String get exFavRemove;
+
+  /// No description provided for @exFavAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favourites'**
+  String get exFavAdd;
+
+  /// No description provided for @exTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Examples'**
+  String get exTitle;
+
+  /// No description provided for @exEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No examples yet'**
+  String get exEmpty;
+
+  /// No description provided for @exSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save current response'**
+  String get exSave;
+
+  /// No description provided for @exClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get exClose;
+
+  /// No description provided for @exSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an example'**
+  String get exSelect;
+
+  /// No description provided for @exDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete example'**
+  String get exDelete;
+
+  /// No description provided for @nsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Network (this device)'**
+  String get nsTitle;
+
+  /// No description provided for @nsCookies.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies ({count})'**
+  String nsCookies(int count);
+
+  /// No description provided for @nsCookiesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved from responses and sent automatically'**
+  String get nsCookiesHint;
+
+  /// No description provided for @nsUseProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a proxy'**
+  String get nsUseProxy;
+
+  /// No description provided for @nsProxyHttp.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP'**
+  String get nsProxyHttp;
+
+  /// No description provided for @nsProxySocks.
+  ///
+  /// In en, this message translates to:
+  /// **'SOCKS5'**
+  String get nsProxySocks;
+
+  /// No description provided for @nsProxyHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy host'**
+  String get nsProxyHost;
+
+  /// No description provided for @nsProxyPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy port'**
+  String get nsProxyPort;
+
+  /// No description provided for @nsProxyUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy user name (optional)'**
+  String get nsProxyUser;
+
+  /// No description provided for @nsProxyPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy password (optional)'**
+  String get nsProxyPassword;
+
+  /// No description provided for @nsProxyBypass.
+  ///
+  /// In en, this message translates to:
+  /// **'No proxy for (comma separated hosts)'**
+  String get nsProxyBypass;
+
+  /// No description provided for @nsSystemProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Use HTTP_PROXY / HTTPS_PROXY / NO_PROXY'**
+  String get nsSystemProxy;
+
+  /// No description provided for @nsSystemProxyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Read from the environment when no proxy is set above. The operating system proxy settings are not read.'**
+  String get nsSystemProxyHint;
+
+  /// No description provided for @nsCertsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Certificates (this device)'**
+  String get nsCertsTitle;
+
+  /// No description provided for @nsCaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted certificate authority'**
+  String get nsCaHint;
+
+  /// No description provided for @nsRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get nsRemove;
+
+  /// No description provided for @nsClientCertFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificate for {pattern}'**
+  String nsClientCertFor(String pattern);
+
+  /// No description provided for @nsAddCa.
+  ///
+  /// In en, this message translates to:
+  /// **'Add trusted CA'**
+  String get nsAddCa;
+
+  /// No description provided for @nsAddClientCert.
+  ///
+  /// In en, this message translates to:
+  /// **'Add client certificate'**
+  String get nsAddClientCert;
+
+  /// No description provided for @nsClientCertTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificate'**
+  String get nsClientCertTitle;
+
+  /// No description provided for @nsCertHosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Hosts (api.example.com, *.example.com or *)'**
+  String get nsCertHosts;
+
+  /// No description provided for @nsChooseCert.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose certificate (.pem, .p12)'**
+  String get nsChooseCert;
+
+  /// No description provided for @nsChooseKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose private key (.pem)'**
+  String get nsChooseKey;
+
+  /// No description provided for @nsPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase (optional)'**
+  String get nsPassphrase;
+
+  /// No description provided for @nsCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get nsCancel;
+
+  /// No description provided for @nsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get nsAdd;
 }
 
 class _AppLocalizationsDelegate

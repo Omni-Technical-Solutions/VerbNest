@@ -1,6 +1,6 @@
 name: postit_script
 description: Script contract, pm prelude and phase runner for PostIt, shared by the app and the CLI. No Flutter code.
-version: 0.32.4
+version: 0.32.5
 publish_to: none
 resolution: workspace
 

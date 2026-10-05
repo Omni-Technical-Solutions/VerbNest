@@ -614,4 +614,111 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get langArabic => 'العربية';
+
+  @override
+  String get exFavRemove => 'Remove from favourites';
+
+  @override
+  String get exFavAdd => 'Add to favourites';
+
+  @override
+  String get exTitle => 'Examples';
+
+  @override
+  String get exEmpty => 'No examples yet';
+
+  @override
+  String get exSave => 'Save current response';
+
+  @override
+  String get exClose => 'Close';
+
+  @override
+  String get exSelect => 'Select an example';
+
+  @override
+  String get exDelete => 'Delete example';
+
+  @override
+  String get nsTitle => 'Network (this device)';
+
+  @override
+  String nsCookies(int count) {
+    return 'Cookies ($count)';
+  }
+
+  @override
+  String get nsCookiesHint => 'Saved from responses and sent automatically';
+
+  @override
+  String get nsUseProxy => 'Use a proxy';
+
+  @override
+  String get nsProxyHttp => 'HTTP';
+
+  @override
+  String get nsProxySocks => 'SOCKS5';
+
+  @override
+  String get nsProxyHost => 'Proxy host';
+
+  @override
+  String get nsProxyPort => 'Proxy port';
+
+  @override
+  String get nsProxyUser => 'Proxy user name (optional)';
+
+  @override
+  String get nsProxyPassword => 'Proxy password (optional)';
+
+  @override
+  String get nsProxyBypass => 'No proxy for (comma separated hosts)';
+
+  @override
+  String get nsSystemProxy => 'Use HTTP_PROXY / HTTPS_PROXY / NO_PROXY';
+
+  @override
+  String get nsSystemProxyHint =>
+      'Read from the environment when no proxy is set above. The operating system proxy settings are not read.';
+
+  @override
+  String get nsCertsTitle => 'Certificates (this device)';
+
+  @override
+  String get nsCaHint => 'Trusted certificate authority';
+
+  @override
+  String get nsRemove => 'Remove';
+
+  @override
+  String nsClientCertFor(String pattern) {
+    return 'Client certificate for $pattern';
+  }
+
+  @override
+  String get nsAddCa => 'Add trusted CA';
+
+  @override
+  String get nsAddClientCert => 'Add client certificate';
+
+  @override
+  String get nsClientCertTitle => 'Client certificate';
+
+  @override
+  String get nsCertHosts => 'Hosts (api.example.com, *.example.com or *)';
+
+  @override
+  String get nsChooseCert => 'Choose certificate (.pem, .p12)';
+
+  @override
+  String get nsChooseKey => 'Choose private key (.pem)';
+
+  @override
+  String get nsPassphrase => 'Passphrase (optional)';
+
+  @override
+  String get nsCancel => 'Cancel';
+
+  @override
+  String get nsAdd => 'Add';
 }

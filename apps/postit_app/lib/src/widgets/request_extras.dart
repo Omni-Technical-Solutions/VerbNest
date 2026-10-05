@@ -9,6 +9,7 @@ import 'package:postit_storage/postit_storage.dart';
 import '../state/editor_state.dart';
 import '../state/session.dart';
 import 'response_view.dart';
+import '../../l10n/l10n.dart';
 
 /// Star toggle for a request (FR-COL-004).
 class FavouriteButton extends ConsumerStatefulWidget {
@@ -27,7 +28,7 @@ class _FavouriteButtonState extends ConsumerState<FavouriteButton> {
     final fav = repo.isFavourite(widget.requestId);
     return IconButton(
       key: const Key('favourite'),
-      tooltip: fav ? 'Remove from favourites' : 'Add to favourites',
+      tooltip: fav ? context.l10n.exFavRemove : context.l10n.exFavAdd,
       icon: Icon(fav ? Icons.star : Icons.star_border),
       onPressed: () =>
           setState(() => repo.setFavourite(widget.requestId, !fav)),
@@ -72,7 +73,7 @@ class _ExamplesDialogState extends ConsumerState<ExamplesDialog> {
     final current = examples.where((e) => e.id == _selected).firstOrNull;
     final response = state.response;
     return AlertDialog(
-      title: const Text('Examples'),
+      title: Text(context.l10n.exTitle),
       content: SizedBox(
         width: 640,
         height: 420,
@@ -81,9 +82,9 @@ class _ExamplesDialogState extends ConsumerState<ExamplesDialog> {
             SizedBox(
               width: 200,
               child: examples.isEmpty
-                  ? const Center(
-                      key: Key('no-examples'),
-                      child: Text('No examples yet'),
+                  ? Center(
+                      key: const Key('no-examples'),
+                      child: Text(context.l10n.exEmpty),
                     )
                   : ListView(
                       children: [
@@ -122,11 +123,11 @@ class _ExamplesDialogState extends ConsumerState<ExamplesDialog> {
                   );
                   setState(() => _selected = id);
                 },
-          child: const Text('Save current response'),
+          child: Text(context.l10n.exSave),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(context.l10n.exClose),
         ),
       ],
     );
@@ -134,7 +135,7 @@ class _ExamplesDialogState extends ConsumerState<ExamplesDialog> {
 
   Widget _detail(ExampleInfo? e, WorkspaceRepository repo) {
     if (e == null) {
-      return const Center(child: Text('Select an example'));
+      return Center(child: Text(context.l10n.exSelect));
     }
     final headers = [
       for (final h in (e.data['headers'] as List? ?? const []))
@@ -157,7 +158,7 @@ class _ExamplesDialogState extends ConsumerState<ExamplesDialog> {
             ),
             IconButton(
               key: const Key('delete-example'),
-              tooltip: 'Delete example',
+              tooltip: context.l10n.exDelete,
               icon: const Icon(Icons.delete_outline),
               onPressed: () => setState(() {
                 repo.deleteExample(e.id);
