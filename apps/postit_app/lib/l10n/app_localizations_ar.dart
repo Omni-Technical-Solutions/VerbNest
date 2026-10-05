@@ -1318,4 +1318,8 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get reDecompress => 'فك ضغط الاستجابات تلقائياً';
+
+  @override
+  String get rvHtmlTooLarge =>
+      'هذه الصفحة كبيرة جداً للمعاينة. استخدم الخام أو احفظها.';
 }

@@ -34,7 +34,7 @@ Needs the CI to run, which needs a remote.
 - 2b. Add `flutter build windows` and `flutter build linux` to CI.
 - 2c. Record results in `docs/release` and the roadmap.
 
-## Phase 3: HTML and PDF preview (minor)
+## Phase 3: HTML and PDF preview (minor) - HTML done in v0.33.0, PDF open, see ADR-011
 
 - 3a. ADR: HTML preview through `webview_flutter` or `flutter_inappwebview`
   with JavaScript off, no network (CSP `default-src 'none'`), and no

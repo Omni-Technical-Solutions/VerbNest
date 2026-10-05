@@ -1317,4 +1317,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reDecompress => 'Decompress responses automatically';
+
+  @override
+  String get rvHtmlTooLarge =>
+      'This page is too large to preview. Use Raw or Save.';
 }

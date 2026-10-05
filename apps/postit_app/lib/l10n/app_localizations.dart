@@ -2473,6 +2473,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Decompress responses automatically'**
   String get reDecompress;
+
+  /// No description provided for @rvHtmlTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This page is too large to preview. Use Raw or Save.'**
+  String get rvHtmlTooLarge;
 }
 
 class _AppLocalizationsDelegate

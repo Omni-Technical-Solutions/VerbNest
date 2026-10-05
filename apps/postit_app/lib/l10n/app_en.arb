@@ -793,5 +793,6 @@
   "reCookies": "Send and save cookies",
   "reUseProxy": "Use the proxy",
   "reUseProxyHint": "Turn off to bypass the proxy for this request",
-  "reDecompress": "Decompress responses automatically"
+  "reDecompress": "Decompress responses automatically",
+  "rvHtmlTooLarge": "This page is too large to preview. Use Raw or Save."
 }
