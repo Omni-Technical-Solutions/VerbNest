@@ -132,6 +132,21 @@ class _CodeViewState extends State<CodeView> {
     final gutter = '${_lines.length}'.length * 8.0 + 36;
     final contentWidth = (_maxLen.clamp(1, 4000)) * widget.fontSize * 0.61 + 24;
 
+    // Code, JSON and URLs read left to right even in a right-to-left app.
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: _layout(scheme, base, rowHeight, visible, gutter, contentWidth),
+    );
+  }
+
+  Widget _layout(
+    ColorScheme scheme,
+    TextStyle base,
+    double rowHeight,
+    List<int> visible,
+    double gutter,
+    double contentWidth,
+  ) {
     return LayoutBuilder(
       builder: (context, c) {
         final width = contentWidth + gutter > c.maxWidth

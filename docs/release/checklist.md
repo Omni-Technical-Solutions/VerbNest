@@ -35,3 +35,7 @@ What is ready in the repository and what only the account owner can do. Nothing 
 5. Flathub: pull request to `flathub/flathub`; replace the placeholder source URL and commit; a Linux machine to build and test the Flatpak.
 6. Screenshots, public support URL, hosted privacy policy.
 7. Windows and Linux builds have only been compiled in CI, never run by hand.
+
+## Screenshots
+- `scripts/screenshots_macos.sh` writes 18 PNGs (2880x1800) to `docs/release/screenshots/macos`. Listing copy: `docs/release/app-store-post.md`.
+- Arabic screenshot omitted: the headless test has no Arabic fallback font.

@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.25.2
+
+- Fix: in right-to-left languages, code and JSON in the response, code generator and similar views, and fields for URLs, headers and variables, were mirrored. They now always read left to right.
+- Added `scripts/screenshots_macos.sh`, which renders 18 App Store screenshots (2880x1800) from sample data, and the listing copy in `docs/release/app-store-post.md`.
+
 ## 0.25.1
 
 - Security: the OAuth 2.0 sign-in only opens http and https links, so an imported collection cannot make PostIt open a `file:` or app-link URL.

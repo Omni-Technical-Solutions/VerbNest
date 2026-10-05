@@ -289,6 +289,9 @@ class _SyncedTextFieldState extends State<SyncedTextField> {
       maxLines: widget.expands ? null : widget.maxLines,
       expands: widget.expands,
       textAlignVertical: widget.expands ? TextAlignVertical.top : null,
+      textDirection: widget.monospace || widget.variables
+          ? TextDirection.ltr
+          : null,
       style: widget.monospace
           ? TextStyle(fontFamily: 'monospace', fontSize: widget.fontSize)
           : null,
