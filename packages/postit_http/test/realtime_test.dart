@@ -114,4 +114,115 @@ void main() {
       );
     });
   });
+
+  group('proxy', () {
+    test('SSE goes through a manual HTTP proxy', () async {
+      final proxy = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => proxy.close(force: true));
+      String? seen;
+      proxy.listen((req) async {
+        seen = req.headers.host;
+        req.response.headers.contentType = ContentType('text', 'event-stream');
+        req.response.write('data: via proxy\n\n');
+        await req.response.close();
+      });
+      final c = await connectSse(
+        Uri.parse('http://upstream.invalid/stream'),
+        settings: HttpSettings(
+          proxy: ProxyConfig(
+            kind: ProxyKind.http,
+            host: '127.0.0.1',
+            port: proxy.port,
+          ),
+        ),
+      );
+      final log = await c.messages.toList();
+      expect(log.any((m) => m.text == 'via proxy'), isTrue);
+      expect(seen, 'upstream.invalid');
+    });
+
+    test('a SOCKS5 proxy is refused with a clear error', () async {
+      expect(
+        connectSse(
+          Uri.parse('http://upstream.invalid/'),
+          settings: HttpSettings(
+            proxy: ProxyConfig(
+              kind: ProxyKind.socks5,
+              host: '127.0.0.1',
+              port: 1,
+            ),
+          ),
+        ),
+        throwsA(isA<HttpException>()),
+      );
+    });
+  });
+
+  group('GraphQL subscription', () {
+    test('acks, subscribes and streams results', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      String? protocol;
+      Object? subscribed;
+      server.listen((req) async {
+        protocol = req.headers.value('sec-websocket-protocol');
+        final ws = await WebSocketTransformer.upgrade(
+          req,
+          protocolSelector: (p) => p.first,
+        );
+        ws.listen((d) {
+          final m = jsonDecode(d as String) as Map;
+          if (m['type'] == 'connection_init') {
+            ws.add(jsonEncode({'type': 'connection_ack'}));
+          } else if (m['type'] == 'subscribe') {
+            subscribed = m['payload'];
+            for (var i = 1; i <= 2; i++) {
+              ws.add(
+                jsonEncode({
+                  'id': '1',
+                  'type': 'next',
+                  'payload': {
+                    'data': {'tick': i},
+                  },
+                }),
+              );
+            }
+            ws.add(jsonEncode({'id': '1', 'type': 'complete'}));
+          }
+        });
+      });
+      final c = await connectGraphqlSubscription(
+        Uri.parse('ws://127.0.0.1:${server.port}/graphql'),
+        {'query': 'subscription { tick }'},
+      );
+      final log = await c.messages.toList();
+      expect(protocol, 'graphql-transport-ws');
+      expect(subscribed, {'query': 'subscription { tick }'});
+      expect(log.where((m) => m.event == 'next').map((m) => m.text), [
+        '{"data":{"tick":1}}',
+        '{"data":{"tick":2}}',
+      ]);
+      expect(log.any((m) => m.text == 'Subscription complete'), isTrue);
+    });
+
+    test('fails when the server never acknowledges', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((req) async {
+        final ws = await WebSocketTransformer.upgrade(
+          req,
+          protocolSelector: (p) => p.first,
+        );
+        ws.listen((_) {});
+      });
+      expect(
+        connectGraphqlSubscription(
+          Uri.parse('ws://127.0.0.1:${server.port}/'),
+          {'query': 'subscription { x }'},
+          settings: const HttpSettings(timeout: Duration(milliseconds: 300)),
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+  });
 }

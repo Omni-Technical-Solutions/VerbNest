@@ -249,22 +249,37 @@ class RequestEditor extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 8),
-          PopupMenuButton<bool>(
+          PopupMenuButton<LiveKind>(
             key: const Key('live'),
-            tooltip: 'Open WebSocket or SSE stream',
+            tooltip: 'Open WebSocket, SSE or GraphQL subscription',
             icon: const Icon(Icons.sync_alt),
-            onSelected: (sse) => showDialog<void>(
+            onSelected: (kind) => showDialog<void>(
               context: context,
               barrierDismissible: false,
               builder: (_) => RealtimeDialog(
-                sse: sse,
-                title: sse ? 'Server-sent events' : 'WebSocket',
-                connect: () => notifier.connectRealtime(sse: sse),
+                sse: kind != LiveKind.websocket,
+                title: switch (kind) {
+                  LiveKind.websocket => 'WebSocket',
+                  LiveKind.sse => 'Server-sent events',
+                  LiveKind.graphqlSubscription => 'GraphQL subscription',
+                },
+                connect: () => notifier.connectRealtime(kind),
               ),
             ),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: false, child: Text('WebSocket')),
-              PopupMenuItem(value: true, child: Text('SSE stream')),
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: LiveKind.websocket,
+                child: Text('WebSocket'),
+              ),
+              const PopupMenuItem(
+                value: LiveKind.sse,
+                child: Text('SSE stream'),
+              ),
+              if (item.body is GraphqlBody)
+                const PopupMenuItem(
+                  value: LiveKind.graphqlSubscription,
+                  child: Text('GraphQL subscription'),
+                ),
             ],
           ),
           state.sending

@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.31.0
+
+- GraphQL subscriptions: with a graphql body, the live button offers "GraphQL subscription". It connects over the `graphql-transport-ws` protocol, waits for the server's acknowledgement, subscribes with the request's query and variables, and shows each result. Close sends `complete`. The older `subscriptions-transport-ws` protocol is not supported.
+- WebSocket, SSE and subscriptions now follow the manual HTTP proxy and the system proxy setting (with Basic credentials). SOCKS5 proxies are refused with a clear message; `dart:io` cannot tunnel them for these connections.
+- Collection runs skip `ws://` and `wss://` requests with a note instead of failing, in both the app and the CLI.
+- Mock server in the app: the runner page has a "Mock server" button that starts and stops the mock on a chosen port and lists its routes.
+- Scale check: a test builds 5,000 requests and times listing and search. On this Mac: build 1.2 s, list 20 ms, index 120 ms, search 3 ms. No change needed.
+- Still not done: moving the remaining UI strings to ARB, HTML and PDF preview, scripts in the CLI, a first CI run, Windows and Linux checks.
+
 ## 0.30.0
 
 - Mock server: `postit mock <workspace.postit>` serves the saved examples (FR-COL-005) of a collection or folder over HTTP until Ctrl+C. Each request with examples answers on its method and URL path (variables resolved from the workspace, `--env` and `--var`; `:id` and `{{var}}` segments match anything). The first example answers; an `X-PostIt-Example: <name>` header picks another. Other requests get a 404 listing the routes. Options: `--collection`, `--env`, `--var`, `--port` (default 3000).

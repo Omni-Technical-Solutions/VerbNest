@@ -19,6 +19,8 @@ import 'session.dart';
 import 'settings_state.dart';
 import 'variables.dart';
 
+enum LiveKind { websocket, sse, graphqlSubscription }
+
 /// Replaceable in tests.
 final engineProvider = Provider<HttpEngine>((ref) {
   ref.read(cookiesProvider);
@@ -333,10 +335,12 @@ class EditorNotifier extends Notifier<EditorState> {
     }
   }
 
-  /// Opens a WebSocket (or SSE stream) to this request's URL with its
+  /// Opens a WebSocket, SSE stream or GraphQL subscription to this request's
+  /// URL with its
   /// headers, auth and the active environment, running no scripts.
   /// Throws [FormatException] with a message fit for the user.
-  Future<RealtimeConnection> connectRealtime({required bool sse}) async {
+  Future<RealtimeConnection> connectRealtime(LiveKind kind) async {
+    final sse = kind == LiveKind.sse;
     flush();
     final session = ref.read(sessionProvider);
     final repo = session.repo;
@@ -356,11 +360,28 @@ class EditorNotifier extends Notifier<EditorState> {
             readFile: (ref) async =>
                 repo.attachmentBytes(attachmentIdOf(ref) ?? ref),
           ).build(
-            state.item.copyWith(method: sse ? state.item.method : 'GET'),
+            state.item.copyWith(
+              method: kind == LiveKind.websocket ? 'GET' : state.item.method,
+            ),
             resolver,
             auth: auth,
           );
       final spec = prepared.spec;
+      if (kind == LiveKind.graphqlSubscription) {
+        if (state.item.body is! GraphqlBody) {
+          throw const FormatException('Switch the body to graphql first');
+        }
+        return await connectGraphqlSubscription(
+          spec.url,
+          (jsonDecode(utf8.decode(spec.body ?? const [])) as Map)
+              .cast<String, Object?>(),
+          headers: [
+            for (final h in spec.headers)
+              if (h.$1.toLowerCase() != 'content-type') h,
+          ],
+          settings: spec.settings,
+        );
+      }
       return sse
           ? await connectSse(
               spec.url,

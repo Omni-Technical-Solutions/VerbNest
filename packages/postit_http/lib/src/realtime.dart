@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'models.dart';
+import 'proxy.dart';
 
 enum RealtimeDirection { sent, received, system }
 
@@ -96,7 +97,11 @@ class SseParser {
   }
 }
 
-HttpClient _client(HttpSettings s, Uri url) {
+HttpClient _client(
+  HttpSettings s,
+  Uri url, [
+  Map<String, String>? environment,
+]) {
   final client = HttpClient(
     context: s.tls == null || s.tls!.isEmpty
         ? null
@@ -104,6 +109,33 @@ HttpClient _client(HttpSettings s, Uri url) {
   );
   if (!s.verifyTls) client.badCertificateCallback = (_, _, _) => true;
   client.connectionTimeout = s.timeout;
+  final manual = s.proxy;
+  final proxy = manual != null
+      ? (manual.bypasses(url.host) ? null : manual)
+      : (s.useSystemProxy
+            ? ProxyConfig.fromEnvironment(
+                url,
+                environment ?? Platform.environment,
+              )
+            : null);
+  if (proxy != null) {
+    if (proxy.kind != ProxyKind.http) {
+      client.close(force: true);
+      throw HttpException(
+        'SOCKS5 proxies are not supported for WebSocket and SSE',
+        uri: url,
+      );
+    }
+    client.findProxy = (_) => 'PROXY ${proxy.host}:${proxy.port}';
+    if (proxy.hasAuth) {
+      client.addProxyCredentials(
+        proxy.host,
+        proxy.port,
+        '',
+        HttpClientBasicCredentials(proxy.username, proxy.password),
+      );
+    }
+  }
   return client;
 }
 
@@ -291,5 +323,123 @@ class _SseConnection implements RealtimeConnection {
   Future<void> close() async {
     await _sub.cancel();
     _finish();
+  }
+}
+
+/// Subscribes over the `graphql-transport-ws` protocol. [payload] is the
+/// GraphQL request body (`query`, `variables`, `operationName`). Each `next`
+/// message becomes a received message holding the result JSON; `error` and
+/// `complete` end the stream with a system message.
+Future<RealtimeConnection> connectGraphqlSubscription(
+  Uri url,
+  Map<String, Object?> payload, {
+  List<Header> headers = const [],
+  Map<String, Object?> connectionParams = const {},
+  HttpSettings settings = const HttpSettings(),
+}) async {
+  final inner = await connectWebSocket(
+    url,
+    headers: headers,
+    protocols: const ['graphql-transport-ws'],
+    settings: settings,
+  );
+  final ack = Completer<void>();
+  final out = StreamController<RealtimeMessage>.broadcast();
+  final done = Completer<void>();
+
+  void system(String text) =>
+      out.add(RealtimeMessage(direction: RealtimeDirection.system, data: text));
+
+  inner.messages.listen((m) {
+    if (m.direction == RealtimeDirection.system) {
+      system(m.text);
+      return;
+    }
+    if (m.direction != RealtimeDirection.received || m.binary) return;
+    final Object? msg;
+    try {
+      msg = jsonDecode(m.text);
+    } on FormatException {
+      system('Unreadable message: ${m.text}');
+      return;
+    }
+    if (msg is! Map) return;
+    switch (msg['type']) {
+      case 'connection_ack':
+        if (!ack.isCompleted) ack.complete();
+      case 'next':
+        out.add(
+          RealtimeMessage(
+            direction: RealtimeDirection.received,
+            data: jsonEncode(msg['payload']),
+            event: 'next',
+          ),
+        );
+      case 'error':
+        system('Subscription error: ${jsonEncode(msg['payload'])}');
+        unawaited(inner.close());
+      case 'complete':
+        system('Subscription complete');
+        unawaited(inner.close());
+      case 'ping':
+        unawaited(inner.send(jsonEncode({'type': 'pong'})));
+    }
+  });
+  unawaited(
+    inner.done.whenComplete(() {
+      if (!ack.isCompleted) {
+        ack.completeError(
+          const WebSocketException('Closed before connection_ack'),
+        );
+      }
+      out.close();
+      done.complete();
+    }),
+  );
+
+  await inner.send(
+    jsonEncode({
+      'type': 'connection_init',
+      if (connectionParams.isNotEmpty) 'payload': connectionParams,
+    }),
+  );
+  try {
+    await ack.future.timeout(settings.timeout);
+  } catch (_) {
+    await inner.close();
+    rethrow;
+  }
+  await inner.send(
+    jsonEncode({'id': '1', 'type': 'subscribe', 'payload': payload}),
+  );
+  return _GraphqlWs(inner, out, done);
+}
+
+class _GraphqlWs implements RealtimeConnection {
+  _GraphqlWs(this._inner, this._out, this._done);
+
+  final RealtimeConnection _inner;
+  final StreamController<RealtimeMessage> _out;
+  final Completer<void> _done;
+
+  @override
+  Stream<RealtimeMessage> get messages => _out.stream;
+
+  @override
+  Future<void> get done => _done.future;
+
+  @override
+  bool get canSend => false;
+
+  @override
+  Future<void> send(Object data) =>
+      throw UnsupportedError('Subscriptions are receive-only');
+
+  @override
+  Future<void> close() async {
+    if (_inner.canSend) {
+      await _inner.send(jsonEncode({'id': '1', 'type': 'complete'}));
+    }
+    await _inner.close();
   }
 }

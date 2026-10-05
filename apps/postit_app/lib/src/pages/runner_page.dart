@@ -8,6 +8,7 @@ import 'package:postit_core/postit_core.dart';
 import '../state/file_port.dart';
 import '../state/runner.dart';
 import '../state/session.dart';
+import '../widgets/mock_server_dialog.dart';
 
 /// Runs the requests of a collection or folder in order (FR-RUN-001) and
 /// shows the results as they arrive (FR-RUN-002).
@@ -120,7 +121,22 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
   Widget build(BuildContext context) {
     final run = ref.watch(runnerProvider);
     return Scaffold(
-      appBar: AppBar(title: Text('Run "$_title"')),
+      appBar: AppBar(
+        title: Text('Run "$_title"'),
+        actions: [
+          TextButton(
+            key: const Key('mock-server'),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (_) => UncontrolledProviderScope(
+                container: ProviderScope.containerOf(context),
+                child: MockServerDialog(containerId: widget.containerId),
+              ),
+            ),
+            child: const Text('Mock server'),
+          ),
+        ],
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

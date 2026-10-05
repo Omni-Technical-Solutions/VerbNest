@@ -129,6 +129,21 @@ class HeadlessSender {
     );
     try {
       final resolver = VariableResolver(scopesFor(id, row));
+      if (isLiveUrl(resolver.resolve(item.url).value)) {
+        return RunStepResult(
+          RunEntry(
+            iteration: iteration,
+            requestId: id,
+            name: name,
+            method: item.method,
+            url: item.url,
+            reason: liveSkipNote,
+            timeMs: 0,
+            skipped: true,
+          ),
+          const RunFlow(skip: true),
+        );
+      }
       var auth = effectiveAuth(item.auth, repo.authChain(id));
       if (auth is OAuth2Auth) {
         auth = await _oauthToken(auth, resolver);
@@ -183,3 +198,9 @@ class HeadlessSender {
     return BearerAuth(token: token.accessToken);
   }
 }
+
+/// WebSocket URLs cannot be run as a request/response step.
+bool isLiveUrl(String url) =>
+    RegExp(r'^\s*wss?://', caseSensitive: false).hasMatch(url);
+
+const liveSkipNote = 'Skipped: WebSocket requests are not run by the runner';

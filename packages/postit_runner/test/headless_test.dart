@@ -102,4 +102,16 @@ void main() {
     expect(report.entries, hasLength(1));
     expect(report.stoppedEarly, isTrue);
   });
+
+  test('websocket requests are skipped, not failed', () async {
+    final a = add('live', (i) => i.copyWith(url: 'ws://127.0.0.1:1/socket'));
+    final sender = HeadlessSender(repo: repo, engine: HttpEngine());
+    final report = await executeRun(
+      config: RunConfig(name: 'x', requestIds: [a]),
+      repo: repo,
+      step: sender.step,
+    );
+    expect(report.entries.single.skipped, isTrue);
+    expect(report.ok, isTrue);
+  });
 }

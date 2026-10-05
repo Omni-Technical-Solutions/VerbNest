@@ -53,6 +53,22 @@ class RunnerNotifier extends Notifier<RunnerState> {
     int iteration,
     Map<String, String> row,
   ) async {
+    final draft = ref.read(editorProvider(id)).item;
+    if (isLiveUrl(draft.url)) {
+      return RunStepResult(
+        RunEntry(
+          iteration: iteration,
+          requestId: id,
+          name: name,
+          method: draft.method,
+          url: draft.url,
+          reason: liveSkipNote,
+          timeMs: 0,
+          skipped: true,
+        ),
+        const RunFlow(skip: true),
+      );
+    }
     _activeId = id;
     await ref.read(editorProvider(id).notifier).send(force: true, data: row);
     _activeId = null;

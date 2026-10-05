@@ -1,6 +1,6 @@
 name: postit_http
 description: PostIt HTTP/1.1 engine built on dart:io sockets.
-version: 0.30.0
+version: 0.31.0
 publish_to: none
 resolution: workspace
 
