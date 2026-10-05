@@ -479,4 +479,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get envAddVariable => 'Add variable';
+
+  @override
+  String get consoleTitle => 'Network console';
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get consoleEmpty => 'Nothing sent in this session yet';
+
+  @override
+  String get consoleSent => 'Sent';
+
+  @override
+  String get consoleError => 'Error';
+
+  @override
+  String get consoleReceived => 'Received';
+
+  @override
+  String get cookiesTitle => 'Cookies';
+
+  @override
+  String get cookiesEmpty => 'No cookies saved yet';
+
+  @override
+  String cookiesDeleteDomain(String domain) {
+    return 'Delete all for $domain';
+  }
+
+  @override
+  String cookiePath(String path) {
+    return 'path $path';
+  }
+
+  @override
+  String get cookieSession => 'session';
+
+  @override
+  String cookieExpires(String when) {
+    return 'expires $when';
+  }
+
+  @override
+  String get deleteAll => 'Delete all';
+
+  @override
+  String get codeTitle => 'Generate code';
+
+  @override
+  String get codeFillVariables => 'Fill in variable values';
+
+  @override
+  String get codeSecretsWarning => 'Secret values will appear in the code';
+
+  @override
+  String get codeCopied => 'Code copied';
+
+  @override
+  String get copy => 'Copy';
 }

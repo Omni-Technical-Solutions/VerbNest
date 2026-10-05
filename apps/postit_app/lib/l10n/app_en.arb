@@ -296,5 +296,44 @@
       }
     }
   },
-  "envAddVariable": "Add variable"
+  "envAddVariable": "Add variable",
+  "consoleTitle": "Network console",
+  "clear": "Clear",
+  "consoleEmpty": "Nothing sent in this session yet",
+  "consoleSent": "Sent",
+  "consoleError": "Error",
+  "consoleReceived": "Received",
+  "cookiesTitle": "Cookies",
+  "cookiesEmpty": "No cookies saved yet",
+  "cookiesDeleteDomain": "Delete all for {domain}",
+  "@cookiesDeleteDomain": {
+    "placeholders": {
+      "domain": {
+        "type": "String"
+      }
+    }
+  },
+  "cookiePath": "path {path}",
+  "@cookiePath": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "cookieSession": "session",
+  "cookieExpires": "expires {when}",
+  "@cookieExpires": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAll": "Delete all",
+  "codeTitle": "Generate code",
+  "codeFillVariables": "Fill in variable values",
+  "codeSecretsWarning": "Secret values will appear in the code",
+  "codeCopied": "Code copied",
+  "copy": "Copy"
 }

@@ -943,6 +943,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add variable'**
   String get envAddVariable;
+
+  /// No description provided for @consoleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Network console'**
+  String get consoleTitle;
+
+  /// No description provided for @clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear;
+
+  /// No description provided for @consoleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing sent in this session yet'**
+  String get consoleEmpty;
+
+  /// No description provided for @consoleSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get consoleSent;
+
+  /// No description provided for @consoleError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get consoleError;
+
+  /// No description provided for @consoleReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get consoleReceived;
+
+  /// No description provided for @cookiesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies'**
+  String get cookiesTitle;
+
+  /// No description provided for @cookiesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No cookies saved yet'**
+  String get cookiesEmpty;
+
+  /// No description provided for @cookiesDeleteDomain.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all for {domain}'**
+  String cookiesDeleteDomain(String domain);
+
+  /// No description provided for @cookiePath.
+  ///
+  /// In en, this message translates to:
+  /// **'path {path}'**
+  String cookiePath(String path);
+
+  /// No description provided for @cookieSession.
+  ///
+  /// In en, this message translates to:
+  /// **'session'**
+  String get cookieSession;
+
+  /// No description provided for @cookieExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'expires {when}'**
+  String cookieExpires(String when);
+
+  /// No description provided for @deleteAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all'**
+  String get deleteAll;
+
+  /// No description provided for @codeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate code'**
+  String get codeTitle;
+
+  /// No description provided for @codeFillVariables.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in variable values'**
+  String get codeFillVariables;
+
+  /// No description provided for @codeSecretsWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret values will appear in the code'**
+  String get codeSecretsWarning;
+
+  /// No description provided for @codeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied'**
+  String get codeCopied;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
 }
 
 class _AppLocalizationsDelegate

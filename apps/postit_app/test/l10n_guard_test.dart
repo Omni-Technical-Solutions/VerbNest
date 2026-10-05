@@ -15,9 +15,6 @@ const _pending = <String>{
   'lib/src/widgets/graphql_editor.dart',
   'lib/src/pages/workspaces_dialog.dart',
   'lib/src/widgets/request_extras.dart',
-  'lib/src/widgets/code_dialog.dart',
-  'lib/src/widgets/cookie_manager.dart',
-  'lib/src/pages/console_page.dart',
   'lib/src/widgets/scripts_editor.dart',
   'lib/src/settings_page.dart',
 };

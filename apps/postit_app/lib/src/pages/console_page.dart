@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/console_log.dart';
 import '../widgets/response_view.dart';
+import '../../l10n/l10n.dart';
 
 /// Requests sent in this session with the exact heads, newest first
 /// (FR-HIS-004). Secrets are masked.
@@ -14,34 +15,34 @@ class ConsolePage extends ConsumerWidget {
     final entries = ref.watch(consoleLogProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Network console'),
+        title: Text(context.l10n.consoleTitle),
         actions: [
           TextButton(
             key: const Key('console-clear'),
             onPressed: entries.isEmpty
                 ? null
                 : ref.read(consoleLogProvider.notifier).clear,
-            child: const Text('Clear'),
+            child: Text(context.l10n.clear),
           ),
         ],
       ),
       body: entries.isEmpty
-          ? const Center(child: Text('Nothing sent in this session yet'))
+          ? Center(child: Text(context.l10n.consoleEmpty))
           : ListView.builder(
               itemCount: entries.length,
-              itemBuilder: (context, i) => _entry(entries[i]),
+              itemBuilder: (context, i) => _entry(context, entries[i]),
             ),
     );
   }
 
-  Widget _entry(ConsoleEntry e) {
+  Widget _entry(BuildContext context, ConsoleEntry e) {
     final failed = e.error != null;
     String two(int n) => n.toString().padLeft(2, '0');
     final t = e.at;
     return ExpansionTile(
       dense: true,
       leading: Text(
-        failed ? 'ERR' : '${e.status}',
+        failed ? context.l10n.histError : '${e.status}',
         style: TextStyle(
           fontWeight: FontWeight.bold,
           color: failed ? Colors.red.shade700 : statusColor(e.status ?? 0),
@@ -55,14 +56,17 @@ class ConsolePage extends ConsumerWidget {
       childrenPadding: const EdgeInsets.all(12),
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Sent', style: TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          context.l10n.consoleSent,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         SelectableText(
           e.sentHead.trimRight(),
           style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
         ),
         const SizedBox(height: 8),
         Text(
-          failed ? 'Error' : 'Received',
+          failed ? context.l10n.consoleError : context.l10n.consoleReceived,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         SelectableText(

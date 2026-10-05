@@ -481,4 +481,64 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get envAddVariable => 'إضافة متغير';
+
+  @override
+  String get consoleTitle => 'وحدة الشبكة';
+
+  @override
+  String get clear => 'مسح';
+
+  @override
+  String get consoleEmpty => 'لم يُرسل شيء في هذه الجلسة بعد';
+
+  @override
+  String get consoleSent => 'المُرسل';
+
+  @override
+  String get consoleError => 'خطأ';
+
+  @override
+  String get consoleReceived => 'المُستلم';
+
+  @override
+  String get cookiesTitle => 'ملفات الارتباط';
+
+  @override
+  String get cookiesEmpty => 'لا توجد ملفات ارتباط محفوظة بعد';
+
+  @override
+  String cookiesDeleteDomain(String domain) {
+    return 'حذف الكل لـ $domain';
+  }
+
+  @override
+  String cookiePath(String path) {
+    return 'المسار $path';
+  }
+
+  @override
+  String get cookieSession => 'جلسة';
+
+  @override
+  String cookieExpires(String when) {
+    return 'تنتهي $when';
+  }
+
+  @override
+  String get deleteAll => 'حذف الكل';
+
+  @override
+  String get codeTitle => 'توليد الشيفرة';
+
+  @override
+  String get codeFillVariables => 'ملء قيم المتغيرات';
+
+  @override
+  String get codeSecretsWarning => 'ستظهر القيم السرية في الشيفرة';
+
+  @override
+  String get codeCopied => 'تم نسخ الشيفرة';
+
+  @override
+  String get copy => 'نسخ';
 }

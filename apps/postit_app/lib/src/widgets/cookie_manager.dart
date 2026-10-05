@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/network_state.dart';
+import '../../l10n/l10n.dart';
 
 /// Lists the saved cookies by domain; remove one, a domain or all of them.
 class CookieManagerDialog extends ConsumerWidget {
@@ -13,14 +14,14 @@ class CookieManagerDialog extends ConsumerWidget {
     final n = ref.read(cookiesProvider.notifier);
     final domains = <String>{for (final c in cookies) c.domain}.toList();
     return AlertDialog(
-      title: const Text('Cookies'),
+      title: Text(context.l10n.cookiesTitle),
       content: SizedBox(
         width: 520,
         height: 380,
         child: cookies.isEmpty
-            ? const Center(
-                key: Key('no-cookies'),
-                child: Text('No cookies saved yet'),
+            ? Center(
+                key: const Key('no-cookies'),
+                child: Text(context.l10n.cookiesEmpty),
               )
             : ListView(
                 children: [
@@ -33,7 +34,7 @@ class CookieManagerDialog extends ConsumerWidget {
                       ),
                       trailing: IconButton(
                         key: Key('clear-domain-$d'),
-                        tooltip: 'Delete all for $d',
+                        tooltip: context.l10n.cookiesDeleteDomain(d),
                         icon: const Icon(Icons.delete_sweep_outlined),
                         onPressed: () => n.removeDomain(d),
                       ),
@@ -46,17 +47,19 @@ class CookieManagerDialog extends ConsumerWidget {
                         title: Text('${c.name} = ${c.value}'),
                         subtitle: Text(
                           [
-                            'path ${c.path}',
+                            context.l10n.cookiePath(c.path),
                             if (c.secure) 'Secure',
                             if (c.httpOnly) 'HttpOnly',
                             if (c.sameSite != null) 'SameSite=${c.sameSite}',
                             c.expires == null
-                                ? 'session'
-                                : 'expires ${c.expires!.toLocal()}',
+                                ? context.l10n.cookieSession
+                                : context.l10n.cookieExpires(
+                                    '${c.expires!.toLocal()}',
+                                  ),
                           ].join(' · '),
                         ),
                         trailing: IconButton(
-                          tooltip: 'Delete',
+                          tooltip: context.l10n.delete,
                           icon: const Icon(Icons.close),
                           onPressed: () => n.remove(c),
                         ),
@@ -69,11 +72,11 @@ class CookieManagerDialog extends ConsumerWidget {
         TextButton(
           key: const Key('clear-cookies'),
           onPressed: cookies.isEmpty ? null : n.clear,
-          child: const Text('Delete all'),
+          child: Text(context.l10n.deleteAll),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(context.l10n.close),
         ),
       ],
     );

@@ -6,6 +6,7 @@ import 'package:postit_import/postit_import.dart';
 import '../state/import_actions.dart';
 import '../state/session.dart';
 import '../state/variables.dart';
+import '../../l10n/l10n.dart';
 
 /// Shows a request as code in a chosen language (FR-IO-003).
 class CodeDialog extends ConsumerStatefulWidget {
@@ -31,7 +32,7 @@ class _CodeDialogState extends ConsumerState<CodeDialog> {
       envId: ref.read(activeEnvProvider),
     );
     return AlertDialog(
-      title: const Text('Generate code'),
+      title: Text(context.l10n.codeTitle),
       content: SizedBox(
         width: 560,
         child: Column(
@@ -50,8 +51,8 @@ class _CodeDialogState extends ConsumerState<CodeDialog> {
             SwitchListTile(
               key: const Key('code-resolve'),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Fill in variable values'),
-              subtitle: const Text('Secret values will appear in the code'),
+              title: Text(context.l10n.codeFillVariables),
+              subtitle: Text(context.l10n.codeSecretsWarning),
               value: _resolve,
               onChanged: (v) => setState(() => _resolve = v),
             ),
@@ -82,13 +83,13 @@ class _CodeDialogState extends ConsumerState<CodeDialog> {
             await Clipboard.setData(ClipboardData(text: code));
             if (!context.mounted) return;
             ScaffoldMessenger.of(context)
-                .showSnackBar(const SnackBar(content: Text('Code copied')));
+                .showSnackBar(SnackBar(content: Text(context.l10n.codeCopied)));
           },
-          child: const Text('Copy'),
+          child: Text(context.l10n.copy),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(context.l10n.close),
         ),
       ],
     );
