@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: ci_integration.sh <device> <process-name> [file...]
+# Usage: ci_integration.sh <device> <process-name|-> [file...]
 # Runs each integration test in its own app launch. The desktop runners keep
 # the app (or its single-instance handle) alive after a test file ends, so
 # the next launch cannot start ("log reader stopped unexpectedly"). Each file
@@ -13,6 +13,8 @@ files=("$@")
 if [ ${#files[@]} -eq 0 ]; then files=(integration_test/*_test.dart); fi
 
 kill_app() {
+  # "-" means a mobile target whose app the test runner reinstalls itself.
+  if [ "$proc" = "-" ]; then return; fi
   case "$device" in
     windows) taskkill //F //IM "$proc.exe" >/dev/null 2>&1 || true ;;
     *) pkill -x "$proc" 2>/dev/null || true ;;

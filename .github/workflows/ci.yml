@@ -105,6 +105,32 @@ jobs:
         shell: bash
         run: ${{ matrix.test }}
         working-directory: apps/postit_app
+      - name: Boot iOS simulator
+        if: matrix.name == 'ios'
+        run: |
+          udid=$(xcrun simctl list devices available | grep -m1 'iPhone' | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
+          xcrun simctl boot "$udid"
+          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
+      - name: iOS integration tests
+        if: matrix.name == 'ios'
+        continue-on-error: true
+        run: ../../scripts/ci_integration.sh "$SIM_UDID" - integration_test/platform_test.dart integration_test/vault_test.dart
+        working-directory: apps/postit_app
+      - name: Enable KVM
+        if: matrix.name == 'android'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android integration tests
+        if: matrix.name == 'android'
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          working-directory: apps/postit_app
+          script: ../../scripts/ci_integration.sh emulator-5554 - integration_test/platform_test.dart integration_test/vault_test.dart
       - uses: actions/upload-artifact@v4
         if: matrix.name == 'android'
         with:
