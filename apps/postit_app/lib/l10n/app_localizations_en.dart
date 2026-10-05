@@ -111,4 +111,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get historyMax => 'Keep at most this many entries';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get rtConnect => 'Connect';
+
+  @override
+  String get rtConnecting => 'Connecting…';
+
+  @override
+  String get rtDisconnect => 'Disconnect';
+
+  @override
+  String get rtClear => 'Clear';
+
+  @override
+  String get rtMessageHint => 'Message';
+
+  @override
+  String get rtSendTooltip => 'Send message';
+
+  @override
+  String get mockTitle => 'Mock server';
+
+  @override
+  String get mockEmpty =>
+      'No request here has a saved example. Save a response as an example first.';
+
+  @override
+  String get mockPort => 'Port';
+
+  @override
+  String get mockStart => 'Start';
+
+  @override
+  String get mockStop => 'Stop';
+
+  @override
+  String mockServing(String url) {
+    return 'Serving on $url';
+  }
+
+  @override
+  String get mockPortInvalid => 'Port must be 0-65535';
+
+  @override
+  String mockListenFailed(int port, String error) {
+    return 'Cannot listen on port $port: $error';
+  }
+
+  @override
+  String mockRouteSubtitle(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count examples',
+      one: '1 example',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String get mockHeaderHint =>
+      'Send an X-PostIt-Example header to pick an example by name.';
 }

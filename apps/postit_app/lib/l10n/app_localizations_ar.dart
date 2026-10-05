@@ -111,4 +111,71 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get historyMax => 'الحد الأقصى لعدد المدخلات';
+
+  @override
+  String get close => 'إغلاق';
+
+  @override
+  String get rtConnect => 'اتصال';
+
+  @override
+  String get rtConnecting => 'جارٍ الاتصال…';
+
+  @override
+  String get rtDisconnect => 'قطع الاتصال';
+
+  @override
+  String get rtClear => 'مسح';
+
+  @override
+  String get rtMessageHint => 'رسالة';
+
+  @override
+  String get rtSendTooltip => 'إرسال الرسالة';
+
+  @override
+  String get mockTitle => 'خادم تجريبي';
+
+  @override
+  String get mockEmpty =>
+      'لا يوجد هنا طلب له مثال محفوظ. احفظ استجابة كمثال أولًا.';
+
+  @override
+  String get mockPort => 'المنفذ';
+
+  @override
+  String get mockStart => 'بدء';
+
+  @override
+  String get mockStop => 'إيقاف';
+
+  @override
+  String mockServing(String url) {
+    return 'يعمل على $url';
+  }
+
+  @override
+  String get mockPortInvalid => 'يجب أن يكون المنفذ بين 0 و65535';
+
+  @override
+  String mockListenFailed(int port, String error) {
+    return 'تعذر الاستماع على المنفذ $port: $error';
+  }
+
+  @override
+  String mockRouteSubtitle(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مثالًا',
+      few: '$count أمثلة',
+      two: 'مثالان',
+      one: 'مثال واحد',
+    );
+    return '$name، $_temp0';
+  }
+
+  @override
+  String get mockHeaderHint =>
+      'أرسل الترويسة X-PostIt-Example لاختيار مثال بالاسم.';
 }

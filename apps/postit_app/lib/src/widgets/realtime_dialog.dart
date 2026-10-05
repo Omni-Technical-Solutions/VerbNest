@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:postit_http/postit_http.dart';
 
+import '../../l10n/l10n.dart';
+
 /// Live message log for a WebSocket or SSE connection.
 class RealtimeDialog extends StatefulWidget {
   const RealtimeDialog({
@@ -100,19 +102,23 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
                   FilledButton.tonal(
                     key: const Key('rt-disconnect'),
                     onPressed: () => unawaited(_conn?.close()),
-                    child: const Text('Disconnect'),
+                    child: Text(context.l10n.rtDisconnect),
                   )
                 else
                   FilledButton(
                     key: const Key('rt-connect'),
                     onPressed: _connecting ? null : _connect,
-                    child: Text(_connecting ? 'Connecting…' : 'Connect'),
+                    child: Text(
+                      _connecting
+                          ? context.l10n.rtConnecting
+                          : context.l10n.rtConnect,
+                    ),
                   ),
                 const SizedBox(width: 8),
                 TextButton(
                   key: const Key('rt-clear'),
                   onPressed: () => setState(_log.clear),
-                  child: const Text('Clear'),
+                  child: Text(context.l10n.rtClear),
                 ),
               ],
             ),
@@ -161,8 +167,8 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
                       key: const Key('rt-input'),
                       controller: _input,
                       enabled: _open,
-                      decoration: const InputDecoration(
-                        hintText: 'Message',
+                      decoration: InputDecoration(
+                        hintText: context.l10n.rtMessageHint,
                         isDense: true,
                       ),
                       onSubmitted: (_) => _send(),
@@ -170,7 +176,7 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
                   ),
                   IconButton(
                     key: const Key('rt-send'),
-                    tooltip: 'Send message',
+                    tooltip: context.l10n.rtSendTooltip,
                     onPressed: _open ? _send : null,
                     icon: const Icon(Icons.send),
                   ),
@@ -182,7 +188,7 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(context.l10n.close),
         ),
       ],
     );

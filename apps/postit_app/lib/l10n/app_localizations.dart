@@ -295,6 +295,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keep at most this many entries'**
   String get historyMax;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @rtConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get rtConnect;
+
+  /// No description provided for @rtConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get rtConnecting;
+
+  /// No description provided for @rtDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get rtDisconnect;
+
+  /// No description provided for @rtClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get rtClear;
+
+  /// No description provided for @rtMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get rtMessageHint;
+
+  /// No description provided for @rtSendTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Send message'**
+  String get rtSendTooltip;
+
+  /// No description provided for @mockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mock server'**
+  String get mockTitle;
+
+  /// No description provided for @mockEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No request here has a saved example. Save a response as an example first.'**
+  String get mockEmpty;
+
+  /// No description provided for @mockPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get mockPort;
+
+  /// No description provided for @mockStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get mockStart;
+
+  /// No description provided for @mockStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get mockStop;
+
+  /// No description provided for @mockServing.
+  ///
+  /// In en, this message translates to:
+  /// **'Serving on {url}'**
+  String mockServing(String url);
+
+  /// No description provided for @mockPortInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Port must be 0-65535'**
+  String get mockPortInvalid;
+
+  /// No description provided for @mockListenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot listen on port {port}: {error}'**
+  String mockListenFailed(int port, String error);
+
+  /// No description provided for @mockRouteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {count, plural, =1{1 example} other{{count} examples}}'**
+  String mockRouteSubtitle(String name, int count);
+
+  /// No description provided for @mockHeaderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send an X-PostIt-Example header to pick an example by name.'**
+  String get mockHeaderHint;
 }
 
 class _AppLocalizationsDelegate

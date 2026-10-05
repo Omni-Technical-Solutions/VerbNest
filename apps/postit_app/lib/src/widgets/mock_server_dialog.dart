@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:postit_runner/postit_runner.dart';
 
+import '../../l10n/l10n.dart';
 import '../state/session.dart';
 import '../state/variables.dart';
 
@@ -37,7 +38,7 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
   Future<void> _start() async {
     final port = int.tryParse(_port.text.trim());
     if (port == null || port < 0 || port > 65535) {
-      setState(() => _error = 'Port must be 0-65535');
+      setState(() => _error = context.l10n.mockPortInvalid);
       return;
     }
     try {
@@ -51,7 +52,7 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
         _error = null;
       });
     } on Object catch (e) {
-      setState(() => _error = 'Cannot listen on port $port: $e');
+      setState(() => _error = context.l10n.mockListenFailed(port, '$e'));
     }
   }
 
@@ -72,7 +73,7 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
   Widget build(BuildContext context) {
     final running = _server;
     return AlertDialog(
-      title: const Text('Mock server'),
+      title: Text(context.l10n.mockTitle),
       content: SizedBox(
         width: 480,
         child: Column(
@@ -80,11 +81,7 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_routes.isEmpty)
-              const Text(
-                'No request here has a saved example. Save a response as an '
-                'example first.',
-                key: Key('mock-empty'),
-              )
+              Text(context.l10n.mockEmpty, key: const Key('mock-empty'))
             else ...[
               Row(
                 children: [
@@ -94,7 +91,9 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
                       key: const Key('mock-port'),
                       controller: _port,
                       enabled: running == null,
-                      decoration: const InputDecoration(labelText: 'Port'),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.mockPort,
+                      ),
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -103,13 +102,13 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
                     FilledButton(
                       key: const Key('mock-start'),
                       onPressed: _start,
-                      child: const Text('Start'),
+                      child: Text(context.l10n.mockStart),
                     )
                   else
                     FilledButton.tonal(
                       key: const Key('mock-stop'),
                       onPressed: _stop,
-                      child: const Text('Stop'),
+                      child: Text(context.l10n.mockStop),
                     ),
                 ],
               ),
@@ -117,7 +116,9 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: SelectableText(
-                    'Serving on http://127.0.0.1:${running.port}',
+                    context.l10n.mockServing(
+                      'http://127.0.0.1:${running.port}',
+                    ),
                     key: const Key('mock-url'),
                   ),
                 ),
@@ -137,16 +138,18 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
                         dense: true,
                         title: Text('${r.method} ${r.path}'),
                         subtitle: Text(
-                          '${r.requestName}, ${r.examples.length} example'
-                          '${r.examples.length == 1 ? '' : 's'}',
+                          context.l10n.mockRouteSubtitle(
+                            r.requestName,
+                            r.examples.length,
+                          ),
                         ),
                       ),
                   ],
                 ),
               ),
-              const Text(
-                'Send an X-PostIt-Example header to pick an example by name.',
-                style: TextStyle(fontSize: 12),
+              Text(
+                context.l10n.mockHeaderHint,
+                style: const TextStyle(fontSize: 12),
               ),
             ],
           ],
@@ -155,7 +158,7 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(context.l10n.close),
         ),
       ],
     );

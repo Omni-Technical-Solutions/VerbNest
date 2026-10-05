@@ -39,5 +39,49 @@
   "historyBodies": "Keep request and response bodies",
   "historyBodiesHint": "Off stores only URLs, headers and status",
   "historyDays": "Delete history older than (days, 0 = never)",
-  "historyMax": "Keep at most this many entries"
+  "historyMax": "Keep at most this many entries",
+  "close": "Close",
+  "rtConnect": "Connect",
+  "rtConnecting": "Connecting…",
+  "rtDisconnect": "Disconnect",
+  "rtClear": "Clear",
+  "rtMessageHint": "Message",
+  "rtSendTooltip": "Send message",
+  "mockTitle": "Mock server",
+  "mockEmpty": "No request here has a saved example. Save a response as an example first.",
+  "mockPort": "Port",
+  "mockStart": "Start",
+  "mockStop": "Stop",
+  "mockServing": "Serving on {url}",
+  "@mockServing": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "mockPortInvalid": "Port must be 0-65535",
+  "mockListenFailed": "Cannot listen on port {port}: {error}",
+  "@mockListenFailed": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "mockRouteSubtitle": "{name}, {count, plural, =1{1 example} other{{count} examples}}",
+  "@mockRouteSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mockHeaderHint": "Send an X-PostIt-Example header to pick an example by name."
 }

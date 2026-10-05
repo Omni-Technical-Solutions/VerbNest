@@ -32,5 +32,22 @@
   "historyBodies": "الاحتفاظ بمحتوى الطلبات والاستجابات",
   "historyBodiesHint": "عند الإيقاف تُحفظ العناوين والرؤوس والحالة فقط",
   "historyDays": "حذف السجل الأقدم من (أيام، 0 = أبدًا)",
-  "historyMax": "الحد الأقصى لعدد المدخلات"
+  "historyMax": "الحد الأقصى لعدد المدخلات",
+  "close": "إغلاق",
+  "rtConnect": "اتصال",
+  "rtConnecting": "جارٍ الاتصال…",
+  "rtDisconnect": "قطع الاتصال",
+  "rtClear": "مسح",
+  "rtMessageHint": "رسالة",
+  "rtSendTooltip": "إرسال الرسالة",
+  "mockTitle": "خادم تجريبي",
+  "mockEmpty": "لا يوجد هنا طلب له مثال محفوظ. احفظ استجابة كمثال أولًا.",
+  "mockPort": "المنفذ",
+  "mockStart": "بدء",
+  "mockStop": "إيقاف",
+  "mockServing": "يعمل على {url}",
+  "mockPortInvalid": "يجب أن يكون المنفذ بين 0 و65535",
+  "mockListenFailed": "تعذر الاستماع على المنفذ {port}: {error}",
+  "mockRouteSubtitle": "{name}، {count, plural, =1{مثال واحد} =2{مثالان} few{{count} أمثلة} other{{count} مثالًا}}",
+  "mockHeaderHint": "أرسل الترويسة X-PostIt-Example لاختيار مثال بالاسم."
 }

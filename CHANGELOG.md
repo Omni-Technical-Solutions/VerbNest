@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.31.1
+
+- UI strings: the realtime and mock-server dialogs now use ARB (English and Arabic). New guard test `l10n_guard_test.dart` lists the files that still hold hard-coded `Text` literals (22 files) and fails when a migrated file regains one, a pending file is already clean, or the Arabic file lacks a key. Found that `context.l10n` already falls back to English in bare-`MaterialApp` widget tests, so migrating needs no test changes. The Arabic texts need review by a native speaker.
+- New `docs/spec/remaining-work-plan.md`: the remaining work in five phases (ARB migration, Windows/Linux verification, HTML/PDF preview, CLI scripts, follow-ups).
+
 ## 0.31.0
 
 - GraphQL subscriptions: with a graphql body, the live button offers "GraphQL subscription". It connects over the `graphql-transport-ws` protocol, waits for the server's acknowledgement, subscribes with the request's query and variables, and shows each result. Close sends `complete`. The older `subscriptions-transport-ws` protocol is not supported.
