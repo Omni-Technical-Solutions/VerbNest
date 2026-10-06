@@ -6,13 +6,20 @@
 # Goes through scripts/build.sh, so the build number is incremented first.
 # The DMG gets a drag-to-Applications layout when `create-dmg` is installed
 # (brew install create-dmg) and falls back to a plain `hdiutil` image.
-# The app is ad-hoc signed (no Developer ID), so Gatekeeper asks the user to
-# approve it on first launch (right-click > Open). Notarised builds need a
-# Developer ID certificate and are a separate, manual step.
+#
+# The app is signed with an Apple certificate (hardened runtime, timestamp,
+# entitlements). The identity defaults to the Apple Distribution certificate;
+# override with SIGN_IDENTITY for a Developer ID Application cert (needed for
+# notarisation). Notarised builds are a separate, manual step
+# (scripts/notarize_macos.sh).
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 out="${1:-$HOME/Downloads}"
+
+# Signing identity: Apple Distribution by default; override with SIGN_IDENTITY.
+SIGN_IDENTITY="${SIGN_IDENTITY:-Apple Distribution: Omni Technical Solutions Pty Ltd (NYY6MADXHV)}"
+ENTITLEMENTS="apps/verbnest_app/macos/Runner/Release.entitlements"
 
 scripts/build.sh macos --release
 
@@ -29,7 +36,11 @@ work="$(mktemp -d)"
 trap 'rm -rf "$stage" "$work"' EXIT
 
 cp -R "$app" "$stage/Verbnest.app"
-codesign --force --deep --sign - "$stage/Verbnest.app"
+codesign --force --deep --options runtime --timestamp \
+  --entitlements "$ENTITLEMENTS" \
+  --sign "$SIGN_IDENTITY" "$stage/Verbnest.app"
+codesign --verify --deep --strict "$stage/Verbnest.app"
+echo "Signed with: $SIGN_IDENTITY"
 
 if command -v create-dmg >/dev/null; then
   create-dmg \

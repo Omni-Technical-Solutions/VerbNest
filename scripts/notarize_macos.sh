@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Signs Verbnest.app with a Developer ID certificate, notarises it with Apple and
-# staples the ticket, then builds the DMG. Needs an Apple Developer account;
-# never run in CI without secrets set. Not tested: there is no Developer ID on
-# the development machine.
+# Signs Verbnest.app with a Developer ID Application certificate, notarises it
+# with Apple and staples the ticket, then builds the DMG. Needs an Apple
+# Developer account; never run in CI without secrets set.
+#
+# A Developer ID Application certificate is required (not yet on this machine;
+# only Apple Distribution and Developer ID Installer are installed). Create
+# one in the Apple Developer portal, export a .p12, and import into Keychain.
 #
 # Environment:
 #   DEVELOPER_ID   signing identity, e.g. "Developer ID Application: Name (TEAMID)"

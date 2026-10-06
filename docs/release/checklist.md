@@ -9,12 +9,12 @@ What is ready in the repository and what only the account owner can do. Nothing 
 - F-Droid / Play text and changelog layout: `distribution/fastlane/metadata/android/en-US/`.
 - Flathub draft: `distribution/flatpak/` (manifest, metainfo, desktop file).
 - winget templates: `distribution/winget/`.
-- macOS: `scripts/package_macos.sh` (ad-hoc DMG) and `scripts/notarize_macos.sh` (Developer ID signing, notarisation, stapling).
+- macOS: `scripts/package_macos.sh` (signed DMG with Apple Distribution cert; override with `SIGN_IDENTITY`) and `scripts/notarize_macos.sh` (Developer ID Application signing, notarisation, stapling — needs a Developer ID Application certificate, not yet on this machine).
 - Listing text, review notes, privacy policy draft: `docs/release/`.
 
 ## Done on this machine (not yet uploaded anywhere)
 - Android upload key created at `~/.postit-signing/upload-keystore.jks` (alias `upload`); passwords are in the gitignored `apps/verbnest_app/android/key.properties`. **Back both up now.** If the key is lost, Play can only reset it through support. `flutter build appbundle --release` produced a signed `com.omni.verbnest` bundle (version 0.25.0, code 4).
-- iOS release build compiles with `--no-codesign`; the macOS DMG builds, is ad-hoc signed and its bundle id is `com.omni.verbnest`.
+- iOS release build compiles with `--no-codesign`; the macOS DMG builds, is signed with the Apple Distribution certificate (Omni Technical Solutions Pty Ltd, team NYY6MADXHV, hardened runtime + timestamp + entitlements) and its bundle id is `com.omni.verbnest`.
 - Entitlements: macOS Release now also allows a local server (`network.server`), needed for the OAuth 2.0 browser redirect. `ITSAppUsesNonExemptEncryption` is false (only standard HTTPS/TLS), so App Store Connect will not ask the export question.
 
 ## Play Store, in order
