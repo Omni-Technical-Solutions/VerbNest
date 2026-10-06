@@ -271,6 +271,33 @@ void oauthTests() {
     );
     expect(c.read(editorProvider(t.id)).response!.status, 200);
   });
+
+  testWidgets('auth and assertions tabs render in the request editor', (
+    tester,
+  ) async {
+    final t = setup();
+    tester.view.physicalSize = const Size(1000, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: t.c,
+        child: MaterialApp(
+          home: Scaffold(body: RequestEditor(requestId: t.id)),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Auth'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('auth-type')), findsOneWidget);
+
+    await tester.tap(find.text('Assertions'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('add-assertion')), findsOneWidget);
+    await tester.pump(EditorNotifier.saveDelay);
+  });
 }
 
 class _TokenEngine extends HttpEngine {
