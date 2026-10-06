@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Signs PostIt.app with a Developer ID certificate, notarises it with Apple and
+# Signs Verbnest.app with a Developer ID certificate, notarises it with Apple and
 # staples the ticket, then builds the DMG. Needs an Apple Developer account;
 # never run in CI without secrets set. Not tested: there is no Developer ID on
 # the development machine.
@@ -19,26 +19,26 @@ cd "$(git rev-parse --show-toplevel)"
 out="${1:-$HOME/Downloads}"
 
 scripts/build.sh macos --release
-app="apps/postit_app/build/macos/Build/Products/Release/PostIt.app"
+app="apps/verbnest_app/build/macos/Build/Products/Release/Verbnest.app"
 [ -d "$app" ] || { echo "Missing $app" >&2; exit 1; }
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-cp -R "$app" "$work/PostIt.app"
+cp -R "$app" "$work/Verbnest.app"
 
 codesign --force --deep --options runtime --timestamp \
-  --entitlements apps/postit_app/macos/Runner/Release.entitlements \
-  --sign "$DEVELOPER_ID" "$work/PostIt.app"
-codesign --verify --deep --strict "$work/PostIt.app"
+  --entitlements apps/verbnest_app/macos/Runner/Release.entitlements \
+  --sign "$DEVELOPER_ID" "$work/Verbnest.app"
+codesign --verify --deep --strict "$work/Verbnest.app"
 
-ditto -c -k --keepParent "$work/PostIt.app" "$work/PostIt.zip"
-xcrun notarytool submit "$work/PostIt.zip" --keychain-profile "$NOTARY_PROFILE" --wait
-xcrun stapler staple "$work/PostIt.app"
+ditto -c -k --keepParent "$work/Verbnest.app" "$work/Verbnest.zip"
+xcrun notarytool submit "$work/Verbnest.zip" --keychain-profile "$NOTARY_PROFILE" --wait
+xcrun stapler staple "$work/Verbnest.app"
 
 version="$(tr -d '[:space:]' < VERSION)"
 build="$(tr -d '[:space:]' < BUILD_NUMBER)"
-dmg="$out/PostIt-${version}+${build}-macos-notarized.dmg"
-hdiutil create -volname "PostIt ${version}" -srcfolder "$work/PostIt.app" -ov -format UDZO "$dmg"
+dmg="$out/Verbnest-${version}+${build}-macos-notarized.dmg"
+hdiutil create -volname "Verbnest ${version}" -srcfolder "$work/Verbnest.app" -ov -format UDZO "$dmg"
 codesign --sign "$DEVELOPER_ID" --timestamp "$dmg"
 xcrun notarytool submit "$dmg" --keychain-profile "$NOTARY_PROFILE" --wait
 xcrun stapler staple "$dmg"

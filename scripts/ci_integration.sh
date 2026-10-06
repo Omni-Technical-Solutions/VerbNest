@@ -8,7 +8,7 @@ set -u
 device=$1
 proc=$2
 shift 2
-cd "$(dirname "$0")/../apps/postit_app"
+cd "$(dirname "$0")/../apps/verbnest_app"
 files=("$@")
 if [ ${#files[@]} -eq 0 ]; then files=(integration_test/*_test.dart); fi
 

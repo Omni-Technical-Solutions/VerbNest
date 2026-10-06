@@ -1,4 +1,4 @@
-PostIt is an API client that keeps your work on your own device.
+Verbnest is an API client that keeps your work on your own device.
 
 Build requests with variables, environments and collections. Send them with Basic, Bearer, API key, Digest, JWT, AWS Signature V4 or OAuth 2.0 (client credentials, password, authorization code with PKCE, implicit). Check responses with pretty-printed bodies, headers, cookies, timings and TLS details. Write pre-request and post-response scripts, assertions and run whole collections with data files.
 

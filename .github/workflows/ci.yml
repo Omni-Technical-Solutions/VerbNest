@@ -21,12 +21,12 @@ jobs:
           cache: true
       - run: flutter pub get
       - if: matrix.os == 'ubuntu-latest'
-        run: dart format --output=none --set-exit-if-changed packages test_server apps/postit_app/lib apps/postit_app/test
+        run: dart format --output=none --set-exit-if-changed packages test_server apps/verbnest_app/lib apps/verbnest_app/test
       - run: dart analyze packages test_server
       - name: Package tests
         shell: bash
         run: |
-          for p in postit_core postit_http postit_storage postit_import postit_runner postit_script postit_cli; do
+          for p in verbnest_core verbnest_http verbnest_storage verbnest_import verbnest_runner verbnest_script verbnest_cli; do
             (cd packages/$p && dart test)
           done
 
@@ -45,9 +45,9 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
-        working-directory: apps/postit_app
+        working-directory: apps/verbnest_app
       - run: flutter test
-        working-directory: apps/postit_app
+        working-directory: apps/verbnest_app
 
   build:
     name: build (${{ matrix.name }})
@@ -60,15 +60,15 @@ jobs:
           - name: linux
             os: ubuntu-latest
             build: flutter build linux --release
-            test: ../../scripts/ci_integration.sh linux postit_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart integration_test/pdf_test.dart
+            test: ../../scripts/ci_integration.sh linux verbnest_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart integration_test/pdf_test.dart
           - name: windows
             os: windows-latest
             build: flutter build windows --release
-            test: ../../scripts/ci_integration.sh windows postit_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart integration_test/pdf_test.dart
+            test: ../../scripts/ci_integration.sh windows verbnest_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart integration_test/pdf_test.dart
           - name: macos
             os: macos-latest
             build: flutter build macos --release
-            test: ../../scripts/ci_integration.sh macos PostIt
+            test: ../../scripts/ci_integration.sh macos Verbnest
           - name: android
             os: ubuntu-latest
             build: flutter build apk --release
@@ -104,12 +104,12 @@ jobs:
         run: rustup toolchain install stable --profile minimal
       - run: flutter pub get
       - run: ${{ matrix.build }}
-        working-directory: apps/postit_app
+        working-directory: apps/verbnest_app
       - name: Integration tests
         if: matrix.test != ''
         shell: bash
         run: ${{ matrix.test }}
-        working-directory: apps/postit_app
+        working-directory: apps/verbnest_app
       - name: Boot iOS simulator
         if: matrix.name == 'ios'
         run: |
@@ -120,7 +120,7 @@ jobs:
         if: matrix.name == 'ios'
         continue-on-error: true
         run: ../../scripts/ci_integration.sh "$SIM_UDID" - integration_test/platform_test.dart integration_test/vault_test.dart integration_test/pdf_test.dart
-        working-directory: apps/postit_app
+        working-directory: apps/verbnest_app
       - name: Enable KVM
         if: matrix.name == 'android'
         run: |
@@ -135,10 +135,10 @@ jobs:
           api-level: 34
           arch: x86_64
           disk-size: 4096M
-          working-directory: apps/postit_app
+          working-directory: apps/verbnest_app
           script: ../../scripts/ci_integration.sh emulator-5554 - integration_test/platform_test.dart integration_test/vault_test.dart integration_test/pdf_test.dart
       - uses: actions/upload-artifact@v4
         if: matrix.name == 'android'
         with:
-          name: postit-android-apk
-          path: apps/postit_app/build/app/outputs/flutter-apk/app-release.apk
+          name: verbnest-android-apk
+          path: apps/verbnest_app/build/app/outputs/flutter-apk/app-release.apk

@@ -1,0 +1,29 @@
+# Draft Flathub manifest. Not built yet: needs a Linux machine, a real source
+# URL and commit, and the offline Dart/Flutter dependency sources that Flathub
+# requires (see https://docs.flathub.org/docs/for-app-authors/ and the
+# flatpak-flutter helper).
+app-id: com.omni.verbnest
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: verbnest_app
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --talk-name=org.freedesktop.secrets
+modules:
+  - name: verbnest
+    buildsystem: simple
+    build-commands:
+      - cp -r bundle /app/verbnest
+      - install -Dm644 distribution/flatpak/com.omni.verbnest.desktop /app/share/applications/com.omni.verbnest.desktop
+      - install -Dm644 distribution/flatpak/com.omni.verbnest.metainfo.xml /app/share/metainfo/com.omni.verbnest.metainfo.xml
+      - install -Dm644 assets/icon/verbnest_icon_512.png /app/share/icons/hicolor/512x512/apps/com.omni.verbnest.png
+      - mkdir -p /app/bin && ln -s /app/verbnest/verbnest_app /app/bin/verbnest_app
+    sources:
+      - type: git
+        url: https://example.invalid/verbnest.git   # replace
+        tag: v0.24.0

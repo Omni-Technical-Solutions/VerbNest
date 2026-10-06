@@ -1,9 +1,9 @@
-# PostIt Constitution
+# Verbnest Constitution
 
 These principles outrank every other document in the kit. When a feature request, PR or design conflicts with one of them, the principle wins unless the constitution itself is amended (see the end of this file).
 
 ## I. Local-first, account-free
-1. PostIt MUST be fully usable offline with no account, no login and no telemetry by default.
+1. Verbnest MUST be fully usable offline with no account, no login and no telemetry by default.
 2. All user data (collections, environments, history) lives on the user's device. Any sharing or sync is opt-in and pluggable (workspace file/bundle exchange, YAML snapshots in git, or self-hosted), never a vendor cloud requirement.
 3. Telemetry, if ever added, is opt-in, anonymous, documented field by field, and off by default.
 
@@ -11,7 +11,7 @@ These principles outrank every other document in the kit. When a feature request
 *(Amended by ADR-007; previously "plain files are the source of truth".)*
 1. Workspace content (collections, folders, requests, examples, environments, variables, settings) is stored in a **workspace database**: one self-contained SQLite file per workspace. Device-local state (history, run results, current variable values, cookies, UI state, search index) is stored in a separate **local database** that is never part of the workspace.
 2. Every write is a transaction; a crash or power loss MUST NOT corrupt or half-apply a change. The schema is versioned and migrated forward only with tested migrations.
-3. The workspace database is a documented, stable format (schema published in data-model.md). Users MUST be able to leave: a workspace can be exported at any time to a copy of the `.postit` file, to Postman v2.1, and to a human-readable YAML folder snapshot (see FR-WS-006), and a snapshot can be imported back without loss.
+3. The workspace database is a documented, stable format (schema published in data-model.md). Users MUST be able to leave: a workspace can be exported at any time to a copy of the `.verbnest` file, to Postman v2.1, and to a human-readable YAML folder snapshot (see FR-WS-006), and a snapshot can be imported back without loss.
 4. Secrets are never written into either database or any export. They live in the OS secure store and are referenced by name.
 
 ## III. One codebase, five first-class platforms
@@ -21,11 +21,11 @@ These principles outrank every other document in the kit. When a feature request
 
 ## IV. Protocol core is UI-independent
 1. Request execution, variable resolution, scripting, import/export and the collection runner live in pure Dart packages with no Flutter dependency.
-2. That core MUST be usable from a headless CLI (`postit run`) so CI pipelines get the same behaviour as the app.
+2. That core MUST be usable from a headless CLI (`verbnest run`) so CI pipelines get the same behaviour as the app.
 
 ## V. Fidelity over convenience
 1. What the user sees is what was sent. The app MUST show the exact final request (resolved URL, headers incl. auto-added ones, body bytes) and the raw response, including timing and TLS details where the platform allows.
-2. PostIt never silently rewrites user input (header casing, URL encoding, body formatting) unless the user opted in.
+2. Verbnest never silently rewrites user input (header casing, URL encoding, body formatting) unless the user opted in.
 
 ## VI. Interoperability, not lock-in
 1. Import from Postman (v2.0/v2.1 collections, environments, globals, data dumps), Insomnia, Bruno, OpenAPI 3.x/Swagger 2.0, HAR, cURL.

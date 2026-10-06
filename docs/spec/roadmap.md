@@ -21,7 +21,7 @@ Goal: a developer can replace Postman for everyday REST work, offline, on any de
 - HTTP engine (HTTP/1.1, TLS, redirects, cancel, compression, auto headers, raw view).
 - Request editor: method, URL with vars, params, path vars, headers, all body modes, settings.
 - Response viewer: status/time/size, pretty/raw/preview (images), headers, cookies (read-only), search, save/share, large-body streaming.
-- Workspace SQLite database v1 (ADR-007) with drift migrations, local database, collections/folders, drag & drop, search (FTS5), `.postit` import/export.
+- Workspace SQLite database v1 (ADR-007) with drift migrations, local database, collections/folders, drag & drop, search (FTS5), `.verbnest` import/export.
 - Environments, globals, collection variables, secrets in OS store, dynamic vars (core set), quick-look.
 - Auth: inherit, none, API key, bearer, basic, OAuth2 client credentials & password.
 - History with restore/save.
@@ -58,7 +58,7 @@ Goal: cover the modern API surface beyond REST.
 **Exit:** FR-GQL-001..003, FR-RT-001/002/004 complete with integration tests on all platforms.
 
 ## Phase 4: v2.0 ("every RPC")
-Goal: make PostIt the best open source tool for remote function call testing.
+Goal: make Verbnest the best open source tool for remote function call testing.
 
 - 4a: gRPC via reflection and descriptor sets (all call types, metadata, TLS), dynamic protobuf codec.
 - 4b: pure-Dart `.proto` parser; gRPC-Web.
@@ -69,7 +69,7 @@ Goal: make PostIt the best open source tool for remote function call testing.
 **Exit:** FR-RPC-001..006 complete; gRPC dynamic codec byte-identical with protoc goldens across the corpus.
 
 ## Phase 5: Platform & ecosystem
-- Headless CLI (`postit run`, `postit mock`) as native binaries for Linux/macOS/Windows; GitHub Action and GitLab CI templates.
+- Headless CLI (`verbnest run`, `verbnest mock`) as native binaries for Linux/macOS/Windows; GitHub Action and GitLab CI templates.
 - Local mock server from examples.
 - OpenAPI contract validation of responses; static docs export.
 - Performance mode in runner (desktop).
@@ -91,12 +91,12 @@ Work is committed once per finished phase (or phase step), never mid-step. Each 
 
 Rules:
 1. A phase step is committed only when analyze and tests are green on the packages it touches.
-2. The build number increases after every build and never decreases. It lives in `BUILD_NUMBER`, is mirrored as the `+N` in `apps/postit_app/pubspec.yaml`, and is passed to Flutter as `--build-number`. All builds (local, CI, release) go through `scripts/build.sh`, which increments it first; a failed build still uses up its number. A version bump never resets it, because the stores require build numbers to rise across versions.
+2. The build number increases after every build and never decreases. It lives in `BUILD_NUMBER`, is mirrored as the `+N` in `apps/verbnest_app/pubspec.yaml`, and is passed to Flutter as `--build-number`. All builds (local, CI, release) go through `scripts/build.sh`, which increments it first; a failed build still uses up its number. A version bump never resets it, because the stores require build numbers to rise across versions.
 3. Commit message: `<type>(<scope>): <summary> (v<version>)`; `chore` uses `(build <N>)` instead because its version does not change.
 4. `feature`, `minor` and `fix` commits update `CHANGELOG.md` and get an annotated tag `v<version>`; `chore` gets neither.
 5. Pushing and publishing releases stay manual.
 6. `.claude/context.md` is updated twice per phase step: before work starts (goal, FR IDs, ⏳/✅ checklist, planned version) and on completion (result, what was left out, what is untested). The completion update is part of the phase commit.
-7. Release build (macOS): after the phase commit, `scripts/package_macos.sh` builds `flutter build macos --release` through `scripts/build.sh` (which raises the build number), ad-hoc signs `PostIt.app`, packages a styled DMG with `create-dmg` (plain `hdiutil` fallback) and moves it to `~/Downloads` as `PostIt-<version>+<build>-macos-<arch>.dmg`. The build number change is committed afterwards as a `chore`. Notarisation needs a Developer ID and stays manual.
+7. Release build (macOS): after the phase commit, `scripts/package_macos.sh` builds `flutter build macos --release` through `scripts/build.sh` (which raises the build number), ad-hoc signs `Verbnest.app`, packages a styled DMG with `create-dmg` (plain `hdiutil` fallback) and moves it to `~/Downloads` as `Verbnest-<version>+<build>-macos-<arch>.dmg`. The build number change is committed afterwards as a `chore`. Notarisation needs a Developer ID and stays manual.
 8. Claude Code runs this with `/phase-commit <type> <summary>` (see `.claude/commands/phase-commit.md`).
 
 Because `feature` bumps major, the first `feature` commit moves the project to 1.0.0. Treat that as the MVP release (end of Phase 1); use `minor` for steps before it.

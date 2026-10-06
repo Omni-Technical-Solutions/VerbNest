@@ -4,7 +4,7 @@
 # Usage: scripts/screenshots_macos.sh [output-dir]
 #        (default: docs/release/screenshots/macos)
 #
-# The app runs headless inside `flutter test` (apps/postit_app/tool/
+# The app runs headless inside `flutter test` (apps/verbnest_app/tool/
 # screenshots_test.dart) with a demo workspace and canned responses, so it
 # needs no window, no screen-recording permission and no network. Fonts come
 # from the Flutter SDK (Roboto) and macOS (SF Mono, Geeza Pro).
@@ -27,8 +27,8 @@ flutter_root="$(cd "$(dirname "$(readlink "$flutter_bin" || echo "$flutter_bin")
 }
 
 rm -f "$out"/*.png
-cd apps/postit_app
-FLUTTER_ROOT="$flutter_root" POSTIT_SHOTS_DIR="$out" \
+cd apps/verbnest_app
+FLUTTER_ROOT="$flutter_root" VERBNEST_SHOTS_DIR="$out" \
   flutter test tool/screenshots_test.dart
 
 echo

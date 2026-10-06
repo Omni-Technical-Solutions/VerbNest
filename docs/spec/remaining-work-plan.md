@@ -47,12 +47,12 @@ Needs the CI to run, which needs a remote.
 ## Phase 4: Scripts in the CLI (minor) - done in v0.32.0, see ADR-010
 
 - 4a. Spike (1 day): can the QuickJS library behind `fjs` load in a plain Dart
-  process through `dart:ffi`? If yes, a `postit_script` package wraps it for
+  process through `dart:ffi`? If yes, a `verbnest_script` package wraps it for
   both the app and the CLI. If no, evaluate `quickjs` FFI bindings or run the
   CLI through `flutter_tester`-free `dart compile exe` with a bundled
   `libquickjs`.
 - 4b. ADR with the outcome. Move `script_engine`, `script_io`, `script_flow`
-  and `prelude.dart` from the app into `postit_script` behind the existing
+  and `prelude.dart` from the app into `verbnest_script` behind the existing
   `ScriptEngine` interface (the interface is already Flutter-free except the
   Riverpod provider).
 - 4c. `HeadlessSender` runs pre and post phases like `EditorNotifier.send`
@@ -66,7 +66,7 @@ Needs the CI to run, which needs a remote.
 - Secrets for the CLI: read from the OS secret store through the same
   `SecretVault` the app uses, behind a `--secrets` flag.
 - CLI history: optional `--record` to write runs into the local store.
-- Mock server: query matching, `X-PostIt-Delay`, body matching.
+- Mock server: query matching, `X-Verbnest-Delay`, body matching.
 - Live connections: saving messages with the request, binary send,
   SSE `Last-Event-ID` reconnect.
 - GraphQL: GET transport, persisted queries, script-aware introspection.

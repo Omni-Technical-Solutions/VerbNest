@@ -13,7 +13,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 number="$(scripts/next_build.sh)"
 name="$(tr -d '[:space:]' < VERSION)"
-echo "Building PostIt ${name}+${number}"
+echo "Building Verbnest ${name}+${number}"
 
-cd apps/postit_app
+cd apps/verbnest_app
 exec flutter build "$@" --build-name="$name" --build-number="$number"

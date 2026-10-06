@@ -18,32 +18,32 @@ scripts/build.sh macos --release
 
 version="$(tr -d '[:space:]' < VERSION)"
 build="$(tr -d '[:space:]' < BUILD_NUMBER)"
-app="apps/postit_app/build/macos/Build/Products/Release/PostIt.app"
-icon="apps/postit_app/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png"
+app="apps/verbnest_app/build/macos/Build/Products/Release/Verbnest.app"
+icon="apps/verbnest_app/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png"
 [ -d "$app" ] || { echo "Missing $app" >&2; exit 1; }
 
 arch="$(uname -m)"
-name="PostIt-${version}+${build}-macos-${arch}.dmg"
+name="Verbnest-${version}+${build}-macos-${arch}.dmg"
 stage="$(mktemp -d)"
 work="$(mktemp -d)"
 trap 'rm -rf "$stage" "$work"' EXIT
 
-cp -R "$app" "$stage/PostIt.app"
-codesign --force --deep --sign - "$stage/PostIt.app"
+cp -R "$app" "$stage/Verbnest.app"
+codesign --force --deep --sign - "$stage/Verbnest.app"
 
 if command -v create-dmg >/dev/null; then
   create-dmg \
-    --volname "PostIt ${version}" \
+    --volname "Verbnest ${version}" \
     --volicon "$icon" \
     --window-pos 200 120 --window-size 600 400 \
     --icon-size 100 \
-    --icon "PostIt.app" 175 190 \
-    --hide-extension "PostIt.app" \
+    --icon "Verbnest.app" 175 190 \
+    --hide-extension "Verbnest.app" \
     --app-drop-link 425 190 \
     "$work/$name" "$stage/" >/dev/null
 else
   ln -s /Applications "$stage/Applications"
-  hdiutil create -volname "PostIt ${version}" -srcfolder "$stage" \
+  hdiutil create -volname "Verbnest ${version}" -srcfolder "$stage" \
     -ov -format UDZO "$work/$name" >/dev/null
 fi
 

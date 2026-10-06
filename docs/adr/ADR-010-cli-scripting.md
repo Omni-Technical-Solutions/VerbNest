@@ -12,7 +12,7 @@ Flutter plugin. Building QuickJS ourselves for each OS and loading it through
 ## Decision
 
 - Move the script contract, the `pm` prelude, the phase runner and the request
-  mapping into a Flutter-free package, `postit_script`. The app keeps `fjs`
+  mapping into a Flutter-free package, `verbnest_script`. The app keeps `fjs`
   behind the same `ScriptEngine` interface.
 - The CLI runs `ScriptInput.toSource()` in an external runtime, `node` by
   default (`--js-runtime` to change it), inside a fresh `vm` context with no

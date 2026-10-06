@@ -1,16 +1,16 @@
-name: postit_workspace
+name: verbnest_workspace
 publish_to: none
 
 environment:
   sdk: ^3.13.4
 
 workspace:
-  - packages/postit_core
-  - packages/postit_http
-  - packages/postit_import
-  - packages/postit_runner
-  - packages/postit_script
-  - packages/postit_cli
-  - packages/postit_storage
+  - packages/verbnest_core
+  - packages/verbnest_http
+  - packages/verbnest_import
+  - packages/verbnest_runner
+  - packages/verbnest_script
+  - packages/verbnest_cli
+  - packages/verbnest_storage
   - test_server
-  - apps/postit_app
+  - apps/verbnest_app

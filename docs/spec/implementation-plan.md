@@ -17,7 +17,7 @@ Core models, SQLite workspace and local stores, request builder, custom HTTP/1.1
 | Variables | Current value kept apart from initial value for non-secrets; secrets in the OS secure store (today: unencrypted local DB); reveal toggle; warn before send on unresolved variables with remember choice | VAR-002/003/006 |
 | History | Group by day; retention settings; do not record bodies/secrets option; network console | HIS-002/003/004 |
 | Import | Paste cURL into the URL bar; Postman examples and folder scripts kept | IO-001/002 |
-| Workspace | Open, create and switch workspaces; `.postit` import/export UI; revisions UI; attachments for binary bodies | WS-* |
+| Workspace | Open, create and switch workspaces; `.verbnest` import/export UI; revisions UI; attachments for binary bodies | WS-* |
 | App | Font scaling and editor font; shortcuts for new, save, switch tab, search, toggle sidebar; settings for history; open tabs restored after restart | APP-001/002/004/006 |
 | Platforms | Only macOS (Intel) has been built. Android, iOS, Windows, Linux builds, entitlements, signing; CI build matrix; Phase 0 spikes; TLS listeners in `test_server`; performance benchmarks | Phase 0 exit, NFR-* |
 
@@ -30,7 +30,7 @@ Core models, SQLite workspace and local stores, request builder, custom HTTP/1.1
 | 11 Editor power features | Variable highlighting and `{{` autocomplete with tooltip; header autocomplete; bulk edit; auto-generated headers listed and overridable; body bytes in final-request view | L | none |
 | 12 Files and attachments | File picker plugin; attachments table API in storage; form-data and binary file parts; `FileReader` wiring; save response to file; share on mobile | M | decision: `file_selector`, `share_plus` |
 | 13 Response viewer P0 | Spike (c) `re_editor` with 5 MB JSON; highlight, fold, line numbers; image preview; wire/decoded sizes; copy header values; large-body streaming to temp file | L | step 12 |
-| 14 Search, reorder, workspaces | FTS5 index and Ctrl/Cmd+K search; drag and drop and long-press drag; workspace open/new/switch; `.postit` import/export UI; revision history UI | L | step 12 |
+| 14 Search, reorder, workspaces | FTS5 index and Ctrl/Cmd+K search; drag and drop and long-press drag; workspace open/new/switch; `.verbnest` import/export UI; revision history UI | L | step 12 |
 | 15 History, settings, shortcuts | Group by day; retention and no-bodies options; network console; font scale and editor font; full shortcut set; persist open tabs; paste-cURL detection in URL bar | M | none |
 | 16 Platforms and MVP release | Android, iOS, Windows, Linux builds and entitlements; Apple Silicon/universal macOS; CI build matrix; TLS test listeners; spikes (a) to (e) with go/no-go; NFR-PERF checks; then `feature` commit to 1.0.0 | L | steps 9 to 15 |
 

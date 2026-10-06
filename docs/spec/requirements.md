@@ -6,10 +6,10 @@ Requirement IDs are stable. Priority: **P0** MVP, **P1** v1, **P2** later. Each 
 
 ## 1. Workspaces & storage (FR-WS)
 
-Storage decision: ADR-007. A workspace is a SQLite database file (`.postit`); device-local state lives in a separate local database.
+Storage decision: ADR-007. A workspace is a SQLite database file (`.verbnest`); device-local state lives in a separate local database.
 
-**FR-WS-001 (P0) Create/open workspace.** A workspace is a single `.postit` SQLite file. Users can create a new one (stored in app storage), import a `.postit` file (copied into app storage), or, on desktop, open a `.postit` file in place.
-- AC: A file that is not a PostIt database, or has a newer schema version than the app, is rejected with a clear message and left untouched.
+**FR-WS-001 (P0) Create/open workspace.** A workspace is a single `.verbnest` SQLite file. Users can create a new one (stored in app storage), import a `.verbnest` file (copied into app storage), or, on desktop, open a `.verbnest` file in place.
+- AC: A file that is not a Verbnest database, or has a newer schema version than the app, is rejected with a clear message and left untouched.
 - AC: A file with an older schema version is migrated after an automatic backup copy.
 - AC (mobile): No folder permission is required for the default flow; import/export use the platform file picker.
 
@@ -17,7 +17,7 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.postit`); de
 
 **FR-WS-003 (withdrawn)** File watching. Replaced by reactive database queries (UI updates from drift `watch()`); no external file edits to track.
 
-**FR-WS-004 (P0) Single-writer safety.** A workspace open in one PostIt process cannot be opened for writing by another; the second attempt shows "in use" and offers read-only.
+**FR-WS-004 (P0) Single-writer safety.** A workspace open in one Verbnest process cannot be opened for writing by another; the second attempt shows "in use" and offers read-only.
 - AC: Killing the app mid-write never leaves a half-applied change (transactional); verified by crash-injection tests (NFR-REL-001).
 
 **FR-WS-005 (withdrawn)** Git integration. Replaced by the YAML snapshot workflow (FR-WS-006); in-app git UI is dropped from scope (open-questions.md #7).
@@ -25,7 +25,7 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.postit`); de
 **FR-WS-006 (P1) YAML snapshot export/import.** Export a workspace to a folder of YAML files (data-model.md §1.2) with deterministic output so it can be committed to git; import a snapshot into a new workspace or merge into the open one with a conflict list.
 - AC: export → import → export is byte-identical; no secret values or current values are written.
 
-**FR-WS-007 (P0) Backup and share.** "Export workspace" writes a consistent `.postit` copy (no history, current values or secrets) and offers the platform share sheet.
+**FR-WS-007 (P0) Backup and share.** "Export workspace" writes a consistent `.verbnest` copy (no history, current values or secrets) and offers the platform share sheet.
 
 **FR-WS-008 (P1) Revision history.** Each saved edit of a request keeps a revision (default last 50); the user can view a diff and restore.
 
@@ -83,7 +83,7 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.postit`); de
 **FR-AUTH-002 (P0)** OAuth 2.0 client credentials and password grants with token caching.
 **FR-AUTH-003 (P1)** OAuth 2.0 authorization code (+PKCE) and implicit, with system browser flow; refresh tokens; token manager listing/deleting tokens.
 - AC (desktop): loopback redirect on `http://127.0.0.1:<random>/callback`.
-- AC (mobile): custom scheme `postit://oauth/callback` and optional universal link.
+- AC (mobile): custom scheme `verbnest://oauth/callback` and optional universal link.
 **FR-AUTH-004 (P1)** Digest, JWT bearer (HS/RS/ES algorithms), AWS SigV4.
 **FR-AUTH-005 (P2)** OAuth 1.0, Hawk, NTLM (desktop), Akamai EdgeGrid, ASAP.
 **FR-AUTH-006 (P0)** Auth output is visible in the final request view; secrets masked.
@@ -121,7 +121,7 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.postit`); de
 **FR-RUN-002 (P1)** `pm.execution.setNextRequest` / `skipRequest` flow control.
 **FR-RUN-003 (P1)** Live results view; save run; export JUnit XML, JSON, HTML.
 **FR-RUN-004 (P2)** Performance mode (desktop): N virtual users, ramp-up, duration; latency percentiles and error rate.
-**FR-RUN-005 (P2)** Headless CLI `postit run <path> -e <env> -d <data> --reporters junit,cli` with exit code = failures > 0.
+**FR-RUN-005 (P2)** Headless CLI `verbnest run <path> -e <env> -d <data> --reporters junit,cli` with exit code = failures > 0.
 
 ## 11. GraphQL (FR-GQL) — P1
 

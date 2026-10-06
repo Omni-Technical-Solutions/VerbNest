@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.43.0
+
+- Renamed the app from PostIt to Verbnest (ADR-015, `docs/spec/rename-plan.md`). Packages are `verbnest_*`, the CLI is `verbnest` (and `vn`), workspace files are `.verbnest`, the bundle id is `com.omni.verbnest`, env vars are `VERBNEST_*`, mock headers are `X-Verbnest-*`.
+- Old data keeps working: `.postit` files open, `postit.yaml` snapshots import, `POSTIT_VAR_*`/`POSTIT_HISTORY_DB` and `X-PostIt-*` are still read, secrets under the old keychain key move to the new one, and the old app-data folder is copied on first start.
+- Not carried over: the `postit` command (use `verbnest` or `vn`). Android installs under a new package id, so it is a new app to the stores.
+
 ## 0.42.0
 
 - CLI: `postit run --history <db>` records sent requests in a history database (same format as the app, secrets masked, `--no-history-bodies` to skip bodies); `postit history <workspace> --db <db>` lists, shows, searches and clears them. `POSTIT_HISTORY_DB` sets the path.

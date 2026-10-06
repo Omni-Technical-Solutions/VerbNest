@@ -1,6 +1,6 @@
 # ADR-008: HTTP/2 through the `http2` package
 
-- **Status:** Accepted (implemented in `postit_http`, v0.26.0)
+- **Status:** Accepted (implemented in `verbnest_http`, v0.26.0)
 
 ## Context
 ADR-001 left HTTP/2 open. Many APIs now serve HTTP/2 only on some routes, and users expect the protocol to show in the response. HTTP/2 frames, HPACK and flow control are too large to write by hand.

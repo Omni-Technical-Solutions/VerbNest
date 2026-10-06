@@ -18,7 +18,7 @@ type="${1:?usage: bump_version.sh <feature|minor|fix|chore> [--dry-run]}"
 dry="${2:-}"
 cd "$(git rev-parse --show-toplevel)"
 
-app=apps/postit_app/pubspec.yaml
+app=apps/verbnest_app/pubspec.yaml
 current="$(tr -d '[:space:]' < VERSION)"
 build="$(tr -d '[:space:]' < BUILD_NUMBER)"
 IFS=. read -r major minor patch <<<"$current"

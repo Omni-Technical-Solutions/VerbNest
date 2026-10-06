@@ -25,7 +25,7 @@ class RawRequest {
   }
 }
 
-/// Local HTTP/1.1 server used by every PostIt test (constitution X).
+/// Local HTTP/1.1 server used by every Verbnest test (constitution X).
 ///
 /// It parses requests itself instead of using `HttpServer`, because
 /// `HttpServer` normalises header names and would hide wire-fidelity bugs.
@@ -83,7 +83,7 @@ class TestServer {
     List<int> key,
     String passphrase,
   ) async {
-    final dir = await Directory.systemTemp.createTemp('postit-p12');
+    final dir = await Directory.systemTemp.createTemp('verbnest-p12');
     try {
       await File('${dir.path}/c.pem').writeAsBytes(cert);
       await File('${dir.path}/k.pem').writeAsBytes(key);
@@ -108,7 +108,7 @@ class TestServer {
   }) async {
     final cached = _generated[cn];
     if (cached != null) return cached;
-    final dir = await Directory.systemTemp.createTemp('postit-tls');
+    final dir = await Directory.systemTemp.createTemp('verbnest-tls');
     try {
       final candidates = [
         'openssl',

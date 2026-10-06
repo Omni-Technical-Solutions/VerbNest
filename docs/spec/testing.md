@@ -6,7 +6,7 @@
 |---|---|---|---|
 | Unit | Pure Dart packages: resolver, parsers, signers, codecs, importers | `package:test`, `checks`/`matcher` | Every PR, Linux runner |
 | Protocol integration | Engine vs. local test server (HTTP/1.1, HTTP/2, TLS, proxy, WS, SSE, gRPC, MQTT) | `package:test` + `test_server/` | Every PR: Linux, macOS, Windows runners |
-| Script compatibility | `pm` API conformance corpus | `postit_script` tests on QuickJS | Every PR, all desktop runners |
+| Script compatibility | `pm` API conformance corpus | `verbnest_script` tests on QuickJS | Every PR, all desktop runners |
 | Golden / widget | Widgets and adaptive layouts at compact/medium/expanded | `flutter_test`, `alchemist` goldens | Every PR (Linux, pinned fonts) |
 | App integration (E2E) | Real app flows on devices | `integration_test` + `patrol` (native dialogs, permissions) | Nightly + release: Android emulator, iOS simulator, macOS, Windows, Linux |
 | Compatibility corpus | Postman import/export round-trip | CLI-driven corpus tests | Every PR |
@@ -14,7 +14,7 @@
 | Security | Script sandbox escape, path traversal in import, secret leakage | Fuzzing (`package:test` + random corpora), static scans (OSV, Semgrep) | Nightly + release |
 | Manual exploratory | Platform feel, accessibility, store compliance | Checklists below | Every release candidate |
 
-Coverage targets: ≥ 90 % lines in `postit_core`, `postit_http`, `postit_io`, `postit_script`; ≥ 70 % app application layer; goldens for every screen in all three layout classes, light + dark.
+Coverage targets: ≥ 90 % lines in `verbnest_core`, `verbnest_http`, `verbnest_io`, `verbnest_script`; ≥ 70 % app application layer; goldens for every screen in all three layout classes, light + dark.
 
 ## 2. Local test server (`test_server/`)
 
@@ -44,7 +44,7 @@ No test may hit the public internet (constitution X). A lint step greps tests fo
 | Proxy | HTTP CONNECT, SOCKS5, auth, bypass list | FR-HTTP-012 |
 | Responses | large body streaming, truncated preview, charset detection, compressed sizes | FR-RES-* |
 | Auth | every auth type against verifying endpoints; OAuth2 PKCE end-to-end (desktop loopback; mobile via patrol with Custom Tabs/ASWebAuthenticationSession) | FR-AUTH-* |
-| Storage | transactions under simulated crash (kill during write, multi-row edits all-or-nothing); migrations from every released schema version via drift schema dumps; newer-schema and non-PostIt files rejected untouched; exclusive-lock behaviour; unknown JSON keys preserved; local database deletion loses no workspace data; `.postit` export contains no history, current values or secrets | FR-WS-001..004, 007, 009, NFR-REL-001 |
+| Storage | transactions under simulated crash (kill during write, multi-row edits all-or-nothing); migrations from every released schema version via drift schema dumps; newer-schema and non-Verbnest files rejected untouched; exclusive-lock behaviour; unknown JSON keys preserved; local database deletion loses no workspace data; `.verbnest` export contains no history, current values or secrets | FR-WS-001..004, 007, 009, NFR-REL-001 |
 | Snapshot | YAML snapshot export → import → export byte-identical; deterministic ordering; merge conflict list; path traversal and YAML alias bombs rejected | FR-WS-006 |
 | Revisions | one revision per save, 50 cap, restore | FR-WS-008 |
 | Import/export | corpus round-trip; malformed inputs; path traversal in file references; huge files | FR-IO-* |

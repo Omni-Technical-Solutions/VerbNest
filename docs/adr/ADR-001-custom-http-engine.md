@@ -1,6 +1,6 @@
 # ADR-001: Custom HTTP engine over `dart:io` sockets
 
-- **Status:** Accepted (implemented in `postit_http`, v0.1+)
+- **Status:** Accepted (implemented in `verbnest_http`, v0.1+)
 
 ## Context
 An API client must control what goes on the wire: header order and casing, raw bodies, redirect handling and the exact bytes sent. `HttpClient` normalises headers and hides the sent request; native stacks differ per platform.

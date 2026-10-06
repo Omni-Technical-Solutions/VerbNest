@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate every platform app icon from assets/icon/postit_icon.svg.
+"""Regenerate every platform app icon from assets/icon/verbnest_icon.svg.
 
 Requires `rsvg-convert` (brew install librsvg) and Pillow.
 Run from anywhere: python3 scripts/generate_icons.py
@@ -13,8 +13,8 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "assets/icon/postit_icon.svg"
-APP = ROOT / "apps/postit_app"
+SRC = ROOT / "assets/icon/verbnest_icon.svg"
+APP = ROOT / "apps/verbnest_app"
 
 
 def render(svg: str, size: int) -> Image.Image:
@@ -45,9 +45,9 @@ def save(img: Image.Image, path: Path, opaque: bool = False) -> None:
 
 
 # Shared assets
-save(render(rounded, 1024), ROOT / "assets/icon/postit_icon_1024.png")
-save(render(square, 1024), ROOT / "assets/icon/postit_icon_square_1024.png", opaque=True)
-save(render(rounded, 512), ROOT / "assets/icon/postit_icon_512.png")
+save(render(rounded, 1024), ROOT / "assets/icon/verbnest_icon_1024.png")
+save(render(square, 1024), ROOT / "assets/icon/verbnest_icon_square_1024.png", opaque=True)
+save(render(rounded, 512), ROOT / "assets/icon/verbnest_icon_512.png")
 
 # Android legacy launcher icons
 for density, size in {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}.items():

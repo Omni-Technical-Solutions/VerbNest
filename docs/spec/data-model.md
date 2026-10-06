@@ -4,13 +4,13 @@ Three stores, with different jobs (ADR-007):
 
 | Store | Holds | Shared? |
 |---|---|---|
-| **Workspace database** (`<name>.postit`, SQLite via drift) | Collections, folders, requests, examples, environments, variables (initial values), scripts, workspace settings, per-request revisions, attached files (protos, data files) | Yes: copy/export the file |
+| **Workspace database** (`<name>.verbnest`, SQLite via drift) | Collections, folders, requests, examples, environments, variables (initial values), scripts, workspace settings, per-request revisions, attached files (protos, data files) | Yes: copy/export the file |
 | **Local database** (SQLite via drift, per device, in app support dir) | History, run results, search index (FTS5), current variable values, cookies, OAuth token metadata, UI tabs/layout, recent workspaces | No |
 | **Secret store** (OS keychain) | Secret variable values, OAuth tokens, cert passphrases | No |
 
 ## 1. Workspace database
 
-One SQLite file per workspace. Opened in WAL mode with `foreign_keys=ON`; the app holds an exclusive lock while a workspace is open. Default location: `<app documents>/workspaces/<workspace id>.postit`. On desktop a workspace may also be opened in place from any path.
+One SQLite file per workspace. Opened in WAL mode with `foreign_keys=ON`; the app holds an exclusive lock while a workspace is open. Default location: `<app documents>/workspaces/<workspace id>.verbnest`. On desktop a workspace may also be opened in place from any path.
 
 Rules:
 - Every entity has a stable `id` (ULID) so history, run results and tabs refer to it across renames and moves.
@@ -84,7 +84,7 @@ References to files inside a request (binary body, multipart file part, proto fi
 
 | Operation | Result | Priority |
 |---|---|---|
-| Copy `.postit` file / "Export workspace" | Consistent copy made with `VACUUM INTO`, no history, no current values, no secrets | P0 |
+| Copy `.verbnest` file / "Export workspace" | Consistent copy made with `VACUUM INTO`, no history, no current values, no secrets | P0 |
 | Export Postman v2.1, cURL | See §6 | P0 |
 | **Export YAML snapshot** to a folder | Writes the tree below from the database; deterministic output so it diffs cleanly in git | P1 |
 | **Import YAML snapshot** | Reads that tree into a new workspace or merges into the open one (by `id`, with a conflict list) | P1 |
@@ -93,7 +93,7 @@ YAML snapshot layout (same shapes as §2):
 
 ```
 my-api/
-  postit.yaml                        workspace manifest
+  verbnest.yaml                        workspace manifest
   globals.yaml
   environments/dev.yaml ...
   collections/petstore/_collection.yaml
@@ -108,9 +108,9 @@ Sibling order is written as `order: [...]` in each `_folder.yaml`/`_collection.y
 
 These are the shapes of the JSON stored in `node.data`, `auth_json`, `scripts_json` and `example.data`, and of the YAML snapshot files. YAML is shown because it is easier to read; the database stores the same structure as JSON.
 
-### 2.1 `postit.yaml`
+### 2.1 `verbnest.yaml`
 ```yaml
-postit: 1                    # format version
+verbnest: 1                    # format version
 id: 01J9Z3...                # ULID
 name: My API
 defaultEnvironment: dev
@@ -230,7 +230,7 @@ deadlineMs: 5000
 
 Auth block shapes mirror Postman's auth types (e.g. `oauth2: { grantType, accessTokenUrl, authUrl, clientId, clientSecret, scope, usePkce, tokenName, addTokenTo: header|query, headerPrefix }`), with secret fields allowed to be `{{var}}` references so the actual secret lives in a secret variable.
 
-## 3. Domain model (Dart, `postit_core`)
+## 3. Domain model (Dart, `verbnest_core`)
 
 ```
 Workspace(id, name, dbPath, settings, collections[], environments[], globals)
@@ -316,7 +316,7 @@ Drift migrations are versioned and tested (`drift_dev` schema dumps) for every r
 
 ## 6. Postman mapping
 
-| Postman v2.1 | PostIt |
+| Postman v2.1 | Verbnest |
 |---|---|
 | `info` | `node` row, kind `collection`: name/description (Postman `_postman_id` kept as `postmanId` in `extra`) |
 | `item[]` with `item[]` | `node` row, kind `folder`, with `parent_id` and `position` |
