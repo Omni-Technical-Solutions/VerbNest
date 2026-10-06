@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.42.0
+
+- CLI: `postit run --history <db>` records sent requests in a history database (same format as the app, secrets masked, `--no-history-bodies` to skip bodies); `postit history <workspace> --db <db>` lists, shows, searches and clears them. `POSTIT_HISTORY_DB` sets the path.
+- CLI: `postit run --vault` reads secret variables from the system secret store (macOS Keychain, Linux libsecret). Not available on Windows. ADR-014.
+
 ## 0.41.0
 
 - Response: PDF preview. `application/pdf` responses get a "Preview" segment that renders the pages with PDFium (`pdfrx`). PDFs above 20 MB, and unreadable ones, show a message. ADR-013.

@@ -5,6 +5,7 @@ import 'package:postit_http/postit_http.dart';
 import 'package:postit_script/postit_script.dart';
 import 'package:postit_storage/postit_storage.dart';
 
+import 'history_recorder.dart';
 import 'runner.dart';
 
 /// The variable scopes of [requestId] as the app builds them, minus the
@@ -81,6 +82,7 @@ class HeadlessSender {
     this.secrets,
     OAuth2TokenCache? oauthCache,
     this.scripts,
+    this.history,
   }) : _oauthCache = oauthCache ?? OAuth2TokenCache();
 
   final WorkspaceRepository repo;
@@ -91,6 +93,9 @@ class HeadlessSender {
   /// Highest-precedence variables, like `--var name=value`.
   final Map<String, String> overrides;
   final SecretStore? secrets;
+
+  /// Records every request that is sent, when set.
+  final HistoryRecorder? history;
   final OAuth2TokenCache _oauthCache;
 
   /// Runs pre-request and post-response scripts when set; without it,
@@ -135,6 +140,7 @@ class HeadlessSender {
         !item.scripts.isEmpty || repo.scriptsChain(id).any((s) => !s.isEmpty);
     if (hasScripts && scripts == null) scriptsSkipped.add(name);
     final logs = <ConsoleLine>[];
+    PreparedRequest? sentPrepared;
     RunEntry entry({
       HttpResponseRecord? response,
       List<TestResult> tests = const [],
@@ -228,7 +234,14 @@ class HeadlessSender {
         readFile: (ref) async =>
             repo.attachmentBytes(_attachmentId(ref) ?? ref),
       ).build(item, resolver, auth: auth);
+      sentPrepared = prepared;
       final response = await sendPrepared(engine, prepared);
+      history?.record(
+        requestId: id,
+        item: item,
+        prepared: prepared,
+        response: response,
+      );
       final facts = ResponseFacts(
         status: response.status,
         headers: response.headers,
@@ -276,8 +289,20 @@ class HeadlessSender {
     } on RequestBuildError catch (e) {
       return RunStepResult(entry(error: e.message));
     } on HttpEngineError catch (e) {
+      history?.record(
+        requestId: id,
+        item: item,
+        prepared: sentPrepared,
+        error: e.message,
+      );
       return RunStepResult(entry(error: e.message));
     } on IOException catch (e) {
+      history?.record(
+        requestId: id,
+        item: item,
+        prepared: sentPrepared,
+        error: '$e',
+      );
       return RunStepResult(entry(error: '$e'));
     }
   }

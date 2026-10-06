@@ -1,6 +1,6 @@
 name: postit_runner
 description: Collection runner for PostIt, shared by the app and the CLI. No Flutter code.
-version: 0.41.0
+version: 0.42.0
 publish_to: none
 resolution: workspace
 

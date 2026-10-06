@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -7,11 +8,14 @@ import 'package:postit_runner/postit_runner.dart';
 import 'package:postit_script/postit_script.dart';
 import 'package:postit_storage/postit_storage.dart';
 
+import 'system_vault.dart';
+
 const _usage = '''
 PostIt CLI
 
 Usage: postit run <workspace.postit> [options]
        postit mock <workspace.postit> [options]
+       postit history <workspace.postit> --db <history.db> [options]
 
 Runs the requests of a collection or folder and exits 0 when every request
 and test passed, 1 when something failed, 2 on a usage or file error.
@@ -25,6 +29,15 @@ X-PostIt-Example header to pick an example by name. A request that saves
 query parameters or a raw body only answers matching calls when another
 request shares its path; otherwise it answers any call on that path.
 X-PostIt-Delay (ms) or --delay slows replies.
+
+`postit run --history <history.db>` records each request it sends in a
+device-local history database (the same format the app uses; secrets are
+masked). `postit history` lists, shows or clears those rows. Set
+POSTIT_HISTORY_DB to avoid repeating the path.
+
+`postit run --vault` reads secret variables from the system secret store
+(macOS Keychain, Linux libsecret) where the app saved them. --var and
+POSTIT_VAR_<name> still win.
 ''';
 
 ArgParser _runParser() => ArgParser()
@@ -78,6 +91,29 @@ ArgParser _runParser() => ArgParser()
     help: 'Program that runs scripts.',
   )
   ..addFlag('no-scripts', help: 'Do not run scripts.', negatable: false)
+  ..addOption('history', help: 'Record sent requests in this history database.')
+  ..addFlag(
+    'history-bodies',
+    help: 'Store request and response bodies in history.',
+    defaultsTo: true,
+  )
+  ..addFlag(
+    'vault',
+    help: 'Read secret variables from the system secret store.',
+    negatable: false,
+  )
+  ..addFlag('help', abbr: 'h', negatable: false);
+
+ArgParser _historyParser() => ArgParser()
+  ..addOption('db', help: 'History database (or POSTIT_HISTORY_DB).')
+  ..addOption('query', abbr: 'q', help: 'Match method, URL or status.')
+  ..addOption('limit', abbr: 'n', defaultsTo: '20')
+  ..addOption('show', help: 'Print one entry by id.')
+  ..addFlag(
+    'clear',
+    help: 'Delete this workspace\'s history.',
+    negatable: false,
+  )
   ..addFlag('help', abbr: 'h', negatable: false);
 
 /// Runs the CLI; returns the process exit code.
@@ -88,6 +124,7 @@ Future<int> runCli(
   Map<String, String>? environment,
   Future<void>? stop,
   void Function(int port)? onReady,
+  SecretVault? vault,
 }) async {
   if (args.isEmpty || args.first == '--help' || args.first == '-h') {
     out.writeln(_usage);
@@ -95,20 +132,34 @@ Future<int> runCli(
     return args.isEmpty ? 2 : 0;
   }
   final isMock = args.first == 'mock';
-  if (args.first != 'run' && !isMock) {
+  final isHistory = args.first == 'history';
+  if (args.first != 'run' && !isMock && !isHistory) {
     err.writeln('Unknown command "${args.first}". Try: postit run --help');
     return 2;
   }
   final ArgResults r;
   try {
-    r = (isMock ? _mockParser() : _runParser()).parse(args.skip(1));
+    r =
+        (isMock
+                ? _mockParser()
+                : isHistory
+                ? _historyParser()
+                : _runParser())
+            .parse(args.skip(1));
   } on FormatException catch (e) {
     err.writeln(e.message);
     return 2;
   }
   if (r['help'] as bool) {
     out.writeln(_usage);
-    out.writeln((isMock ? _mockParser() : _runParser()).usage);
+    out.writeln(
+      (isMock
+              ? _mockParser()
+              : isHistory
+              ? _historyParser()
+              : _runParser())
+          .usage,
+    );
     return 0;
   }
   if (r.rest.length != 1) {
@@ -128,7 +179,9 @@ Future<int> runCli(
     final repo = WorkspaceRepository(db);
     return isMock
         ? await _mock(r, repo, out, err, environment, stop, onReady)
-        : await _run(r, repo, out, err, environment);
+        : isHistory
+        ? _history(r, repo, out, err, environment)
+        : await _run(r, repo, out, err, environment, vault);
   } on StorageError catch (e) {
     err.writeln(e.message);
     return 2;
@@ -167,6 +220,7 @@ Future<int> _run(
   IOSink out,
   IOSink err,
   Map<String, String>? environment,
+  SecretVault? vault,
 ) async {
   final spec = r['collection'] as String?;
   final NodeInfo? container;
@@ -262,8 +316,42 @@ Future<int> _run(
     maxRedirects: s['maxRedirects'] as int? ?? d.maxRedirects,
     useSystemProxy: true,
   );
+  SecretStore? secrets;
+  if (r['vault'] as bool) {
+    try {
+      secrets = await VaultSecretStore.load(
+        vault ?? SystemSecretVault(),
+        repo.workspaceId,
+      );
+    } on UnsupportedError catch (e) {
+      err.writeln('--vault: ${e.message}');
+      return 2;
+    }
+  }
+
+  final historyPath =
+      (r['history'] as String?) ??
+      (environment ?? Platform.environment)['POSTIT_HISTORY_DB'];
+  LocalStore? historyDb;
+  HistoryRecorder? recorder;
+  if (historyPath != null && historyPath.isNotEmpty) {
+    try {
+      historyDb = LocalStore.open(historyPath);
+    } on Object catch (e) {
+      err.writeln('Cannot open history database: $e');
+      return 2;
+    }
+    recorder = HistoryRecorder(
+      local: historyDb,
+      workspaceId: repo.workspaceId,
+      environmentName: envName,
+      storeBodies: r['history-bodies'] as bool,
+    );
+  }
   final sender = HeadlessSender(
     repo: repo,
+    secrets: secrets,
+    history: recorder,
     engine: HttpEngine(cookieJar: CookieJar()),
     defaults: defaults,
     envId: envId,
@@ -294,6 +382,7 @@ Future<int> _run(
         : null,
   );
 
+  historyDb?.close();
   if (sender.scriptsSkipped.isNotEmpty) {
     err.writeln(
       'Scripts were not run (no JavaScript runtime; see --js-runtime) for: '
@@ -453,4 +542,83 @@ Future<ScriptEngine?> _scriptEngine(ArgResults r) async {
   return await ProcessScriptEngine.available(exe)
       ? ProcessScriptEngine(executable: exe)
       : null;
+}
+
+int _history(
+  ArgResults r,
+  WorkspaceRepository repo,
+  IOSink out,
+  IOSink err,
+  Map<String, String>? environment,
+) {
+  final path =
+      (r['db'] as String?) ??
+      (environment ?? Platform.environment)['POSTIT_HISTORY_DB'];
+  if (path == null || path.isEmpty) {
+    err.writeln('Give the history database with --db or POSTIT_HISTORY_DB.');
+    return 2;
+  }
+  if (!File(path).existsSync()) {
+    err.writeln('No history database at $path.');
+    return 2;
+  }
+  final limit = int.tryParse(r['limit'] as String);
+  if (limit == null || limit < 1) {
+    err.writeln('--limit must be 1 or more.');
+    return 2;
+  }
+  final LocalStore store;
+  try {
+    store = LocalStore.open(path);
+  } on Object catch (e) {
+    err.writeln('Cannot open history database: $e');
+    return 2;
+  }
+  try {
+    final ws = repo.workspaceId;
+    if (r['clear'] as bool) {
+      store.clearHistory(ws);
+      out.writeln('History cleared.');
+      return 0;
+    }
+    final show = r['show'] as String?;
+    if (show != null) {
+      final e = store.history(show);
+      if (e == null || e.workspaceId != ws) {
+        err.writeln('No history entry "$show" for this workspace.');
+        return 2;
+      }
+      out.writeln('${e.method} ${e.url}');
+      out.writeln(
+        '${e.sentAt.toIso8601String()}  '
+        '${e.error != null ? 'error: ${e.error}' : 'status ${e.status ?? '-'}'}'
+        '${e.totalMs == null ? '' : '  ${e.totalMs} ms'}'
+        '${e.environmentName == null ? '' : '  env ${e.environmentName}'}',
+      );
+      out.writeln('--- request');
+      out.writeln(e.requestJson);
+      final body = e.responseBody;
+      if (body != null) {
+        out.writeln('--- response${e.bodyTruncated ? ' (truncated)' : ''}');
+        out.writeln(utf8.decode(body, allowMalformed: true));
+      }
+      return 0;
+    }
+    final rows = store.listHistory(
+      ws,
+      query: r['query'] as String?,
+      limit: limit,
+    );
+    if (rows.isEmpty) out.writeln('No history.');
+    for (final e in rows) {
+      out.writeln(
+        '${e.id}  ${e.sentAt.toIso8601String()}  ${e.method} ${e.url}  '
+        '${e.error != null ? 'error' : e.status ?? '-'}'
+        '${e.totalMs == null ? '' : '  ${e.totalMs} ms'}',
+      );
+    }
+    return 0;
+  } finally {
+    store.close();
+  }
 }
