@@ -120,17 +120,18 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               if (ops.length > 1)
-                DropdownButton<String>(
+                DropdownMenu<String>(
                   key: const Key('gql-operation'),
-                  value: ops.contains(body.operationName)
+                  initialSelection: ops.contains(body.operationName)
                       ? body.operationName
                       : null,
-                  hint: Text(context.l10n.gqlOperation),
-                  items: [
-                    for (final o in ops)
-                      DropdownMenuItem(value: o, child: Text(o)),
+                  hintText: context.l10n.gqlOperation,
+                  expandedInsets: EdgeInsets.zero,
+                  requestFocusOnTap: false,
+                  dropdownMenuEntries: [
+                    for (final o in ops) DropdownMenuEntry(value: o, label: o),
                   ],
-                  onChanged: (v) =>
+                  onSelected: (v) =>
                       widget.onChanged(body.copyWith(operationName: v ?? '')),
                 ),
               Tooltip(

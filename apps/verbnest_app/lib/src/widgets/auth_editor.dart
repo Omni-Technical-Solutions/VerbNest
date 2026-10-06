@@ -51,14 +51,17 @@ class AuthEditor extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        DropdownButton<String>(
+        DropdownMenu<String>(
           key: const Key('auth-type'),
-          value: _types.contains(auth.type) ? auth.type : null,
-          hint: Text(auth.type),
-          items: [
-            for (final t in _types) DropdownMenuItem(value: t, child: Text(t)),
+          initialSelection: auth.type,
+          requestFocusOnTap: false,
+          expandedInsets: EdgeInsets.zero,
+          dropdownMenuEntries: [
+            for (final t in _types) DropdownMenuEntry(value: t, label: t),
+            if (!_types.contains(auth.type))
+              DropdownMenuEntry(value: auth.type, label: auth.type),
           ],
-          onChanged: (t) {
+          onSelected: (t) {
             if (t != null && t != auth.type) _set(_fresh(t));
           },
         ),
@@ -203,14 +206,16 @@ extension on AuthEditor {
   );
 
   List<Widget> _jwt(BuildContext context, JwtAuth a) => [
-    DropdownButton<JwtAlgorithm>(
+    DropdownMenu<JwtAlgorithm>(
       key: const Key('jwt-algorithm'),
-      value: a.algorithm,
-      items: [
+      initialSelection: a.algorithm,
+      requestFocusOnTap: false,
+      expandedInsets: EdgeInsets.zero,
+      dropdownMenuEntries: [
         for (final g in JwtAlgorithm.values)
-          DropdownMenuItem(value: g, child: Text(g.label)),
+          DropdownMenuEntry(value: g, label: g.label),
       ],
-      onChanged: (g) {
+      onSelected: (g) {
         if (g != null) _set(a.copyWith(algorithm: g));
       },
     ),
@@ -257,28 +262,30 @@ extension on AuthEditor {
 
     final needsToken = a.grant != OAuth2Grant.implicit;
     return [
-      DropdownButton<OAuth2Grant>(
+      DropdownMenu<OAuth2Grant>(
         key: const Key('oauth-grant'),
-        value: a.grant,
-        items: [
-          DropdownMenuItem(
+        initialSelection: a.grant,
+        requestFocusOnTap: false,
+        expandedInsets: EdgeInsets.zero,
+        dropdownMenuEntries: [
+          DropdownMenuEntry(
             value: OAuth2Grant.clientCredentials,
-            child: Text(context.l10n.oauthClientCredentials),
+            label: context.l10n.oauthClientCredentials,
           ),
-          DropdownMenuItem(
+          DropdownMenuEntry(
             value: OAuth2Grant.password,
-            child: Text(context.l10n.oauthPassword),
+            label: context.l10n.oauthPassword,
           ),
-          DropdownMenuItem(
+          DropdownMenuEntry(
             value: OAuth2Grant.authorizationCode,
-            child: Text(context.l10n.oauthAuthCode),
+            label: context.l10n.oauthAuthCode,
           ),
-          DropdownMenuItem(
+          DropdownMenuEntry(
             value: OAuth2Grant.implicit,
-            child: Text(context.l10n.oauthImplicit),
+            label: context.l10n.oauthImplicit,
           ),
         ],
-        onChanged: (g) {
+        onSelected: (g) {
           if (g != null) _set(a.copyWith(grant: g));
         },
       ),

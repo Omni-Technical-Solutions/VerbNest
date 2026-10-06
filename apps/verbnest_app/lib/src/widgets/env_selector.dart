@@ -21,19 +21,20 @@ class EnvSelector extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        DropdownButton<String?>(
+        DropdownMenu<String?>(
           key: const Key('env-select'),
-          value: envs.any((e) => e.id == active) ? active : null,
-          underline: const SizedBox.shrink(),
-          items: [
-            DropdownMenuItem(
+          initialSelection: envs.any((e) => e.id == active) ? active : null,
+          requestFocusOnTap: false,
+          decorationBuilder: (_, _) =>
+              InputDecoration(border: InputBorder.none, isDense: true),
+          dropdownMenuEntries: [
+            DropdownMenuEntry(
               value: null,
-              child: Text(context.l10n.noEnvironment),
+              label: context.l10n.noEnvironment,
             ),
-            for (final e in envs)
-              DropdownMenuItem(value: e.id, child: Text(e.name)),
+            for (final e in envs) DropdownMenuEntry(value: e.id, label: e.name),
           ],
-          onChanged: ref.read(activeEnvProvider.notifier).select,
+          onSelected: ref.read(activeEnvProvider.notifier).select,
         ),
         IconButton(
           key: const Key('quick-look'),

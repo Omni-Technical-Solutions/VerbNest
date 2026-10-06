@@ -1,6 +1,6 @@
 name: test_server
 description: Local echo and protocol test server used by all Verbnest tests.
-version: 0.43.0
+version: 0.44.0
 publish_to: none
 resolution: workspace
 

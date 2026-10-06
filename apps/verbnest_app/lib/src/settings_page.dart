@@ -64,25 +64,27 @@ class SettingsPage extends ConsumerWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: DropdownButtonFormField<String>(
+          child: DropdownMenu<String>(
             key: const Key('language'),
-            initialValue: ref.watch(localeProvider)?.languageCode ?? '',
-            decoration: InputDecoration(labelText: context.l10n.language),
-            items: [
-              DropdownMenuItem(
+            initialSelection: ref.watch(localeProvider)?.languageCode ?? '',
+            expandedInsets: EdgeInsets.zero,
+            requestFocusOnTap: false,
+            label: Text(context.l10n.language),
+            dropdownMenuEntries: [
+              DropdownMenuEntry(
                 value: '',
-                child: Text(context.l10n.systemDefault),
+                label: context.l10n.systemDefault,
               ),
-              DropdownMenuItem(
+              DropdownMenuEntry(
                 value: 'en',
-                child: Text(context.l10n.langEnglish),
+                label: context.l10n.langEnglish,
               ),
-              DropdownMenuItem(
+              DropdownMenuEntry(
                 value: 'ar',
-                child: Text(context.l10n.langArabic),
+                label: context.l10n.langArabic,
               ),
             ],
-            onChanged: (v) => ref
+            onSelected: (v) => ref
                 .read(localeProvider.notifier)
                 .set(v == null || v.isEmpty ? null : Locale(v)),
           ),

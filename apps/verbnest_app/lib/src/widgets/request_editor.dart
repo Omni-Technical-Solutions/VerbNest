@@ -196,20 +196,25 @@ class RequestEditor extends ConsumerWidget {
       padding: const EdgeInsets.all(8),
       child: Row(
         children: [
-          DropdownButton<String>(
+          DropdownMenu<String>(
             key: const Key('method'),
-            value: httpMethods.contains(item.method) ? item.method : null,
-            hint: Text(item.method),
-            underline: const SizedBox.shrink(),
-            items: [
-              for (final m in httpMethods)
-                DropdownMenuItem(value: m, child: Text(m)),
-              DropdownMenuItem(
+            initialSelection:
+                httpMethods.contains(item.method) ? item.method : null,
+            width: 120,
+            requestFocusOnTap: false,
+            decorationBuilder: (_, _) => InputDecoration(
+              border: InputBorder.none,
+              isDense: true,
+              hintText: item.method,
+            ),
+            dropdownMenuEntries: [
+              for (final m in httpMethods) DropdownMenuEntry(value: m, label: m),
+              DropdownMenuEntry(
                 value: _customMethod,
-                child: Text(context.l10n.reCustom),
+                label: context.l10n.reCustom,
               ),
             ],
-            onChanged: (m) async {
+            onSelected: (m) async {
               if (m == null) return;
               if (m != _customMethod) {
                 notifier.edit((i) => i.copyWith(method: m));
@@ -593,15 +598,17 @@ class _BodyTab extends ConsumerWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: DropdownButton<String>(
+          child: DropdownMenu<String>(
             key: const Key('body-mode'),
-            value: _modes.contains(body.mode) ? body.mode : null,
-            hint: Text(body.mode),
-            items: [
-              for (final m in _modes)
-                DropdownMenuItem(value: m, child: Text(m)),
+            initialSelection:
+                _modes.contains(body.mode) ? body.mode : null,
+            hintText: body.mode,
+            expandedInsets: EdgeInsets.zero,
+            requestFocusOnTap: false,
+            dropdownMenuEntries: [
+              for (final m in _modes) DropdownMenuEntry(value: m, label: m),
             ],
-            onChanged: (m) {
+            onSelected: (m) {
               if (m == null || m == body.mode) return;
               // A GraphQL operation is a POST; a GET with a body is rarely meant.
               notifier.edit(
@@ -676,22 +683,22 @@ class _SettingsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        DropdownButtonFormField<String>(
+        DropdownMenu<String>(
           key: const Key('http-version'),
-          initialValue: s.httpVersion ?? 'auto',
-          decoration: InputDecoration(
-            labelText: context.l10n.reHttpVersion,
-            helperText: context.l10n.reHttp2Hint,
-          ),
-          items: [
-            DropdownMenuItem(
+          initialSelection: s.httpVersion ?? 'auto',
+          expandedInsets: EdgeInsets.zero,
+          requestFocusOnTap: false,
+          label: Text(context.l10n.reHttpVersion),
+          helperText: context.l10n.reHttp2Hint,
+          dropdownMenuEntries: [
+            DropdownMenuEntry(
               value: 'auto',
-              child: Text(context.l10n.reHttpAuto),
+              label: context.l10n.reHttpAuto,
             ),
-            DropdownMenuItem(value: '1.1', child: Text(context.l10n.reHttp11)),
-            DropdownMenuItem(value: '2', child: Text(context.l10n.reHttp2)),
+            DropdownMenuEntry(value: '1.1', label: context.l10n.reHttp11),
+            DropdownMenuEntry(value: '2', label: context.l10n.reHttp2),
           ],
-          onChanged: (v) =>
+          onSelected: (v) =>
               _set(s.copyWith(httpVersion: v == 'auto' ? null : v)),
         ),
         const SizedBox(height: 8),

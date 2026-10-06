@@ -74,17 +74,18 @@ class AssertionsEditor extends StatelessWidget {
             value: a.enabled,
             onChanged: (v) => _replace(i, a.copyWith(enabled: v ?? true)),
           ),
-          DropdownButton<AssertionTarget>(
+          DropdownMenu<AssertionTarget>(
             key: Key('assert-target-$i'),
-            value: a.target,
-            items: [
+            initialSelection: a.target,
+            requestFocusOnTap: false,
+            dropdownMenuEntries: [
               for (final t in AssertionTarget.values)
-                DropdownMenuItem(
+                DropdownMenuEntry(
                   value: t,
-                  child: Text(_targetLabel(context, t)),
+                  label: _targetLabel(context, t),
                 ),
             ],
-            onChanged: (t) {
+            onSelected: (t) {
               if (t == null) return;
               final nextOps = Assertion.opsFor(t);
               _replace(
@@ -115,14 +116,15 @@ class AssertionsEditor extends StatelessWidget {
               ),
             ),
           if (a.target != AssertionTarget.schema)
-            DropdownButton<AssertionOp>(
+            DropdownMenu<AssertionOp>(
               key: Key('assert-op-$i'),
-              value: ops.contains(a.op) ? a.op : ops.first,
-              items: [
+              initialSelection: ops.contains(a.op) ? a.op : ops.first,
+              requestFocusOnTap: false,
+              dropdownMenuEntries: [
                 for (final o in ops)
-                  DropdownMenuItem(value: o, child: Text(o.label)),
+                  DropdownMenuEntry(value: o, label: o.label),
               ],
-              onChanged: (o) {
+              onSelected: (o) {
                 if (o != null) _replace(i, a.copyWith(op: o));
               },
             ),

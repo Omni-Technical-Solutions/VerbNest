@@ -39,14 +39,16 @@ class _CodeDialogState extends ConsumerState<CodeDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButton<CodeLanguage>(
+            DropdownMenu<CodeLanguage>(
               key: const Key('code-language'),
-              value: _language,
-              items: [
+              initialSelection: _language,
+              expandedInsets: EdgeInsets.zero,
+              requestFocusOnTap: false,
+              dropdownMenuEntries: [
                 for (final l in CodeLanguage.values)
-                  DropdownMenuItem(value: l, child: Text(l.label)),
+                  DropdownMenuEntry(value: l, label: l.label),
               ],
-              onChanged: (l) => setState(() => _language = l ?? _language),
+              onSelected: (l) => setState(() => _language = l ?? _language),
             ),
             SwitchListTile(
               key: const Key('code-resolve'),

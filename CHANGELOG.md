@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.44.0
+
+- All dropdowns converted from `DropdownButton` to `DropdownMenu` (Material 3). The old `DropdownButton` had a hardcoded 300ms menu overlay animation that caused a visible fade when selecting an item. `DropdownMenu` uses `MenuAnchor` with `animated: false` by default, so menus open and close instantly. Affected: auth type, JWT algorithm, OAuth2 grant, HTTP method, body mode, HTTP version, language, GraphQL operation, code language, environment, assertion target, assertion operator.
+
 ## 0.43.0
 
 - Renamed the app from PostIt to Verbnest (ADR-015, `docs/spec/rename-plan.md`). Packages are `verbnest_*`, the CLI is `verbnest` (and `vn`), workspace files are `.verbnest`, the bundle id is `com.omni.verbnest`, env vars are `VERBNEST_*`, mock headers are `X-Verbnest-*`.
