@@ -10,6 +10,7 @@ import 'errors.dart';
 import 'http2_exchange.dart';
 import 'models.dart';
 import 'proxy.dart';
+import 'proxy_tunnel.dart';
 import 'tls_config.dart';
 
 /// Lets callers abort an in-flight request (FR-HTTP-009).
@@ -210,7 +211,7 @@ class HttpEngine {
     if (absoluteForm &&
         proxy!.hasAuth &&
         !headers.any((h) => h.$1.toLowerCase() == 'proxy-authorization')) {
-      headers.add(('Proxy-Authorization', _basic(proxy)));
+      headers.add(('Proxy-Authorization', basicProxyAuth(proxy)));
     }
     final target = absoluteForm
         ? spec.url.removeFragment().toString()
@@ -225,16 +226,13 @@ class HttpEngine {
     return _Wire(head.toString(), body, spec.method, target, headers);
   }
 
-  static String _basic(ProxyConfig p) =>
-      'Basic ${base64Encode(utf8.encode('${p.username}:${p.password}'))}';
-
   List<Header> _withAutoHeaders(HttpRequestSpec spec, int bodyLength) {
     final user = spec.headers;
     bool has(String n) => user.any((h) => h.$1.toLowerCase() == n);
     final u = spec.url;
     final defaultPort = u.scheme == 'https' ? 443 : 80;
     final hostValue = u.hasPort && u.port != defaultPort
-        ? '${u.host.contains(':') ? '[${u.host}]' : u.host}:${u.port}'
+        ? hostPort(u.host, u.port)
         : (u.host.contains(':') ? '[${u.host}]' : u.host);
     return [
       ...user,
@@ -299,97 +297,18 @@ class _Connection {
     if (u.host.isEmpty || (u.scheme != 'http' && u.scheme != 'https')) {
       throw ProtocolError('Unsupported URL: $u');
     }
-    final port = u.hasPort ? u.port : (u.scheme == 'https' ? 443 : 80);
     final wanted = spec.settings.httpVersion;
     if (wanted == HttpVersionPref.http2 && u.scheme != 'https') {
       throw const ProtocolError('HTTP/2 needs an https:// URL');
     }
 
-    final via = proxy;
-    var mark = sw.elapsed;
-    final addresses = await InternetAddress.lookup(via?.host ?? u.host);
-    final dns = sw.elapsed - mark;
-    _checkCancelled();
+    final dns = await _lookup(sw);
+    final tcp = await _connectTcp(dns.address, sw);
+    final tls = await _secure(tcp.socket, sw);
+    final socket = tls.socket;
 
-    mark = sw.elapsed;
-    var socket = await Socket.connect(addresses.first, via?.port ?? port);
-    _socket = socket;
-    ByteReader? reader;
-    if (via != null) {
-      if (via.kind == ProxyKind.socks5) {
-        reader = ByteReader(socket);
-        await _socks5(socket, reader, via, u.host, port);
-      } else if (u.scheme == 'https') {
-        reader = ByteReader(socket);
-        await _httpConnect(socket, reader, via, u.host, port);
-      }
-    }
-    final connect = sw.elapsed - mark;
-    _checkCancelled();
-
-    mark = sw.elapsed;
-    TlsInfo? tlsInfo;
-    String? negotiated;
-    if (u.scheme == 'https') {
-      final config = spec.settings.tls;
-      SecurityContext? context;
-      if (config != null && !config.isEmpty) {
-        try {
-          context = config.contextFor(u.host);
-        } on Object catch (e) {
-          throw TlsError('Could not load the certificates: $e');
-        }
-      }
-      final secure = await SecureSocket.secure(
-        socket,
-        host: u.host,
-        context: context,
-        supportedProtocols: switch (wanted) {
-          HttpVersionPref.http1 => const ['http/1.1'],
-          HttpVersionPref.http2 => const ['h2'],
-          HttpVersionPref.auto => const ['h2', 'http/1.1'],
-        },
-        onBadCertificate: spec.settings.verifyTls ? null : (_) => true,
-      );
-      socket = secure;
-      _socket = socket;
-      reader = null;
-      negotiated = secure.selectedProtocol;
-      final cert = secure.peerCertificate;
-      if (cert != null) {
-        tlsInfo = TlsInfo(
-          subject: cert.subject,
-          issuer: cert.issuer,
-          validFrom: cert.startValidity,
-          validTo: cert.endValidity,
-          protocol: secure.selectedProtocol,
-          clientCertificateSent:
-              config?.clientCertificates.any((c) => c.matches(u.host)) ?? false,
-        );
-      }
-    }
-    final tls = sw.elapsed - mark;
-
-    if (negotiated == 'h2') {
-      final fields = h2Fields(wire.method, u, wire.target, wire.headers);
-      final h2Wire = _Wire(
-        h2HeadText(wire.method, fields),
-        wire.body,
-        wire.method,
-        wire.target,
-        wire.headers,
-      );
-      final r = await h2Exchange(socket, fields, wire.body, sw);
-      final parsed = _Parsed(
-        httpVersion: '2',
-        status: r.status,
-        reason: '',
-        headers: r.headers,
-        body: r.body,
-        ttfb: r.ttfb,
-        download: r.download,
-      );
-      return _record(parsed, h2Wire, dns, connect, tls, sw, tlsInfo);
+    if (tls.negotiated == 'h2') {
+      return _exchangeH2(wire, socket, sw, dns.time, tcp.time, tls);
     }
     if (wanted == HttpVersionPref.http2) {
       throw const ProtocolError('The server does not support HTTP/2');
@@ -400,113 +319,134 @@ class _Connection {
     await socket.flush();
     final sentAt = sw.elapsed;
 
-    reader ??= ByteReader(socket);
-    final parsed = await _readResponse(reader, sw, sentAt);
-    return _record(parsed, wire, dns, connect, tls, sw, tlsInfo);
-  }
-
-  static String _hostPort(String host, int port) =>
-      '${host.contains(':') ? '[$host]' : host}:$port';
-
-  /// Opens a tunnel through an HTTP proxy with CONNECT.
-  Future<void> _httpConnect(
-    Socket socket,
-    ByteReader reader,
-    ProxyConfig proxy,
-    String host,
-    int port,
-  ) async {
-    final hp = _hostPort(host, port);
-    socket.add(
-      utf8.encode(
-        'CONNECT $hp HTTP/1.1\r\nHost: $hp\r\n'
-        '${proxy.hasAuth ? 'Proxy-Authorization: ${HttpEngine._basic(proxy)}\r\n' : ''}'
-        '\r\n',
-      ),
+    // A TLS handshake consumed the reader that spoke to the proxy.
+    final reader = tls.secured ? ByteReader(socket) : tcp.reader;
+    final parsed = await _readResponse(
+      reader ?? ByteReader(socket),
+      sw,
+      sentAt,
     );
-    await socket.flush();
-    final head = await reader.readHead();
-    if (head == null) {
-      throw const NetworkError('The proxy closed the connection');
-    }
-    final line = latin1.decode(head).split('\r\n').first;
-    final parts = line.split(' ');
-    final code = parts.length > 1 ? int.tryParse(parts[1]) : null;
-    if (code == null || code < 200 || code >= 300) {
-      throw NetworkError('The proxy refused the tunnel: $line');
-    }
+    return _record(parsed, wire, dns.time, tcp.time, tls.time, sw, tls.info);
   }
 
-  /// SOCKS5 handshake (RFC 1928, user/password per RFC 1929). The proxy
-  /// resolves [host], so DNS does not leak.
-  Future<void> _socks5(
-    Socket socket,
-    ByteReader reader,
-    ProxyConfig proxy,
-    String host,
-    int port,
+  int get _port {
+    final u = spec.url;
+    return u.hasPort ? u.port : (u.scheme == 'https' ? 443 : 80);
+  }
+
+  Future<({InternetAddress address, Duration time})> _lookup(
+    Stopwatch sw,
   ) async {
-    socket.add(proxy.hasAuth ? [5, 2, 0, 2] : [5, 1, 0]);
-    await socket.flush();
-    final choice = await reader.readExact(2);
-    if (choice[0] != 5) throw const NetworkError('Not a SOCKS5 proxy');
-    if (choice[1] == 0xFF) {
-      throw const NetworkError(
-        'The SOCKS5 proxy accepts none of our log-in methods',
-      );
-    }
-    if (choice[1] == 2) {
-      if (!proxy.hasAuth) {
-        throw const NetworkError(
-          'The SOCKS5 proxy needs a user name and password',
-        );
+    final mark = sw.elapsed;
+    final addresses = await InternetAddress.lookup(
+      proxy?.host ?? spec.url.host,
+    );
+    final time = sw.elapsed - mark;
+    _checkCancelled();
+    return (address: addresses.first, time: time);
+  }
+
+  /// Opens the TCP connection, through the proxy tunnel when there is one.
+  Future<({Socket socket, ByteReader? reader, Duration time})> _connectTcp(
+    InternetAddress address,
+    Stopwatch sw,
+  ) async {
+    final u = spec.url;
+    final via = proxy;
+    final mark = sw.elapsed;
+    final socket = await Socket.connect(address, via?.port ?? _port);
+    _socket = socket;
+    ByteReader? reader;
+    if (via != null) {
+      if (via.kind == ProxyKind.socks5) {
+        reader = ByteReader(socket);
+        await socks5Handshake(socket, reader, via, u.host, _port);
+      } else if (u.scheme == 'https') {
+        reader = ByteReader(socket);
+        await httpConnectTunnel(socket, reader, via, u.host, _port);
       }
-      final user = utf8.encode(proxy.username);
-      final pass = utf8.encode(proxy.password);
-      if (user.length > 255 || pass.length > 255) {
-        throw const NetworkError('The proxy user name or password is too long');
+    }
+    final time = sw.elapsed - mark;
+    _checkCancelled();
+    return (socket: socket, reader: reader, time: time);
+  }
+
+  /// Upgrades [socket] to TLS for https URLs; other URLs pass through.
+  Future<_Secured> _secure(Socket socket, Stopwatch sw) async {
+    final u = spec.url;
+    final mark = sw.elapsed;
+    if (u.scheme != 'https') {
+      return _Secured(socket, secured: false, time: sw.elapsed - mark);
+    }
+    final config = spec.settings.tls;
+    SecurityContext? context;
+    if (config != null && !config.isEmpty) {
+      try {
+        context = config.contextFor(u.host);
+      } on Object catch (e) {
+        throw TlsError('Could not load the certificates: $e');
       }
-      socket.add([1, user.length, ...user, pass.length, ...pass]);
-      await socket.flush();
-      final ok = await reader.readExact(2);
-      if (ok[1] != 0) {
-        throw const NetworkError(
-          'The SOCKS5 proxy rejected the user name or password',
-        );
-      }
     }
-    final ip = InternetAddress.tryParse(host);
-    final addr = ip != null
-        ? [ip.type == InternetAddressType.IPv4 ? 1 : 4, ...ip.rawAddress]
-        : [3, utf8.encode(host).length, ...utf8.encode(host)];
-    if (ip == null && utf8.encode(host).length > 255) {
-      throw const NetworkError('The host name is too long for SOCKS5');
-    }
-    socket.add([5, 1, 0, ...addr, port >> 8, port & 0xFF]);
-    await socket.flush();
-    final reply = await reader.readExact(4);
-    if (reply[1] != 0) {
-      const reasons = {
-        1: 'general failure',
-        2: 'not allowed by the proxy rules',
-        3: 'network unreachable',
-        4: 'host unreachable',
-        5: 'connection refused',
-        6: 'TTL expired',
-        7: 'command not supported',
-        8: 'address type not supported',
-      };
-      throw NetworkError(
-        'The SOCKS5 proxy could not connect: ${reasons[reply[1]] ?? 'error ${reply[1]}'}',
-      );
-    }
-    final skip = switch (reply[3]) {
-      1 => 4,
-      4 => 16,
-      3 => (await reader.readExact(1))[0],
-      _ => throw const NetworkError('Unexpected SOCKS5 reply'),
-    };
-    await reader.readExact(skip + 2);
+    final secure = await SecureSocket.secure(
+      socket,
+      host: u.host,
+      context: context,
+      supportedProtocols: switch (spec.settings.httpVersion) {
+        HttpVersionPref.http1 => const ['http/1.1'],
+        HttpVersionPref.http2 => const ['h2'],
+        HttpVersionPref.auto => const ['h2', 'http/1.1'],
+      },
+      onBadCertificate: spec.settings.verifyTls ? null : (_) => true,
+    );
+    _socket = secure;
+    final cert = secure.peerCertificate;
+    return _Secured(
+      secure,
+      secured: true,
+      negotiated: secure.selectedProtocol,
+      time: sw.elapsed - mark,
+      info: cert == null
+          ? null
+          : TlsInfo(
+              subject: cert.subject,
+              issuer: cert.issuer,
+              validFrom: cert.startValidity,
+              validTo: cert.endValidity,
+              protocol: secure.selectedProtocol,
+              clientCertificateSent:
+                  config?.clientCertificates.any((c) => c.matches(u.host)) ??
+                  false,
+            ),
+    );
+  }
+
+  Future<HttpResponseRecord> _exchangeH2(
+    _Wire wire,
+    Socket socket,
+    Stopwatch sw,
+    Duration dns,
+    Duration connect,
+    _Secured tls,
+  ) async {
+    final fields = h2Fields(wire.method, spec.url, wire.target, wire.headers);
+    final h2Wire = _Wire(
+      h2HeadText(wire.method, fields),
+      wire.body,
+      wire.method,
+      wire.target,
+      wire.headers,
+    );
+    final r = await h2Exchange(socket, fields, wire.body, sw);
+    final parsed = _Parsed(
+      httpVersion: '2',
+      status: r.status,
+      reason: '',
+      headers: r.headers,
+      body: r.body,
+      ttfb: r.ttfb,
+      download: r.download,
+    );
+    return _record(parsed, h2Wire, dns, connect, tls.time, sw, tls.info);
   }
 
   void _checkCancelled() {
@@ -658,6 +598,22 @@ class _Connection {
     if (e is FormatException) return NetworkError(e.message);
     return NetworkError('$e');
   }
+}
+
+class _Secured {
+  _Secured(
+    this.socket, {
+    required this.secured,
+    required this.time,
+    this.negotiated,
+    this.info,
+  });
+
+  final Socket socket;
+  final bool secured;
+  final String? negotiated;
+  final TlsInfo? info;
+  final Duration time;
 }
 
 class _Parsed {
