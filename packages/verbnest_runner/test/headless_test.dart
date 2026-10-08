@@ -111,6 +111,22 @@ void main() {
     expect(server.requests, isEmpty);
   });
 
+  test('a -v override of a secret variable is masked in the report', () async {
+    final a = add('ok', (i) => i.copyWith(url: '{{base}}/echo?t={{token}}'));
+    final sender = HeadlessSender(
+      repo: repo,
+      engine: HttpEngine(),
+      overrides: {'token': 'OVERRIDE-SECRET'},
+    );
+    final report = await executeRun(
+      config: RunConfig(name: 'API', requestIds: [a]),
+      repo: repo,
+      step: sender.step,
+    );
+    expect(report.entries.single.status, 200);
+    expect(report.entries.single.url, isNot(contains('OVERRIDE-SECRET')));
+  });
+
   test(
     'a connection failure becomes an entry error, not an exception',
     () async {

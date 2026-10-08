@@ -44,9 +44,28 @@ VariableScopes workspaceScopes(
   ];
 
   final containers = repo.ancestors(requestId).reversed.toList();
+  // An override of a secret variable stays secret, so reports and history
+  // mask its value and the approved-host check applies to it.
+  final secretKeys = {
+    for (final o in [
+      VariableOwner.global,
+      if (envId != null) VariableOwner.environment(envId),
+      for (var i = 0; i < containers.length; i++)
+        i == 0
+            ? VariableOwner.collection(containers[i])
+            : VariableOwner.folder(containers[i]),
+    ])
+      for (final v in repo.variables(o))
+        if (v.secret) v.key,
+  };
   return VariableScopes(
     local: [
-      for (final e in overrides.entries) Variable(key: e.key, value: e.value),
+      for (final e in overrides.entries)
+        Variable(
+          key: e.key,
+          value: e.value,
+          secret: secretKeys.contains(e.key),
+        ),
     ],
     data: [for (final e in data.entries) Variable(key: e.key, value: e.value)],
     global: [...vars(VariableOwner.global), ...extra(ScriptScope.globals)],

@@ -392,4 +392,30 @@ subscription { y }
       expect(UrlText.appendQuery('http://h/p', ''), 'http://h/p');
     });
   });
+
+  test('deeply nested type references are rejected, not a stack overflow', () {
+    final sdl = 'type A { f: ${'[' * 10000}Int${']' * 10000} }';
+    expect(() => GraphqlSchema.fromSdl(sdl), throwsFormatException);
+    Object ref = {'kind': 'SCALAR', 'name': 'Int'};
+    for (var i = 0; i < 10000; i++) {
+      ref = {'kind': 'LIST', 'ofType': ref};
+    }
+    final json = {
+      'data': {
+        '__schema': {
+          'queryType': {'name': 'Query'},
+          'types': [
+            {
+              'kind': 'OBJECT',
+              'name': 'Query',
+              'fields': [
+                {'name': 'f', 'args': [], 'type': ref},
+              ],
+            },
+          ],
+        },
+      },
+    };
+    expect(() => GraphqlSchema.fromIntrospection(json), throwsFormatException);
+  });
 }

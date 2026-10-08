@@ -209,11 +209,17 @@ class GraphqlSchema {
     _ => null,
   };
 
-  static String _typeText(Object? ref) {
+  /// Deepest list/non-null wrapping accepted in a type reference.
+  static const _maxTypeDepth = 64;
+
+  static String _typeText(Object? ref, [int depth = 0]) {
     if (ref is! Map) return 'String';
+    if (depth > _maxTypeDepth) {
+      throw const FormatException('Type reference is nested too deeply');
+    }
     return switch (ref['kind']) {
-      'NON_NULL' => '${_typeText(ref['ofType'])}!',
-      'LIST' => '[${_typeText(ref['ofType'])}]',
+      'NON_NULL' => '${_typeText(ref['ofType'], depth + 1)}!',
+      'LIST' => '[${_typeText(ref['ofType'], depth + 1)}]',
       _ => ref['name'] as String? ?? 'String',
     };
   }
@@ -544,10 +550,13 @@ class _SdlParser {
     return GqlArg(name, type, defaultValue: def, description: desc);
   }
 
-  String _typeRef() {
+  String _typeRef([int depth = 0]) {
+    if (depth > GraphqlSchema._maxTypeDepth) {
+      throw const FormatException('Type reference is nested too deeply');
+    }
     String base;
     if (_eatPunct('[')) {
-      base = '[${_typeRef()}]';
+      base = '[${_typeRef(depth + 1)}]';
       _punct(']');
     } else {
       base = _name();

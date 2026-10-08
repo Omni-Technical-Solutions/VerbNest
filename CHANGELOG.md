@@ -4,6 +4,8 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 
 ## Unreleased
 
+- Security: a `-v name=value` override of a secret variable is now treated as secret (masked in reports and history, and subject to approved hosts). GraphQL SDL and introspection type references nested deeper than 64 levels are rejected with a format error instead of overflowing the stack.
+
 - Chore: the script JS prelude moved to `packages/verbnest_script/assets/prelude.js` (generated into Dart by `tool/gen_prelude.dart`, checked by a test); GraphQL lexer and completion split into helpers; storage rows read through typed accessors that name the column on a bad value (`StorageFormatError`).
 
 - Security: workspaces start with scripts off. Turn on "Run scripts in this workspace" in Settings for workspaces you trust. Scripts no longer receive secret variables, `pm.sendRequest` cannot reach link-local or cloud metadata addresses, and the CLI runs Node with `--permission` where available.
