@@ -5,6 +5,8 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+export 'package:verbnest_runner/verbnest_runner.dart' show attachmentIdOf;
+
 class PickedFile {
   const PickedFile(this.name, this.bytes, {this.mime});
 
@@ -75,13 +77,6 @@ String safeFileName(String name) {
 /// file name, so the multipart `filename` is the real name.
 String attachmentRef(String id, String name) =>
     'attachment:$id/${safeFileName(name)}';
-
-String? attachmentIdOf(String ref) {
-  if (!ref.startsWith('attachment:')) return null;
-  final rest = ref.substring('attachment:'.length);
-  final slash = rest.indexOf('/');
-  return slash < 0 ? rest : rest.substring(0, slash);
-}
 
 /// A name for a saved response: from Content-Disposition, else the URL's last
 /// segment, else `response` with an extension from the content type.

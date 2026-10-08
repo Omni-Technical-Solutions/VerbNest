@@ -5,6 +5,12 @@ import 'dart:io' show IOException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_http/verbnest_http.dart';
+import 'package:verbnest_runner/verbnest_runner.dart'
+    show
+        HistoryRecorder,
+        evaluateAssertions,
+        prepareRequest,
+        requestErrorMessage;
 import 'package:verbnest_script/verbnest_script.dart'
     show EngineScriptHost, ScriptHost;
 import 'package:verbnest_storage/verbnest_storage.dart';
@@ -14,7 +20,6 @@ import '../scripting/script_flow.dart';
 import '../scripting/script_io.dart';
 import 'browser_port.dart';
 import 'console_log.dart';
-import 'file_port.dart';
 import 'network_state.dart';
 import 'prefs.dart';
 import 'session.dart';
@@ -240,15 +245,14 @@ class EditorNotifier extends Notifier<EditorState> {
           data: data,
         ),
       );
-      var auth = effectiveAuth(item.auth, repo.authChain(id));
-      if (auth is OAuth2Auth) {
-        auth = await _oauthToken(auth, resolver, defaults, token);
-      }
-      prepared = await RequestBuilder(
+      prepared = await prepareRequest(
+        repo: repo,
+        requestId: id,
+        item: item,
+        resolver: resolver,
         defaults: defaults,
-        readFile: (ref) async =>
-            repo.attachmentBytes(attachmentIdOf(ref) ?? ref),
-      ).build(item, resolver, auth: auth);
+        oauthToken: (auth) => _oauthToken(auth, resolver, defaults, token),
+      );
       if (!force &&
           prepared.unresolved.isNotEmpty &&
           ref.read(warnUnresolvedProvider)) {
@@ -289,6 +293,13 @@ class EditorNotifier extends Notifier<EditorState> {
   void _fail(String message) =>
       state = state.copyWith(sending: false, error: message);
 
+  /// [e] as a [FormatException] carrying its user-facing message when it is a
+  /// request failure, else [e] itself.
+  Object _userFacing(Object e) {
+    final message = requestErrorMessage(e);
+    return message == null ? e : FormatException(message);
+  }
+
   /// Asks this request's URL for its GraphQL schema (FR-GQL-002). Uses the
   /// request's URL, headers, auth and the active environment, but runs no
   /// scripts. Throws [FormatException] with a message fit for the user.
@@ -303,23 +314,17 @@ class EditorNotifier extends Notifier<EditorState> {
       final resolver = VariableResolver(
         buildScopes(session, requestId: id, envId: envId),
       );
-      var auth = effectiveAuth(state.item.auth, repo.authChain(id));
-      if (auth is OAuth2Auth) {
-        auth = await _oauthToken(auth, resolver, defaults, token);
-      }
-      final prepared =
-          await RequestBuilder(
-            defaults: defaults,
-            readFile: (ref) async =>
-                repo.attachmentBytes(attachmentIdOf(ref) ?? ref),
-          ).build(
-            state.item.copyWith(
-              method: 'POST',
-              body: const GraphqlBody(query: graphqlIntrospectionQuery),
-            ),
-            resolver,
-            auth: auth,
-          );
+      final prepared = await prepareRequest(
+        repo: repo,
+        requestId: id,
+        item: state.item.copyWith(
+          method: 'POST',
+          body: const GraphqlBody(query: graphqlIntrospectionQuery),
+        ),
+        resolver: resolver,
+        defaults: defaults,
+        oauthToken: (auth) => _oauthToken(auth, resolver, defaults, token),
+      );
       final response = await sendPrepared(
         ref.read(engineProvider),
         prepared,
@@ -334,12 +339,8 @@ class EditorNotifier extends Notifier<EditorState> {
         );
       }
       return GraphqlSchema.fromIntrospection(json);
-    } on OAuth2Error catch (e) {
-      throw FormatException(e.message);
-    } on RequestBuildError catch (e) {
-      throw FormatException(e.message);
-    } on HttpEngineError catch (e) {
-      throw FormatException(e.message);
+    } on Object catch (e) {
+      throw _userFacing(e);
     }
   }
 
@@ -358,22 +359,17 @@ class EditorNotifier extends Notifier<EditorState> {
       final resolver = VariableResolver(
         buildScopes(session, requestId: id, envId: envId),
       );
-      var auth = effectiveAuth(state.item.auth, repo.authChain(id));
-      if (auth is OAuth2Auth) {
-        auth = await _oauthToken(auth, resolver, defaults, CancelToken());
-      }
-      final prepared =
-          await RequestBuilder(
-            defaults: defaults,
-            readFile: (ref) async =>
-                repo.attachmentBytes(attachmentIdOf(ref) ?? ref),
-          ).build(
-            state.item.copyWith(
-              method: kind == LiveKind.websocket ? 'GET' : state.item.method,
-            ),
-            resolver,
-            auth: auth,
-          );
+      final prepared = await prepareRequest(
+        repo: repo,
+        requestId: id,
+        item: state.item.copyWith(
+          method: kind == LiveKind.websocket ? 'GET' : state.item.method,
+        ),
+        resolver: resolver,
+        defaults: defaults,
+        oauthToken: (auth) =>
+            _oauthToken(auth, resolver, defaults, CancelToken()),
+      );
       final spec = prepared.spec;
       if (kind == LiveKind.graphqlSubscription) {
         if (state.item.body is! GraphqlBody) {
@@ -407,14 +403,10 @@ class EditorNotifier extends Notifier<EditorState> {
               ],
               settings: spec.settings,
             );
-    } on OAuth2Error catch (e) {
-      throw FormatException(e.message);
-    } on RequestBuildError catch (e) {
-      throw FormatException(e.message);
-    } on HttpEngineError catch (e) {
-      throw FormatException(e.message);
     } on IOException catch (e) {
       throw FormatException('$e');
+    } on Object catch (e) {
+      throw _userFacing(e);
     }
   }
 
@@ -442,17 +434,7 @@ class EditorNotifier extends Notifier<EditorState> {
       data: data,
       host: _scriptHost(),
     );
-    final facts = ResponseFacts(
-      status: response.status,
-      headers: response.headers,
-      body: response.bodyText,
-      timeMs: response.timings.total.inMilliseconds,
-    );
-    final checks = [
-      for (final a in item.assertions)
-        if (a.enabled)
-          a.evaluate(facts, resolve: (t) => resolver.resolve(t).value),
-    ];
+    final checks = evaluateAssertions(item, response, resolver);
     state = state.copyWith(
       sending: false,
       response: response,
@@ -515,8 +497,8 @@ class EditorNotifier extends Notifier<EditorState> {
     return BearerAuth(token: token.accessToken);
   }
 
-  /// Stores the exchange in local history with secrets masked (FR-HIS-001).
-  /// A failure to record must never break sending.
+  /// Stores the exchange in the console and in local history with secrets
+  /// masked (FR-HIS-001). A failure to record must never break sending.
   void _record(
     PreparedRequest p,
     String? envId, {
@@ -526,81 +508,59 @@ class EditorNotifier extends Notifier<EditorState> {
     try {
       final session = ref.read(sessionProvider);
       final prefs = ref.read(prefsProvider);
-      final spec = p.spec;
       ref
           .read(consoleLogProvider.notifier)
-          .add(
-            ConsoleEntry(
-              at: DateTime.now(),
-              method: spec.method,
-              url: p.masker.maskText(spec.url.toString()),
-              sentHead: response != null
-                  ? p.masker.maskHead(response.sent.head)
-                  : '${spec.method} ${p.masker.maskText(spec.url.toString())}',
-              status: response?.status,
-              ms: response?.timings.total.inMilliseconds,
-              responseHead: response == null
-                  ? null
-                  : '${response.httpVersion} ${response.status} ${response.reason}\n'
-                        '${response.headers.map((h) => '${h.$1}: ${h.$2}').join('\n')}',
-              error: error,
-            ),
-          );
-      final envName = envId == null
-          ? null
-          : session.repo
-                .environments()
-                .where((e) => e.id == envId)
-                .firstOrNull
-                ?.name;
-      session.local.addHistory(
-        HistoryEntry(
-          id: Ulid.generate(),
-          workspaceId: session.repo.workspaceId,
-          requestId: id,
-          method: spec.method,
-          url: p.masker.maskText(spec.url.toString()),
-          environmentName: envName,
-          sentAt: DateTime.now(),
-          status: response?.status,
-          totalMs: response?.timings.total.inMilliseconds,
-          requestJson: jsonEncode({
-            'method': spec.method,
-            'url': p.masker.maskText(spec.url.toString()),
-            'headers': [
-              for (final (k, v) in spec.headers)
-                [k, p.masker.headerValue(k, v)],
-            ],
-            'body': spec.body == null || !prefs.historyBodies
-                ? null
-                : p.masker.maskText(
-                    utf8.decode(spec.body!, allowMalformed: true),
-                  ),
-          }),
-          responseMetaJson: response == null
-              ? null
-              : jsonEncode({
-                  'reason': response.reason,
-                  'headers': [
-                    for (final (k, v) in response.headers) [k, v],
-                  ],
-                }),
-          responseBody: response?.body,
-          error: error,
-        ),
+          .add(_consoleEntry(p, response, error));
+      HistoryRecorder(
+        local: session.local,
+        workspaceId: session.repo.workspaceId,
+        environmentName: envId == null
+            ? null
+            : session.repo
+                  .environments()
+                  .where((e) => e.id == envId)
+                  .firstOrNull
+                  ?.name,
         storeBodies: prefs.historyBodies,
-      );
-      session.local.pruneHistory(
-        session.repo.workspaceId,
         maxEntries: prefs.historyMax,
         maxAge: prefs.historyDays == 0
             ? null
             : Duration(days: prefs.historyDays),
+      ).record(
+        requestId: id,
+        item: state.item,
+        prepared: p,
+        response: response,
+        error: error,
       );
       ref.read(historyTickProvider.notifier).bump();
     } catch (_) {
       // History is best-effort.
     }
+  }
+
+  static ConsoleEntry _consoleEntry(
+    PreparedRequest p,
+    HttpResponseRecord? response,
+    String? error,
+  ) {
+    final spec = p.spec;
+    final url = p.masker.maskText(spec.url.toString());
+    return ConsoleEntry(
+      at: DateTime.now(),
+      method: spec.method,
+      url: url,
+      sentHead: response != null
+          ? p.masker.maskHead(response.sent.head)
+          : '${spec.method} $url',
+      status: response?.status,
+      ms: response?.timings.total.inMilliseconds,
+      responseHead: response == null
+          ? null
+          : '${response.httpVersion} ${response.status} ${response.reason}\n'
+                '${response.headers.map((h) => '${h.$1}: ${h.$2}').join('\n')}',
+      error: error,
+    );
   }
 }
 

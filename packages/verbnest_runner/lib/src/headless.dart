@@ -6,6 +6,7 @@ import 'package:verbnest_script/verbnest_script.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
 import 'history_recorder.dart';
+import 'request_pipeline.dart';
 import 'runner.dart';
 
 /// The variable scopes of [requestId] as the app builds them, minus the
@@ -121,13 +122,6 @@ class HeadlessSender {
         scriptValues: _scriptVars.state,
       );
 
-  static String? _attachmentId(String ref) {
-    if (!ref.startsWith('attachment:')) return null;
-    final rest = ref.substring('attachment:'.length);
-    final slash = rest.indexOf('/');
-    return slash < 0 ? rest : rest.substring(0, slash);
-  }
-
   /// A [RunStep] for [executeRun].
   Future<RunStepResult> step(
     String id,
@@ -225,15 +219,14 @@ class HeadlessSender {
           const RunFlow(skip: true),
         );
       }
-      var auth = effectiveAuth(item.auth, repo.authChain(id));
-      if (auth is OAuth2Auth) {
-        auth = await _oauthToken(auth, resolver);
-      }
-      final prepared = await RequestBuilder(
+      final prepared = await prepareRequest(
+        repo: repo,
+        requestId: id,
+        item: item,
+        resolver: resolver,
         defaults: defaults,
-        readFile: (ref) async =>
-            repo.attachmentBytes(_attachmentId(ref) ?? ref),
-      ).build(item, resolver, auth: auth);
+        oauthToken: (auth) => _oauthToken(auth, resolver),
+      );
       sentPrepared = prepared;
       final response = await sendPrepared(engine, prepared);
       history?.record(
@@ -242,17 +235,7 @@ class HeadlessSender {
         prepared: prepared,
         response: response,
       );
-      final facts = ResponseFacts(
-        status: response.status,
-        headers: response.headers,
-        body: response.bodyText,
-        timeMs: response.timings.total.inMilliseconds,
-      );
-      final tests = [
-        for (final a in item.assertions)
-          if (a.enabled)
-            a.evaluate(facts, resolve: (t) => resolver.resolve(t).value),
-      ];
+      final tests = evaluateAssertions(item, response, resolver);
       String? scriptError;
       if (engineForScripts != null && hasScripts) {
         final post = await runScriptPhaseWith(
