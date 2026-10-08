@@ -1190,6 +1190,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String reSecretHostPrompt(String names, String host) {
+    return 'Send $names to $host? This host is not approved for it yet.';
+  }
+
+  @override
+  String get reSecretHostAllow => 'Always allow and send';
+
+  @override
   String get reSendAnyway => 'Send anyway';
 
   @override

@@ -2222,6 +2222,18 @@ abstract class AppLocalizations {
   /// **'Not defined: {names}'**
   String reNotDefined(String names);
 
+  /// No description provided for @reSecretHostPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Send {names} to {host}? This host is not approved for it yet.'**
+  String reSecretHostPrompt(String names, String host);
+
+  /// No description provided for @reSecretHostAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Always allow and send'**
+  String get reSecretHostAllow;
+
   /// No description provided for @reSendAnyway.
   ///
   /// In en, this message translates to:

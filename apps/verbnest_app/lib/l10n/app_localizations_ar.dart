@@ -1190,6 +1190,14 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String reSecretHostPrompt(String names, String host) {
+    return 'هل تريد إرسال $names إلى $host؟ لم يُعتمد هذا المضيف لها بعد.';
+  }
+
+  @override
+  String get reSecretHostAllow => 'اسمح دائماً وأرسل';
+
+  @override
   String get reSendAnyway => 'أرسل على أي حال';
 
   @override

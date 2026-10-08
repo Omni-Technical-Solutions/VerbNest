@@ -108,9 +108,51 @@ void main() {
       final store = await VaultSecretStore.load(vault, workspaceId);
       store.put(workspaceId, owner.kind, owner.id, 'token', 'S3CRET');
       await store.flush();
-      final (code, _, _) = await cli(['run', file, '--vault'], vault: vault);
+      final (code, _, _) = await cli([
+        'run',
+        file,
+        '--vault',
+        '--allow-secret-host',
+        '*=*',
+      ], vault: vault);
       expect(code, 0);
       expect(server.requests.single.target, contains('t=S3CRET'));
+    });
+
+    test('a secret is not sent to a host nobody approved', () async {
+      final vault = _MemoryVault();
+      final store = await VaultSecretStore.load(vault, workspaceId);
+      store.put(workspaceId, owner.kind, owner.id, 'token', 'S3CRET');
+      await store.flush();
+      final (_, out, err) = await cli(['run', file, '--vault'], vault: vault);
+      expect(server.requests, isEmpty);
+      expect('$out$err', contains('not been approved'));
+      expect('$out$err', isNot(contains('S3CRET')));
+    });
+
+    test('a host approved in the vault, or by flag, is allowed', () async {
+      final vault = _MemoryVault();
+      final store = await VaultSecretStore.load(vault, workspaceId);
+      store.put(workspaceId, owner.kind, owner.id, 'token', 'S3CRET');
+      SecretHosts(
+        store,
+        workspaceId,
+      ).allow(['token'], Uri.parse(server.baseUrl).host);
+      await store.flush();
+      await cli(['run', file, '--vault'], vault: vault);
+      expect(server.requests.single.target, contains('t=S3CRET'));
+    });
+
+    test('--allow-secret-host needs NAME=HOST', () async {
+      final (code, _, err) = await cli([
+        'run',
+        file,
+        '--vault',
+        '--allow-secret-host',
+        'oops',
+      ], vault: _MemoryVault());
+      expect(code, 2);
+      expect(err, contains('NAME=HOST'));
     });
 
     test('--var wins over the vault', () async {
@@ -118,7 +160,15 @@ void main() {
       final store = await VaultSecretStore.load(vault, workspaceId);
       store.put(workspaceId, owner.kind, owner.id, 'token', 'S3CRET');
       await store.flush();
-      await cli(['run', file, '--vault', '-v', 'token=cli'], vault: vault);
+      await cli([
+        'run',
+        file,
+        '--vault',
+        '--allow-secret-host',
+        '*=*',
+        '-v',
+        'token=cli',
+      ], vault: vault);
       expect(server.requests.single.target, contains('t=cli'));
     });
 
@@ -182,6 +232,8 @@ void main() {
         'run',
         file,
         '--vault',
+        '--allow-secret-host',
+        '*=*',
         '--history',
         db,
       ], vault: vault);

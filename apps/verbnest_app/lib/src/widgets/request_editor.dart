@@ -46,6 +46,8 @@ class RequestEditor extends ConsumerWidget {
           UrlBar(state: state, notifier: notifier),
           if (state.pendingUnresolved.isNotEmpty)
             _PendingBanner(state: state, notifier: notifier),
+          if (state.pendingSecretHost != null)
+            _SecretHostBanner(state: state, notifier: notifier),
           if (state.unresolved.isNotEmpty)
             _Banner(
               context.l10n.reUndefined(
@@ -136,6 +138,45 @@ class _PendingBanner extends ConsumerWidget {
           ),
           TextButton(
             key: const Key('dismiss-pending'),
+            onPressed: notifier.dismissPending,
+            child: Text(context.l10n.reCancel),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SecretHostBanner extends StatelessWidget {
+  const _SecretHostBanner({required this.state, required this.notifier});
+
+  final EditorState state;
+  final EditorNotifier notifier;
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = state.pendingSecretHost!;
+    return Container(
+      key: const Key('secret-host-banner'),
+      color: Theme.of(context).colorScheme.errorContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Wrap(
+        spacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            context.l10n.reSecretHostPrompt(
+              pending.names.map((n) => '{{$n}}').join(', '),
+              pending.host,
+            ),
+          ),
+          TextButton(
+            key: const Key('secret-host-allow'),
+            onPressed: notifier.approveSecretHostAndSend,
+            child: Text(context.l10n.reSecretHostAllow),
+          ),
+          TextButton(
+            key: const Key('secret-host-cancel'),
             onPressed: notifier.dismissPending,
             child: Text(context.l10n.reCancel),
           ),

@@ -81,6 +81,7 @@ class HeadlessSender {
     this.envId,
     this.overrides = const {},
     this.secrets,
+    this.secretHostFlags = const {},
     OAuth2TokenCache? oauthCache,
     this.scripts,
     this.history,
@@ -94,6 +95,9 @@ class HeadlessSender {
   /// Highest-precedence variables, like `--var name=value`.
   final Map<String, String> overrides;
   final SecretStore? secrets;
+
+  /// Extra secret-to-host approvals (`name` or `*` to hosts), not stored.
+  final Map<String, Set<String>> secretHostFlags;
 
   /// Records every request that is sent, when set.
   final HistoryRecorder? history;
@@ -226,6 +230,9 @@ class HeadlessSender {
         resolver: resolver,
         defaults: defaults,
         oauthToken: (auth) => _oauthToken(auth, resolver),
+        secretHosts: secrets == null
+            ? null
+            : SecretHosts(secrets!, repo.workspaceId, extra: secretHostFlags),
       );
       sentPrepared = prepared;
       final response = await sendPrepared(engine, prepared);

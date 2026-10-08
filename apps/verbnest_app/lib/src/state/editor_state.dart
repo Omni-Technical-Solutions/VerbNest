@@ -8,6 +8,7 @@ import 'package:verbnest_http/verbnest_http.dart';
 import 'package:verbnest_runner/verbnest_runner.dart'
     show
         HistoryRecorder,
+        SecretHostNotApproved,
         evaluateAssertions,
         prepareRequest,
         requestErrorMessage;
@@ -51,6 +52,7 @@ class EditorState {
     this.maskedSentHead,
     this.maskedSentBody,
     this.pendingUnresolved = const {},
+    this.pendingSecretHost,
     this.tests = const [],
     this.scriptLogs = const [],
     this.scriptError,
@@ -75,6 +77,9 @@ class EditorState {
   /// Names that stopped a send until the user confirms.
   final Set<String> pendingUnresolved;
 
+  /// A send stopped because secrets would go to an unapproved host.
+  final SecretHostNotApproved? pendingSecretHost;
+
   /// Results of the post-response scripts of the last send (FR-SCR-003).
   final List<TestResult> tests;
 
@@ -97,6 +102,8 @@ class EditorState {
     String? maskedSentHead,
     String? maskedSentBody,
     Set<String>? pendingUnresolved,
+    SecretHostNotApproved? pendingSecretHost,
+    bool clearSecretHost = false,
     List<TestResult>? tests,
     List<ConsoleLine>? scriptLogs,
     String? scriptError,
@@ -118,6 +125,9 @@ class EditorState {
     pendingUnresolved: clearResult
         ? (pendingUnresolved ?? const {})
         : (pendingUnresolved ?? this.pendingUnresolved),
+    pendingSecretHost: clearSecretHost || clearResult
+        ? pendingSecretHost
+        : (pendingSecretHost ?? this.pendingSecretHost),
     tests: clearResult ? (tests ?? const []) : (tests ?? this.tests),
     scriptLogs: clearResult
         ? (scriptLogs ?? const [])
@@ -187,6 +197,19 @@ class EditorNotifier extends Notifier<EditorState> {
   void dismissPending() =>
       state = state.copyWith(pendingUnresolved: const {}, clearResult: true);
 
+  /// Remembers the host the last send was stopped for, then sends again.
+  Future<void> approveSecretHostAndSend() async {
+    final pending = state.pendingSecretHost;
+    if (pending == null) return;
+    final s = ref.read(sessionProvider);
+    SecretHosts(
+      s.secrets,
+      s.repo.workspaceId,
+    ).allow(pending.names, pending.host);
+    state = state.copyWith(clearSecretHost: true);
+    await send();
+  }
+
   /// Sends the draft. With undefined variables it stops first and sets
   /// [EditorState.pendingUnresolved] unless [force] is true or the user
   /// turned the warning off.
@@ -252,6 +275,7 @@ class EditorNotifier extends Notifier<EditorState> {
         resolver: resolver,
         defaults: defaults,
         oauthToken: (auth) => _oauthToken(auth, resolver, defaults, token),
+        secretHosts: SecretHosts(session.secrets, repo.workspaceId),
       );
       if (!force &&
           prepared.unresolved.isNotEmpty &&
@@ -280,6 +304,8 @@ class EditorNotifier extends Notifier<EditorState> {
       _record(prepared, envId, response: response);
     } on OAuth2Error catch (e) {
       _fail(e.message);
+    } on SecretHostNotApproved catch (e) {
+      state = state.copyWith(sending: false, pendingSecretHost: e);
     } on RequestBuildError catch (e) {
       _fail(e.message);
     } on HttpEngineError catch (e) {
@@ -324,6 +350,7 @@ class EditorNotifier extends Notifier<EditorState> {
         resolver: resolver,
         defaults: defaults,
         oauthToken: (auth) => _oauthToken(auth, resolver, defaults, token),
+        secretHosts: SecretHosts(session.secrets, repo.workspaceId),
       );
       final response = await sendPrepared(
         ref.read(engineProvider),
@@ -369,6 +396,7 @@ class EditorNotifier extends Notifier<EditorState> {
         defaults: defaults,
         oauthToken: (auth) =>
             _oauthToken(auth, resolver, defaults, CancelToken()),
+        secretHosts: SecretHosts(session.secrets, repo.workspaceId),
       );
       final spec = prepared.spec;
       if (kind == LiveKind.graphqlSubscription) {

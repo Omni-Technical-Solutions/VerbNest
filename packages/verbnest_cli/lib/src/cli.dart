@@ -113,6 +113,13 @@ ArgParser _runParser() => ArgParser()
     help: 'Read secret variables from the system secret store.',
     negatable: false,
   )
+  ..addMultiOption(
+    'allow-secret-host',
+    help:
+        'With --vault: let secret NAME be sent to HOST (NAME=HOST; NAME or '
+        'HOST may be *). Hosts approved in the app are honoured already.',
+    valueHelp: 'NAME=HOST',
+  )
   ..addFlag('help', abbr: 'h', negatable: false);
 
 ArgParser _historyParser() => ArgParser()
@@ -369,9 +376,21 @@ Future<int> _run(
       storeBodies: r['history-bodies'] as bool,
     );
   }
+  final secretHostFlags = <String, Set<String>>{};
+  for (final entry in r['allow-secret-host'] as List<String>) {
+    final eq = entry.indexOf('=');
+    if (eq < 1 || eq == entry.length - 1) {
+      err.writeln('--allow-secret-host expects NAME=HOST, got "$entry".');
+      return 2;
+    }
+    (secretHostFlags[entry.substring(0, eq)] ??= {}).add(
+      entry.substring(eq + 1).toLowerCase(),
+    );
+  }
   final sender = HeadlessSender(
     repo: repo,
     secrets: secrets,
+    secretHostFlags: secretHostFlags,
     history: recorder,
     engine: HttpEngine(cookieJar: CookieJar()),
     defaults: defaults,

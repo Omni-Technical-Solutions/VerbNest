@@ -215,6 +215,13 @@ void envAndHistoryTests() {
       ),
     );
     await n.send();
+    // The secret may not go to a host nobody approved for it.
+    expect(t.e.last, isNull);
+    final pending = t.c.read(editorProvider(t.id)).pendingSecretHost!;
+    expect(pending.names, ['tok']);
+    expect(pending.host, 'dev.test');
+    await n.approveSecretHostAndSend();
+    expect(t.c.read(editorProvider(t.id)).pendingSecretHost, isNull);
     expect(t.e.last!.url.host, 'dev.test');
     expect(t.e.last!.headers.any((h) => h.$2.contains('s3cret')), isTrue);
 

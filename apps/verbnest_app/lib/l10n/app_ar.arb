@@ -354,6 +354,8 @@
   "reUndefined": "متغيرات غير معرّفة: {names}",
   "reResponseSaved": "تم حفظ الاستجابة",
   "reNotDefined": "غير معرّف: {names}",
+  "reSecretHostPrompt": "هل تريد إرسال {names} إلى {host}؟ لم يُعتمد هذا المضيف لها بعد.",
+  "reSecretHostAllow": "اسمح دائماً وأرسل",
   "reSendAnyway": "أرسل على أي حال",
   "reDontWarn": "لا تحذّر مجدداً",
   "reCancel": "إلغاء",

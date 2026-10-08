@@ -735,6 +735,18 @@
       }
     }
   },
+  "reSecretHostPrompt": "Send {names} to {host}? This host is not approved for it yet.",
+  "@reSecretHostPrompt": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      },
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "reSecretHostAllow": "Always allow and send",
   "reSendAnyway": "Send anyway",
   "reDontWarn": "Don't warn again",
   "reCancel": "Cancel",

@@ -11,6 +11,19 @@ String? attachmentIdOf(String ref) {
   return slash < 0 ? rest : rest.substring(0, slash);
 }
 
+/// A request would send secret variables to a host the user has not approved
+/// for them.
+class SecretHostNotApproved extends RequestBuildError {
+  SecretHostNotApproved(this.names, this.host)
+    : super(
+        'Secret ${names.join(', ')} has not been approved for host $host. '
+        'Approve the host to send it there.',
+      );
+
+  final List<String> names;
+  final String host;
+}
+
 /// Turns [item] into a ready-to-send request: inherits auth from the
 /// containers above [requestId], swaps OAuth 2.0 auth for a bearer token via
 /// [oauthToken], and reads attachment files from [repo].
@@ -24,13 +37,22 @@ Future<PreparedRequest> prepareRequest({
   required VariableResolver resolver,
   required HttpSettings defaults,
   required Future<Auth> Function(OAuth2Auth auth) oauthToken,
+  SecretHosts? secretHosts,
 }) async {
   var auth = effectiveAuth(item.auth, repo.authChain(requestId));
   if (auth is OAuth2Auth) auth = await oauthToken(auth);
-  return RequestBuilder(
+  final prepared = await RequestBuilder(
     defaults: defaults,
     readFile: (ref) async => repo.attachmentBytes(attachmentIdOf(ref) ?? ref),
   ).build(item, resolver, auth: auth);
+  if (secretHosts != null && prepared.secretNames.isNotEmpty) {
+    final url = prepared.spec.url;
+    final blocked = secretHosts.blocked(prepared.secretNames, url);
+    if (blocked.isNotEmpty) {
+      throw SecretHostNotApproved(blocked, SecretHosts.hostOf(url));
+    }
+  }
+  return prepared;
 }
 
 /// Results of the enabled assertions of [item] against [response].

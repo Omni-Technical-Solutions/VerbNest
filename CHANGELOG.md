@@ -11,6 +11,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - Security: WebSocket messages and SSE lines are capped at 16 MiB, HTTP/2 bodies at 512 MiB. Cookies with control characters, over 4096 bytes, or for common public suffixes (such as `co.uk`) are refused, and Max-Age is capped at 400 days. Assertion and JSON Schema regular expressions that are invalid, over 500 characters or have nested quantifiers are refused instead of run. Dependabot now watches Actions and pub dependencies.
 - Security: the CLI no longer runs workspace scripts by default. Pass `--allow-scripts` to run them (only for workspaces you trust). `--no-scripts` is still accepted.
 - Security: exporting a snapshot refuses paths inside `.git` directories (no git hooks can be written).
+- Security: secret variables are only sent to hosts you approved for them. The first send of a secret to a new host stops with a banner ("Always allow and send" or Cancel); approvals are kept in the secret store, not in the workspace file, so a tampered copy of a workspace cannot send your secrets elsewhere. The CLI with `--vault` refuses unapproved hosts; approve them in the app or pass `--allow-secret-host NAME=HOST` (`*` works for either side).
 
 ## 0.44.0
 
