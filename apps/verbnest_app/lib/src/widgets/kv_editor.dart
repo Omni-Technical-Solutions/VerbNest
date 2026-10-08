@@ -4,6 +4,7 @@ import 'package:verbnest_core/verbnest_core.dart';
 import '../state/var_text.dart';
 import 'synced_field.dart';
 import '../../l10n/l10n.dart';
+import '../theme.dart';
 
 /// Editable key/value table used for params, headers and form bodies.
 class KeyValueEditor extends StatefulWidget {
@@ -97,7 +98,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
         controller: _bulkController,
         minLines: 6,
         maxLines: null,
-        style: const TextStyle(fontFamily: 'monospace'),
+        style: monoStyle(),
         decoration: InputDecoration(
           isDense: true,
           hintText: context.l10n.kvBulkHint,
@@ -143,35 +144,37 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
   }
 
   Widget _row(int i) {
-    return Padding(
+    return _RowIn(
       key: ValueKey('$idPrefix-row-$i'),
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Checkbox(
-            value: rows[i].enabled,
-            onChanged: (v) => _set(i, rows[i].copyWith(enabled: v)),
-          ),
-          Expanded(
-            child: SyncedTextField(
-              key: ValueKey('$idPrefix-key-$i'),
-              value: rows[i].key,
-              hint: context.l10n.kvKey,
-              variables: true,
-              suggestions: widget.keySuggestions,
-              onChanged: (v) => _set(i, rows[i].copyWith(key: v)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Checkbox(
+              value: rows[i].enabled,
+              onChanged: (v) => _set(i, rows[i].copyWith(enabled: v)),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: _valueCell(i)),
-          if (widget.onPickFile != null) _typeToggle(i),
-          IconButton(
-            tooltip: context.l10n.remove,
-            icon: const Icon(Icons.close, size: 18),
-            onPressed: () => onChanged([...rows]..removeAt(i)),
-          ),
-        ],
+            Expanded(
+              child: SyncedTextField(
+                key: ValueKey('$idPrefix-key-$i'),
+                value: rows[i].key,
+                hint: context.l10n.kvKey,
+                variables: true,
+                suggestions: widget.keySuggestions,
+                onChanged: (v) => _set(i, rows[i].copyWith(key: v)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: _valueCell(i)),
+            if (widget.onPickFile != null) _typeToggle(i),
+            IconButton(
+              tooltip: context.l10n.remove,
+              icon: const Icon(Icons.close, size: 18),
+              onPressed: () => onChanged([...rows]..removeAt(i)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -203,6 +206,45 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
           type: isFile ? KeyValueType.text : KeyValueType.file,
           value: '',
         ),
+      ),
+    );
+  }
+}
+
+/// Rows fade and slide in when the table grows; existing rows are not
+/// re-animated because the key moves with the row's position.
+class _RowIn extends StatefulWidget {
+  const _RowIn({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<_RowIn> createState() => _RowInState();
+}
+
+class _RowInState extends State<_RowIn> {
+  bool _shown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _shown = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = Motion.of(context, Motion.base);
+    return AnimatedOpacity(
+      opacity: _shown ? 1 : 0,
+      duration: d,
+      curve: Motion.curve,
+      child: AnimatedSlide(
+        offset: _shown ? Offset.zero : const Offset(0, -0.1),
+        duration: d,
+        curve: Motion.curve,
+        child: widget.child,
       ),
     );
   }

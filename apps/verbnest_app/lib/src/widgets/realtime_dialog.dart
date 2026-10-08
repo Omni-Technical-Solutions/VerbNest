@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:verbnest_http/verbnest_http.dart';
 
 import '../../l10n/l10n.dart';
+import '../theme.dart';
 
 /// Live message log for a WebSocket or SSE connection.
 class RealtimeDialog extends StatefulWidget {
@@ -180,7 +181,7 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             child: SelectableText(
               '${_prefix(m)}${m.text}',
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              style: monoStyle(fontSize: 12),
             ),
           );
         },

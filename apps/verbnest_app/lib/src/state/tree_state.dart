@@ -6,6 +6,9 @@ import 'package:verbnest_storage/verbnest_storage.dart';
 
 import 'session.dart';
 
+/// Reverses a tree change.
+typedef Undo = void Function();
+
 /// Bumps whenever the workspace changes, so views re-read the repository.
 final workspaceVersionProvider = StreamProvider<int>((ref) async* {
   final repo = ref.watch(repositoryProvider);
@@ -135,6 +138,22 @@ final tabsProvider = NotifierProvider<TabsNotifier, TabsState>(
   TabsNotifier.new,
 );
 
+class _Captured {
+  const _Captured({
+    required this.raw,
+    required this.owner,
+    required this.variables,
+    required this.examples,
+    required this.children,
+  });
+
+  final Map<String, Object?> raw;
+  final VariableOwner? owner;
+  final List<Variable> variables;
+  final List<ExampleInfo> examples;
+  final List<_Captured> children;
+}
+
 /// Commands the sidebar issues; each wraps one repository operation.
 class TreeActions {
   TreeActions(this._ref);
@@ -181,6 +200,50 @@ class TreeActions {
     });
   }
 
+  /// Deletes [id] and returns a function that puts the subtree back in its
+  /// old place, with container variables and saved examples. Version history
+  /// is not restored.
+  Undo deleteUndoable(String id) {
+    final node = _repo.node(id);
+    final parent = node.parentId;
+    final index = _repo.children(parent).indexWhere((n) => n.id == id);
+    final captured = _capture(id);
+    delete(id);
+    return () {
+      _put(captured, parent);
+      _repo.move(id, parent, index);
+    };
+  }
+
+  _Captured _capture(String id) {
+    final node = _repo.node(id);
+    final owner = switch (node.kind) {
+      NodeKind.collection => VariableOwner.collection(id),
+      NodeKind.folder => VariableOwner.folder(id),
+      NodeKind.request => null,
+    };
+    return _Captured(
+      raw: _repo.rawNode(id),
+      owner: owner,
+      variables: owner == null ? const [] : _repo.variables(owner),
+      examples: node.isContainer ? const [] : _repo.examples(id),
+      children: [for (final c in _repo.children(id)) _capture(c.id)],
+    );
+  }
+
+  void _put(_Captured c, String? parent) {
+    _repo.restoreNode(c.raw, parent);
+    if (c.owner != null && c.variables.isNotEmpty) {
+      _repo.saveVariables(c.owner!, c.variables);
+    }
+    for (final e in c.examples) {
+      _repo.restoreExample(e);
+    }
+    for (final child in c.children) {
+      _put(child, c.raw['id'] as String);
+    }
+  }
+
   /// Whether dropping [id] on [targetId] is allowed.
   bool canDrop(String id, String targetId) {
     if (id == targetId) return false;
@@ -195,8 +258,11 @@ class TreeActions {
 
   /// Drops [id] on [targetId]: into a folder or collection (at the end), or
   /// before a request. A collection dropped on a collection takes its place.
-  void drop(String id, String targetId) {
-    if (!canDrop(id, targetId)) return;
+  ///
+  /// Returns a function that moves it back, or null when nothing moved.
+  Undo? drop(String id, String targetId) {
+    if (!canDrop(id, targetId)) return null;
+    final undo = _undoMove(id);
     final dragged = _repo.node(id);
     final target = _repo.node(targetId);
     if (dragged.kind == NodeKind.collection) {
@@ -218,15 +284,24 @@ class TreeActions {
           .toList();
       _repo.move(id, target.parentId, order.indexOf(targetId));
     }
+    return undo;
+  }
+
+  Undo _undoMove(String id) {
+    final parent = _repo.node(id).parentId;
+    final index = _repo.children(parent).indexWhere((n) => n.id == id);
+    return () => _repo.move(id, parent, index);
   }
 
   /// Moves [id] one place up (-1) or down (+1) among its siblings.
-  void nudge(String id, int delta) {
+  Undo? nudge(String id, int delta) {
     final node = _repo.node(id);
     final siblings = _repo.children(node.parentId).map((n) => n.id).toList();
     final target = siblings.indexOf(id) + delta;
-    if (target < 0 || target >= siblings.length) return;
+    if (target < 0 || target >= siblings.length) return null;
+    final undo = _undoMove(id);
     _repo.move(id, node.parentId, target);
+    return undo;
   }
 }
 

@@ -1,6 +1,8 @@
 /// Pure helpers behind the response code view: lines, JSON tokens and folds.
 library;
 
+import 'dart:convert';
+
 enum TokenKind { key, string, number, literal, punct, plain }
 
 class CodeToken {
@@ -68,4 +70,58 @@ List<int> visibleLines(int total, Map<int, int> folds, Set<int> collapsed) {
     i = collapsed.contains(i) && folds.containsKey(i) ? folds[i]! : i + 1;
   }
   return out;
+}
+
+class _Frame {
+  _Frame(this.path, this.isArray);
+
+  final String path;
+  final bool isArray;
+  int count = 0;
+}
+
+final _keyAtStart = RegExp(r'^"((?:\\.|[^"\\])*)"\s*:');
+final _plainKey = RegExp(r'^[A-Za-z_]\w*$');
+
+String _child(String parent, String key) =>
+    _plainKey.hasMatch(key) ? '$parent.$key' : "$parent['$key']";
+
+/// JSONPath of the value written on line [index] of pretty-printed JSON, for
+/// example `$.items[2].name`. A closing bracket gives the path of the
+/// container it closes. Returns null when [index] is out of range or blank.
+String? jsonPathForLine(List<String> lines, int index) {
+  final stack = <_Frame>[];
+  for (var i = 0; i <= index && i < lines.length; i++) {
+    final t = lines[i].trim();
+    if (t.isEmpty) {
+      if (i == index) return null;
+      continue;
+    }
+    if (t[0] == '}' || t[0] == ']') {
+      final closed = stack.isEmpty ? null : stack.removeLast();
+      if (i == index) return closed?.path ?? r'$';
+      continue;
+    }
+    String here;
+    if (stack.isEmpty) {
+      here = r'$';
+    } else if (stack.last.isArray) {
+      here = '${stack.last.path}[${stack.last.count++}]';
+    } else {
+      final m = _keyAtStart.firstMatch(t);
+      var key = m?[1];
+      if (key != null) {
+        try {
+          key = jsonDecode('"$key"') as String;
+        } on FormatException {
+          // Keep the raw text.
+        }
+      }
+      here = key == null ? stack.last.path : _child(stack.last.path, key);
+    }
+    if (i == index) return here;
+    final last = t[t.length - 1];
+    if (last == '{' || last == '[') stack.add(_Frame(here, last == '['));
+  }
+  return null;
 }

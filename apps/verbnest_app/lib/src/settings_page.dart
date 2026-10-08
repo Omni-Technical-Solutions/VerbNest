@@ -7,6 +7,7 @@ import 'state/prefs.dart';
 import 'state/session.dart';
 import 'state/settings_state.dart';
 import 'state/theme_state.dart';
+import 'theme.dart';
 import 'widgets/network_settings.dart';
 import 'widgets/synced_field.dart';
 
@@ -18,30 +19,45 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final prefs = ref.watch(prefsProvider);
     final prefsNotifier = ref.read(prefsProvider.notifier);
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        ..._general(context, ref),
-        ..._http(context, ref),
-        const Divider(),
-        const NetworkSettingsSection(),
-        const Divider(),
-        _section(context, context.l10n.appearanceSection),
-        ..._appearance(context, prefs, prefsNotifier),
-        const Divider(),
-        _section(context, context.l10n.historySection),
-        SwitchListTile(
-          key: const Key('scripts-trusted'),
-          title: Text(context.l10n.trustScripts),
-          subtitle: Text(context.l10n.trustScriptsHint),
-          value: prefs.scriptsTrusted,
-          onChanged: (v) =>
-              prefsNotifier.update(prefs.copyWith(scriptsTrusted: v)),
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: ListView(
+          padding: const EdgeInsets.all(Space.md),
+          children: [
+            _card([..._general(context, ref), ..._http(context, ref)]),
+            _card([const NetworkSettingsSection()]),
+            _card([
+              _section(context, context.l10n.appearanceSection),
+              ..._appearance(context, prefs, prefsNotifier),
+            ]),
+            _card([
+              _section(context, context.l10n.historySection),
+              SwitchListTile(
+                key: const Key('scripts-trusted'),
+                title: Text(context.l10n.trustScripts),
+                subtitle: Text(context.l10n.trustScriptsHint),
+                value: prefs.scriptsTrusted,
+                onChanged: (v) =>
+                    prefsNotifier.update(prefs.copyWith(scriptsTrusted: v)),
+              ),
+              ..._history(context, prefs, prefsNotifier),
+            ]),
+          ],
         ),
-        ..._history(context, prefs, prefsNotifier),
-      ],
+      ),
     );
   }
+
+  Widget _card(List<Widget> children) => Card(
+    margin: const EdgeInsets.only(bottom: Space.md),
+    clipBehavior: Clip.antiAlias,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    ),
+  );
 
   List<Widget> _general(BuildContext context, WidgetRef ref) {
     final protected = ref.watch(sessionProvider).secretsProtected;
@@ -148,6 +164,52 @@ class SettingsPage extends ConsumerWidget {
     PrefsNotifier prefsNotifier,
   ) {
     return [
+      ListTile(
+        title: Text(context.l10n.settingsAccent),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: Space.sm),
+          child: Wrap(
+            key: const Key('accent-picker'),
+            spacing: Space.sm,
+            children: [
+              for (var i = 0; i < AppAccents.seeds.length; i++)
+                Semantics(
+                  button: true,
+                  selected: i == prefs.accent,
+                  label: '${context.l10n.settingsAccent} ${i + 1}',
+                  child: InkWell(
+                    key: Key('accent-$i'),
+                    customBorder: const CircleBorder(),
+                    onTap: () =>
+                        prefsNotifier.update(prefs.copyWith(accent: i)),
+                    child: AnimatedContainer(
+                      duration: Motion.of(context, Motion.fast),
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppAccents.seeds[i],
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          width: 3,
+                          color: i == prefs.accent
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Colors.transparent,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+      SwitchListTile(
+        key: const Key('compact-density'),
+        title: Text(context.l10n.settingsCompact),
+        subtitle: Text(context.l10n.settingsCompactHint),
+        value: prefs.compact,
+        onChanged: (v) => prefsNotifier.update(prefs.copyWith(compact: v)),
+      ),
       ListTile(
         title: Text(
           context.l10n.settingsTextSize((prefs.fontScale * 100).round()),

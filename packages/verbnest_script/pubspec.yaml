@@ -1,6 +1,6 @@
 name: verbnest_script
 description: Script contract, pm prelude and phase runner for Verbnest, shared by the app and the CLI. No Flutter code.
-version: 0.44.0
+version: 0.45.0
 publish_to: none
 resolution: workspace
 

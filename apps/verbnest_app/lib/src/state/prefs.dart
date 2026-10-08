@@ -13,6 +13,8 @@ class Prefs {
     this.fontScale = 1.0,
     this.editorFontSize = 13,
     this.scriptsTrusted = false,
+    this.accent = 0,
+    this.compact = false,
   });
 
   /// Entries older than this are removed; 0 keeps them forever.
@@ -28,6 +30,12 @@ class Prefs {
   /// shared workspaces cannot run code until the user allows it.
   final bool scriptsTrusted;
 
+  /// Index into `AppAccents.seeds`.
+  final int accent;
+
+  /// Tighter spacing for dense screens.
+  final bool compact;
+
   static const minScale = 0.8, maxScale = 1.6;
   static const minEditorSize = 10.0, maxEditorSize = 24.0;
 
@@ -38,6 +46,8 @@ class Prefs {
     double? fontScale,
     double? editorFontSize,
     bool? scriptsTrusted,
+    int? accent,
+    bool? compact,
   }) => Prefs(
     historyDays: historyDays ?? this.historyDays,
     historyMax: historyMax ?? this.historyMax,
@@ -48,6 +58,8 @@ class Prefs {
       maxEditorSize,
     ),
     scriptsTrusted: scriptsTrusted ?? this.scriptsTrusted,
+    accent: accent ?? this.accent,
+    compact: compact ?? this.compact,
   );
 }
 
@@ -67,6 +79,8 @@ class PrefsNotifier extends Notifier<Prefs> {
       fontScale: double.tryParse(get('fontScale') ?? ''),
       editorFontSize: double.tryParse(get('editorFontSize') ?? ''),
       scriptsTrusted: get('scriptsTrusted') == 'true',
+      accent: int.tryParse(get('accent') ?? ''),
+      compact: get('compact') == 'true',
     );
   }
 
@@ -80,8 +94,51 @@ class PrefsNotifier extends Notifier<Prefs> {
     put('fontScale', next.fontScale);
     put('editorFontSize', next.editorFontSize);
     put('scriptsTrusted', next.scriptsTrusted);
+    put('accent', next.accent);
+    put('compact', next.compact);
     state = next;
   }
 }
 
 final prefsProvider = NotifierProvider<PrefsNotifier, Prefs>(PrefsNotifier.new);
+
+/// Where the divider sits between request and response, and whether they
+/// sit side by side. Stored with the other device-local preferences.
+class SplitLayout {
+  const SplitLayout({this.ratio = 0.5, this.horizontal = false});
+
+  final double ratio;
+  final bool horizontal;
+
+  static const minRatio = 0.15, maxRatio = 0.85;
+
+  SplitLayout copyWith({double? ratio, bool? horizontal}) => SplitLayout(
+    ratio: (ratio ?? this.ratio).clamp(minRatio, maxRatio),
+    horizontal: horizontal ?? this.horizontal,
+  );
+}
+
+class SplitLayoutNotifier extends Notifier<SplitLayout> {
+  @override
+  SplitLayout build() {
+    final s = ref.read(sessionProvider);
+    final ws = s.repo.workspaceId;
+    String? get(String k) => s.local.kv(ws, 'pref.$k');
+    return const SplitLayout().copyWith(
+      ratio: double.tryParse(get('splitRatio') ?? ''),
+      horizontal: get('splitHorizontal') == 'true',
+    );
+  }
+
+  void update(SplitLayout next) {
+    final s = ref.read(sessionProvider);
+    final ws = s.repo.workspaceId;
+    s.local.setKv(ws, 'pref.splitRatio', '${next.ratio}');
+    s.local.setKv(ws, 'pref.splitHorizontal', '${next.horizontal}');
+    state = next;
+  }
+}
+
+final splitLayoutProvider = NotifierProvider<SplitLayoutNotifier, SplitLayout>(
+  SplitLayoutNotifier.new,
+);

@@ -8,10 +8,13 @@ import 'package:verbnest_http/verbnest_http.dart';
 
 import '../state/cookies.dart';
 import '../state/editor_state.dart';
+import '../theme.dart';
 import 'code_view.dart';
 import 'html_preview.dart';
 import 'pdf_preview.dart';
+import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
+import 'ui/toast.dart';
 
 String formatBytes(int n) {
   if (n < 1024) return '$n B';
@@ -72,12 +75,8 @@ String formatDuration(Duration d) => d.inMicroseconds < 1000
     ? '${(d.inMicroseconds / 1000).toStringAsFixed(1)} ms'
     : '${(d.inMilliseconds / 1000).toStringAsFixed(2)} s';
 
-Color statusColor(int status) {
-  if (status >= 500) return Colors.red.shade700;
-  if (status >= 400) return Colors.orange.shade800;
-  if (status >= 300) return Colors.blue.shade700;
-  return Colors.green.shade700;
-}
+Color statusColor(BuildContext context, int status) =>
+    AppColors.of(context).status(status);
 
 /// Status line plus Body / Cookies / Headers / Sent tabs (FR-RES-001..).
 class ResponseView extends StatefulWidget {
@@ -112,24 +111,53 @@ class _ResponseViewState extends State<ResponseView> {
   @override
   Widget build(BuildContext context) {
     final state = widget.state;
+    final body = AnimatedSwitcher(
+      duration: Motion.of(context, Motion.base),
+      switchInCurve: Motion.curve,
+      child: KeyedSubtree(
+        key: ValueKey(
+          state.sending
+              ? 'sending'
+              : state.error != null
+              ? 'error'
+              : state.response == null
+              ? 'empty'
+              : 'response',
+        ),
+        child: _content(context, state),
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 3,
+          child: state.sending ? const LinearProgressIndicator() : null,
+        ),
+        Expanded(child: body),
+      ],
+    );
+  }
+
+  Widget _content(BuildContext context, EditorState state) {
     if (state.sending) {
-      return const Center(child: CircularProgressIndicator());
+      return const Skeleton();
     }
     if (state.error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            state.error!,
-            key: const Key('response-error'),
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        ),
+      return EmptyState(
+        icon: Icons.error_outline,
+        title: state.error!,
+        titleKey: const Key('response-error'),
+        titleColor: Theme.of(context).colorScheme.error,
       );
     }
     final r = state.response;
     if (r == null) {
-      return Center(child: Text(context.l10n.rvEmpty));
+      return EmptyState(
+        icon: Icons.bolt_outlined,
+        title: context.l10n.rvEmpty,
+        hint: 'Ctrl/Cmd + Enter',
+      );
     }
     final cookies = [
       for (final (k, v) in r.headers)
@@ -163,20 +191,32 @@ class _ResponseViewState extends State<ResponseView> {
       padding: const EdgeInsets.all(8),
       child: Wrap(
         spacing: 12,
+        runSpacing: 4,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text(
+          StatusPill(
+            r.status,
             '${r.status} ${r.reason}',
             key: const Key('response-status'),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: statusColor(r.status),
-            ),
           ),
-          InkWell(
-            key: const Key('response-timing'),
-            onTap: () => _showTiming(r),
-            child: Text('${r.timings.total.inMilliseconds} ms'),
+          Tooltip(
+            message: context.l10n.rvTiming,
+            child: InkWell(
+              key: const Key('response-timing'),
+              borderRadius: BorderRadius.circular(Radii.sm),
+              onTap: () => _showTiming(r),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.timer_outlined, size: 16),
+                    const SizedBox(width: 4),
+                    Text('${r.timings.total.inMilliseconds} ms'),
+                  ],
+                ),
+              ),
+            ),
           ),
           Text(
             context.l10n.rvHttpVersion(r.httpVersion),
@@ -361,7 +401,7 @@ class _ResponseViewState extends State<ResponseView> {
                 _ => Icons.cancel,
               },
               color: switch (t.status) {
-                'pass' => Colors.green.shade700,
+                'pass' => AppColors.of(context).success,
                 'skip' => scheme.outline,
                 _ => scheme.error,
               },
@@ -378,7 +418,7 @@ class _ResponseViewState extends State<ResponseView> {
           for (final l in s.scriptLogs)
             SelectableText(
               '${l.level == 'log' ? '' : '${l.level}: '}${l.text}',
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              style: monoStyle(fontSize: 12),
             ),
         ],
       ],
@@ -400,7 +440,7 @@ class _ResponseViewState extends State<ResponseView> {
           visualDensity: VisualDensity.compact,
           title: SelectableText(
             '${r.headers[i].$1}: ${r.headers[i].$2}',
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+            style: monoStyle(fontSize: 13),
           ),
           trailing: IconButton(
             key: ValueKey('copy-header-$i'),
@@ -545,9 +585,7 @@ class _ResponseViewState extends State<ResponseView> {
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: text));
               if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(context.l10n.rvBodyCopied)),
-              );
+              showToast(context, context.l10n.rvBodyCopied);
             },
           ),
         ],
@@ -617,10 +655,6 @@ class _ResponseViewState extends State<ResponseView> {
 
   Widget _scroll(String text, {Key? key}) => SingleChildScrollView(
     padding: const EdgeInsets.all(8),
-    child: SelectableText(
-      text,
-      key: key,
-      style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-    ),
+    child: SelectableText(text, key: key, style: monoStyle(fontSize: 13)),
   );
 }

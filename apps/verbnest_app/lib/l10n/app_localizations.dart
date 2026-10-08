@@ -2342,6 +2342,102 @@ abstract class AppLocalizations {
   /// **'Assertions'**
   String get reTabAssertions;
 
+  /// No description provided for @reSplitStacked.
+  ///
+  /// In en, this message translates to:
+  /// **'Stack request above response'**
+  String get reSplitStacked;
+
+  /// No description provided for @reSplitSideBySide.
+  ///
+  /// In en, this message translates to:
+  /// **'Show request and response side by side'**
+  String get reSplitSideBySide;
+
+  /// No description provided for @cmdShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get cmdShortcuts;
+
+  /// No description provided for @shortcutsClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get shortcutsClose;
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @tabClosedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed {name}'**
+  String tabClosedToast(String name);
+
+  /// No description provided for @toastDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {name}'**
+  String toastDeleted(String name);
+
+  /// No description provided for @toastMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved {name}'**
+  String toastMoved(String name);
+
+  /// No description provided for @paletteGroupCommands.
+  ///
+  /// In en, this message translates to:
+  /// **'Commands'**
+  String get paletteGroupCommands;
+
+  /// No description provided for @paletteGroupNavigate.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to'**
+  String get paletteGroupNavigate;
+
+  /// No description provided for @paletteGroupRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get paletteGroupRequests;
+
+  /// No description provided for @settingsAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent colour'**
+  String get settingsAccent;
+
+  /// No description provided for @settingsCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact layout'**
+  String get settingsCompact;
+
+  /// No description provided for @settingsCompactHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tighter spacing, more on screen.'**
+  String get settingsCompactHint;
+
+  /// No description provided for @codeCopyPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy JSON path'**
+  String get codeCopyPath;
+
+  /// No description provided for @codePathCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {path}'**
+  String codePathCopied(String path);
+
   /// No description provided for @reTabSettings.
   ///
   /// In en, this message translates to:

@@ -10,6 +10,7 @@ import '../state/editor_state.dart';
 import '../state/session.dart';
 import 'response_view.dart';
 import '../../l10n/l10n.dart';
+import '../theme.dart';
 
 /// Star toggle for a request (FR-COL-004).
 class FavouriteButton extends ConsumerStatefulWidget {
@@ -152,7 +153,10 @@ class _ExamplesDialogState extends ConsumerState<ExamplesDialog> {
                 '${e.data['status'] ?? ''} ${e.data['reason'] ?? ''}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: statusColor((e.data['status'] as int?) ?? 200),
+                  color: statusColor(
+                    context,
+                    (e.data['status'] as int?) ?? 200,
+                  ),
                 ),
               ),
             ),
@@ -172,13 +176,13 @@ class _ExamplesDialogState extends ConsumerState<ExamplesDialog> {
             children: [
               SelectableText(
                 headers.join('\n'),
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                style: monoStyle(fontSize: 12),
               ),
               const Divider(),
               SelectableText(
                 text,
                 key: const Key('example-body'),
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                style: monoStyle(fontSize: 12),
               ),
             ],
           ),

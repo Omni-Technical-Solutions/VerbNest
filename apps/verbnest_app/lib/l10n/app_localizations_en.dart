@@ -1252,6 +1252,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reTabAssertions => 'Assertions';
 
   @override
+  String get reSplitStacked => 'Stack request above response';
+
+  @override
+  String get reSplitSideBySide => 'Show request and response side by side';
+
+  @override
+  String get cmdShortcuts => 'Keyboard shortcuts';
+
+  @override
+  String get shortcutsClose => 'Close';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String tabClosedToast(String name) {
+    return 'Closed $name';
+  }
+
+  @override
+  String toastDeleted(String name) {
+    return 'Deleted $name';
+  }
+
+  @override
+  String toastMoved(String name) {
+    return 'Moved $name';
+  }
+
+  @override
+  String get paletteGroupCommands => 'Commands';
+
+  @override
+  String get paletteGroupNavigate => 'Go to';
+
+  @override
+  String get paletteGroupRequests => 'Requests';
+
+  @override
+  String get settingsAccent => 'Accent colour';
+
+  @override
+  String get settingsCompact => 'Compact layout';
+
+  @override
+  String get settingsCompactHint => 'Tighter spacing, more on screen.';
+
+  @override
+  String get codeCopyPath => 'Copy JSON path';
+
+  @override
+  String codePathCopied(String path) {
+    return 'Copied $path';
+  }
+
+  @override
   String get reTabSettings => 'Settings';
 
   @override

@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import '../theme.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_http/verbnest_http.dart' show Masker;
 import 'package:verbnest_storage/verbnest_storage.dart';
@@ -13,6 +16,7 @@ import '../state/variables.dart';
 import '../widgets/name_dialog.dart';
 import '../widgets/response_view.dart';
 import '../../l10n/l10n.dart';
+import '../widgets/ui/ui.dart';
 
 /// Sent requests, newest first, with search (FR-HIS-001/002).
 class HistoryPage extends ConsumerStatefulWidget {
@@ -39,12 +43,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
         _toolbar(session, entries.isEmpty),
         Expanded(
           child: entries.isEmpty
-              ? Center(
-                  child: Text(
-                    _query.isEmpty
-                        ? context.l10n.histEmpty
-                        : context.l10n.histNoMatch(_query),
-                  ),
+              ? EmptyState(
+                  icon: _query.isEmpty ? Icons.history : Icons.search_off,
+                  title: _query.isEmpty
+                      ? context.l10n.histEmpty
+                      : context.l10n.histNoMatch(_query),
                 )
               : _grouped(entries),
         ),
@@ -139,11 +142,18 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           failed ? context.l10n.histError : '${e.status}',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: failed ? Colors.red.shade700 : statusColor(e.status ?? 0),
+            color: failed
+                ? AppColors.of(context).danger
+                : statusColor(context, e.status ?? 0),
           ),
         ),
       ),
-      title: Text('${e.method} ${e.url}', overflow: TextOverflow.ellipsis),
+      title: Row(
+        children: [
+          MethodBadge(e.method, width: 48),
+          Expanded(child: Text(e.url, overflow: TextOverflow.ellipsis)),
+        ],
+      ),
       subtitle: Text(
         [
           e.sentAt.toLocal().toString().split('.').first,
@@ -249,10 +259,7 @@ class HistoryDetailPage extends ConsumerWidget {
 
   Widget _text(String t) => SingleChildScrollView(
     padding: const EdgeInsets.all(12),
-    child: SelectableText(
-      t,
-      style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-    ),
+    child: SelectableText(t, style: monoStyle(fontSize: 13)),
   );
 }
 

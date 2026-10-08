@@ -13,9 +13,12 @@ import '../state/import_actions.dart';
 import '../state/session.dart';
 import '../state/sidebar_rows.dart';
 import '../state/tree_state.dart';
+import '../theme.dart';
 import 'code_dialog.dart';
+import 'ui/ui.dart';
 import 'name_dialog.dart';
 import '../../l10n/l10n.dart';
+import 'ui/toast.dart';
 
 enum _Action {
   newRequest,
@@ -106,35 +109,46 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
               onChanged: (v) => setState(() => _filter = v),
             ),
           ),
-          if (_hasHost(context))
-            IconButton(
-              key: const Key('workspaces'),
-              tooltip: context.l10n.sbWorkspaces,
-              icon: const Icon(Icons.workspaces_outline),
-              onPressed: () => showWorkspaces(context, ref),
-            ),
           IconButton(
             key: const Key('favourites-filter'),
             tooltip: _favOnly ? context.l10n.sbShowAll : context.l10n.sbShowFav,
             icon: Icon(_favOnly ? Icons.star : Icons.star_border),
             onPressed: () => setState(() => _favOnly = !_favOnly),
           ),
-          IconButton(
-            key: const Key('search'),
-            tooltip: context.l10n.sbSearch,
-            icon: const Icon(Icons.manage_search),
-            onPressed: () async {
-              final hit = await runSearch(context, ref);
-              if (hit != null && hit.kind == NodeKind.request) {
-                widget.onOpenRequest?.call(hit.id);
+          PopupMenuButton<String>(
+            key: const Key('sidebar-more'),
+            icon: const Icon(Icons.more_horiz),
+            onSelected: (v) async {
+              switch (v) {
+                case 'search':
+                  final hit = await runSearch(context, ref);
+                  if (hit != null && hit.kind == NodeKind.request) {
+                    widget.onOpenRequest?.call(hit.id);
+                  }
+                case 'import':
+                  _import(context);
+                case 'workspaces':
+                  showWorkspaces(context, ref);
               }
             },
-          ),
-          IconButton(
-            key: const Key('import'),
-            tooltip: context.l10n.sbImport,
-            icon: const Icon(Icons.file_download_outlined),
-            onPressed: () => _import(context),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                key: const Key('search'),
+                value: 'search',
+                child: Text(context.l10n.sbSearch),
+              ),
+              PopupMenuItem(
+                key: const Key('import'),
+                value: 'import',
+                child: Text(context.l10n.sbImport),
+              ),
+              if (_hasHost(context))
+                PopupMenuItem(
+                  key: const Key('workspaces'),
+                  value: 'workspaces',
+                  child: Text(context.l10n.sbWorkspaces),
+                ),
+            ],
           ),
           IconButton(
             key: const Key('new-collection'),
@@ -151,9 +165,10 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
     final repo = ref.read(repositoryProvider);
     final ids = repo.favourites();
     if (ids.isEmpty) {
-      return Center(
+      return EmptyState(
         key: const Key('no-favourites'),
-        child: Text(context.l10n.sbNoFav),
+        icon: Icons.star_border,
+        title: context.l10n.sbNoFav,
       );
     }
     return ListView(
@@ -166,16 +181,11 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
 
   Widget _empty(BuildContext context) {
     final filtering = _filter.trim().isNotEmpty;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          filtering
-              ? context.l10n.sbNoMatch(_filter)
-              : context.l10n.sbNoCollections,
-          textAlign: TextAlign.center,
-        ),
-      ),
+    return EmptyState(
+      icon: filtering ? Icons.search_off : Icons.folder_open_outlined,
+      title: filtering
+          ? context.l10n.sbNoMatch(_filter)
+          : context.l10n.sbNoCollections,
     );
   }
 
@@ -189,10 +199,10 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           ref.read(treeActionsProvider).canDrop(d.data, node.id),
       onAcceptWithDetails: (d) {
         try {
-          ref.read(treeActionsProvider).drop(d.data, node.id);
+          final undo = ref.read(treeActionsProvider).drop(d.data, node.id);
+          if (undo != null) _movedToast(context, d.data, undo);
         } on StorageError catch (e) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(e.message)));
+          showToast(context, e.message);
         }
       },
       builder: (context, candidates, _) => LongPressDraggable<String>(
@@ -227,6 +237,15 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
   Widget _tileBody(BuildContext context, SidebarRow row, String? active) {
     final node = row.node;
     final selected = node.id == active;
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onSecondaryTapUp: (d) => _contextMenu(context, node, d.globalPosition),
+      child: _rowTile(context, row, selected),
+    );
+  }
+
+  Widget _rowTile(BuildContext context, SidebarRow row, bool selected) {
+    final node = row.node;
     return ListTile(
       key: Key('node-${node.id}'),
       dense: true,
@@ -247,7 +266,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
                 Icons.star,
                 key: Key('fav-${node.id}'),
                 size: 12,
-                color: Colors.amber.shade700,
+                color: AppColors.of(context).favourite,
               ),
             ),
         ],
@@ -259,39 +278,21 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
 
   Widget _leading(NodeInfo node, bool expanded) {
     if (node.isContainer) {
-      return Icon(
-        expanded ? Icons.folder_open : Icons.folder_outlined,
-        size: 20,
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedRotation(
+            turns: expanded ? 0.25 : 0,
+            duration: Motion.of(context, Motion.fast),
+            curve: Motion.curve,
+            child: const Icon(Icons.chevron_right, size: 16),
+          ),
+          Icon(expanded ? Icons.folder_open : Icons.folder_outlined, size: 20),
+        ],
       );
     }
-    return SizedBox(
-      width: 40,
-      child: Text(
-        _shortMethod(node.method ?? 'GET'),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: _methodColor(node.method ?? 'GET'),
-        ),
-      ),
-    );
+    return MethodBadge(node.method ?? 'GET');
   }
-
-  String _shortMethod(String m) => switch (m.toUpperCase()) {
-    'DELETE' => 'DEL',
-    'OPTIONS' => 'OPT',
-    'PATCH' => 'PATCH',
-    final other => other.length > 5 ? other.substring(0, 5) : other,
-  };
-
-  Color _methodColor(String m) => switch (m.toUpperCase()) {
-    'GET' => Colors.green.shade700,
-    'POST' => Colors.orange.shade800,
-    'PUT' => Colors.blue.shade700,
-    'PATCH' => Colors.purple.shade600,
-    'DELETE' => Colors.red.shade700,
-    _ => Colors.grey.shade700,
-  };
 
   void _onTap(NodeInfo node) {
     if (node.isContainer) {
@@ -308,74 +309,96 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       tooltip: context.l10n.sbActions,
       icon: const Icon(Icons.more_vert, size: 18),
       onSelected: (a) => _run(context, a, node),
-      itemBuilder: (_) => [
-        if (node.isContainer) ...[
-          PopupMenuItem(
-            value: _Action.newRequest,
-            child: Text(context.l10n.sbNewRequest),
-          ),
-          PopupMenuItem(
-            value: _Action.newFolder,
-            child: Text(context.l10n.sbNewFolder),
-          ),
-        ],
-        PopupMenuItem(
-          value: _Action.rename,
-          child: Text(context.l10n.sbRename),
+      itemBuilder: (_) => _items(context, node),
+    );
+  }
+
+  /// Same actions as the row's menu button, opened by right-click.
+  Future<void> _contextMenu(
+    BuildContext context,
+    NodeInfo node,
+    Offset position,
+  ) async {
+    final overlay =
+        Overlay.of(context).context.findRenderObject()! as RenderBox;
+    final action = await showMenu<_Action>(
+      context: context,
+      position: RelativeRect.fromRect(
+        position & const Size(1, 1),
+        Offset.zero & overlay.size,
+      ),
+      items: _items(context, node),
+    );
+    if (action != null && context.mounted) _run(context, action, node);
+  }
+
+  List<PopupMenuEntry<_Action>> _items(BuildContext context, NodeInfo node) => [
+    if (node.isContainer) ...[
+      PopupMenuItem(
+        value: _Action.newRequest,
+        child: Text(context.l10n.sbNewRequest),
+      ),
+      PopupMenuItem(
+        value: _Action.newFolder,
+        child: Text(context.l10n.sbNewFolder),
+      ),
+    ],
+    PopupMenuItem(value: _Action.rename, child: Text(context.l10n.sbRename)),
+    if (node.isContainer)
+      PopupMenuItem(value: _Action.run, child: Text(context.l10n.sbRun)),
+    if (node.isContainer)
+      PopupMenuItem(
+        value: _Action.settings,
+        child: Text(context.l10n.sbSettings),
+      ),
+    PopupMenuItem(
+      value: _Action.duplicate,
+      child: Text(context.l10n.sbDuplicate),
+    ),
+    PopupMenuItem(value: _Action.moveUp, child: Text(context.l10n.sbMoveUp)),
+    PopupMenuItem(
+      value: _Action.moveDown,
+      child: Text(context.l10n.sbMoveDown),
+    ),
+    if (!node.isContainer)
+      PopupMenuItem(
+        value: _Action.versions,
+        child: Text(context.l10n.sbVersions),
+      ),
+    if (!node.isContainer)
+      PopupMenuItem(
+        value: _Action.copyCurl,
+        child: Text(context.l10n.sbCopyCurl),
+      ),
+    if (!node.isContainer)
+      PopupMenuItem(
+        value: _Action.toggleFavourite,
+        child: Text(
+          ref.read(repositoryProvider).isFavourite(node.id)
+              ? context.l10n.sbFavRemove
+              : context.l10n.sbFavAdd,
         ),
-        if (node.isContainer)
-          PopupMenuItem(value: _Action.run, child: Text(context.l10n.sbRun)),
-        if (node.isContainer)
-          PopupMenuItem(
-            value: _Action.settings,
-            child: Text(context.l10n.sbSettings),
-          ),
-        PopupMenuItem(
-          value: _Action.duplicate,
-          child: Text(context.l10n.sbDuplicate),
-        ),
-        PopupMenuItem(
-          value: _Action.moveUp,
-          child: Text(context.l10n.sbMoveUp),
-        ),
-        PopupMenuItem(
-          value: _Action.moveDown,
-          child: Text(context.l10n.sbMoveDown),
-        ),
-        if (!node.isContainer)
-          PopupMenuItem(
-            value: _Action.versions,
-            child: Text(context.l10n.sbVersions),
-          ),
-        if (!node.isContainer)
-          PopupMenuItem(
-            value: _Action.copyCurl,
-            child: Text(context.l10n.sbCopyCurl),
-          ),
-        if (!node.isContainer)
-          PopupMenuItem(
-            value: _Action.toggleFavourite,
-            child: Text(
-              ref.read(repositoryProvider).isFavourite(node.id)
-                  ? context.l10n.sbFavRemove
-                  : context.l10n.sbFavAdd,
-            ),
-          ),
-        if (!node.isContainer)
-          PopupMenuItem(
-            value: _Action.generateCode,
-            child: Text(context.l10n.sbGenerateCode),
-          ),
-        if (node.parentId == null)
-          PopupMenuItem(
-            value: _Action.exportPostman,
-            child: Text(context.l10n.sbCopyPostman),
-          ),
-        PopupMenuItem(
-          value: _Action.delete,
-          child: Text(context.l10n.sbDelete),
-        ),
-      ],
+      ),
+    if (!node.isContainer)
+      PopupMenuItem(
+        value: _Action.generateCode,
+        child: Text(context.l10n.sbGenerateCode),
+      ),
+    if (node.parentId == null)
+      PopupMenuItem(
+        value: _Action.exportPostman,
+        child: Text(context.l10n.sbCopyPostman),
+      ),
+    PopupMenuItem(value: _Action.delete, child: Text(context.l10n.sbDelete)),
+  ];
+
+  void _movedToast(BuildContext context, String id, Undo undo) {
+    final name = ref.read(repositoryProvider).node(id).name;
+    showToast(
+      context,
+      context.l10n.toastMoved(name),
+      onUndo: undo,
+      undoLabel: context.l10n.undo,
     );
   }
 
@@ -432,9 +455,15 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       case _Action.duplicate:
         actions.duplicate(node.id);
       case _Action.moveUp:
-        actions.nudge(node.id, -1);
+        final undo = actions.nudge(node.id, -1);
+        if (undo != null && context.mounted) {
+          _movedToast(context, node.id, undo);
+        }
       case _Action.moveDown:
-        actions.nudge(node.id, 1);
+        final undo = actions.nudge(node.id, 1);
+        if (undo != null && context.mounted) {
+          _movedToast(context, node.id, undo);
+        }
       case _Action.versions:
         await showRevisions(context, ref, node.id);
       case _Action.copyCurl:
@@ -463,15 +492,23 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
           title: l10n.sbDeleteTitle(node.name),
           message: node.isContainer ? l10n.sbDeleteFolderMsg : l10n.sbDeleteMsg,
         );
-        if (ok) actions.delete(node.id);
+        if (!ok) return;
+        final undo = actions.deleteUndoable(node.id);
+        if (context.mounted) {
+          showToast(
+            context,
+            l10n.toastDeleted(node.name),
+            onUndo: undo,
+            undoLabel: l10n.undo,
+          );
+        }
     }
   }
 
   Future<void> _copy(BuildContext context, String text, String message) async {
     await Clipboard.setData(ClipboardData(text: text));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    showToast(context, message);
   }
 
   Future<void> _import(BuildContext context) async {

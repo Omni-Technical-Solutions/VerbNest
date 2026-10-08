@@ -9,6 +9,8 @@ import '../state/file_port.dart';
 import '../state/graphql_state.dart';
 import 'synced_field.dart';
 import '../../l10n/l10n.dart';
+import 'ui/toast.dart';
+import '../theme.dart';
 
 /// Query and variables editors for a GraphQL body, with schema loading,
 /// completion and an explorer (FR-GQL-001/002).
@@ -35,8 +37,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
 
   void _say(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    showToast(context, message);
   }
 
   Future<void> _fetch() async {
@@ -249,7 +250,7 @@ class _SdlDialogState extends ConsumerState<_SdlDialog> {
               controller: _controller,
               maxLines: 12,
               textDirection: TextDirection.ltr,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              style: monoStyle(fontSize: 12),
               decoration: const InputDecoration(
                 hintText: 'type Query { … }',
                 border: OutlineInputBorder(),
@@ -400,7 +401,7 @@ class _GraphqlExplorerState extends State<GraphqlExplorer> {
           color: widget.schema.type(namedTypeOf(type)) == null
               ? null
               : Theme.of(context).colorScheme.primary,
-          fontFamily: 'monospace',
+          fontFamily: kMonoFamily,
         ),
       ),
     );
@@ -428,7 +429,7 @@ class _GraphqlExplorerState extends State<GraphqlExplorer> {
                         ? f.name
                         : '${f.name}(${f.args.map((a) => '${a.name}: ${a.type}').join(', ')})',
                     style: TextStyle(
-                      fontFamily: 'monospace',
+                      fontFamily: kMonoFamily,
                       decoration: f.deprecated == null
                           ? null
                           : TextDecoration.lineThrough,
@@ -447,7 +448,7 @@ class _GraphqlExplorerState extends State<GraphqlExplorer> {
             contentPadding: EdgeInsets.zero,
             title: Row(
               children: [
-                Text(f.name, style: const TextStyle(fontFamily: 'monospace')),
+                Text(f.name, style: monoStyle()),
                 const Text(': '),
                 typeLink(f.type),
               ],
@@ -458,10 +459,7 @@ class _GraphqlExplorerState extends State<GraphqlExplorer> {
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            title: Text(
-              v.name,
-              style: const TextStyle(fontFamily: 'monospace'),
-            ),
+            title: Text(v.name, style: monoStyle()),
             subtitle: v.description.isEmpty ? null : Text(v.description),
           ),
         if (t.kind == GqlKind.union)

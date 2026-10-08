@@ -7,6 +7,7 @@ import '../state/session.dart';
 import '../state/variables.dart';
 import '../widgets/name_dialog.dart';
 import '../../l10n/l10n.dart';
+import '../widgets/ui/toast.dart';
 
 /// Environments and globals with their variables (FR-VAR-002..004).
 class EnvironmentsPage extends ConsumerStatefulWidget {
@@ -66,8 +67,7 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
     setState(() => _selected = null);
   }
 
-  void _toast(String text) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  void _toast(String text) => showToast(context, text);
 
   @override
   Widget build(BuildContext context) {
@@ -78,21 +78,27 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
         ? VariableOwner.global
         : VariableOwner.environment(env.id);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _toolbar(envs, env),
-        const Divider(height: 1),
-        Expanded(
-          child: VariablesEditor(
-            key: ValueKey('${owner.kind}-${owner.id}'),
-            initial: loadVariables(session, owner),
-            initialCurrent: loadCurrentValues(session, owner),
-            onChanged: (vars, cur) =>
-                saveVariables(session, owner, vars, current: cur),
-          ),
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 960),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _toolbar(envs, env),
+            const Divider(height: 1),
+            Expanded(
+              child: VariablesEditor(
+                key: ValueKey('${owner.kind}-${owner.id}'),
+                initial: loadVariables(session, owner),
+                initialCurrent: loadCurrentValues(session, owner),
+                onChanged: (vars, cur) =>
+                    saveVariables(session, owner, vars, current: cur),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -216,7 +222,11 @@ class _VariablesEditorState extends State<VariablesEditor> {
     return ListView(
       padding: const EdgeInsets.all(8),
       children: [
-        for (var i = 0; i < _vars.length; i++) _row(context, i),
+        for (var i = 0; i < _vars.length; i++)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: _row(context, i),
+          ),
         if (_duplicates.isNotEmpty)
           Padding(
             padding: const EdgeInsets.all(8),

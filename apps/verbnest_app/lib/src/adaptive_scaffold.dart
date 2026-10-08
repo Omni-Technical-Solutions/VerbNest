@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show kTertiaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,8 +16,11 @@ import 'state/session.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
 import 'state/tree_state.dart';
+import 'theme.dart';
 import 'widgets/collections_sidebar.dart';
 import 'widgets/request_editor.dart';
+import 'widgets/ui/toast.dart';
+import 'widgets/ui/ui.dart';
 
 enum _Destination {
   collections(Icons.folder_outlined, Icons.folder),
@@ -75,37 +79,50 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     final entries = <PaletteEntry>[
       PaletteEntry(
         id: 'cmd-new-request',
+        shortcut: _combo('N'),
         title: l.cmdNewRequest,
         icon: Icons.add,
         run: _newRequest,
       ),
       PaletteEntry(
         id: 'cmd-send',
+        shortcut: _combo('↵'),
         title: l.cmdSend,
         icon: Icons.send,
         run: _sendActive,
       ),
       PaletteEntry(
         id: 'cmd-search',
+        shortcut: _combo('⇧F'),
         title: l.cmdSearch,
         icon: Icons.manage_search,
         run: _search,
       ),
       PaletteEntry(
         id: 'cmd-toggle-sidebar',
+        shortcut: _combo('\\'),
         title: l.cmdToggleSidebar,
         icon: Icons.view_sidebar_outlined,
         run: _toggleSidebar,
       ),
       PaletteEntry(
         id: 'cmd-close-tab',
+        shortcut: _combo('W'),
         title: l.cmdCloseTab,
         icon: Icons.close,
         run: _closeActive,
       ),
+      PaletteEntry(
+        id: 'cmd-shortcuts',
+        title: l.cmdShortcuts,
+        icon: Icons.keyboard_outlined,
+        shortcut: _combo('/'),
+        run: _showShortcuts,
+      ),
       for (final d in _Destination.values)
         PaletteEntry(
           id: 'go-${d.name}',
+          group: PaletteGroup.navigate,
           title: l.cmdGoTo(d.label(context)),
           icon: d.icon,
           run: () => setState(() => _selected = d),
@@ -114,6 +131,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
         if (d.kind == NodeKind.request)
           PaletteEntry(
             id: 'req-${d.id}',
+            group: PaletteGroup.request,
             title: d.name,
             subtitle: '${d.method ?? ''} ${d.url ?? ''}'.trim(),
             run: () {
@@ -123,6 +141,51 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
           ),
     ];
     showCommandPalette(context, entries);
+  }
+
+  String _combo(String key) => '${_modKey()}+$key';
+
+  void _showShortcuts() {
+    final l = context.l10n;
+    final rows = [
+      (l.cmdNewRequest, _combo('N')),
+      (l.cmdSend, _combo('↵')),
+      (l.cmdSearch, _combo('⇧F')),
+      (l.cmdToggleSidebar, _combo('\\')),
+      (l.cmdCloseTab, _combo('W')),
+      (l.cmdShortcuts, _combo('/')),
+    ];
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        key: const Key('shortcuts-dialog'),
+        title: Text(l.cmdShortcuts),
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final (title, keys) in rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(title)),
+                      Kbd(keys),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.shortcutsClose),
+          ),
+        ],
+      ),
+    );
   }
 
   void _newRequest() {
@@ -147,7 +210,19 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
 
   void _closeActive() {
     final id = ref.read(tabsProvider).active;
-    if (id != null) ref.read(tabsProvider.notifier).close(id);
+    if (id != null) _closeTab(id);
+  }
+
+  void _closeTab(String id) {
+    final name = ref.read(repositoryProvider).node(id).name;
+    ref.read(tabsProvider.notifier).close(id);
+    final l = context.l10n;
+    showToast(
+      context,
+      l.tabClosedToast(name),
+      onUndo: () => ref.read(tabsProvider.notifier).open(id),
+      undoLabel: l.undo,
+    );
   }
 
   @override
@@ -159,6 +234,10 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
           const SingleActivator(LogicalKeyboardKey.enter, meta: true),
         ])
           mod: _sendActive,
+        const SingleActivator(LogicalKeyboardKey.slash, control: true):
+            _showShortcuts,
+        const SingleActivator(LogicalKeyboardKey.slash, meta: true):
+            _showShortcuts,
         const SingleActivator(LogicalKeyboardKey.keyK, control: true): _palette,
         const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _palette,
         const SingleActivator(
@@ -246,12 +325,28 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
             ],
           ),
           const VerticalDivider(width: 1),
-          if (sidebar &&
-              _sidebarVisible &&
-              _selected == _Destination.collections) ...[
-            SizedBox(width: 280, child: _sidebar()),
-            const VerticalDivider(width: 1),
-          ],
+          if (sidebar && _selected == _Destination.collections)
+            TweenAnimationBuilder<double>(
+              tween: Tween(end: _sidebarVisible ? 1 : 0),
+              duration: Motion.of(context, Motion.base),
+              curve: Motion.curve,
+              // Fully collapsed means unmounted, as before the animation.
+              builder: (context, t, child) => t == 0
+                  ? const SizedBox.shrink()
+                  : ClipRect(
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        widthFactor: t,
+                        child: child,
+                      ),
+                    ),
+              child: Row(
+                children: [
+                  SizedBox(width: _sidebarWidth, child: _sidebar()),
+                  _sidebarHandle(),
+                ],
+              ),
+            ),
           Expanded(child: _content()),
         ],
       ),
@@ -260,12 +355,42 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
 
   Widget _sidebar() => const CollectionsSidebar();
 
+  double _sidebarWidth = 280;
+  static const _minSidebar = 200.0, _maxSidebar = 480.0;
+
+  /// Divider that doubles as a drag handle; double-click resets the width.
+  Widget _sidebarHandle() {
+    final line = Theme.of(context).colorScheme.outlineVariant;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
+        key: const Key('sidebar-handle'),
+        behavior: HitTestBehavior.opaque,
+        onDoubleTap: () => setState(() => _sidebarWidth = 280),
+        onHorizontalDragUpdate: (d) => setState(() {
+          final dx = Directionality.of(context) == TextDirection.rtl
+              ? -d.delta.dx
+              : d.delta.dx;
+          _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebar, _maxSidebar);
+        }),
+        child: SizedBox(
+          width: 7,
+          child: Center(child: Container(width: 1, color: line)),
+        ),
+      ),
+    );
+  }
+
   bool _expanded = false;
 
   Widget _activeRequest() {
     final active = ref.watch(tabsProvider).active;
     if (active == null) {
-      return Center(child: Text(context.l10n.selectOrCreateRequest));
+      return EmptyState(
+        icon: Icons.http,
+        title: context.l10n.selectOrCreateRequest,
+        hint: '${_modKey()} + N',
+      );
     }
     ref.watch(workspaceVersionProvider);
     final tabs = ref.watch(tabsProvider);
@@ -281,9 +406,10 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
                 _TabChip(
                   key: Key('tab-$id'),
                   title: repo.node(id).name,
+                  method: repo.node(id).method,
                   selected: id == active,
                   onTap: () => ref.read(tabsProvider.notifier).activate(id),
-                  onClose: () => ref.read(tabsProvider.notifier).close(id),
+                  onClose: () => _closeTab(id),
                 ),
             ],
           ),
@@ -309,7 +435,23 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     );
   }
 
+  String _modKey() => switch (Theme.of(context).platform) {
+    TargetPlatform.macOS || TargetPlatform.iOS => '⌘',
+    _ => 'Ctrl',
+  };
+
   Widget _content() {
+    return AnimatedSwitcher(
+      duration: Motion.of(context, Motion.base),
+      switchInCurve: Motion.curve,
+      child: KeyedSubtree(
+        key: ValueKey('$_selected-$_expanded'),
+        child: _page(),
+      ),
+    );
+  }
+
+  Widget _page() {
     return switch (_selected) {
       _Destination.settings => const SettingsPage(),
       _Destination.history => const HistoryPage(),
@@ -322,45 +464,82 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   }
 }
 
-class _TabChip extends StatelessWidget {
+class _TabChip extends StatefulWidget {
   const _TabChip({
     super.key,
     required this.title,
+    required this.method,
     required this.selected,
     required this.onTap,
     required this.onClose,
   });
 
   final String title;
+  final String? method;
   final bool selected;
   final VoidCallback onTap;
   final VoidCallback onClose;
 
   @override
+  State<_TabChip> createState() => _TabChipState();
+}
+
+class _TabChipState extends State<_TabChip> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsetsDirectional.only(start: 12),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              width: 2,
+    final scheme = Theme.of(context).colorScheme;
+    final selected = widget.selected;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Listener(
+        // Middle-click closes, like a browser tab.
+        onPointerDown: (e) {
+          if (e.buttons == kTertiaryButton) widget.onClose();
+        },
+        child: InkWell(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: Motion.of(context, Motion.base),
+            curve: Motion.curve,
+            padding: const EdgeInsetsDirectional.only(start: Space.md),
+            decoration: BoxDecoration(
               color: selected
-                  ? Theme.of(context).colorScheme.primary
+                  ? scheme.primaryContainer.withValues(alpha: 0.3)
+                  : _hover
+                  ? scheme.onSurface.withValues(alpha: 0.05)
                   : Colors.transparent,
+              border: Border(
+                bottom: BorderSide(
+                  width: 2,
+                  color: selected ? scheme.primary : Colors.transparent,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                if (widget.method != null) ...[
+                  MethodBadge(widget.method!, width: 34),
+                ],
+                Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+                Opacity(
+                  opacity: selected || _hover ? 1 : 0.4,
+                  child: IconButton(
+                    tooltip: context.l10n.closeTab,
+                    icon: const Icon(Icons.close, size: 14),
+                    onPressed: widget.onClose,
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        child: Row(
-          children: [
-            Text(title),
-            IconButton(
-              tooltip: context.l10n.closeTab,
-              icon: const Icon(Icons.close, size: 14),
-              onPressed: onClose,
-            ),
-          ],
         ),
       ),
     );

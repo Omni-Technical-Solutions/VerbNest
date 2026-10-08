@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../state/code_view.dart';
+import '../../l10n/l10n.dart';
+import '../theme.dart';
+import 'ui/toast.dart';
 
 /// Read-only, virtualised text view with line numbers, optional JSON colours
 /// and folding, and search highlighting. Rows are fixed height so a body of
@@ -31,6 +35,7 @@ class _CodeViewState extends State<CodeView> {
   late Map<int, int> _folds;
   final Set<int> _collapsed = {};
   late int _maxLen;
+  int? _hoverRow;
 
   @override
   void initState() {
@@ -55,6 +60,13 @@ class _CodeViewState extends State<CodeView> {
       if (l.length > m) m = l.length;
     }
     _maxLen = m;
+  }
+
+  void _copyPath(int line) {
+    final path = jsonPathForLine(_lines, line);
+    if (path == null) return;
+    Clipboard.setData(ClipboardData(text: path));
+    showToast(context, context.l10n.codePathCopied(path));
   }
 
   TextSpan _span(String line, TextStyle base, ColorScheme scheme) {
@@ -100,8 +112,8 @@ class _CodeViewState extends State<CodeView> {
       }
       if (marks.any((m) => m.$1 <= a && b <= m.$2)) {
         style = style.copyWith(
-          backgroundColor: const Color(0xFFFFE082),
-          color: Colors.black,
+          backgroundColor: AppColors.of(context).searchMark,
+          color: AppColors.of(context).onSearchMark,
         );
       }
       spans.add(TextSpan(text: line.substring(a, b), style: style));
@@ -111,9 +123,9 @@ class _CodeViewState extends State<CodeView> {
 
   Color? _color(TokenKind k, ColorScheme s) => switch (k) {
     TokenKind.key => s.primary,
-    TokenKind.string => Colors.green.shade700,
-    TokenKind.number => Colors.orange.shade800,
-    TokenKind.literal => Colors.purple.shade400,
+    TokenKind.string => AppColors.of(context).synString,
+    TokenKind.number => AppColors.of(context).synNumber,
+    TokenKind.literal => AppColors.of(context).synLiteral,
     TokenKind.punct => s.onSurfaceVariant,
     TokenKind.plain => null,
   };
@@ -122,7 +134,7 @@ class _CodeViewState extends State<CodeView> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final base = TextStyle(
-      fontFamily: 'monospace',
+      fontFamily: kMonoFamily,
       fontSize: widget.fontSize,
       height: 1.0,
       color: scheme.onSurface,
@@ -165,60 +177,84 @@ class _CodeViewState extends State<CodeView> {
                   final i = visible[row];
                   final foldable = _folds.containsKey(i);
                   final folded = _collapsed.contains(i);
-                  return Row(
-                    children: [
-                      SizedBox(
-                        width: gutter,
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 18,
-                              child: foldable
-                                  ? InkWell(
-                                      key: ValueKey('fold-$i'),
-                                      onTap: () => setState(
-                                        () => folded
-                                            ? _collapsed.remove(i)
-                                            : _collapsed.add(i),
-                                      ),
-                                      child: Icon(
-                                        folded
-                                            ? Icons.chevron_right
-                                            : Icons.expand_more,
-                                        size: 16,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            Expanded(
-                              child: SelectionContainer.disabled(
-                                child: Text(
-                                  '${i + 1}',
-                                  textAlign: TextAlign.right,
-                                  style: base.copyWith(
-                                    color: scheme.outline,
-                                    fontSize: 11,
-                                  ),
+                  return MouseRegion(
+                    onEnter: (_) => setState(() => _hoverRow = i),
+                    onExit: (_) {
+                      if (_hoverRow == i) setState(() => _hoverRow = null);
+                    },
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: gutter,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 18,
+                                child: foldable
+                                    ? InkWell(
+                                        key: ValueKey('fold-$i'),
+                                        onTap: () => setState(
+                                          () => folded
+                                              ? _collapsed.remove(i)
+                                              : _collapsed.add(i),
+                                        ),
+                                        child: Icon(
+                                          folded
+                                              ? Icons.chevron_right
+                                              : Icons.expand_more,
+                                          size: 16,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              Expanded(
+                                child: SelectionContainer.disabled(
+                                  child: widget.json && _hoverRow == i
+                                      ? Align(
+                                          alignment:
+                                              AlignmentDirectional.centerEnd,
+                                          child: InkWell(
+                                            key: ValueKey('copy-path-$i'),
+                                            onTap: () => _copyPath(i),
+                                            child: Tooltip(
+                                              message:
+                                                  context.l10n.codeCopyPath,
+                                              child: Icon(
+                                                Icons.copy,
+                                                size: 12,
+                                                color: scheme.primary,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Text(
+                                          '${i + 1}',
+                                          textAlign: TextAlign.right,
+                                          style: base.copyWith(
+                                            color: scheme.outline,
+                                            fontSize: 11,
+                                          ),
+                                        ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Text.rich(
-                          _span(
-                            folded ? '${_lines[i]} …' : _lines[i],
-                            base,
-                            scheme,
+                              const SizedBox(width: 8),
+                            ],
                           ),
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.clip,
                         ),
-                      ),
-                    ],
+                        Expanded(
+                          child: Text.rich(
+                            _span(
+                              folded ? '${_lines[i]} …' : _lines[i],
+                              base,
+                              scheme,
+                            ),
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.clip,
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),

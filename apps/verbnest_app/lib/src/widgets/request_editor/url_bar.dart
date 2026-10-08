@@ -9,9 +9,11 @@ import 'package:verbnest_import/verbnest_import.dart';
 import '../../../l10n/l10n.dart';
 import '../../state/editor_state.dart';
 import '../../state/file_port.dart';
+import '../../theme.dart';
 import '../name_dialog.dart';
 import '../realtime_dialog.dart';
 import '../synced_field.dart';
+import '../ui/ui.dart';
 
 const _customMethod = '\u0000custom';
 
@@ -45,22 +47,47 @@ class UrlBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           _LiveMenu(item: item, notifier: notifier),
-          state.sending
-              ? FilledButton.tonal(
-                  key: const Key('cancel'),
-                  onPressed: notifier.cancel,
-                  child: Text(context.l10n.reCancel),
-                )
-              : FilledButton(
-                  key: const Key('send'),
-                  onPressed: notifier.send,
-                  child: Text(context.l10n.reSend),
-                ),
+          AnimatedSwitcher(
+            duration: Motion.of(context, Motion.fast),
+            transitionBuilder: (child, anim) => FadeTransition(
+              opacity: anim,
+              child: ScaleTransition(
+                scale: Tween(begin: 0.92, end: 1.0).animate(anim),
+                child: child,
+              ),
+            ),
+            child: state.sending
+                ? FilledButton.tonal(
+                    key: const Key('cancel'),
+                    onPressed: notifier.cancel,
+                    child: Text(context.l10n.reCancel),
+                  )
+                : FilledButton(
+                    key: const Key('send'),
+                    onPressed: notifier.send,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(context.l10n.reSend),
+                        const SizedBox(width: Space.sm),
+                        Kbd(
+                          _sendHint(context),
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
         ],
       ),
     );
   }
 }
+
+String _sendHint(BuildContext context) => switch (Theme.of(context).platform) {
+  TargetPlatform.macOS || TargetPlatform.iOS => '⌘↵',
+  _ => 'Ctrl+↵',
+};
 
 class _MethodDropdown extends StatelessWidget {
   const _MethodDropdown({required this.item, required this.notifier});
@@ -91,6 +118,10 @@ class _MethodDropdown extends StatelessWidget {
       key: const Key('method'),
       initialSelection: httpMethods.contains(item.method) ? item.method : null,
       width: 120,
+      textStyle: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: AppColors.of(context).method(item.method),
+      ),
       requestFocusOnTap: false,
       decorationBuilder: (_, _) => InputDecoration(
         border: InputBorder.none,

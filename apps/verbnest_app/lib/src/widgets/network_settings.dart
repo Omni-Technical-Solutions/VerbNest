@@ -9,6 +9,7 @@ import '../state/network_state.dart';
 import 'cookie_manager.dart';
 import 'synced_field.dart';
 import '../../l10n/l10n.dart';
+import 'ui/toast.dart';
 
 /// Proxy, certificates and cookies (FR-HTTP-011..013), shown in Settings.
 class NetworkSettingsSection extends ConsumerWidget {
@@ -167,8 +168,7 @@ class NetworkSettingsSection extends ConsumerWidget {
               onPressed: () async {
                 final err = await n.addCa(ref.read(filePortProvider));
                 if (err != null && context.mounted) {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(err)));
+                  showToast(context, err);
                 }
               },
             ),

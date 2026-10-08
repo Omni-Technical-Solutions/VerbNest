@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../l10n/l10n.dart';
+import '../widgets/ui/ui.dart';
+
+enum PaletteGroup { command, navigate, request }
 
 /// One entry of the command palette (FR-APP-003).
 class PaletteEntry {
@@ -11,12 +14,20 @@ class PaletteEntry {
     required this.run,
     this.subtitle,
     this.icon,
+    this.shortcut,
+    this.group = PaletteGroup.command,
   });
 
   final String id;
   final String title;
   final String? subtitle;
   final IconData? icon;
+
+  /// Key combination shown at the end of the row, such as `Ctrl+N`.
+  final String? shortcut;
+
+  /// Section heading shown above the entries while the query is empty.
+  final PaletteGroup group;
   final VoidCallback run;
 }
 
@@ -58,6 +69,65 @@ Future<void> showCommandPalette(
   chosen?.run();
 }
 
+/// [title] with every occurrence of each query word in bold.
+TextSpan _highlight(BuildContext context, String title, String query) {
+  final words = query
+      .toLowerCase()
+      .split(RegExp(r'\s+'))
+      .where((w) => w.isNotEmpty)
+      .toList();
+  if (words.isEmpty) return TextSpan(text: title);
+  final lower = title.toLowerCase();
+  final bold = List<bool>.filled(title.length, false);
+  for (final w in words) {
+    for (
+      var i = lower.indexOf(w);
+      i != -1;
+      i = lower.indexOf(w, i + w.length)
+    ) {
+      for (var j = i; j < i + w.length; j++) {
+        bold[j] = true;
+      }
+    }
+  }
+  final color = Theme.of(context).colorScheme.primary;
+  final spans = <InlineSpan>[];
+  var start = 0;
+  for (var i = 1; i <= title.length; i++) {
+    if (i == title.length || bold[i] != bold[start]) {
+      spans.add(
+        TextSpan(
+          text: title.substring(start, i),
+          style: bold[start]
+              ? TextStyle(fontWeight: FontWeight.w700, color: color)
+              : null,
+        ),
+      );
+      start = i;
+    }
+  }
+  return TextSpan(children: spans);
+}
+
+Widget _groupHeader(BuildContext context, PaletteGroup g) {
+  final l = context.l10n;
+  return Padding(
+    padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 2),
+    child: Text(
+      switch (g) {
+        PaletteGroup.command => l.paletteGroupCommands,
+        PaletteGroup.navigate => l.paletteGroupNavigate,
+        PaletteGroup.request => l.paletteGroupRequests,
+      },
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    ),
+  );
+}
+
 class _Palette extends StatefulWidget {
   const _Palette(this.entries);
 
@@ -77,6 +147,17 @@ class _PaletteState extends State<_Palette> {
     if (_index >= shown.length) _index = shown.isEmpty ? 0 : shown.length - 1;
     void choose(int i) {
       if (i < shown.length) Navigator.pop(context, shown[i]);
+    }
+
+    // Group headings only while browsing; a search ranks across groups.
+    final rows = <Object>[];
+    PaletteGroup? last;
+    for (var i = 0; i < shown.length; i++) {
+      if (_query.trim().isEmpty && shown[i].group != last) {
+        last = shown[i].group;
+        rows.add(last);
+      }
+      rows.add(i);
     }
 
     return Dialog(
@@ -126,18 +207,36 @@ class _PaletteState extends State<_Palette> {
                       child: Text(context.l10n.paletteNothing),
                     )
                   : ListView.builder(
-                      itemCount: shown.length,
-                      itemBuilder: (_, i) => ListTile(
-                        key: Key('palette-${shown[i].id}'),
-                        dense: true,
-                        selected: i == _index,
-                        leading: Icon(shown[i].icon ?? Icons.http, size: 18),
-                        title: Text(shown[i].title),
-                        subtitle: shown[i].subtitle == null
-                            ? null
-                            : Text(shown[i].subtitle!),
-                        onTap: () => choose(i),
-                      ),
+                      itemCount: rows.length,
+                      itemBuilder: (_, r) {
+                        final row = rows[r];
+                        if (row is PaletteGroup) {
+                          return _groupHeader(context, row);
+                        }
+                        final i = row as int;
+                        return ListTile(
+                          key: Key('palette-${shown[i].id}'),
+                          dense: true,
+                          selected: i == _index,
+                          leading: Icon(shown[i].icon ?? Icons.http, size: 18),
+                          title: Text.rich(
+                            _highlight(context, shown[i].title, _query),
+                          ),
+                          trailing: shown[i].shortcut == null
+                              ? null
+                              : Kbd(shown[i].shortcut!),
+                          subtitle: shown[i].subtitle == null
+                              ? null
+                              : Text.rich(
+                                  _highlight(
+                                    context,
+                                    shown[i].subtitle!,
+                                    _query,
+                                  ),
+                                ),
+                          onTap: () => choose(i),
+                        );
+                      },
                     ),
             ),
           ],

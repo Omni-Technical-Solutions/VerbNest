@@ -1252,6 +1252,62 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reTabAssertions => 'التأكيدات';
 
   @override
+  String get reSplitStacked => 'عرض الطلب فوق الاستجابة';
+
+  @override
+  String get reSplitSideBySide => 'عرض الطلب والاستجابة جنبًا إلى جنب';
+
+  @override
+  String get cmdShortcuts => 'اختصارات لوحة المفاتيح';
+
+  @override
+  String get shortcutsClose => 'إغلاق';
+
+  @override
+  String get undo => 'تراجع';
+
+  @override
+  String tabClosedToast(String name) {
+    return 'تم إغلاق $name';
+  }
+
+  @override
+  String toastDeleted(String name) {
+    return 'تم حذف $name';
+  }
+
+  @override
+  String toastMoved(String name) {
+    return 'تم نقل $name';
+  }
+
+  @override
+  String get paletteGroupCommands => 'الأوامر';
+
+  @override
+  String get paletteGroupNavigate => 'انتقال إلى';
+
+  @override
+  String get paletteGroupRequests => 'الطلبات';
+
+  @override
+  String get settingsAccent => 'لون التمييز';
+
+  @override
+  String get settingsCompact => 'تخطيط مضغوط';
+
+  @override
+  String get settingsCompactHint => 'مسافات أقل، محتوى أكثر على الشاشة.';
+
+  @override
+  String get codeCopyPath => 'نسخ مسار JSON';
+
+  @override
+  String codePathCopied(String path) {
+    return 'تم نسخ $path';
+  }
+
+  @override
   String get reTabSettings => 'الإعدادات';
 
   @override

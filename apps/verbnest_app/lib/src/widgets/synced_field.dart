@@ -3,6 +3,7 @@ import 'package:verbnest_core/verbnest_core.dart';
 
 import '../state/js_syntax.dart';
 import '../state/var_text.dart';
+import '../theme.dart';
 
 /// Gives text fields below it access to the variables a request resolves
 /// against, for highlighting and `{{` completion (FR-VAR-004).
@@ -316,9 +317,7 @@ class _SyncedTextFieldState extends State<SyncedTextField> {
       textDirection: widget.monospace || widget.variables
           ? TextDirection.ltr
           : null,
-      style: widget.monospace
-          ? TextStyle(fontFamily: 'monospace', fontSize: widget.fontSize)
-          : null,
+      style: widget.monospace ? monoStyle(fontSize: widget.fontSize) : null,
       decoration: InputDecoration(
         isDense: true,
         hintText: widget.hint,

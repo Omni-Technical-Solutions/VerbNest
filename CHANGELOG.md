@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.45.0
+
+- UI: new design foundation. Theme tokens (spacing, radii, motion) and an `AppColors` extension replace the hard-coded colours for HTTP methods, status classes, syntax and highlights, so they follow light and dark mode. Rounded inputs, dialogs, menus, tabs and tooltips, with a visible focus ring. Animations respect the system "reduce motion" setting.
+- UI: the request editor has a draggable divider between request and response (stacked or side by side, remembered per device), count badges on the Params, Headers and Assertions tabs, a coloured method selector, a Send button that shows its shortcut and swaps with Cancel, and an animated banner for warnings. The response pane shows a slim progress bar while sending, a status pill, a timing chip that looks tappable, and proper empty and error states.
+- UI: editor tabs show the HTTP method and a close button that appears on hover; middle-click closes a tab. The sidebar can be resized (double-click the handle to reset), rows have a right-click menu, and Search, Import and Workspaces moved into one menu. Pages fade between sections.
+- UI: deleting a collection, folder or request and moving or dragging an item offer Undo in a toast (restores the subtree, container variables and saved examples; version history is not restored). The sidebar collapses with a slide animation. The command palette groups entries (Commands, Go to, Requests) and highlights matches in subtitles too. Settings gain an accent colour picker and a compact layout toggle. Hovering a JSON line in the response viewer offers "Copy JSON path" (for example `$.items[0].id`). The runner shows a progress ring with a percentage, and key/value rows fade in when added. Monospaced text prefers JetBrains Mono, SF Mono, Menlo or Consolas when installed.
+- UI: closing a tab shows an Undo toast, the command palette bolds the matching letters, the response pane shows a pulsing skeleton while loading, folders have an animated chevron, and Settings and Environments sit in a centred column (Settings in cards). Code text uses one shared monospace style.
+- UI: the command palette shows shortcuts, and a new "Keyboard shortcuts" sheet opens from the palette or with Ctrl/Cmd+/. Toasts have an icon; empty screens (history, console, runner, collections) explain what to do next.
+
 ## Unreleased
 
 - Security: a `-v name=value` override of a secret variable is now treated as secret (masked in reports and history, and subject to approved hosts). GraphQL SDL and introspection type references nested deeper than 64 levels are rejected with a format error instead of overflowing the stack.

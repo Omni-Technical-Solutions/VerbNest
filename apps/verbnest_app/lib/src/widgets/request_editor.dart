@@ -20,7 +20,11 @@ import 'request_extras.dart';
 import 'response_view.dart';
 import 'scripts_editor.dart';
 import 'synced_field.dart';
+import '../layout_class.dart';
+import 'ui/split_view.dart';
+import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
+import 'ui/toast.dart';
 
 export 'request_editor/url_bar.dart' show httpMethods;
 
@@ -110,10 +114,9 @@ class _PendingBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
+    return InlineBanner(
       key: const Key('pending-banner'),
-      color: Theme.of(context).colorScheme.errorContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      tone: BannerTone.danger,
       child: Wrap(
         spacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -156,10 +159,9 @@ class _SecretHostBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pending = state.pendingSecretHost!;
-    return Container(
+    return InlineBanner(
       key: const Key('secret-host-banner'),
-      color: Theme.of(context).colorScheme.errorContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      tone: BannerTone.danger,
       child: Wrap(
         spacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -193,9 +195,8 @@ class _Banner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).colorScheme.tertiaryContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    return InlineBanner(
+      tone: BannerTone.warning,
       child: Text(text, key: const Key('banner')),
     );
   }
@@ -223,12 +224,39 @@ class _Panes extends ConsumerWidget {
           notifier: notifier,
         );
         final response = _response(context, ref);
+        final layout = ref.watch(splitLayoutProvider);
         // Side by side is cramped below tablet width; stack instead.
-        return Column(
+        final sideBySide =
+            layout.horizontal && c.maxWidth >= LayoutClass.mediumBreakpoint;
+        return Stack(
           children: [
-            Expanded(child: request),
-            const Divider(height: 1),
-            Expanded(child: response),
+            SplitView(
+              axis: sideBySide ? Axis.horizontal : Axis.vertical,
+              ratio: layout.ratio,
+              onRatioChanged: (r) => ref
+                  .read(splitLayoutProvider.notifier)
+                  .update(layout.copyWith(ratio: r)),
+              first: request,
+              second: response,
+            ),
+            PositionedDirectional(
+              end: 4,
+              top: 4,
+              child: IconButton(
+                key: const Key('split-orientation'),
+                visualDensity: VisualDensity.compact,
+                tooltip: sideBySide
+                    ? context.l10n.reSplitStacked
+                    : context.l10n.reSplitSideBySide,
+                icon: Icon(
+                  sideBySide ? Icons.view_agenda_outlined : Icons.view_column,
+                  size: 18,
+                ),
+                onPressed: () => ref
+                    .read(splitLayoutProvider.notifier)
+                    .update(layout.copyWith(horizontal: !layout.horizontal)),
+              ),
+            ),
           ],
         );
       },
@@ -255,9 +283,7 @@ class _Panes extends ConsumerWidget {
                 mime: r.header('content-type')?.split(';').first,
               );
               if (ok && context.mounted) {
-                ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                  SnackBar(content: Text(context.l10n.reResponseSaved)),
-                );
+                showToast(context, context.l10n.reResponseSaved);
               }
             },
     );
@@ -285,12 +311,12 @@ class _RequestTabs extends StatelessWidget {
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             tabs: [
-              Tab(text: context.l10n.reTabParams),
-              Tab(text: context.l10n.reTabHeaders),
+              _tab(context.l10n.reTabParams, _active(item.params)),
+              _tab(context.l10n.reTabHeaders, _active(item.headers)),
               Tab(text: context.l10n.reTabAuth),
               Tab(text: context.l10n.reTabBody),
               Tab(text: context.l10n.reTabScripts),
-              Tab(text: context.l10n.reTabAssertions),
+              _tab(context.l10n.reTabAssertions, item.assertions.length),
               Tab(text: context.l10n.reTabSettings),
             ],
           ),
@@ -299,6 +325,19 @@ class _RequestTabs extends StatelessWidget {
       ),
     );
   }
+
+  static int _active(List<KeyValue> rows) =>
+      rows.where((r) => r.enabled && r.key.isNotEmpty).length;
+
+  static Widget _tab(String label, int count) => Tab(
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label),
+        if (count > 0) ...[const SizedBox(width: 6), CountBadge(count)],
+      ],
+    ),
+  );
 
   List<Widget> _views() => [
     ParamsTab(item: item, notifier: notifier),

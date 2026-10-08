@@ -765,6 +765,42 @@
   "reTabBody": "Body",
   "reTabScripts": "Scripts",
   "reTabAssertions": "Assertions",
+  "reSplitStacked": "Stack request above response",
+  "reSplitSideBySide": "Show request and response side by side",
+  "cmdShortcuts": "Keyboard shortcuts",
+  "shortcutsClose": "Close",
+  "undo": "Undo",
+  "tabClosedToast": "Closed {name}",
+  "@tabClosedToast": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "toastDeleted": "Deleted {name}",
+  "toastMoved": "Moved {name}",
+  "@toastDeleted": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "@toastMoved": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "paletteGroupCommands": "Commands",
+  "paletteGroupNavigate": "Go to",
+  "paletteGroupRequests": "Requests",
+  "settingsAccent": "Accent colour",
+  "settingsCompact": "Compact layout",
+  "settingsCompactHint": "Tighter spacing, more on screen.",
+  "codeCopyPath": "Copy JSON path",
+  "codePathCopied": "Copied {path}",
+  "@codePathCopied": {
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
   "reTabSettings": "Settings",
   "rePathVars": "Path variables",
   "reValue": "Value",

@@ -7,6 +7,8 @@ import '../state/import_actions.dart';
 import '../state/session.dart';
 import '../state/variables.dart';
 import '../../l10n/l10n.dart';
+import 'ui/toast.dart';
+import '../theme.dart';
 
 /// Shows a request as code in a chosen language (FR-IO-003).
 class CodeDialog extends ConsumerStatefulWidget {
@@ -67,10 +69,7 @@ class _CodeDialogState extends ConsumerState<CodeDialog> {
                   child: SelectableText(
                     code,
                     key: const Key('code-text'),
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                    ),
+                    style: monoStyle(fontSize: 12),
                   ),
                 ),
               ),
@@ -84,8 +83,7 @@ class _CodeDialogState extends ConsumerState<CodeDialog> {
           onPressed: () async {
             await Clipboard.setData(ClipboardData(text: code));
             if (!context.mounted) return;
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(context.l10n.codeCopied)));
+            showToast(context, context.l10n.codeCopied);
           },
           child: Text(context.l10n.copy),
         ),

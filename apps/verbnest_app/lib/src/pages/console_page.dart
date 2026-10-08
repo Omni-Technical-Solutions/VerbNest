@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+
+import '../theme.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/console_log.dart';
 import '../widgets/response_view.dart';
 import '../../l10n/l10n.dart';
+import '../widgets/ui/ui.dart';
 
 /// Requests sent in this session with the exact heads, newest first
 /// (FR-HIS-004). Secrets are masked.
@@ -27,7 +31,7 @@ class ConsolePage extends ConsumerWidget {
         ],
       ),
       body: entries.isEmpty
-          ? Center(child: Text(context.l10n.consoleEmpty))
+          ? EmptyState(icon: Icons.terminal, title: context.l10n.consoleEmpty)
           : ListView.builder(
               itemCount: entries.length,
               itemBuilder: (context, i) => _entry(context, entries[i]),
@@ -45,7 +49,9 @@ class ConsolePage extends ConsumerWidget {
         failed ? context.l10n.histError : '${e.status}',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: failed ? Colors.red.shade700 : statusColor(e.status ?? 0),
+          color: failed
+              ? AppColors.of(context).danger
+              : statusColor(context, e.status ?? 0),
         ),
       ),
       title: Text('${e.method} ${e.url}', overflow: TextOverflow.ellipsis),
@@ -60,10 +66,7 @@ class ConsolePage extends ConsumerWidget {
           context.l10n.consoleSent,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        SelectableText(
-          e.sentHead.trimRight(),
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-        ),
+        SelectableText(e.sentHead.trimRight(), style: monoStyle(fontSize: 12)),
         const SizedBox(height: 8),
         Text(
           failed ? context.l10n.consoleError : context.l10n.consoleReceived,
@@ -71,7 +74,7 @@ class ConsolePage extends ConsumerWidget {
         ),
         SelectableText(
           e.error ?? e.responseHead ?? '',
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          style: monoStyle(fontSize: 12),
         ),
       ],
     );

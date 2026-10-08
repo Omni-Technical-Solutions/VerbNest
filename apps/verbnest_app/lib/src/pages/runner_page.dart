@@ -8,8 +8,11 @@ import 'package:verbnest_core/verbnest_core.dart';
 import '../state/file_port.dart';
 import '../state/runner.dart';
 import '../state/session.dart';
+import '../theme.dart';
 import '../widgets/mock_server_dialog.dart';
 import '../../l10n/l10n.dart';
+import '../widgets/ui/toast.dart';
+import '../widgets/ui/ui.dart';
 
 /// Runs the requests of a collection or folder in order (FR-RUN-001) and
 /// shows the results as they arrive (FR-RUN-002).
@@ -113,8 +116,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
           mime: mime,
         );
     if (ok && mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(context.l10n.runReportSaved)));
+      showToast(context, context.l10n.runReportSaved);
     }
   }
 
@@ -177,7 +179,10 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
 
   Widget _pickList(BuildContext context) {
     if (_picks.isEmpty) {
-      return Center(child: Text(context.l10n.runNoRequests));
+      return EmptyState(
+        icon: Icons.playlist_remove,
+        title: context.l10n.runNoRequests,
+      );
     }
     return ReorderableListView(
       key: const Key('run-requests'),
@@ -275,10 +280,25 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
     padding: const EdgeInsets.all(8),
     child: Row(
       children: [
-        const SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2),
+        SizedBox(
+          width: 28,
+          height: 28,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CircularProgressIndicator(
+                strokeWidth: 3,
+                // Iterations advance in steps; between them the ring spins.
+                value: run.total == 0 ? null : run.iteration / run.total,
+              ),
+              Text(
+                run.total == 0
+                    ? ''
+                    : '${(100 * run.iteration / run.total).round()}',
+                style: const TextStyle(fontSize: 8),
+              ),
+            ],
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -299,7 +319,10 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
 
   Widget _results(BuildContext context, RunnerState run) {
     if (run.entries.isEmpty) {
-      return Center(child: Text(context.l10n.runResultsHere));
+      return EmptyState(
+        icon: Icons.play_circle_outline,
+        title: context.l10n.runResultsHere,
+      );
     }
     return ListView(
       key: const Key('run-results'),
@@ -319,7 +342,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
         color: e.skipped
             ? null
             : e.ok
-            ? Colors.green
+            ? AppColors.of(context).success
             : scheme.error,
       ),
       title: Text('${e.method} ${e.name}', overflow: TextOverflow.ellipsis),
