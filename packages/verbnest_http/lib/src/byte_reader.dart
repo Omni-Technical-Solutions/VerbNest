@@ -83,10 +83,14 @@ class ByteReader {
     return out.toBytes();
   }
 
-  Future<Uint8List> readToEnd() async {
+  /// Reads until the stream ends; throws [FormatException] past [max] bytes.
+  Future<Uint8List> readToEnd({int? max}) async {
     final out = BytesBuilder(copy: false);
     while (true) {
       if (_pending.isNotEmpty) out.add(_take(_pending.length));
+      if (max != null && out.length > max) {
+        throw const FormatException('Response body is too large');
+      }
       if (!await _fill()) return out.toBytes();
     }
   }

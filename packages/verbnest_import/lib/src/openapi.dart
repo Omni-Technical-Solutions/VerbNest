@@ -18,18 +18,11 @@ Object? decodeJsonOrYaml(String text) {
     }
   }
   try {
-    return _plain(loadYaml(text));
+    return plainYaml(loadYaml(text));
   } on Object {
     return null;
   }
 }
-
-Object? _plain(Object? v) => switch (v) {
-  YamlMap() => {for (final e in v.entries) '${e.key}': _plain(e.value)},
-  Map() => {for (final e in v.entries) '${e.key}': _plain(e.value)},
-  List() => [for (final e in v) _plain(e)],
-  _ => v,
-};
 
 bool looksLikeOpenApi(Object? json) {
   if (json is! Map) return false;

@@ -5,6 +5,7 @@ import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 import 'package:yaml/yaml.dart';
 
+import 'json_util.dart';
 import 'yaml_emit.dart';
 
 /// File path (forward slashes) to content.
@@ -180,15 +181,9 @@ class SnapshotResult {
   final List<String> conflicts;
 }
 
-Object? _plain(Object? v) => switch (v) {
-  YamlMap() => {for (final e in v.entries) '${e.key}': _plain(e.value)},
-  YamlList() => [for (final e in v) _plain(e)],
-  _ => v,
-};
-
 Map<String, Object?> _doc(List<int> bytes, String path) {
   try {
-    final v = _plain(loadYaml(utf8.decode(bytes)));
+    final v = plainYaml(loadYaml(utf8.decode(bytes)));
     if (v is Map<String, Object?>) return v;
   } on Object {
     // falls through to the error below

@@ -153,7 +153,7 @@ class MockServer {
       port,
     );
     final mock = MockServer._(server, routes, delay);
-    server.listen(mock._handle);
+    server.listen(mock._guarded);
     return mock;
   }
 
@@ -165,8 +165,52 @@ class MockServer {
     'keep-alive',
   };
 
+  static const _maxRequestBody = 1024 * 1024;
+
+  /// A web page can point a DNS name at 127.0.0.1 and read the mock through
+  /// the browser, so on a loopback bind only loopback host names are served.
+  bool _hostAllowed(HttpRequest req) {
+    if (!_server.address.isLoopback) return true;
+    final host = req.headers.host?.toLowerCase();
+    return host == 'localhost' ||
+        host == '::1' ||
+        (host != null && InternetAddress.tryParse(host)?.isLoopback == true);
+  }
+
+  Future<void> _guarded(HttpRequest req) async {
+    try {
+      if (!_hostAllowed(req)) {
+        req.response.statusCode = HttpStatus.forbidden;
+        await req.response.close();
+        return;
+      }
+      if (req.contentLength > _maxRequestBody) {
+        req.response
+          ..statusCode = HttpStatus.requestEntityTooLarge
+          ..persistentConnection = false;
+        await req.response.close();
+        return;
+      }
+      await _handle(req);
+    } on Object {
+      try {
+        req.response.statusCode = HttpStatus.internalServerError;
+        await req.response.close();
+      } on Object {
+        // The connection is already gone.
+      }
+    }
+  }
+
   Future<void> _handle(HttpRequest req) async {
-    final requestBody = await utf8.decodeStream(req);
+    final requestBody = await utf8.decodeStream(
+      req.fold<List<int>>([], (all, chunk) {
+        if (all.length + chunk.length > _maxRequestBody) {
+          throw const FormatException('Request body is too large');
+        }
+        return all..addAll(chunk);
+      }).asStream(),
+    );
     final parts = [
       for (final s in req.uri.pathSegments)
         if (s.isNotEmpty) s,

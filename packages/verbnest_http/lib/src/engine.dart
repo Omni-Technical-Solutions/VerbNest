@@ -539,7 +539,12 @@ class _Connection {
       return _readChunked(reader);
     }
     final length = int.tryParse(h('content-length') ?? '');
-    return length != null ? reader.readExact(length) : reader.readToEnd();
+    if (length != null && length > maxBodyBytes) {
+      throw const ProtocolError('Response body is too large');
+    }
+    return length != null
+        ? reader.readExact(length)
+        : reader.readToEnd(max: maxBodyBytes);
   }
 
   Future<Uint8List> _readChunked(ByteReader reader) async {
@@ -549,6 +554,9 @@ class _Connection {
         (await reader.readLine()).split(';').first.trim(),
         radix: 16,
       );
+      if (size < 0 || out.length + size > maxBodyBytes) {
+        throw const ProtocolError('Response body is too large');
+      }
       if (size == 0) {
         while ((await reader.readLine()).isNotEmpty) {}
         return out.toBytes();
@@ -596,13 +604,25 @@ class _Connection {
     }
     try {
       return switch (encoding) {
-        'gzip' || 'x-gzip' => Uint8List.fromList(gzip.decode(p.body)),
-        'deflate' => Uint8List.fromList(zlib.decode(p.body)),
+        'gzip' || 'x-gzip' => _inflate(gzip, p.body),
+        'deflate' => _inflate(zlib, p.body),
         _ => p.body,
       };
     } on FormatException catch (e) {
       throw ProtocolError('Could not decode $encoding body: ${e.message}');
     }
+  }
+
+  /// Inflates in chunks so a small compressed body cannot expand past
+  /// [maxBodyBytes] in memory.
+  Uint8List _inflate(Codec<List<int>, List<int>> codec, Uint8List body) {
+    final out = BytesBuilder(copy: false);
+    final sink = codec.decoder.startChunkedConversion(
+      ByteConversionSink.from(_CappedSink(out, maxBodyBytes)),
+    );
+    sink.add(body);
+    sink.close();
+    return out.toBytes();
   }
 
   HttpEngineError _translate(Object e) {
@@ -660,4 +680,26 @@ class _Parsed {
   final Uint8List body;
   final Duration ttfb;
   final Duration download;
+}
+
+/// Largest response body read from the wire, and the largest after
+/// decompression.
+const maxBodyBytes = 512 * 1024 * 1024;
+
+class _CappedSink implements Sink<List<int>> {
+  _CappedSink(this._out, this._max);
+
+  final BytesBuilder _out;
+  final int _max;
+
+  @override
+  void add(List<int> chunk) {
+    if (_out.length + chunk.length > _max) {
+      throw const ProtocolError('Decompressed response body is too large');
+    }
+    _out.add(chunk);
+  }
+
+  @override
+  void close() {}
 }

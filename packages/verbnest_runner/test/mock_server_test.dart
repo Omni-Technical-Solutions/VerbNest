@@ -8,6 +8,7 @@ import 'package:verbnest_storage/verbnest_storage.dart';
 import 'package:test/test.dart';
 
 void main() {
+  hardeningTests();
   late WorkspaceRepository repo;
   late String col;
   MockServer? mock;
@@ -187,5 +188,27 @@ void main() {
     final res = await req.close();
     await res.drain<void>();
     expect(res.statusCode, isNot(500));
+  });
+}
+
+void hardeningTests() {
+  test('foreign Host headers and oversized bodies are refused', () async {
+    final mock = await MockServer.start(const []);
+    addTearDown(mock.close);
+    Future<int> status(String host, {int bodyBytes = 0}) async {
+      final s = await Socket.connect(InternetAddress.loopbackIPv4, mock.port);
+      s.write(
+        'POST / HTTP/1.1\r\nHost: $host\r\nContent-Length: $bodyBytes\r\n'
+        'Connection: close\r\n\r\n',
+      );
+      if (bodyBytes > 0) s.add(Uint8List(bodyBytes));
+      final head = await utf8.decoder.bind(s).first;
+      s.destroy();
+      return int.parse(head.split(' ')[1]);
+    }
+
+    expect(await status('evil.example'), 403);
+    expect(await status('localhost:${mock.port}', bodyBytes: 5 << 20), 413);
+    expect(await status('127.0.0.1:${mock.port}'), 404);
   });
 }

@@ -99,6 +99,7 @@ RequestNode find(FolderNode f, String name) {
 }
 
 void main() {
+  yamlBombTest();
   group('OpenAPI', () {
     final doc = decodeJsonOrYaml(petstoreYaml);
     test('is recognised, YAML or JSON', () {
@@ -387,5 +388,16 @@ void main() {
         startsWith("curl -X POST 'https://a.test/x?q=1'"),
       );
     });
+  });
+}
+
+void yamlBombTest() {
+  test('a YAML alias bomb is rejected instead of expanded', () {
+    final lines = ['a0: &a0 [x, x, x, x, x, x, x, x, x, x]'];
+    for (var i = 1; i < 12; i++) {
+      final prev = List.filled(10, '*a${i - 1}').join(', ');
+      lines.add('a$i: &a$i [$prev]');
+    }
+    expect(decodeJsonOrYaml(lines.join('\n')), isNull);
   });
 }

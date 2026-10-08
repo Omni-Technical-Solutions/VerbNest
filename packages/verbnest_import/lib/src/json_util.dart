@@ -10,3 +10,27 @@ List<Object?> asJsonList(Object? v) => v is List ? v : const [];
 
 /// [v] when it is a string, else an empty string.
 String asJsonString(Object? v) => v is String ? v : '';
+
+const _maxYamlNodes = 500000;
+const _maxYamlDepth = 200;
+
+/// Copies parsed YAML into plain maps and lists. Aliases share one node in
+/// the parsed tree, so a few lines of aliases can expand to billions of
+/// values; this throws [FormatException] past a node or depth limit instead.
+Object? plainYaml(Object? root) {
+  var nodes = 0;
+  Object? walk(Object? v, int depth) {
+    if (++nodes > _maxYamlNodes || depth > _maxYamlDepth) {
+      throw const FormatException('YAML document is too large or too deep');
+    }
+    return switch (v) {
+      Map() => {
+        for (final e in v.entries) '${e.key}': walk(e.value, depth + 1),
+      },
+      List() => [for (final e in v) walk(e, depth + 1)],
+      _ => v,
+    };
+  }
+
+  return walk(root, 0);
+}
