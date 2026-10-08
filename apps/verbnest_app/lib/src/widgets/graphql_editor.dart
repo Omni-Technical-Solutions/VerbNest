@@ -83,35 +83,13 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
             spacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              FilledButton.tonalIcon(
-                key: const Key('gql-fetch'),
-                icon: _fetching
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.cloud_download_outlined, size: 18),
-                label: Text(context.l10n.gqlFetch),
-                onPressed: _fetching || widget.url.trim().isEmpty
-                    ? null
-                    : _fetch,
-              ),
+              _buildFetchButton(context),
               TextButton(
                 key: const Key('gql-import-sdl'),
                 onPressed: _importSdl,
                 child: Text(context.l10n.gqlImportSdl),
               ),
-              TextButton(
-                key: const Key('gql-explore'),
-                onPressed: schema == null
-                    ? null
-                    : () => showDialog<void>(
-                        context: context,
-                        builder: (_) => GraphqlExplorer(schema: schema),
-                      ),
-                child: Text(context.l10n.gqlExplore),
-              ),
+              _buildExploreButton(context, schema),
               Text(
                 key: const Key('gql-status'),
                 schema == null
@@ -119,68 +97,108 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
                     : context.l10n.gqlTypeCount(schema.userTypes.length),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
-              if (ops.length > 1)
-                DropdownMenu<String>(
-                  key: const Key('gql-operation'),
-                  initialSelection: ops.contains(body.operationName)
-                      ? body.operationName
-                      : null,
-                  hintText: context.l10n.gqlOperation,
-                  expandedInsets: EdgeInsets.zero,
-                  requestFocusOnTap: false,
-                  dropdownMenuEntries: [
-                    for (final o in ops) DropdownMenuEntry(value: o, label: o),
-                  ],
-                  onSelected: (v) =>
-                      widget.onChanged(body.copyWith(operationName: v ?? '')),
-                ),
-              Tooltip(
-                message: context.l10n.gqlPersistedHint,
-                child: FilterChip(
-                  key: const Key('gql-persisted'),
-                  label: Text(context.l10n.gqlPersisted),
-                  selected: body.persisted,
-                  onSelected: (v) =>
-                      widget.onChanged(body.copyWith(persisted: v)),
-                ),
-              ),
+              if (ops.length > 1) _buildOperationMenu(context, ops),
+              _buildPersistedChip(context),
             ],
           ),
         ),
-        Expanded(
-          flex: 3,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-            child: SyncedTextField(
-              key: const Key('gql-query'),
-              label: context.l10n.gqlQuery,
-              value: body.query,
-              variables: true,
-              monospace: true,
-              expands: true,
-              completer: schema == null
-                  ? null
-                  : (text, caret) => graphqlComplete(schema, text, caret),
-              onChanged: (v) => widget.onChanged(body.copyWith(query: v)),
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-            child: SyncedTextField(
-              key: const Key('gql-variables'),
-              label: context.l10n.gqlVariables,
-              value: body.variables,
-              variables: true,
-              monospace: true,
-              expands: true,
-              onChanged: (v) => widget.onChanged(body.copyWith(variables: v)),
-            ),
-          ),
-        ),
+        Expanded(flex: 3, child: _buildQueryField(context, schema)),
+        Expanded(flex: 2, child: _buildVariablesField(context)),
       ],
+    );
+  }
+
+  Widget _buildFetchButton(BuildContext context) {
+    return FilledButton.tonalIcon(
+      key: const Key('gql-fetch'),
+      icon: _fetching
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.cloud_download_outlined, size: 18),
+      label: Text(context.l10n.gqlFetch),
+      onPressed: _fetching || widget.url.trim().isEmpty ? null : _fetch,
+    );
+  }
+
+  Widget _buildExploreButton(BuildContext context, GraphqlSchema? schema) {
+    return TextButton(
+      key: const Key('gql-explore'),
+      onPressed: schema == null
+          ? null
+          : () => showDialog<void>(
+              context: context,
+              builder: (_) => GraphqlExplorer(schema: schema),
+            ),
+      child: Text(context.l10n.gqlExplore),
+    );
+  }
+
+  Widget _buildOperationMenu(BuildContext context, List<String> ops) {
+    final body = widget.body;
+    return DropdownMenu<String>(
+      key: const Key('gql-operation'),
+      initialSelection: ops.contains(body.operationName)
+          ? body.operationName
+          : null,
+      hintText: context.l10n.gqlOperation,
+      expandedInsets: EdgeInsets.zero,
+      requestFocusOnTap: false,
+      dropdownMenuEntries: [
+        for (final o in ops) DropdownMenuEntry(value: o, label: o),
+      ],
+      onSelected: (v) =>
+          widget.onChanged(body.copyWith(operationName: v ?? '')),
+    );
+  }
+
+  Widget _buildPersistedChip(BuildContext context) {
+    final body = widget.body;
+    return Tooltip(
+      message: context.l10n.gqlPersistedHint,
+      child: FilterChip(
+        key: const Key('gql-persisted'),
+        label: Text(context.l10n.gqlPersisted),
+        selected: body.persisted,
+        onSelected: (v) => widget.onChanged(body.copyWith(persisted: v)),
+      ),
+    );
+  }
+
+  Widget _buildQueryField(BuildContext context, GraphqlSchema? schema) {
+    final body = widget.body;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      child: SyncedTextField(
+        key: const Key('gql-query'),
+        label: context.l10n.gqlQuery,
+        value: body.query,
+        variables: true,
+        monospace: true,
+        expands: true,
+        completer: schema == null
+            ? null
+            : (text, caret) => graphqlComplete(schema, text, caret),
+        onChanged: (v) => widget.onChanged(body.copyWith(query: v)),
+      ),
+    );
+  }
+
+  Widget _buildVariablesField(BuildContext context) {
+    final body = widget.body;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+      child: SyncedTextField(
+        key: const Key('gql-variables'),
+        label: context.l10n.gqlVariables,
+        value: body.variables,
+        variables: true,
+        monospace: true,
+        expands: true,
+        onChanged: (v) => widget.onChanged(body.copyWith(variables: v)),
+      ),
     );
   }
 }

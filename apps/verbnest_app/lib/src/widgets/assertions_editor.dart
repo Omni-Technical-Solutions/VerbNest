@@ -61,7 +61,6 @@ class AssertionsEditor extends StatelessWidget {
     final named =
         a.target == AssertionTarget.header ||
         a.target == AssertionTarget.jsonPath;
-    final valueKey = ValueKey('v$i-${assertions.length}-${a.target.name}');
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Wrap(
@@ -74,73 +73,11 @@ class AssertionsEditor extends StatelessWidget {
             value: a.enabled,
             onChanged: (v) => _replace(i, a.copyWith(enabled: v ?? true)),
           ),
-          DropdownMenu<AssertionTarget>(
-            key: Key('assert-target-$i'),
-            initialSelection: a.target,
-            requestFocusOnTap: false,
-            dropdownMenuEntries: [
-              for (final t in AssertionTarget.values)
-                DropdownMenuEntry(value: t, label: _targetLabel(context, t)),
-            ],
-            onSelected: (t) {
-              if (t == null) return;
-              final nextOps = Assertion.opsFor(t);
-              _replace(
-                i,
-                Assertion(
-                  target: t,
-                  op: nextOps.contains(a.op) ? a.op : nextOps.first,
-                  name: a.name,
-                  value: a.value,
-                  enabled: a.enabled,
-                ),
-              );
-            },
-          ),
-          if (named)
-            SizedBox(
-              width: 180,
-              child: TextFormField(
-                key: ValueKey('n$i-${assertions.length}-${a.target.name}'),
-                initialValue: a.name,
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: a.target == AssertionTarget.header
-                      ? 'Content-Type'
-                      : r'$.data[0].id',
-                ),
-                onChanged: (v) => _replace(i, a.copyWith(name: v)),
-              ),
-            ),
-          if (a.target != AssertionTarget.schema)
-            DropdownMenu<AssertionOp>(
-              key: Key('assert-op-$i'),
-              initialSelection: ops.contains(a.op) ? a.op : ops.first,
-              requestFocusOnTap: false,
-              dropdownMenuEntries: [
-                for (final o in ops)
-                  DropdownMenuEntry(value: o, label: o.label),
-              ],
-              onSelected: (o) {
-                if (o != null) _replace(i, a.copyWith(op: o));
-              },
-            ),
+          _targetMenu(context, i, a),
+          if (named) _nameField(i, a),
+          if (a.target != AssertionTarget.schema) _opMenu(i, a, ops),
           if (a.op.needsValue || a.target == AssertionTarget.schema)
-            SizedBox(
-              width: a.target == AssertionTarget.schema ? 320 : 180,
-              child: TextFormField(
-                key: valueKey,
-                initialValue: a.value,
-                maxLines: a.target == AssertionTarget.schema ? 4 : 1,
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: a.target == AssertionTarget.schema
-                      ? '{"type": "object", "required": ["id"]}'
-                      : 'Expected value',
-                ),
-                onChanged: (v) => _replace(i, a.copyWith(value: v)),
-              ),
-            ),
+            _valueField(i, a),
           IconButton(
             key: Key('assert-delete-$i'),
             tooltip: context.l10n.remove,
@@ -151,6 +88,82 @@ class AssertionsEditor extends StatelessWidget {
             ]),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _targetMenu(BuildContext context, int i, Assertion a) {
+    return DropdownMenu<AssertionTarget>(
+      key: Key('assert-target-$i'),
+      initialSelection: a.target,
+      requestFocusOnTap: false,
+      dropdownMenuEntries: [
+        for (final t in AssertionTarget.values)
+          DropdownMenuEntry(value: t, label: _targetLabel(context, t)),
+      ],
+      onSelected: (t) {
+        if (t == null) return;
+        final nextOps = Assertion.opsFor(t);
+        _replace(
+          i,
+          Assertion(
+            target: t,
+            op: nextOps.contains(a.op) ? a.op : nextOps.first,
+            name: a.name,
+            value: a.value,
+            enabled: a.enabled,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _nameField(int i, Assertion a) {
+    return SizedBox(
+      width: 180,
+      child: TextFormField(
+        key: ValueKey('n$i-${assertions.length}-${a.target.name}'),
+        initialValue: a.name,
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: a.target == AssertionTarget.header
+              ? 'Content-Type'
+              : r'$.data[0].id',
+        ),
+        onChanged: (v) => _replace(i, a.copyWith(name: v)),
+      ),
+    );
+  }
+
+  Widget _opMenu(int i, Assertion a, List<AssertionOp> ops) {
+    return DropdownMenu<AssertionOp>(
+      key: Key('assert-op-$i'),
+      initialSelection: ops.contains(a.op) ? a.op : ops.first,
+      requestFocusOnTap: false,
+      dropdownMenuEntries: [
+        for (final o in ops) DropdownMenuEntry(value: o, label: o.label),
+      ],
+      onSelected: (o) {
+        if (o != null) _replace(i, a.copyWith(op: o));
+      },
+    );
+  }
+
+  Widget _valueField(int i, Assertion a) {
+    final schema = a.target == AssertionTarget.schema;
+    return SizedBox(
+      width: schema ? 320 : 180,
+      child: TextFormField(
+        key: ValueKey('v$i-${assertions.length}-${a.target.name}'),
+        initialValue: a.value,
+        maxLines: schema ? 4 : 1,
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: schema
+              ? '{"type": "object", "required": ["id"]}'
+              : 'Expected value',
+        ),
+        onChanged: (v) => _replace(i, a.copyWith(value: v)),
       ),
     );
   }

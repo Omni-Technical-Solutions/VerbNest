@@ -103,108 +103,11 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                if (_open)
-                  FilledButton.tonal(
-                    key: const Key('rt-disconnect'),
-                    onPressed: () => unawaited(_conn?.close()),
-                    child: Text(context.l10n.rtDisconnect),
-                  )
-                else
-                  FilledButton(
-                    key: const Key('rt-connect'),
-                    onPressed: _connecting ? null : _connect,
-                    child: Text(
-                      _connecting
-                          ? context.l10n.rtConnecting
-                          : context.l10n.rtConnect,
-                    ),
-                  ),
-                const SizedBox(width: 8),
-                TextButton(
-                  key: const Key('rt-clear'),
-                  onPressed: () => setState(_log.clear),
-                  child: Text(context.l10n.rtClear),
-                ),
-                if (widget.onSave != null)
-                  TextButton(
-                    key: const Key('rt-save'),
-                    onPressed: _log.isEmpty
-                        ? null
-                        : () => widget.onSave!(formatRealtimeLog(_log)),
-                    child: Text(context.l10n.rtSave),
-                  ),
-              ],
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  _error!,
-                  key: const Key('rt-error'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
+            _buildToolbar(context),
+            if (_error != null) _buildError(context),
             const SizedBox(height: 8),
-            Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                ),
-                child: ListView.builder(
-                  key: const Key('rt-log'),
-                  itemCount: _log.length,
-                  itemBuilder: (_, i) {
-                    final m = _log[i];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      child: SelectableText(
-                        '${_prefix(m)}${m.text}',
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            if (!widget.sse)
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      key: const Key('rt-input'),
-                      controller: _input,
-                      enabled: _open,
-                      decoration: InputDecoration(
-                        hintText: _hex
-                            ? context.l10n.rtHexHint
-                            : context.l10n.rtMessageHint,
-                        isDense: true,
-                      ),
-                      onSubmitted: (_) => _send(),
-                    ),
-                  ),
-                  Checkbox(
-                    key: const Key('rt-hex'),
-                    value: _hex,
-                    onChanged: (v) => setState(() => _hex = v ?? false),
-                  ),
-                  Text(context.l10n.rtHex),
-                  IconButton(
-                    key: const Key('rt-send'),
-                    tooltip: context.l10n.rtSendTooltip,
-                    onPressed: _open ? _send : null,
-                    icon: const Icon(Icons.send),
-                  ),
-                ],
-              ),
+            Expanded(child: _buildLog(context)),
+            if (!widget.sse) _buildInputRow(context),
           ],
         ),
       ),
@@ -212,6 +115,107 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.close),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToolbar(BuildContext context) {
+    return Row(
+      children: [
+        if (_open)
+          FilledButton.tonal(
+            key: const Key('rt-disconnect'),
+            onPressed: () => unawaited(_conn?.close()),
+            child: Text(context.l10n.rtDisconnect),
+          )
+        else
+          FilledButton(
+            key: const Key('rt-connect'),
+            onPressed: _connecting ? null : _connect,
+            child: Text(
+              _connecting ? context.l10n.rtConnecting : context.l10n.rtConnect,
+            ),
+          ),
+        const SizedBox(width: 8),
+        TextButton(
+          key: const Key('rt-clear'),
+          onPressed: () => setState(_log.clear),
+          child: Text(context.l10n.rtClear),
+        ),
+        if (widget.onSave != null)
+          TextButton(
+            key: const Key('rt-save'),
+            onPressed: _log.isEmpty
+                ? null
+                : () => widget.onSave!(formatRealtimeLog(_log)),
+            child: Text(context.l10n.rtSave),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildError(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        _error!,
+        key: const Key('rt-error'),
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      ),
+    );
+  }
+
+  Widget _buildLog(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: ListView.builder(
+        key: const Key('rt-log'),
+        itemCount: _log.length,
+        itemBuilder: (_, i) {
+          final m = _log[i];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: SelectableText(
+              '${_prefix(m)}${m.text}',
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInputRow(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            key: const Key('rt-input'),
+            controller: _input,
+            enabled: _open,
+            decoration: InputDecoration(
+              hintText: _hex
+                  ? context.l10n.rtHexHint
+                  : context.l10n.rtMessageHint,
+              isDense: true,
+            ),
+            onSubmitted: (_) => _send(),
+          ),
+        ),
+        Checkbox(
+          key: const Key('rt-hex'),
+          value: _hex,
+          onChanged: (v) => setState(() => _hex = v ?? false),
+        ),
+        Text(context.l10n.rtHex),
+        IconButton(
+          key: const Key('rt-send'),
+          tooltip: context.l10n.rtSendTooltip,
+          onPressed: _open ? _send : null,
+          icon: const Icon(Icons.send),
         ),
       ],
     );

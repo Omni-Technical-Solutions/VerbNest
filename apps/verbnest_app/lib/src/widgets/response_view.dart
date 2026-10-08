@@ -140,71 +140,8 @@ class _ResponseViewState extends State<ResponseView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Wrap(
-              spacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  '${r.status} ${r.reason}',
-                  key: const Key('response-status'),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: statusColor(r.status),
-                  ),
-                ),
-                InkWell(
-                  key: const Key('response-timing'),
-                  onTap: () => _showTiming(r),
-                  child: Text('${r.timings.total.inMilliseconds} ms'),
-                ),
-                Text(
-                  context.l10n.rvHttpVersion(r.httpVersion),
-                  key: const Key('response-http'),
-                ),
-                Text(sizeLabel(r, onWire: context.l10n.rvOnWire)),
-                if (r.tls != null)
-                  InkWell(
-                    key: const Key('response-tls'),
-                    onTap: () => _showTls(r.tls!),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.lock_outline, size: 16),
-                        const SizedBox(width: 4),
-                        Text(context.l10n.rvTls),
-                      ],
-                    ),
-                  ),
-                if (widget.onSave != null)
-                  TextButton.icon(
-                    key: const Key('response-save'),
-                    icon: Icon(
-                      widget.share ? Icons.ios_share : Icons.save_alt,
-                      size: 18,
-                    ),
-                    label: Text(
-                      widget.share ? context.l10n.rvShare : context.l10n.rvSave,
-                    ),
-                    onPressed: widget.onSave,
-                  ),
-              ],
-            ),
-          ),
-          TabBar(
-            tabs: [
-              Tab(text: context.l10n.rvTabBody),
-              Tab(
-                text: cookies.isEmpty
-                    ? context.l10n.rvTabCookies
-                    : context.l10n.rvTabCookiesN(cookies.length),
-              ),
-              Tab(text: context.l10n.rvTabHeaders),
-              Tab(text: context.l10n.rvTabSent),
-              Tab(text: _testsLabel(context, state)),
-            ],
-          ),
+          _statusBar(context, r),
+          _tabBar(context, state, cookies),
           Expanded(
             child: TabBarView(
               children: [
@@ -218,6 +155,79 @@ class _ResponseViewState extends State<ResponseView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _statusBar(BuildContext context, HttpResponseRecord r) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Wrap(
+        spacing: 12,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            '${r.status} ${r.reason}',
+            key: const Key('response-status'),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: statusColor(r.status),
+            ),
+          ),
+          InkWell(
+            key: const Key('response-timing'),
+            onTap: () => _showTiming(r),
+            child: Text('${r.timings.total.inMilliseconds} ms'),
+          ),
+          Text(
+            context.l10n.rvHttpVersion(r.httpVersion),
+            key: const Key('response-http'),
+          ),
+          Text(sizeLabel(r, onWire: context.l10n.rvOnWire)),
+          if (r.tls != null)
+            InkWell(
+              key: const Key('response-tls'),
+              onTap: () => _showTls(r.tls!),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.lock_outline, size: 16),
+                  const SizedBox(width: 4),
+                  Text(context.l10n.rvTls),
+                ],
+              ),
+            ),
+          if (widget.onSave != null) _saveButton(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _saveButton(BuildContext context) {
+    return TextButton.icon(
+      key: const Key('response-save'),
+      icon: Icon(widget.share ? Icons.ios_share : Icons.save_alt, size: 18),
+      label: Text(widget.share ? context.l10n.rvShare : context.l10n.rvSave),
+      onPressed: widget.onSave,
+    );
+  }
+
+  Widget _tabBar(
+    BuildContext context,
+    EditorState state,
+    List<SetCookie> cookies,
+  ) {
+    return TabBar(
+      tabs: [
+        Tab(text: context.l10n.rvTabBody),
+        Tab(
+          text: cookies.isEmpty
+              ? context.l10n.rvTabCookies
+              : context.l10n.rvTabCookiesN(cookies.length),
+        ),
+        Tab(text: context.l10n.rvTabHeaders),
+        Tab(text: context.l10n.rvTabSent),
+        Tab(text: _testsLabel(context, state)),
+      ],
     );
   }
 
