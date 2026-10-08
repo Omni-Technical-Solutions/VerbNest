@@ -128,73 +128,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
               child: Text(context.l10n.kvBulkEdit),
             ),
           ),
-        for (var i = 0; i < rows.length; i++)
-          Padding(
-            key: ValueKey('$idPrefix-row-$i'),
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Checkbox(
-                  value: rows[i].enabled,
-                  onChanged: (v) => _set(i, rows[i].copyWith(enabled: v)),
-                ),
-                Expanded(
-                  child: SyncedTextField(
-                    key: ValueKey('$idPrefix-key-$i'),
-                    value: rows[i].key,
-                    hint: context.l10n.kvKey,
-                    variables: true,
-                    suggestions: widget.keySuggestions,
-                    onChanged: (v) => _set(i, rows[i].copyWith(key: v)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: rows[i].type == KeyValueType.file
-                      ? _fileCell(i)
-                      : SyncedTextField(
-                          key: ValueKey('$idPrefix-value-$i'),
-                          value: rows[i].value,
-                          hint: context.l10n.kvValue,
-                          variables: true,
-                          suggestions:
-                              widget.valueSuggestions[rows[i].key
-                                  .toLowerCase()] ??
-                              const [],
-                          onChanged: (v) => _set(i, rows[i].copyWith(value: v)),
-                        ),
-                ),
-                if (widget.onPickFile != null)
-                  IconButton(
-                    key: ValueKey('$idPrefix-type-$i'),
-                    tooltip: rows[i].type == KeyValueType.file
-                        ? context.l10n.kvSwitchToText
-                        : context.l10n.kvSwitchToFile,
-                    icon: Icon(
-                      rows[i].type == KeyValueType.file
-                          ? Icons.attach_file
-                          : Icons.text_fields,
-                      size: 18,
-                    ),
-                    onPressed: () => _set(
-                      i,
-                      rows[i].copyWith(
-                        type: rows[i].type == KeyValueType.file
-                            ? KeyValueType.text
-                            : KeyValueType.file,
-                        value: '',
-                      ),
-                    ),
-                  ),
-                IconButton(
-                  tooltip: context.l10n.remove,
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: () => onChanged([...rows]..removeAt(i)),
-                ),
-              ],
-            ),
-          ),
+        for (var i = 0; i < rows.length; i++) _row(i),
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: TextButton.icon(
@@ -205,6 +139,71 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _row(int i) {
+    return Padding(
+      key: ValueKey('$idPrefix-row-$i'),
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Checkbox(
+            value: rows[i].enabled,
+            onChanged: (v) => _set(i, rows[i].copyWith(enabled: v)),
+          ),
+          Expanded(
+            child: SyncedTextField(
+              key: ValueKey('$idPrefix-key-$i'),
+              value: rows[i].key,
+              hint: context.l10n.kvKey,
+              variables: true,
+              suggestions: widget.keySuggestions,
+              onChanged: (v) => _set(i, rows[i].copyWith(key: v)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: _valueCell(i)),
+          if (widget.onPickFile != null) _typeToggle(i),
+          IconButton(
+            tooltip: context.l10n.remove,
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: () => onChanged([...rows]..removeAt(i)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _valueCell(int i) {
+    if (rows[i].type == KeyValueType.file) return _fileCell(i);
+    return SyncedTextField(
+      key: ValueKey('$idPrefix-value-$i'),
+      value: rows[i].value,
+      hint: context.l10n.kvValue,
+      variables: true,
+      suggestions:
+          widget.valueSuggestions[rows[i].key.toLowerCase()] ?? const [],
+      onChanged: (v) => _set(i, rows[i].copyWith(value: v)),
+    );
+  }
+
+  Widget _typeToggle(int i) {
+    final isFile = rows[i].type == KeyValueType.file;
+    return IconButton(
+      key: ValueKey('$idPrefix-type-$i'),
+      tooltip: isFile
+          ? context.l10n.kvSwitchToText
+          : context.l10n.kvSwitchToFile,
+      icon: Icon(isFile ? Icons.attach_file : Icons.text_fields, size: 18),
+      onPressed: () => _set(
+        i,
+        rows[i].copyWith(
+          type: isFile ? KeyValueType.text : KeyValueType.file,
+          value: '',
+        ),
+      ),
     );
   }
 }

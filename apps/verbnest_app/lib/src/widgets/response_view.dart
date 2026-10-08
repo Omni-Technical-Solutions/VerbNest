@@ -100,6 +100,8 @@ class ResponseView extends StatefulWidget {
   State<ResponseView> createState() => _ResponseViewState();
 }
 
+enum _Preview { none, image, html, pdf }
+
 class _ResponseViewState extends State<ResponseView> {
   bool _pretty = true;
   bool _preview = false;
@@ -446,13 +448,8 @@ class _ResponseViewState extends State<ResponseView> {
   }
 
   Widget _body(HttpResponseRecord r) {
-    final isImage = isImageResponse(r);
-    final isHtml = isHtmlResponse(r);
-    final showImage = isImage && _preview;
-    final isPdf = isPdfResponse(r);
-    final showHtml = isHtml && _preview;
-    final showPdf = isPdf && _preview;
     final kind = bodyKindOf(r.header('content-type'));
+    final preview = _previewOf(r);
     final filtering =
         !_hex && kind != BodyKind.other && _filter.trim().isNotEmpty;
     final text = _hex
@@ -460,121 +457,132 @@ class _ResponseViewState extends State<ResponseView> {
         : filtering
         ? _applyFilter(r, kind)
         : _bodyText(r);
-    final matches = countMatches(text, _query);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(
-            children: [
-              SegmentedButton<String>(
-                key: const Key('body-view'),
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                    value: 'pretty',
-                    label: Text(context.l10n.rvPretty),
-                  ),
-                  ButtonSegment(value: 'raw', label: Text(context.l10n.rvRaw)),
-                  ButtonSegment(value: 'hex', label: Text(context.l10n.rvHex)),
-                  if (isImage || isHtml || isPdf)
-                    ButtonSegment(
-                      value: 'preview',
-                      label: Text(context.l10n.rvPreview),
-                    ),
-                ],
-                selected: {
-                  showImage || showHtml || showPdf
-                      ? 'preview'
-                      : _hex
-                      ? 'hex'
-                      : (_pretty ? 'pretty' : 'raw'),
-                },
-                onSelectionChanged: (s) => setState(() {
-                  _preview = s.first == 'preview';
-                  _hex = s.first == 'hex';
-                  if (!_preview && !_hex) _pretty = s.first == 'pretty';
-                }),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  key: const Key('response-search'),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: context.l10n.rvSearch,
-                    prefixIcon: const Icon(Icons.search, size: 18),
-                    suffixText: _query.isEmpty ? null : '$matches',
-                  ),
-                  onChanged: (v) => setState(() => _query = v),
-                ),
-              ),
-              IconButton(
-                key: const Key('copy-body'),
-                tooltip: context.l10n.rvCopyBody,
-                icon: const Icon(Icons.copy, size: 18),
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: text));
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.l10n.rvBodyCopied)),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-        if (kind != BodyKind.other &&
-            !_hex &&
-            !showImage &&
-            !showHtml &&
-            !showPdf)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-            child: TextField(
-              key: const Key('response-filter'),
-              decoration: InputDecoration(
-                isDense: true,
-                hintText: kind == BodyKind.json
-                    ? context.l10n.rvFilterJson
-                    : context.l10n.rvFilterXml,
-                prefixIcon: const Icon(Icons.filter_alt_outlined, size: 18),
-                errorText: filtering ? _filterError : null,
-              ),
-              onChanged: (v) => setState(() => _filter = v),
-            ),
-          ),
-        Expanded(
-          child: showPdf
-              ? PdfPreview(bytes: r.body)
-              : showHtml
-              ? HtmlPreview(html: r.bodyText, size: r.body.length)
-              : showImage
-              ? Center(
-                  child: Image.memory(
-                    r.body,
-                    key: const Key('response-image'),
-                    errorBuilder: (_, _, _) => Text(context.l10n.rvImageError),
-                  ),
-                )
-              : CodeView(
-                  text: text,
-                  fontSize: widget.codeFontSize,
-                  json:
-                      _pretty &&
-                      !_hex &&
-                      (r
-                              .header('content-type')
-                              ?.toLowerCase()
-                              .contains('json') ??
-                          false),
-                  query: _query,
-                ),
-        ),
+        _bodyToolbar(r, text, preview),
+        if (kind != BodyKind.other && !_hex && preview == _Preview.none)
+          _filterField(kind, filtering),
+        Expanded(child: _bodyContent(r, text, preview)),
       ],
     );
   }
+
+  /// Which preview, if any, the toggle currently shows for [r].
+  _Preview _previewOf(HttpResponseRecord r) {
+    if (!_preview) return _Preview.none;
+    if (isImageResponse(r)) return _Preview.image;
+    if (isHtmlResponse(r)) return _Preview.html;
+    if (isPdfResponse(r)) return _Preview.pdf;
+    return _Preview.none;
+  }
+
+  Widget _bodyToolbar(HttpResponseRecord r, String text, _Preview preview) {
+    final canPreview =
+        isImageResponse(r) || isHtmlResponse(r) || isPdfResponse(r);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          SegmentedButton<String>(
+            key: const Key('body-view'),
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(
+                value: 'pretty',
+                label: Text(context.l10n.rvPretty),
+              ),
+              ButtonSegment(value: 'raw', label: Text(context.l10n.rvRaw)),
+              ButtonSegment(value: 'hex', label: Text(context.l10n.rvHex)),
+              if (canPreview)
+                ButtonSegment(
+                  value: 'preview',
+                  label: Text(context.l10n.rvPreview),
+                ),
+            ],
+            selected: {
+              preview != _Preview.none
+                  ? 'preview'
+                  : _hex
+                  ? 'hex'
+                  : (_pretty ? 'pretty' : 'raw'),
+            },
+            onSelectionChanged: (s) => setState(() {
+              _preview = s.first == 'preview';
+              _hex = s.first == 'hex';
+              if (!_preview && !_hex) _pretty = s.first == 'pretty';
+            }),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              key: const Key('response-search'),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: context.l10n.rvSearch,
+                prefixIcon: const Icon(Icons.search, size: 18),
+                suffixText: _query.isEmpty
+                    ? null
+                    : '${countMatches(text, _query)}',
+              ),
+              onChanged: (v) => setState(() => _query = v),
+            ),
+          ),
+          IconButton(
+            key: const Key('copy-body'),
+            tooltip: context.l10n.rvCopyBody,
+            icon: const Icon(Icons.copy, size: 18),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: text));
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(context.l10n.rvBodyCopied)),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterField(BodyKind kind, bool filtering) => Padding(
+    padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+    child: TextField(
+      key: const Key('response-filter'),
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: kind == BodyKind.json
+            ? context.l10n.rvFilterJson
+            : context.l10n.rvFilterXml,
+        prefixIcon: const Icon(Icons.filter_alt_outlined, size: 18),
+        errorText: filtering ? _filterError : null,
+      ),
+      onChanged: (v) => setState(() => _filter = v),
+    ),
+  );
+
+  Widget _bodyContent(HttpResponseRecord r, String text, _Preview preview) =>
+      switch (preview) {
+        _Preview.pdf => PdfPreview(bytes: r.body),
+        _Preview.html => HtmlPreview(html: r.bodyText, size: r.body.length),
+        _Preview.image => Center(
+          child: Image.memory(
+            r.body,
+            key: const Key('response-image'),
+            errorBuilder: (_, _, _) => Text(context.l10n.rvImageError),
+          ),
+        ),
+        _Preview.none => CodeView(
+          text: text,
+          fontSize: widget.codeFontSize,
+          json:
+              _pretty &&
+              !_hex &&
+              (r.header('content-type')?.toLowerCase().contains('json') ??
+                  false),
+          query: _query,
+        ),
+      };
 
   Widget _cookies(List<SetCookie> cookies) {
     if (cookies.isEmpty) {

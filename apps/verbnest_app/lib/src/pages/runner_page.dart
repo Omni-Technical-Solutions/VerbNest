@@ -159,96 +159,9 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
         children: [
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 220),
-            child: _picks.isEmpty
-                ? Center(child: Text(context.l10n.runNoRequests))
-                : ReorderableListView(
-                    key: const Key('run-requests'),
-                    buildDefaultDragHandles: true,
-                    onReorderItem: (from, to) => setState(() {
-                      _picks.insert(to, _picks.removeAt(from));
-                    }),
-                    children: [
-                      for (final p in _picks)
-                        CheckboxListTile(
-                          key: ValueKey(p.id),
-                          dense: true,
-                          value: p.on,
-                          onChanged: (v) => setState(() => p.on = v ?? true),
-                          title: Text(
-                            '${p.method ?? ''}  ${p.name}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                  ),
+            child: _pickList(context),
           ),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              SizedBox(
-                width: 110,
-                child: TextFormField(
-                  key: const Key('run-iterations'),
-                  initialValue: '$_iterations',
-                  enabled: _data.isEmpty,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.runIterations,
-                    isDense: true,
-                  ),
-                  onChanged: (v) =>
-                      _iterations = (int.tryParse(v) ?? 1).clamp(1, 10000),
-                ),
-              ),
-              SizedBox(
-                width: 130,
-                child: TextFormField(
-                  key: const Key('run-delay'),
-                  initialValue: '$_delayMs',
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.runDelay,
-                    isDense: true,
-                  ),
-                  onChanged: (v) =>
-                      _delayMs = (int.tryParse(v) ?? 0).clamp(0, 600000),
-                ),
-              ),
-              FilterChip(
-                key: const Key('run-stop-on-failure'),
-                label: Text(context.l10n.runStopOnFailure),
-                selected: _stopOnFailure,
-                onSelected: (v) => setState(() => _stopOnFailure = v),
-              ),
-              OutlinedButton.icon(
-                key: const Key('run-data'),
-                onPressed: _pickData,
-                icon: const Icon(Icons.table_chart_outlined),
-                label: Text(
-                  _dataName == null
-                      ? context.l10n.runDataFile
-                      : context.l10n.runDataFileRows(_dataName!, _data.length),
-                ),
-              ),
-              if (_dataName != null)
-                IconButton(
-                  tooltip: context.l10n.runRemoveData,
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: () => setState(() {
-                    _data = const [];
-                    _dataName = null;
-                  }),
-                ),
-              FilledButton.icon(
-                key: const Key('run-start'),
-                onPressed: _picks.any((p) => p.on) ? _start : null,
-                icon: const Icon(Icons.play_arrow),
-                label: Text(context.l10n.runStart),
-              ),
-            ],
-          ),
+          _options(context),
           if (_dataError != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -259,6 +172,102 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _pickList(BuildContext context) {
+    if (_picks.isEmpty) {
+      return Center(child: Text(context.l10n.runNoRequests));
+    }
+    return ReorderableListView(
+      key: const Key('run-requests'),
+      buildDefaultDragHandles: true,
+      onReorderItem: (from, to) => setState(() {
+        _picks.insert(to, _picks.removeAt(from));
+      }),
+      children: [
+        for (final p in _picks)
+          CheckboxListTile(
+            key: ValueKey(p.id),
+            dense: true,
+            value: p.on,
+            onChanged: (v) => setState(() => p.on = v ?? true),
+            title: Text(
+              '${p.method ?? ''}  ${p.name}',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _options(BuildContext context) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        SizedBox(
+          width: 110,
+          child: TextFormField(
+            key: const Key('run-iterations'),
+            initialValue: '$_iterations',
+            enabled: _data.isEmpty,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: context.l10n.runIterations,
+              isDense: true,
+            ),
+            onChanged: (v) =>
+                _iterations = (int.tryParse(v) ?? 1).clamp(1, 10000),
+          ),
+        ),
+        SizedBox(
+          width: 130,
+          child: TextFormField(
+            key: const Key('run-delay'),
+            initialValue: '$_delayMs',
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: context.l10n.runDelay,
+              isDense: true,
+            ),
+            onChanged: (v) =>
+                _delayMs = (int.tryParse(v) ?? 0).clamp(0, 600000),
+          ),
+        ),
+        FilterChip(
+          key: const Key('run-stop-on-failure'),
+          label: Text(context.l10n.runStopOnFailure),
+          selected: _stopOnFailure,
+          onSelected: (v) => setState(() => _stopOnFailure = v),
+        ),
+        OutlinedButton.icon(
+          key: const Key('run-data'),
+          onPressed: _pickData,
+          icon: const Icon(Icons.table_chart_outlined),
+          label: Text(
+            _dataName == null
+                ? context.l10n.runDataFile
+                : context.l10n.runDataFileRows(_dataName!, _data.length),
+          ),
+        ),
+        if (_dataName != null)
+          IconButton(
+            tooltip: context.l10n.runRemoveData,
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: () => setState(() {
+              _data = const [];
+              _dataName = null;
+            }),
+          ),
+        FilledButton.icon(
+          key: const Key('run-start'),
+          onPressed: _picks.any((p) => p.on) ? _start : null,
+          icon: const Icon(Icons.play_arrow),
+          label: Text(context.l10n.runStart),
+        ),
+      ],
     );
   }
 
@@ -292,61 +301,57 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
     if (run.entries.isEmpty) {
       return Center(child: Text(context.l10n.runResultsHere));
     }
-    final scheme = Theme.of(context).colorScheme;
     return ListView(
       key: const Key('run-results'),
+      children: [for (final e in run.entries) _entryTile(context, run, e)],
+    );
+  }
+
+  Widget _entryTile(BuildContext context, RunnerState run, RunEntry e) {
+    final scheme = Theme.of(context).colorScheme;
+    return ExpansionTile(
+      leading: Icon(
+        e.skipped
+            ? Icons.skip_next
+            : e.ok
+            ? Icons.check_circle
+            : Icons.cancel,
+        color: e.skipped
+            ? null
+            : e.ok
+            ? Colors.green
+            : scheme.error,
+      ),
+      title: Text('${e.method} ${e.name}', overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        e.skipped
+            ? context.l10n.runSkipped
+            : context.l10n.runEntrySummary(
+                    '${e.status ?? '—'}',
+                    e.timeMs,
+                    e.passedTests,
+                    e.failedTests,
+                  ) +
+                  (run.total > 1
+                      ? ' · ${context.l10n.runIterationSuffix(e.iteration)}'
+                      : ''),
+      ),
       children: [
-        for (final e in run.entries)
-          ExpansionTile(
+        if (e.error != null)
+          ListTile(
+            dense: true,
+            title: Text(e.error!, style: TextStyle(color: scheme.error)),
+          ),
+        for (final t in e.tests)
+          ListTile(
+            dense: true,
             leading: Icon(
-              e.skipped
-                  ? Icons.skip_next
-                  : e.ok
-                  ? Icons.check_circle
-                  : Icons.cancel,
-              color: e.skipped
-                  ? null
-                  : e.ok
-                  ? Colors.green
-                  : scheme.error,
+              t.passed ? Icons.check : (t.failed ? Icons.close : Icons.remove),
+              size: 16,
+              color: t.failed ? scheme.error : null,
             ),
-            title: Text(
-              '${e.method} ${e.name}',
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              e.skipped
-                  ? context.l10n.runSkipped
-                  : context.l10n.runEntrySummary(
-                          '${e.status ?? '—'}',
-                          e.timeMs,
-                          e.passedTests,
-                          e.failedTests,
-                        ) +
-                        (run.total > 1
-                            ? ' · ${context.l10n.runIterationSuffix(e.iteration)}'
-                            : ''),
-            ),
-            children: [
-              if (e.error != null)
-                ListTile(
-                  dense: true,
-                  title: Text(e.error!, style: TextStyle(color: scheme.error)),
-                ),
-              for (final t in e.tests)
-                ListTile(
-                  dense: true,
-                  leading: Icon(
-                    t.passed
-                        ? Icons.check
-                        : (t.failed ? Icons.close : Icons.remove),
-                    size: 16,
-                    color: t.failed ? scheme.error : null,
-                  ),
-                  title: Text(t.name),
-                  subtitle: t.message == null ? null : Text(t.message!),
-                ),
-            ],
+            title: Text(t.name),
+            subtitle: t.message == null ? null : Text(t.message!),
           ),
       ],
     );

@@ -75,109 +75,12 @@ class AuthEditor extends StatelessWidget {
               onChanged: (v) => _set(BearerAuth(token: v)),
             ),
           ],
-          BasicAuth() => [
-            SyncedTextField(
-              key: const Key('auth-user'),
-              label: context.l10n.authUsername,
-              value: auth.username,
-              onChanged: (v) =>
-                  _set(BasicAuth(username: v, password: auth.password)),
-            ),
-            const SizedBox(height: 8),
-            SyncedTextField(
-              key: const Key('auth-pass'),
-              label: context.l10n.authPassword,
-              obscure: true,
-              value: auth.password,
-              onChanged: (v) =>
-                  _set(BasicAuth(username: auth.username, password: v)),
-            ),
-          ],
-          ApiKeyAuth() => [
-            SyncedTextField(
-              label: context.l10n.authKey,
-              value: auth.key,
-              onChanged: (v) => _set(
-                ApiKeyAuth(key: v, value: auth.value, addTo: auth.addTo),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SyncedTextField(
-              label: context.l10n.authValue,
-              value: auth.value,
-              onChanged: (v) =>
-                  _set(ApiKeyAuth(key: auth.key, value: v, addTo: auth.addTo)),
-            ),
-            const SizedBox(height: 8),
-            SegmentedButton<ApiKeyLocation>(
-              segments: [
-                ButtonSegment(
-                  value: ApiKeyLocation.header,
-                  label: Text(context.l10n.authHeader),
-                ),
-                ButtonSegment(
-                  value: ApiKeyLocation.query,
-                  label: Text(context.l10n.authQuery),
-                ),
-              ],
-              selected: {auth.addTo},
-              onSelectionChanged: (s) => _set(
-                ApiKeyAuth(key: auth.key, value: auth.value, addTo: s.first),
-              ),
-            ),
-          ],
+          BasicAuth() => _basic(context, auth),
+          ApiKeyAuth() => _apiKey(context, auth),
           OAuth2Auth() => _oauth2(context, auth),
-          DigestAuth() => [
-            _field(
-              'Username',
-              context.l10n.authUsername,
-              auth.username,
-              (v) => DigestAuth(username: v, password: auth.password),
-            ),
-            _field(
-              'Password',
-              context.l10n.authPassword,
-              auth.password,
-              (v) => DigestAuth(username: auth.username, password: v),
-              obscure: true,
-            ),
-            Text(context.l10n.authDigestHint),
-          ],
+          DigestAuth() => _digest(context, auth),
           JwtAuth() => _jwt(context, auth),
-          AwsV4Auth() => [
-            _field(
-              'Access key',
-              context.l10n.authAccessKey,
-              auth.accessKey,
-              (v) => auth.copyWith(accessKey: v),
-            ),
-            _field(
-              'Secret key',
-              context.l10n.authSecretKey,
-              auth.secretKey,
-              (v) => auth.copyWith(secretKey: v),
-              obscure: true,
-            ),
-            _field(
-              'Region',
-              context.l10n.authRegion,
-              auth.region,
-              (v) => auth.copyWith(region: v),
-            ),
-            _field(
-              'Service',
-              context.l10n.authService,
-              auth.service,
-              (v) => auth.copyWith(service: v),
-            ),
-            _field(
-              'Session token',
-              context.l10n.authSessionToken,
-              auth.sessionToken,
-              (v) => auth.copyWith(sessionToken: v),
-              obscure: true,
-            ),
-          ],
+          AwsV4Auth() => _awsV4(context, auth),
           InheritAuth() => [Text(inheritText ?? context.l10n.authInherit)],
           NoAuth() => [Text(context.l10n.authNone)],
           RawAuth() => [Text(context.l10n.authRaw(auth.type))],
@@ -188,6 +91,107 @@ class AuthEditor extends StatelessWidget {
 }
 
 extension on AuthEditor {
+  List<Widget> _basic(BuildContext context, BasicAuth auth) => [
+    SyncedTextField(
+      key: const Key('auth-user'),
+      label: context.l10n.authUsername,
+      value: auth.username,
+      onChanged: (v) => _set(BasicAuth(username: v, password: auth.password)),
+    ),
+    const SizedBox(height: 8),
+    SyncedTextField(
+      key: const Key('auth-pass'),
+      label: context.l10n.authPassword,
+      obscure: true,
+      value: auth.password,
+      onChanged: (v) => _set(BasicAuth(username: auth.username, password: v)),
+    ),
+  ];
+
+  List<Widget> _apiKey(BuildContext context, ApiKeyAuth auth) => [
+    SyncedTextField(
+      label: context.l10n.authKey,
+      value: auth.key,
+      onChanged: (v) =>
+          _set(ApiKeyAuth(key: v, value: auth.value, addTo: auth.addTo)),
+    ),
+    const SizedBox(height: 8),
+    SyncedTextField(
+      label: context.l10n.authValue,
+      value: auth.value,
+      onChanged: (v) =>
+          _set(ApiKeyAuth(key: auth.key, value: v, addTo: auth.addTo)),
+    ),
+    const SizedBox(height: 8),
+    SegmentedButton<ApiKeyLocation>(
+      segments: [
+        ButtonSegment(
+          value: ApiKeyLocation.header,
+          label: Text(context.l10n.authHeader),
+        ),
+        ButtonSegment(
+          value: ApiKeyLocation.query,
+          label: Text(context.l10n.authQuery),
+        ),
+      ],
+      selected: {auth.addTo},
+      onSelectionChanged: (s) =>
+          _set(ApiKeyAuth(key: auth.key, value: auth.value, addTo: s.first)),
+    ),
+  ];
+
+  List<Widget> _digest(BuildContext context, DigestAuth auth) => [
+    _field(
+      'Username',
+      context.l10n.authUsername,
+      auth.username,
+      (v) => DigestAuth(username: v, password: auth.password),
+    ),
+    _field(
+      'Password',
+      context.l10n.authPassword,
+      auth.password,
+      (v) => DigestAuth(username: auth.username, password: v),
+      obscure: true,
+    ),
+    Text(context.l10n.authDigestHint),
+  ];
+
+  List<Widget> _awsV4(BuildContext context, AwsV4Auth auth) => [
+    _field(
+      'Access key',
+      context.l10n.authAccessKey,
+      auth.accessKey,
+      (v) => auth.copyWith(accessKey: v),
+    ),
+    _field(
+      'Secret key',
+      context.l10n.authSecretKey,
+      auth.secretKey,
+      (v) => auth.copyWith(secretKey: v),
+      obscure: true,
+    ),
+    _field(
+      'Region',
+      context.l10n.authRegion,
+      auth.region,
+      (v) => auth.copyWith(region: v),
+    ),
+    _field(
+      'Service',
+      context.l10n.authService,
+      auth.service,
+      (v) => auth.copyWith(service: v),
+    ),
+    _field(
+      'Session token',
+      context.l10n.authSessionToken,
+      auth.sessionToken,
+      (v) => auth.copyWith(sessionToken: v),
+      obscure: true,
+    ),
+  ];
+
   Widget _field(
     String id,
     String label,
@@ -242,26 +246,24 @@ extension on AuthEditor {
     Text(context.l10n.authJwtHint),
   ];
 
-  List<Widget> _oauth2(BuildContext context, OAuth2Auth a) {
-    Widget field(
-      String id,
-      String label,
-      String value,
-      OAuth2Auth Function(String) change, {
-      bool obscure = false,
-    }) => Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: SyncedTextField(
-        key: Key('oauth-$id'),
-        label: label,
-        value: value,
-        obscure: obscure,
-        onChanged: (v) => _set(change(v)),
-      ),
-    );
+  Widget _oauthField(
+    String id,
+    String label,
+    String value,
+    OAuth2Auth Function(String) change, {
+    bool obscure = false,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: SyncedTextField(
+      key: Key('oauth-$id'),
+      label: label,
+      value: value,
+      obscure: obscure,
+      onChanged: (v) => _set(change(v)),
+    ),
+  );
 
-    final needsToken = a.grant != OAuth2Grant.implicit;
-    return [
+  Widget _oauthGrant(BuildContext context, OAuth2Auth a) =>
       DropdownMenu<OAuth2Grant>(
         key: const Key('oauth-grant'),
         initialSelection: a.grant,
@@ -288,87 +290,96 @@ extension on AuthEditor {
         onSelected: (g) {
           if (g != null) _set(a.copyWith(grant: g));
         },
-      ),
-      const SizedBox(height: 8),
+      );
+
+  List<Widget> _oauthCredentials(BuildContext context, OAuth2Auth a) {
+    final needsToken = a.grant != OAuth2Grant.implicit;
+    return [
       if (a.interactive)
-        field(
+        _oauthField(
           'Auth URL',
           context.l10n.oauthAuthUrl,
           a.authUrl,
           (v) => a.copyWith(authUrl: v),
         ),
       if (needsToken)
-        field(
+        _oauthField(
           'Token URL',
           context.l10n.oauthTokenUrl,
           a.tokenUrl,
           (v) => a.copyWith(tokenUrl: v),
         ),
-      field(
+      _oauthField(
         'Client ID',
         context.l10n.oauthClientId,
         a.clientId,
         (v) => a.copyWith(clientId: v),
       ),
       if (needsToken)
-        field(
+        _oauthField(
           'Client secret',
           context.l10n.oauthClientSecret,
           a.clientSecret,
           (v) => a.copyWith(clientSecret: v),
           obscure: true,
         ),
-      field(
+      _oauthField(
         'Scope',
         context.l10n.oauthScope,
         a.scope,
         (v) => a.copyWith(scope: v),
       ),
-      if (a.grant == OAuth2Grant.password) ...[
-        field(
-          'Username',
-          context.l10n.authUsername,
-          a.username,
-          (v) => a.copyWith(username: v),
-        ),
-        field(
-          'Password',
-          context.l10n.authPassword,
-          a.password,
-          (v) => a.copyWith(password: v),
-          obscure: true,
-        ),
-      ],
-      if (a.grant == OAuth2Grant.authorizationCode)
-        SwitchListTile(
-          key: const Key('oauth-pkce'),
-          contentPadding: EdgeInsets.zero,
-          title: Text(context.l10n.oauthPkce),
-          value: a.usePkce,
-          onChanged: (v) => _set(a.copyWith(usePkce: v)),
-        ),
-      if (a.interactive)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(context.l10n.oauthBrowserHint),
-        ),
-      Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Consumer(
-          builder: (context, ref, _) => TextButton.icon(
-            key: const Key('oauth-tokens'),
-            onPressed: () => showTokenManager(context),
-            icon: const Icon(Icons.vpn_key_outlined),
-            label: Text(context.l10n.oauthTokens),
-          ),
-        ),
-      ),
-      SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(context.l10n.oauthBodyCreds),
-        value: a.clientAuthInBody,
-        onChanged: (v) => _set(a.copyWith(clientAuthInBody: v)),
-      ),
     ];
   }
+
+  List<Widget> _oauth2(BuildContext context, OAuth2Auth a) => [
+    _oauthGrant(context, a),
+    const SizedBox(height: 8),
+    ..._oauthCredentials(context, a),
+    if (a.grant == OAuth2Grant.password) ...[
+      _oauthField(
+        'Username',
+        context.l10n.authUsername,
+        a.username,
+        (v) => a.copyWith(username: v),
+      ),
+      _oauthField(
+        'Password',
+        context.l10n.authPassword,
+        a.password,
+        (v) => a.copyWith(password: v),
+        obscure: true,
+      ),
+    ],
+    if (a.grant == OAuth2Grant.authorizationCode)
+      SwitchListTile(
+        key: const Key('oauth-pkce'),
+        contentPadding: EdgeInsets.zero,
+        title: Text(context.l10n.oauthPkce),
+        value: a.usePkce,
+        onChanged: (v) => _set(a.copyWith(usePkce: v)),
+      ),
+    if (a.interactive)
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(context.l10n.oauthBrowserHint),
+      ),
+    Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Consumer(
+        builder: (context, ref, _) => TextButton.icon(
+          key: const Key('oauth-tokens'),
+          onPressed: () => showTokenManager(context),
+          icon: const Icon(Icons.vpn_key_outlined),
+          label: Text(context.l10n.oauthTokens),
+        ),
+      ),
+    ),
+    SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(context.l10n.oauthBodyCreds),
+      value: a.clientAuthInBody,
+      onChanged: (v) => _set(a.copyWith(clientAuthInBody: v)),
+    ),
+  ];
 }

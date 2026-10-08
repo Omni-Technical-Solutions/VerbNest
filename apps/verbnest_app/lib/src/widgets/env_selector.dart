@@ -28,10 +28,7 @@ class EnvSelector extends ConsumerWidget {
           decorationBuilder: (_, _) =>
               InputDecoration(border: InputBorder.none, isDense: true),
           dropdownMenuEntries: [
-            DropdownMenuEntry(
-              value: null,
-              label: context.l10n.noEnvironment,
-            ),
+            DropdownMenuEntry(value: null, label: context.l10n.noEnvironment),
             for (final e in envs) DropdownMenuEntry(value: e.id, label: e.name),
           ],
           onSelected: ref.read(activeEnvProvider.notifier).select,

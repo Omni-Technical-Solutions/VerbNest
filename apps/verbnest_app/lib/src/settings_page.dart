@@ -16,183 +16,203 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final s = ref.watch(httpDefaultsProvider);
-    final notifier = ref.read(httpDefaultsProvider.notifier);
-    final protected = ref.watch(sessionProvider).secretsProtected;
     final prefs = ref.watch(prefsProvider);
     final prefsNotifier = ref.read(prefsProvider.notifier);
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        ListTile(
-          key: const Key('secrets-status'),
-          leading: Icon(
-            protected ? Icons.lock : Icons.warning_amber,
-            color: protected ? null : Theme.of(context).colorScheme.error,
-          ),
-          title: Text(
-            protected
-                ? context.l10n.secretsProtected
-                : context.l10n.secretsUnprotected,
-          ),
-          subtitle: protected
-              ? null
-              : Text(context.l10n.secretsUnavailableHint),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: SegmentedButton<ThemeMode>(
-            key: const Key('theme-mode'),
-            segments: [
-              ButtonSegment(
-                value: ThemeMode.system,
-                label: Text(context.l10n.themeSystem),
-              ),
-              ButtonSegment(
-                value: ThemeMode.light,
-                label: Text(context.l10n.themeLight),
-              ),
-              ButtonSegment(
-                value: ThemeMode.dark,
-                label: Text(context.l10n.themeDark),
-              ),
-            ],
-            selected: {ref.watch(themeModeProvider)},
-            onSelectionChanged: (s) =>
-                ref.read(themeModeProvider.notifier).set(s.first),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: DropdownMenu<String>(
-            key: const Key('language'),
-            initialSelection: ref.watch(localeProvider)?.languageCode ?? '',
-            expandedInsets: EdgeInsets.zero,
-            requestFocusOnTap: false,
-            label: Text(context.l10n.language),
-            dropdownMenuEntries: [
-              DropdownMenuEntry(
-                value: '',
-                label: context.l10n.systemDefault,
-              ),
-              DropdownMenuEntry(
-                value: 'en',
-                label: context.l10n.langEnglish,
-              ),
-              DropdownMenuEntry(
-                value: 'ar',
-                label: context.l10n.langArabic,
-              ),
-            ],
-            onSelected: (v) => ref
-                .read(localeProvider.notifier)
-                .set(v == null || v.isEmpty ? null : Locale(v)),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: SyncedTextField(
-            key: const Key('default-timeout'),
-            label: context.l10n.defaultTimeout,
-            value: '${s.timeout.inSeconds}',
-            onChanged: (v) {
-              final secs = int.tryParse(v.trim());
-              if (secs != null && secs > 0) {
-                notifier.update(timeout: Duration(seconds: secs));
-              }
-            },
-          ),
-        ),
-        SwitchListTile(
-          key: const Key('default-verify-tls'),
-          title: Text(context.l10n.verifyTls),
-          subtitle: Text(context.l10n.verifyTlsHint),
-          value: s.verifyTls,
-          onChanged: (v) => notifier.update(verifyTls: v),
-        ),
-        SwitchListTile(
-          key: const Key('warn-unresolved'),
-          title: Text(context.l10n.warnUnresolved),
-          value: ref.watch(warnUnresolvedProvider),
-          onChanged: ref.read(warnUnresolvedProvider.notifier).set,
-        ),
-        SwitchListTile(
-          title: Text(context.l10n.followRedirects),
-          value: s.followRedirects,
-          onChanged: (v) => notifier.update(followRedirects: v),
-        ),
+        ..._general(context, ref),
+        ..._http(context, ref),
         const Divider(),
         const NetworkSettingsSection(),
         const Divider(),
         _section(context, context.l10n.appearanceSection),
-        ListTile(
-          title: Text(
-            context.l10n.settingsTextSize((prefs.fontScale * 100).round()),
-          ),
-          subtitle: Slider(
-            key: const Key('font-scale'),
-            min: Prefs.minScale,
-            max: Prefs.maxScale,
-            divisions: 8,
-            value: prefs.fontScale,
-            onChanged: (v) =>
-                prefsNotifier.update(prefs.copyWith(fontScale: v)),
-          ),
-        ),
-        ListTile(
-          title: Text(
-            context.l10n.settingsCodeFontSize(prefs.editorFontSize.round()),
-          ),
-          subtitle: Slider(
-            key: const Key('editor-font-size'),
-            min: Prefs.minEditorSize,
-            max: Prefs.maxEditorSize,
-            divisions: 14,
-            value: prefs.editorFontSize,
-            onChanged: (v) =>
-                prefsNotifier.update(prefs.copyWith(editorFontSize: v)),
-          ),
-        ),
+        ..._appearance(context, prefs, prefsNotifier),
         const Divider(),
         _section(context, context.l10n.historySection),
-        SwitchListTile(
-          key: const Key('history-bodies'),
-          title: Text(context.l10n.historyBodies),
-          subtitle: Text(context.l10n.historyBodiesHint),
-          value: prefs.historyBodies,
-          onChanged: (v) =>
-              prefsNotifier.update(prefs.copyWith(historyBodies: v)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: SyncedTextField(
-            key: const Key('history-days'),
-            label: context.l10n.historyDays,
-            value: '${prefs.historyDays}',
-            onChanged: (v) {
-              final n = int.tryParse(v.trim());
-              if (n != null && n >= 0) {
-                prefsNotifier.update(prefs.copyWith(historyDays: n));
-              }
-            },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: SyncedTextField(
-            key: const Key('history-max'),
-            label: context.l10n.historyMax,
-            value: '${prefs.historyMax}',
-            onChanged: (v) {
-              final n = int.tryParse(v.trim());
-              if (n != null && n > 0) {
-                prefsNotifier.update(prefs.copyWith(historyMax: n));
-              }
-            },
-          ),
-        ),
+        ..._history(context, prefs, prefsNotifier),
       ],
     );
+  }
+
+  List<Widget> _general(BuildContext context, WidgetRef ref) {
+    final protected = ref.watch(sessionProvider).secretsProtected;
+    return [
+      ListTile(
+        key: const Key('secrets-status'),
+        leading: Icon(
+          protected ? Icons.lock : Icons.warning_amber,
+          color: protected ? null : Theme.of(context).colorScheme.error,
+        ),
+        title: Text(
+          protected
+              ? context.l10n.secretsProtected
+              : context.l10n.secretsUnprotected,
+        ),
+        subtitle: protected ? null : Text(context.l10n.secretsUnavailableHint),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: SegmentedButton<ThemeMode>(
+          key: const Key('theme-mode'),
+          segments: [
+            ButtonSegment(
+              value: ThemeMode.system,
+              label: Text(context.l10n.themeSystem),
+            ),
+            ButtonSegment(
+              value: ThemeMode.light,
+              label: Text(context.l10n.themeLight),
+            ),
+            ButtonSegment(
+              value: ThemeMode.dark,
+              label: Text(context.l10n.themeDark),
+            ),
+          ],
+          selected: {ref.watch(themeModeProvider)},
+          onSelectionChanged: (s) =>
+              ref.read(themeModeProvider.notifier).set(s.first),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: DropdownMenu<String>(
+          key: const Key('language'),
+          initialSelection: ref.watch(localeProvider)?.languageCode ?? '',
+          expandedInsets: EdgeInsets.zero,
+          requestFocusOnTap: false,
+          label: Text(context.l10n.language),
+          dropdownMenuEntries: [
+            DropdownMenuEntry(value: '', label: context.l10n.systemDefault),
+            DropdownMenuEntry(value: 'en', label: context.l10n.langEnglish),
+            DropdownMenuEntry(value: 'ar', label: context.l10n.langArabic),
+          ],
+          onSelected: (v) => ref
+              .read(localeProvider.notifier)
+              .set(v == null || v.isEmpty ? null : Locale(v)),
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _http(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(httpDefaultsProvider);
+    final notifier = ref.read(httpDefaultsProvider.notifier);
+    return [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: SyncedTextField(
+          key: const Key('default-timeout'),
+          label: context.l10n.defaultTimeout,
+          value: '${s.timeout.inSeconds}',
+          onChanged: (v) {
+            final secs = int.tryParse(v.trim());
+            if (secs != null && secs > 0) {
+              notifier.update(timeout: Duration(seconds: secs));
+            }
+          },
+        ),
+      ),
+      SwitchListTile(
+        key: const Key('default-verify-tls'),
+        title: Text(context.l10n.verifyTls),
+        subtitle: Text(context.l10n.verifyTlsHint),
+        value: s.verifyTls,
+        onChanged: (v) => notifier.update(verifyTls: v),
+      ),
+      SwitchListTile(
+        key: const Key('warn-unresolved'),
+        title: Text(context.l10n.warnUnresolved),
+        value: ref.watch(warnUnresolvedProvider),
+        onChanged: ref.read(warnUnresolvedProvider.notifier).set,
+      ),
+      SwitchListTile(
+        title: Text(context.l10n.followRedirects),
+        value: s.followRedirects,
+        onChanged: (v) => notifier.update(followRedirects: v),
+      ),
+    ];
+  }
+
+  List<Widget> _appearance(
+    BuildContext context,
+    Prefs prefs,
+    PrefsNotifier prefsNotifier,
+  ) {
+    return [
+      ListTile(
+        title: Text(
+          context.l10n.settingsTextSize((prefs.fontScale * 100).round()),
+        ),
+        subtitle: Slider(
+          key: const Key('font-scale'),
+          min: Prefs.minScale,
+          max: Prefs.maxScale,
+          divisions: 8,
+          value: prefs.fontScale,
+          onChanged: (v) => prefsNotifier.update(prefs.copyWith(fontScale: v)),
+        ),
+      ),
+      ListTile(
+        title: Text(
+          context.l10n.settingsCodeFontSize(prefs.editorFontSize.round()),
+        ),
+        subtitle: Slider(
+          key: const Key('editor-font-size'),
+          min: Prefs.minEditorSize,
+          max: Prefs.maxEditorSize,
+          divisions: 14,
+          value: prefs.editorFontSize,
+          onChanged: (v) =>
+              prefsNotifier.update(prefs.copyWith(editorFontSize: v)),
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _history(
+    BuildContext context,
+    Prefs prefs,
+    PrefsNotifier prefsNotifier,
+  ) {
+    return [
+      SwitchListTile(
+        key: const Key('history-bodies'),
+        title: Text(context.l10n.historyBodies),
+        subtitle: Text(context.l10n.historyBodiesHint),
+        value: prefs.historyBodies,
+        onChanged: (v) =>
+            prefsNotifier.update(prefs.copyWith(historyBodies: v)),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: SyncedTextField(
+          key: const Key('history-days'),
+          label: context.l10n.historyDays,
+          value: '${prefs.historyDays}',
+          onChanged: (v) {
+            final n = int.tryParse(v.trim());
+            if (n != null && n >= 0) {
+              prefsNotifier.update(prefs.copyWith(historyDays: n));
+            }
+          },
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: SyncedTextField(
+          key: const Key('history-max'),
+          label: context.l10n.historyMax,
+          value: '${prefs.historyMax}',
+          onChanged: (v) {
+            final n = int.tryParse(v.trim());
+            if (n != null && n > 0) {
+              prefsNotifier.update(prefs.copyWith(historyMax: n));
+            }
+          },
+        ),
+      ),
+    ];
   }
 
   Widget _section(BuildContext context, String text) => Padding(

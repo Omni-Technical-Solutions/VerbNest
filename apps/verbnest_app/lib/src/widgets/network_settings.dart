@@ -44,58 +44,7 @@ class NetworkSettingsSection extends ConsumerWidget {
           value: c.proxyEnabled,
           onChanged: (v) => n.update((x) => x.copyWith(proxyEnabled: v)),
         ),
-        if (c.proxyEnabled) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: SegmentedButton<ProxyKind>(
-              key: const Key('proxy-kind'),
-              segments: [
-                ButtonSegment(
-                  value: ProxyKind.http,
-                  label: Text(context.l10n.nsProxyHttp),
-                ),
-                ButtonSegment(
-                  value: ProxyKind.socks5,
-                  label: Text(context.l10n.nsProxySocks),
-                ),
-              ],
-              selected: {c.proxyKind},
-              onSelectionChanged: (s) =>
-                  n.update((x) => x.copyWith(proxyKind: s.first)),
-            ),
-          ),
-          _field(
-            'proxy-host',
-            context.l10n.nsProxyHost,
-            c.proxyHost,
-            (v) => n.update((x) => x.copyWith(proxyHost: v.trim())),
-          ),
-          _field('proxy-port', context.l10n.nsProxyPort, '${c.proxyPort}', (v) {
-            final p = int.tryParse(v.trim());
-            if (p != null && p > 0 && p < 65536) {
-              n.update((x) => x.copyWith(proxyPort: p));
-            }
-          }),
-          _field(
-            'proxy-user',
-            context.l10n.nsProxyUser,
-            c.proxyUser,
-            (v) => n.update((x) => x.copyWith(proxyUser: v)),
-          ),
-          _field(
-            'proxy-password',
-            context.l10n.nsProxyPassword,
-            c.proxyPassword,
-            (v) => n.update((x) => x.copyWith(proxyPassword: v)),
-            obscure: true,
-          ),
-          _field(
-            'proxy-bypass',
-            context.l10n.nsProxyBypass,
-            c.bypass,
-            (v) => n.update((x) => x.copyWith(bypass: v)),
-          ),
-        ],
+        if (c.proxyEnabled) ..._proxyFields(context, c, n),
         SwitchListTile(
           key: const Key('system-proxy'),
           title: Text(context.l10n.nsSystemProxy),
@@ -108,65 +57,133 @@ class NetworkSettingsSection extends ConsumerWidget {
           padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
           child: Text(context.l10n.nsCertsTitle, style: theme),
         ),
-        for (var i = 0; i < c.cas.length; i++)
-          ListTile(
-            key: Key('ca-$i'),
-            dense: true,
-            leading: const Icon(Icons.verified_user_outlined),
-            title: Text(c.cas[i].name),
-            subtitle: Text(context.l10n.nsCaHint),
-            trailing: IconButton(
-              tooltip: context.l10n.nsRemove,
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => n.removeCa(i),
-            ),
-          ),
-        for (final cert in c.clientCerts)
-          ListTile(
-            key: Key('client-cert-${cert.id}'),
-            dense: true,
-            leading: const Icon(Icons.badge_outlined),
-            title: Text(cert.name),
-            subtitle: Text(context.l10n.nsClientCertFor(cert.pattern)),
-            trailing: IconButton(
-              tooltip: context.l10n.nsRemove,
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => n.removeClientCert(cert.id),
-            ),
-          ),
-        Wrap(
-          spacing: 8,
-          children: [
-            Padding(
-              padding: const EdgeInsetsDirectional.only(start: 16),
-              child: OutlinedButton.icon(
-                key: const Key('add-ca'),
-                icon: const Icon(Icons.add),
-                label: Text(context.l10n.nsAddCa),
-                onPressed: () async {
-                  final err = await n.addCa(ref.read(filePortProvider));
-                  if (err != null && context.mounted) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text(err)));
-                  }
-                },
-              ),
-            ),
-            OutlinedButton.icon(
-              key: const Key('add-client-cert'),
-              icon: const Icon(Icons.add),
-              label: Text(context.l10n.nsAddClientCert),
-              onPressed: () => showDialog<void>(
-                context: context,
-                builder: (_) => const _ClientCertDialog(),
-              ),
-            ),
-          ],
-        ),
+        ..._certTiles(context, c, n),
+        _addButtons(context, ref, n),
         const SizedBox(height: 8),
       ],
     );
   }
+
+  List<Widget> _proxyFields(
+    BuildContext context,
+    NetworkConfig c,
+    NetworkNotifier n,
+  ) => [
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: SegmentedButton<ProxyKind>(
+        key: const Key('proxy-kind'),
+        segments: [
+          ButtonSegment(
+            value: ProxyKind.http,
+            label: Text(context.l10n.nsProxyHttp),
+          ),
+          ButtonSegment(
+            value: ProxyKind.socks5,
+            label: Text(context.l10n.nsProxySocks),
+          ),
+        ],
+        selected: {c.proxyKind},
+        onSelectionChanged: (s) =>
+            n.update((x) => x.copyWith(proxyKind: s.first)),
+      ),
+    ),
+    _field(
+      'proxy-host',
+      context.l10n.nsProxyHost,
+      c.proxyHost,
+      (v) => n.update((x) => x.copyWith(proxyHost: v.trim())),
+    ),
+    _field('proxy-port', context.l10n.nsProxyPort, '${c.proxyPort}', (v) {
+      final p = int.tryParse(v.trim());
+      if (p != null && p > 0 && p < 65536) {
+        n.update((x) => x.copyWith(proxyPort: p));
+      }
+    }),
+    _field(
+      'proxy-user',
+      context.l10n.nsProxyUser,
+      c.proxyUser,
+      (v) => n.update((x) => x.copyWith(proxyUser: v)),
+    ),
+    _field(
+      'proxy-password',
+      context.l10n.nsProxyPassword,
+      c.proxyPassword,
+      (v) => n.update((x) => x.copyWith(proxyPassword: v)),
+      obscure: true,
+    ),
+    _field(
+      'proxy-bypass',
+      context.l10n.nsProxyBypass,
+      c.bypass,
+      (v) => n.update((x) => x.copyWith(bypass: v)),
+    ),
+  ];
+
+  List<Widget> _certTiles(
+    BuildContext context,
+    NetworkConfig c,
+    NetworkNotifier n,
+  ) => [
+    for (var i = 0; i < c.cas.length; i++)
+      ListTile(
+        key: Key('ca-$i'),
+        dense: true,
+        leading: const Icon(Icons.verified_user_outlined),
+        title: Text(c.cas[i].name),
+        subtitle: Text(context.l10n.nsCaHint),
+        trailing: IconButton(
+          tooltip: context.l10n.nsRemove,
+          icon: const Icon(Icons.delete_outline),
+          onPressed: () => n.removeCa(i),
+        ),
+      ),
+    for (final cert in c.clientCerts)
+      ListTile(
+        key: Key('client-cert-${cert.id}'),
+        dense: true,
+        leading: const Icon(Icons.badge_outlined),
+        title: Text(cert.name),
+        subtitle: Text(context.l10n.nsClientCertFor(cert.pattern)),
+        trailing: IconButton(
+          tooltip: context.l10n.nsRemove,
+          icon: const Icon(Icons.delete_outline),
+          onPressed: () => n.removeClientCert(cert.id),
+        ),
+      ),
+  ];
+
+  Widget _addButtons(BuildContext context, WidgetRef ref, NetworkNotifier n) =>
+      Wrap(
+        spacing: 8,
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 16),
+            child: OutlinedButton.icon(
+              key: const Key('add-ca'),
+              icon: const Icon(Icons.add),
+              label: Text(context.l10n.nsAddCa),
+              onPressed: () async {
+                final err = await n.addCa(ref.read(filePortProvider));
+                if (err != null && context.mounted) {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(err)));
+                }
+              },
+            ),
+          ),
+          OutlinedButton.icon(
+            key: const Key('add-client-cert'),
+            icon: const Icon(Icons.add),
+            label: Text(context.l10n.nsAddClientCert),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (_) => const _ClientCertDialog(),
+            ),
+          ),
+        ],
+      );
 
   Widget _field(
     String key,

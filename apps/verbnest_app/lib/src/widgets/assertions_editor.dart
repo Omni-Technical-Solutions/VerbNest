@@ -80,10 +80,7 @@ class AssertionsEditor extends StatelessWidget {
             requestFocusOnTap: false,
             dropdownMenuEntries: [
               for (final t in AssertionTarget.values)
-                DropdownMenuEntry(
-                  value: t,
-                  label: _targetLabel(context, t),
-                ),
+                DropdownMenuEntry(value: t, label: _targetLabel(context, t)),
             ],
             onSelected: (t) {
               if (t == null) return;

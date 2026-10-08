@@ -36,38 +36,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  key: const Key('history-search'),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    prefixIcon: const Icon(Icons.search, size: 18),
-                    hintText: context.l10n.histSearchHint,
-                  ),
-                  onChanged: (v) => setState(() => _query = v.trim()),
-                ),
-              ),
-              IconButton(
-                key: const Key('console-open'),
-                tooltip: context.l10n.histConsole,
-                icon: const Icon(Icons.terminal),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const ConsolePage()),
-                ),
-              ),
-              IconButton(
-                key: const Key('history-clear'),
-                tooltip: context.l10n.histClear,
-                icon: const Icon(Icons.delete_sweep_outlined),
-                onPressed: entries.isEmpty ? null : () => _clear(session),
-              ),
-            ],
-          ),
-        ),
+        _toolbar(session, entries.isEmpty),
         Expanded(
           child: entries.isEmpty
               ? Center(
@@ -80,6 +49,41 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               : _grouped(entries),
         ),
       ],
+    );
+  }
+
+  Widget _toolbar(WorkspaceSession session, bool empty) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              key: const Key('history-search'),
+              decoration: InputDecoration(
+                isDense: true,
+                prefixIcon: const Icon(Icons.search, size: 18),
+                hintText: context.l10n.histSearchHint,
+              ),
+              onChanged: (v) => setState(() => _query = v.trim()),
+            ),
+          ),
+          IconButton(
+            key: const Key('console-open'),
+            tooltip: context.l10n.histConsole,
+            icon: const Icon(Icons.terminal),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ConsolePage()),
+            ),
+          ),
+          IconButton(
+            key: const Key('history-clear'),
+            tooltip: context.l10n.histClear,
+            icon: const Icon(Icons.delete_sweep_outlined),
+            onPressed: empty ? null : () => _clear(session),
+          ),
+        ],
+      ),
     );
   }
 
@@ -165,7 +169,6 @@ class HistoryDetailPage extends ConsumerWidget {
     final exists = requestStillExists(session, entry);
     final request = const JsonEncoder.withIndent('  ')
         .convert(jsonDecode(entry.requestJson));
-    final body = entry.responseBody;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -174,35 +177,7 @@ class HistoryDetailPage extends ConsumerWidget {
             '${entry.method} ${entry.url}',
             overflow: TextOverflow.ellipsis,
           ),
-          actions: [
-            if (exists)
-              TextButton(
-                key: const Key('history-open'),
-                onPressed: () {
-                  ref.read(tabsProvider.notifier).open(entry.requestId!);
-                  Navigator.of(context).popUntil((r) => r.isFirst);
-                },
-                child: Text(context.l10n.histOpenRequest),
-              ),
-            TextButton(
-              key: const Key('history-save'),
-              onPressed: () {
-                final masked = requestFromHistory(entry).hadMasked;
-                final id = saveHistoryAsRequest(session, entry);
-                ref.read(tabsProvider.notifier).open(id);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      masked
-                          ? context.l10n.histSavedMasked(Masker.placeholder)
-                          : context.l10n.histSaved,
-                    ),
-                  ),
-                );
-              },
-              child: Text(context.l10n.histSaveAsNew),
-            ),
-          ],
+          actions: _actions(context, ref, session, exists),
           bottom: TabBar(
             tabs: [
               Tab(text: context.l10n.histTabRequest),
@@ -213,16 +188,60 @@ class HistoryDetailPage extends ConsumerWidget {
         body: TabBarView(
           children: [
             _text(request),
-            _text(
-              entry.error ??
-                  (body == null
-                      ? context.l10n.histNoBody
-                      : utf8.decode(body, allowMalformed: true) +
-                            (entry.bodyTruncated
-                                ? '\n\n${context.l10n.histTruncated}'
-                                : '')),
-            ),
+            _text(entry.error ?? _responseText(context)),
           ],
+        ),
+      ),
+    );
+  }
+
+  String _responseText(BuildContext context) {
+    final body = entry.responseBody;
+    if (body == null) return context.l10n.histNoBody;
+    final truncated = entry.bodyTruncated
+        ? '\n\n${context.l10n.histTruncated}'
+        : '';
+    return utf8.decode(body, allowMalformed: true) + truncated;
+  }
+
+  List<Widget> _actions(
+    BuildContext context,
+    WidgetRef ref,
+    WorkspaceSession session,
+    bool exists,
+  ) {
+    return [
+      if (exists)
+        TextButton(
+          key: const Key('history-open'),
+          onPressed: () {
+            ref.read(tabsProvider.notifier).open(entry.requestId!);
+            Navigator.of(context).popUntil((r) => r.isFirst);
+          },
+          child: Text(context.l10n.histOpenRequest),
+        ),
+      TextButton(
+        key: const Key('history-save'),
+        onPressed: () => _saveAsNew(context, ref, session),
+        child: Text(context.l10n.histSaveAsNew),
+      ),
+    ];
+  }
+
+  void _saveAsNew(
+    BuildContext context,
+    WidgetRef ref,
+    WorkspaceSession session,
+  ) {
+    final masked = requestFromHistory(entry).hadMasked;
+    final id = saveHistoryAsRequest(session, entry);
+    ref.read(tabsProvider.notifier).open(id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          masked
+              ? context.l10n.histSavedMasked(Masker.placeholder)
+              : context.l10n.histSaved,
         ),
       ),
     );

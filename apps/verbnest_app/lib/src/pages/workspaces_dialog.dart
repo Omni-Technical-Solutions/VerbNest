@@ -45,7 +45,6 @@ class _WorkspacesDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
     final switcher = ref.read(workspaceSwitcherProvider);
-    final port = ref.read(filePortProvider);
     final currentId = session.repo.workspaceId;
     final recent = switcher.recent();
 
@@ -56,33 +55,7 @@ class _WorkspacesDialog extends ConsumerWidget {
         height: 360,
         child: ListView(
           children: [
-            ListTile(
-              key: const Key('ws-current'),
-              leading: const Icon(Icons.check_circle_outline),
-              title: Text(session.repo.name),
-              subtitle: Text(session.db.path ?? context.l10n.wsInMemory),
-              trailing: IconButton(
-                key: const Key('ws-rename'),
-                tooltip: context.l10n.wsRename,
-                icon: const Icon(Icons.edit, size: 18),
-                onPressed: () async {
-                  final name = await askName(
-                    context,
-                    title: context.l10n.wsRenameTitle,
-                    initial: session.repo.name,
-                    action: context.l10n.wsRename,
-                  );
-                  if (name == null || name.trim().isEmpty) return;
-                  session.repo.name = name.trim();
-                  session.local.touchWorkspace(
-                    currentId,
-                    name.trim(),
-                    session.db.path!,
-                  );
-                  if (context.mounted) Navigator.pop(context);
-                },
-              ),
-            ),
+            _currentTile(context, session, currentId),
             const Divider(),
             for (final w in recent)
               if (w.id != currentId)
@@ -97,78 +70,129 @@ class _WorkspacesDialog extends ConsumerWidget {
           ],
         ),
       ),
-      actions: [
+      actions: _actions(context, ref, session, switcher),
+    );
+  }
+
+  Widget _currentTile(
+    BuildContext context,
+    WorkspaceSession session,
+    String currentId,
+  ) {
+    return ListTile(
+      key: const Key('ws-current'),
+      leading: const Icon(Icons.check_circle_outline),
+      title: Text(session.repo.name),
+      subtitle: Text(session.db.path ?? context.l10n.wsInMemory),
+      trailing: IconButton(
+        key: const Key('ws-rename'),
+        tooltip: context.l10n.wsRename,
+        icon: const Icon(Icons.edit, size: 18),
+        onPressed: () => _rename(context, session, currentId),
+      ),
+    );
+  }
+
+  Future<void> _rename(
+    BuildContext context,
+    WorkspaceSession session,
+    String currentId,
+  ) async {
+    final name = await askName(
+      context,
+      title: context.l10n.wsRenameTitle,
+      initial: session.repo.name,
+      action: context.l10n.wsRename,
+    );
+    if (name == null || name.trim().isEmpty) return;
+    session.repo.name = name.trim();
+    session.local.touchWorkspace(currentId, name.trim(), session.db.path!);
+    if (context.mounted) Navigator.pop(context);
+  }
+
+  List<Widget> _actions(
+    BuildContext context,
+    WidgetRef ref,
+    WorkspaceSession session,
+    WorkspaceSwitcher switcher,
+  ) {
+    final port = ref.read(filePortProvider);
+    return [
+      TextButton(
+        key: const Key('ws-import'),
+        onPressed: () => _guard(context, () async {
+          final f = await port.pick();
+          if (f != null) await switcher.importBytes(f.name, f.bytes);
+        }),
+        child: Text(context.l10n.wsImport),
+      ),
+      if (ref.read(folderPortProvider).available) ...[
         TextButton(
-          key: const Key('ws-import'),
-          onPressed: () => _guard(context, () async {
-            final f = await port.pick();
-            if (f != null) await switcher.importBytes(f.name, f.bytes);
-          }),
-          child: Text(context.l10n.wsImport),
+          key: const Key('ws-snapshot-import'),
+          onPressed: () => _importSnapshot(context, ref, session),
+          child: Text(context.l10n.wsImportSnapshot),
         ),
-        if (ref.read(folderPortProvider).available) ...[
-          TextButton(
-            key: const Key('ws-snapshot-import'),
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final nav = Navigator.of(context);
-              final l10n = context.l10n;
-              try {
-                final files = await ref.read(folderPortProvider).read();
-                if (files == null) return;
-                final r = importSnapshot(session.repo, files);
-                nav.pop();
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      l10n.wsSnapshotMerged(r.requests, r.environments) +
-                          (r.conflicts.isEmpty
-                              ? ''
-                              : l10n.wsSnapshotKept(
-                                  r.conflicts.length,
-                                  r.conflicts.first,
-                                )),
-                    ),
-                  ),
-                );
-              } on Object catch (e) {
-                messenger.showSnackBar(SnackBar(content: Text('$e')));
-              }
-            },
-            child: Text(context.l10n.wsImportSnapshot),
-          ),
-          TextButton(
-            key: const Key('ws-snapshot-export'),
-            onPressed: () => _guard(context, () async {
-              await ref
-                  .read(folderPortProvider)
-                  .write(exportSnapshot(session.repo));
-            }),
-            child: Text(context.l10n.wsExportSnapshot),
-          ),
-        ],
         TextButton(
-          key: const Key('ws-export'),
+          key: const Key('ws-snapshot-export'),
           onPressed: () => _guard(context, () async {
-            final bytes = await switcher.exportCurrent();
-            await port.save('${session.repo.name}.verbnest', bytes);
+            await ref
+                .read(folderPortProvider)
+                .write(exportSnapshot(session.repo));
           }),
-          child: Text(context.l10n.wsExport),
-        ),
-        FilledButton(
-          key: const Key('ws-new'),
-          onPressed: () async {
-            final name = await askName(
-              context,
-              title: context.l10n.wsNewTitle,
-              action: context.l10n.wsCreate,
-            );
-            if (name == null || !context.mounted) return;
-            await _guard(context, () => switcher.create(name));
-          },
-          child: Text(context.l10n.wsNew),
+          child: Text(context.l10n.wsExportSnapshot),
         ),
       ],
+      TextButton(
+        key: const Key('ws-export'),
+        onPressed: () => _guard(context, () async {
+          final bytes = await switcher.exportCurrent();
+          await port.save('${session.repo.name}.verbnest', bytes);
+        }),
+        child: Text(context.l10n.wsExport),
+      ),
+      FilledButton(
+        key: const Key('ws-new'),
+        onPressed: () => _create(context, switcher),
+        child: Text(context.l10n.wsNew),
+      ),
+    ];
+  }
+
+  Future<void> _importSnapshot(
+    BuildContext context,
+    WidgetRef ref,
+    WorkspaceSession session,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    final l10n = context.l10n;
+    try {
+      final files = await ref.read(folderPortProvider).read();
+      if (files == null) return;
+      final r = importSnapshot(session.repo, files);
+      nav.pop();
+      final kept = r.conflicts.isEmpty
+          ? ''
+          : l10n.wsSnapshotKept(r.conflicts.length, r.conflicts.first);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.wsSnapshotMerged(r.requests, r.environments) + kept,
+          ),
+        ),
+      );
+    } on Object catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _create(BuildContext context, WorkspaceSwitcher switcher) async {
+    final name = await askName(
+      context,
+      title: context.l10n.wsNewTitle,
+      action: context.l10n.wsCreate,
     );
+    if (name == null || !context.mounted) return;
+    await _guard(context, () => switcher.create(name));
   }
 }

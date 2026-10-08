@@ -81,56 +81,7 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      ChoiceChip(
-                        key: const Key('env-globals'),
-                        label: Text(context.l10n.envGlobals),
-                        selected: env == null,
-                        onSelected: (_) => setState(() => _selected = null),
-                      ),
-                      for (final e in envs)
-                        Padding(
-                          padding: const EdgeInsetsDirectional.only(start: 8),
-                          child: ChoiceChip(
-                            key: Key('env-${e.id}'),
-                            label: Text(e.name),
-                            selected: e.id == env?.id,
-                            onSelected: (_) => setState(() => _selected = e.id),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              IconButton(
-                key: const Key('env-add'),
-                tooltip: context.l10n.envNew,
-                icon: const Icon(Icons.add),
-                onPressed: _add,
-              ),
-              if (env != null) ...[
-                IconButton(
-                  tooltip: context.l10n.rename,
-                  icon: const Icon(Icons.edit_outlined),
-                  onPressed: () => _rename(env),
-                ),
-                IconButton(
-                  tooltip: context.l10n.delete,
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _delete(env),
-                ),
-              ],
-            ],
-          ),
-        ),
+        _toolbar(envs, env),
         const Divider(height: 1),
         Expanded(
           child: VariablesEditor(
@@ -143,6 +94,61 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
         ),
       ],
     );
+  }
+
+  Widget _toolbar(List<Environment> envs, Environment? env) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: _chips(envs, env)),
+            ),
+          ),
+          IconButton(
+            key: const Key('env-add'),
+            tooltip: context.l10n.envNew,
+            icon: const Icon(Icons.add),
+            onPressed: _add,
+          ),
+          if (env != null) ...[
+            IconButton(
+              tooltip: context.l10n.rename,
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => _rename(env),
+            ),
+            IconButton(
+              tooltip: context.l10n.delete,
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _delete(env),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _chips(List<Environment> envs, Environment? env) {
+    return [
+      ChoiceChip(
+        key: const Key('env-globals'),
+        label: Text(context.l10n.envGlobals),
+        selected: env == null,
+        onSelected: (_) => setState(() => _selected = null),
+      ),
+      for (final e in envs)
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: 8),
+          child: ChoiceChip(
+            key: Key('env-${e.id}'),
+            label: Text(e.name),
+            selected: e.id == env?.id,
+            onSelected: (_) => setState(() => _selected = e.id),
+          ),
+        ),
+    ];
   }
 }
 
@@ -210,93 +216,7 @@ class _VariablesEditorState extends State<VariablesEditor> {
     return ListView(
       padding: const EdgeInsets.all(8),
       children: [
-        for (var i = 0; i < _vars.length; i++)
-          Row(
-            key: ValueKey('var-row-$i'),
-            children: [
-              Checkbox(
-                value: _vars[i].enabled,
-                onChanged: (v) => _set(i, _copy(_vars[i], enabled: v)),
-              ),
-              Expanded(
-                child: TextFormField(
-                  key: ValueKey('var-key-$i'),
-                  initialValue: _vars[i].key,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: context.l10n.envVarName,
-                  ),
-                  onChanged: (v) => _set(i, _copy(_vars[i], key: v)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  key: ValueKey(
-                    'var-value-$i-${_vars[i].secret}${_revealed.contains(i) ? '-shown' : ''}',
-                  ),
-                  initialValue: _vars[i].value,
-                  obscureText: _vars[i].secret && !_revealed.contains(i),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: _vars[i].secret
-                        ? context.l10n.envSecretValue
-                        : context.l10n.envInitialValue,
-                  ),
-                  onChanged: (v) => _set(i, _copy(_vars[i], value: v)),
-                ),
-              ),
-              if (_vars[i].secret)
-                IconButton(
-                  key: ValueKey('var-reveal-$i'),
-                  tooltip: _revealed.contains(i)
-                      ? context.l10n.envHide
-                      : context.l10n.envShow,
-                  icon: Icon(
-                    _revealed.contains(i)
-                        ? Icons.visibility_off
-                        : Icons.visibility,
-                    size: 18,
-                  ),
-                  onPressed: () => setState(() {
-                    _revealed.contains(i)
-                        ? _revealed.remove(i)
-                        : _revealed.add(i);
-                  }),
-                )
-              else ...[
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    key: ValueKey('var-current-$i-${_vars[i].key}'),
-                    initialValue: _current[_vars[i].key] ?? '',
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: context.l10n.envCurrentValue,
-                    ),
-                    onChanged: (v) => _setCurrent(_vars[i].key, v),
-                  ),
-                ),
-              ],
-              IconButton(
-                key: ValueKey('var-secret-$i'),
-                tooltip: _vars[i].secret
-                    ? context.l10n.envSecret
-                    : context.l10n.envMarkSecret,
-                icon: Icon(
-                  _vars[i].secret ? Icons.lock : Icons.lock_open,
-                  size: 18,
-                ),
-                onPressed: () =>
-                    _set(i, _copy(_vars[i], secret: !_vars[i].secret)),
-              ),
-              IconButton(
-                tooltip: context.l10n.remove,
-                icon: const Icon(Icons.close, size: 18),
-                onPressed: () => _update([..._vars]..removeAt(i)),
-              ),
-            ],
-          ),
+        for (var i = 0; i < _vars.length; i++) _row(context, i),
         if (_duplicates.isNotEmpty)
           Padding(
             padding: const EdgeInsets.all(8),
@@ -316,6 +236,94 @@ class _VariablesEditorState extends State<VariablesEditor> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _row(BuildContext context, int i) {
+    final v = _vars[i];
+    return Row(
+      key: ValueKey('var-row-$i'),
+      children: [
+        Checkbox(
+          value: v.enabled,
+          onChanged: (x) => _set(i, _copy(v, enabled: x)),
+        ),
+        Expanded(
+          child: TextFormField(
+            key: ValueKey('var-key-$i'),
+            initialValue: v.key,
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: context.l10n.envVarName,
+            ),
+            onChanged: (x) => _set(i, _copy(v, key: x)),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: _valueField(context, i)),
+        if (v.secret)
+          _revealButton(context, i)
+        else ...[
+          const SizedBox(width: 8),
+          Expanded(child: _currentField(context, i)),
+        ],
+        IconButton(
+          key: ValueKey('var-secret-$i'),
+          tooltip: v.secret
+              ? context.l10n.envSecret
+              : context.l10n.envMarkSecret,
+          icon: Icon(v.secret ? Icons.lock : Icons.lock_open, size: 18),
+          onPressed: () => _set(i, _copy(v, secret: !v.secret)),
+        ),
+        IconButton(
+          tooltip: context.l10n.remove,
+          icon: const Icon(Icons.close, size: 18),
+          onPressed: () => _update([..._vars]..removeAt(i)),
+        ),
+      ],
+    );
+  }
+
+  Widget _valueField(BuildContext context, int i) {
+    final v = _vars[i];
+    return TextFormField(
+      key: ValueKey(
+        'var-value-$i-${v.secret}${_revealed.contains(i) ? '-shown' : ''}',
+      ),
+      initialValue: v.value,
+      obscureText: v.secret && !_revealed.contains(i),
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: v.secret
+            ? context.l10n.envSecretValue
+            : context.l10n.envInitialValue,
+      ),
+      onChanged: (x) => _set(i, _copy(v, value: x)),
+    );
+  }
+
+  Widget _revealButton(BuildContext context, int i) {
+    final shown = _revealed.contains(i);
+    return IconButton(
+      key: ValueKey('var-reveal-$i'),
+      tooltip: shown ? context.l10n.envHide : context.l10n.envShow,
+      icon: Icon(shown ? Icons.visibility_off : Icons.visibility, size: 18),
+      onPressed: () => setState(() {
+        shown ? _revealed.remove(i) : _revealed.add(i);
+      }),
+    );
+  }
+
+  Widget _currentField(BuildContext context, int i) {
+    final v = _vars[i];
+    return TextFormField(
+      key: ValueKey('var-current-$i-${v.key}'),
+      initialValue: _current[v.key] ?? '',
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: context.l10n.envCurrentValue,
+      ),
+      onChanged: (x) => _setCurrent(v.key, x),
     );
   }
 }
