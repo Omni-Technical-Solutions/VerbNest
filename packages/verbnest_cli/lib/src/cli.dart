@@ -19,8 +19,9 @@ Usage: verbnest run <workspace.verbnest> [options]
 
 Runs the requests of a collection or folder and exits 0 when every request
 and test passed, 1 when something failed, 2 on a usage or file error.
-Pre-request and post-response scripts run in an external JavaScript runtime
-(see --js-runtime). Without one they are skipped and reported. Variables
+Pre-request and post-response scripts are skipped and reported unless you pass
+--allow-scripts, which runs them in an external JavaScript runtime (see
+--js-runtime). Only allow scripts in workspaces you trust. Variables
 scripts set last for the run only; nothing is written to the workspace file.
 
 `verbnest mock` serves the saved examples of a collection over HTTP until
@@ -90,7 +91,16 @@ ArgParser _runParser() => ArgParser()
     defaultsTo: 'node',
     help: 'Program that runs scripts.',
   )
-  ..addFlag('no-scripts', help: 'Do not run scripts.', negatable: false)
+  ..addFlag(
+    'allow-scripts',
+    help: 'Run the scripts in the workspace. Only use this on workspaces you trust.',
+    negatable: false,
+  )
+  ..addFlag(
+    'no-scripts',
+    help: 'Do not run scripts (default).',
+    negatable: false,
+  )
   ..addOption('history', help: 'Record sent requests in this history database.')
   ..addFlag(
     'history-bodies',
@@ -543,7 +553,7 @@ Future<int> _mock(
 }
 
 Future<ScriptEngine?> _scriptEngine(ArgResults r) async {
-  if (r['no-scripts'] as bool) return null;
+  if (r['no-scripts'] as bool || !(r['allow-scripts'] as bool)) return null;
   final exe = r['js-runtime'] as String;
   return await ProcessScriptEngine.available(exe)
       ? ProcessScriptEngine(executable: exe)

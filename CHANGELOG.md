@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## Unreleased
+
+- Security: the CLI no longer runs workspace scripts by default. Pass `--allow-scripts` to run them (only for workspaces you trust). `--no-scripts` is still accepted.
+
 ## 0.44.0
 
 - All dropdowns converted from `DropdownButton` to `DropdownMenu` (Material 3). The old `DropdownButton` had a hardcoded 300ms menu overlay animation that caused a visible fade when selecting an item. `DropdownMenu` uses `MenuAnchor` with `animated: false` by default, so menus open and close instantly. Affected: auth type, JWT algorithm, OAuth2 grant, HTTP method, body mode, HTTP version, language, GraphQL operation, code language, environment, assertion target, assertion operator.
