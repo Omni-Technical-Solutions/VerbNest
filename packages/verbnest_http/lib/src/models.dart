@@ -46,6 +46,10 @@ enum HttpVersionPref {
   };
 }
 
+/// Largest response body read from the wire, and the largest after
+/// decompression.
+const maxBodyBytes = 512 * 1024 * 1024;
+
 class HttpSettings {
   const HttpSettings({
     this.httpVersion = HttpVersionPref.auto,

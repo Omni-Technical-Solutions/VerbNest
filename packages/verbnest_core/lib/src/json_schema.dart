@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'safe_regex.dart';
+
 /// Checks [value] against a JSON Schema subset and returns one message per
 /// problem (empty = valid). Supported: type, enum, const, required,
 /// properties, additionalProperties (false), items, minItems, maxItems,
@@ -71,8 +73,13 @@ void _check(Object? v, Object? schema, String at, List<String> errors) {
       errors.add('$at: longer than $max characters');
     }
     final pattern = schema['pattern'];
-    if (pattern is String && !RegExp(pattern).hasMatch(v)) {
-      errors.add('$at: does not match $pattern');
+    if (pattern is String) {
+      final hit = safeRegexMatch(pattern, v);
+      if (hit == null) {
+        errors.add('$at: pattern $pattern is invalid or unsafe');
+      } else if (!hit) {
+        errors.add('$at: does not match $pattern');
+      }
     }
   }
   if (v is List) {

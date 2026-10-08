@@ -5,6 +5,21 @@ void main() {
   final now = DateTime.utc(2025, 1, 1, 12);
   Uri u(String s) => Uri.parse(s);
 
+  group('hardening', () {
+    test('public suffix, control characters and huge Max-Age', () {
+      final jar = CookieJar();
+      expect(
+        jar.storeFromResponse(u('https://evil.co.uk/'), [
+          'a=1; Domain=co.uk',
+          'b=1\u0001x',
+          'c=1; Max-Age=99999999999999',
+        ], now: now),
+        1,
+      );
+      expect(jar.matching(u('https://other.co.uk/'), now: now), isEmpty);
+    });
+  });
+
   group('storing', () {
     test('a host-only cookie goes back to that host only', () {
       final jar = CookieJar();

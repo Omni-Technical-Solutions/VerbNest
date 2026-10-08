@@ -219,13 +219,26 @@ class _WebSocketConnection implements RealtimeConnection {
       ),
     );
     _socket.listen(
-      (d) => _out.add(
-        RealtimeMessage(
-          direction: RealtimeDirection.received,
-          data: d is String ? d : Uint8List.fromList(d as List<int>),
-          binary: d is! String,
-        ),
-      ),
+      (d) {
+        final size = d is String ? d.length : (d as List<int>).length;
+        if (size > maxRealtimeMessageBytes) {
+          _out.add(
+            RealtimeMessage(
+              direction: RealtimeDirection.system,
+              data: 'Message of $size bytes dropped: too large',
+            ),
+          );
+          _socket.close(1009, 'Message too big');
+          return;
+        }
+        _out.add(
+          RealtimeMessage(
+            direction: RealtimeDirection.received,
+            data: d is String ? d : Uint8List.fromList(d as List<int>),
+            binary: d is! String,
+          ),
+        );
+      },
       onError: (Object e) => _out.add(
         RealtimeMessage(direction: RealtimeDirection.system, data: '$e'),
       ),
@@ -354,8 +367,19 @@ class _SseConnection implements RealtimeConnection {
       ),
     );
     parser.lastId = lastId;
+    var lineBytes = 0;
     _sub = res
         .cast<List<int>>()
+        .map((chunk) {
+          // LineSplitter buffers a whole line, so cap lines before it.
+          for (final b in chunk) {
+            lineBytes = b == 10 ? 0 : lineBytes + 1;
+          }
+          if (lineBytes > maxRealtimeMessageBytes) {
+            throw const FormatException('Event line is too large');
+          }
+          return chunk;
+        })
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen(
@@ -617,3 +641,6 @@ class _GraphqlWs implements RealtimeConnection {
     await _inner.close();
   }
 }
+
+/// Largest single WebSocket message or SSE line kept in memory.
+const maxRealtimeMessageBytes = 16 * 1024 * 1024;

@@ -8,6 +8,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - Security: on a cross-origin redirect only a short list of safe headers is kept (it was a denylist). Header values with CR, LF or NUL are refused. The OAuth sign-in callback is accepted only with the right `state`, the authorize URL must be http(s), and token requests never follow redirects.
 - Security: cURL export quotes the method and uses `--form-string` for text fields. Snapshot writes reject backslash, drive-letter and symlink paths.
 - Security: response bodies and decompressed bodies are capped at 512 MiB, YAML imports are limited in size and depth (alias bombs), and the mock server limits request bodies to 1 MiB and refuses non-loopback Host headers. The masker also hides percent-encoded and JSON-escaped secrets. Release signing can be made mandatory with `VERBNEST_REQUIRE_RELEASE_SIGNING=1`. CI actions are pinned by commit SHA.
+- Security: WebSocket messages and SSE lines are capped at 16 MiB, HTTP/2 bodies at 512 MiB. Cookies with control characters, over 4096 bytes, or for common public suffixes (such as `co.uk`) are refused, and Max-Age is capped at 400 days. Assertion and JSON Schema regular expressions that are invalid, over 500 characters or have nested quantifiers are refused instead of run. Dependabot now watches Actions and pub dependencies.
 - Security: the CLI no longer runs workspace scripts by default. Pass `--allow-scripts` to run them (only for workspaces you trust). `--no-scripts` is still accepted.
 
 ## 0.44.0

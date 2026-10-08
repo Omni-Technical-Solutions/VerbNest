@@ -120,6 +120,9 @@ Future<H2Response> h2Exchange(
         downloadStart = sw.elapsed;
       } else if (m is h2.DataStreamMessage) {
         data.add(m.bytes);
+        if (data.length > maxBodyBytes) {
+          throw const ProtocolError('Response body is too large');
+        }
       }
     }
     if (status == null) {

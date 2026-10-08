@@ -682,10 +682,6 @@ class _Parsed {
   final Duration download;
 }
 
-/// Largest response body read from the wire, and the largest after
-/// decompression.
-const maxBodyBytes = 512 * 1024 * 1024;
-
 class _CappedSink implements Sink<List<int>> {
   _CappedSink(this._out, this._max);
 

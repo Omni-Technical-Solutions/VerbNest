@@ -202,6 +202,13 @@ class CookieJar {
     final name = first.substring(0, eq).trim();
     if (name.isEmpty) return null;
     final value = first.substring(eq + 1).trim();
+    // Control characters would split the Cookie header or a log line, and
+    // browsers cap a cookie at 4096 bytes.
+    if (_control.hasMatch(name) ||
+        _control.hasMatch(value) ||
+        name.length + value.length > 4096) {
+      return null;
+    }
 
     String? domainAttr;
     String? pathAttr;
@@ -245,7 +252,8 @@ class CookieJar {
           host == domainAttr ||
           (!_isIp(host) &&
               host.endsWith('.$domainAttr') &&
-              domainAttr.contains('.'));
+              domainAttr.contains('.') &&
+              !_publicSuffixes.contains(domainAttr));
       if (!ok) return null;
       domain = domainAttr;
       hostOnly = false;
@@ -262,7 +270,7 @@ class CookieJar {
     if (maxAge != null) {
       exp = maxAge <= 0
           ? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true)
-          : now.add(Duration(seconds: maxAge));
+          : now.add(Duration(seconds: maxAge.clamp(1, 400 * 86400)));
     }
 
     return StoredCookie(
@@ -278,6 +286,35 @@ class CookieJar {
       createdAt: now,
     );
   }
+
+  static final _control = RegExp(r'[\x00-\x1f\x7f]');
+
+  /// Multi-label public suffixes a site must not set cookies for. This is a
+  /// short list of the common ones, not the full Public Suffix List.
+  static const _publicSuffixes = {
+    'co.uk',
+    'org.uk',
+    'ac.uk',
+    'gov.uk',
+    'com.au',
+    'net.au',
+    'org.au',
+    'co.jp',
+    'co.nz',
+    'co.in',
+    'com.br',
+    'com.cn',
+    'co.za',
+    'github.io',
+    'herokuapp.com',
+    'appspot.com',
+    'cloudfront.net',
+    'blogspot.com',
+    'azurewebsites.net',
+    'vercel.app',
+    'netlify.app',
+    'pages.dev',
+  };
 
   static String _defaultPath(String requestPath) {
     if (!requestPath.startsWith('/')) return '/';

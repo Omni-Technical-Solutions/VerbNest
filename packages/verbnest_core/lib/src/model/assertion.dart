@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../json_path.dart';
 import '../json_schema.dart';
+import '../safe_regex.dart';
 import '../test_result.dart';
 
 enum AssertionTarget { status, header, jsonPath, responseTime, body, schema }
@@ -241,7 +242,9 @@ class Assertion {
       case AssertionOp.notContains:
         return _contains(actual, value) ? 'Got $shown' : null;
       case AssertionOp.matches:
-        return RegExp(value).hasMatch(_text(actual)) ? null : 'Got $shown';
+        final hit = safeRegexMatch(value, _text(actual));
+        if (hit == null) return 'The pattern is invalid or unsafe: $value';
+        return hit ? null : 'Got $shown';
       case AssertionOp.lt:
       case AssertionOp.lte:
       case AssertionOp.gt:
