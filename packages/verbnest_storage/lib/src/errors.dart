@@ -52,3 +52,8 @@ class InvalidOperationError extends StorageError {
 class DuplicateNameError extends StorageError {
   const DuplicateNameError(String name) : super('"$name" already exists');
 }
+
+/// A stored value does not have the type its column promises.
+class StorageFormatError extends StorageError {
+  const StorageFormatError(super.message);
+}

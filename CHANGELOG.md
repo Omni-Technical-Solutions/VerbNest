@@ -4,6 +4,8 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 
 ## Unreleased
 
+- Chore: the script JS prelude moved to `packages/verbnest_script/assets/prelude.js` (generated into Dart by `tool/gen_prelude.dart`, checked by a test); GraphQL lexer and completion split into helpers; storage rows read through typed accessors that name the column on a bad value (`StorageFormatError`).
+
 - Security: workspaces start with scripts off. Turn on "Run scripts in this workspace" in Settings for workspaces you trust. Scripts no longer receive secret variables, `pm.sendRequest` cannot reach link-local or cloud metadata addresses, and the CLI runs Node with `--permission` where available.
 - Security: on a cross-origin redirect only a short list of safe headers is kept (it was a denylist). Header values with CR, LF or NUL are refused. The OAuth sign-in callback is accepted only with the right `state`, the authorize URL must be http(s), and token requests never follow redirects.
 - Security: cURL export quotes the method and uses `--form-string` for text fields. Snapshot writes reject backslash, drive-letter and symlink paths.

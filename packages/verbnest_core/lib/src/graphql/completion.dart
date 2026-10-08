@@ -40,10 +40,25 @@ GqlCompletion? graphqlComplete(GraphqlSchema schema, String query, int offset) {
   final before = head.substring(0, prefixStart);
   final lexed = lexGraphql(before);
   if (lexed.openString) return null;
+  final scan = _scan(schema, lexed.tokens);
+  return _suggest(schema, scan, prefix, prefixStart);
+}
 
-  // Each open `{` holds the type its fields belong to (null if unknown).
+/// Where the caret sits in the query: the open selection sets and argument
+/// lists, and the last token before it.
+class _Scan {
+  _Scan(this.stack, this.parens, this.prev);
+
+  /// Each open `{` holds the type its fields belong to (null if unknown).
+  final List<GqlType?> stack;
+
+  /// Each open `(` holds the field whose arguments are being written.
+  final List<GqlField?> parens;
+  final GqlToken? prev;
+}
+
+_Scan _scan(GraphqlSchema schema, List<GqlToken> tokens) {
   final stack = <GqlType?>[];
-  // Each open `(` holds the field whose arguments are being written.
   final parens = <GqlField?>[];
   String? opKeyword;
   String? lastName; // last name seen at the current level, before `{` or `(`
@@ -54,7 +69,7 @@ GqlCompletion? graphqlComplete(GraphqlSchema schema, String query, int offset) {
 
   GqlType? top() => stack.isEmpty ? null : stack.last;
 
-  for (final t in lexed.tokens) {
+  for (final t in tokens) {
     if (parens.isNotEmpty) {
       if (t.isPunct('(')) parens.add(null);
       if (t.isPunct(')')) parens.removeLast();
@@ -113,10 +128,21 @@ GqlCompletion? graphqlComplete(GraphqlSchema schema, String query, int offset) {
     }
     prev = t;
   }
+  return _Scan(stack, parens, prev);
+}
 
-  String? lowerPrefix() => prefix.toLowerCase();
+GqlCompletion? _suggest(
+  GraphqlSchema schema,
+  _Scan scan,
+  String prefix,
+  int prefixStart,
+) {
+  final parens = scan.parens;
+  final stack = scan.stack;
+  final prev = scan.prev;
+  final lower = prefix.toLowerCase();
   bool matches(String name) =>
-      prefix.isEmpty || name.toLowerCase().startsWith(lowerPrefix()!);
+      prefix.isEmpty || name.toLowerCase().startsWith(lower);
 
   if (parens.isNotEmpty) {
     final field = parens.last;
@@ -129,7 +155,7 @@ GqlCompletion? graphqlComplete(GraphqlSchema schema, String query, int offset) {
     return items.isEmpty ? null : GqlCompletion(prefixStart, items);
   }
 
-  final owner = top();
+  final owner = stack.isEmpty ? null : stack.last;
   if (owner == null) return null;
   if (owner.kind != GqlKind.object && owner.kind != GqlKind.interface) {
     if (owner.kind == GqlKind.union) {

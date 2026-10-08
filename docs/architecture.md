@@ -40,4 +40,4 @@ deepest functions. Prefer splitting a long `build` into small widgets or
 methods per section, and keep new functions under about 60 lines.
 
 ## Not done (refactor leftovers)
-The JS prelude asset (the CLI is pure Dart with no asset bundle), the GraphQL lexer and completion splits and typed storage mappers remain. `mock_server_dialog.build`, `json_schema._check` and the cookie domain check are split. A CI function-size gate (scripts/complexity_report.py --check, limits 260 lines / 90 branches) now stops regressions.
+The JS prelude now lives in `packages/verbnest_script/assets/prelude.js`; `dart run tool/gen_prelude.dart` regenerates `lib/src/prelude.dart` (the CLI is pure Dart with no asset bundle) and a test fails if they drift. The GraphQL lexer and completion are split into helpers, and storage rows are read through typed accessors (`row_mapper.dart`) that name the column on a type mismatch. `mock_server_dialog.build`, `json_schema._check` and the cookie domain check are split. A CI function-size gate (scripts/complexity_report.py --check, limits 260 lines / 90 branches) now stops regressions.

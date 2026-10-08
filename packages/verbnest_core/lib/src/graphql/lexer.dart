@@ -54,56 +54,12 @@ GqlLexed lexGraphql(String src) {
       out.add(GqlToken(GqlTok.punct, src[i], i, i + 1));
       i++;
     } else if (c == 34) {
-      final start = i;
-      if (src.startsWith('"""', i)) {
-        var j = i + 3;
-        final buf = StringBuffer();
-        var closed = false;
-        while (j < n) {
-          if (src.startsWith(r'\"""', j)) {
-            buf.write('"""');
-            j += 4;
-          } else if (src.startsWith('"""', j)) {
-            closed = true;
-            j += 3;
-            break;
-          } else {
-            buf.write(src[j]);
-            j++;
-          }
-        }
-        if (!closed) return GqlLexed(out, openString: true);
-        out.add(
-          GqlToken(GqlTok.blockString, _dedent(buf.toString()), start, j),
-        );
-        i = j;
-      } else {
-        var j = i + 1;
-        final buf = StringBuffer();
-        var closed = false;
-        while (j < n && src[j] != '\n') {
-          if (src[j] == r'\' && j + 1 < n) {
-            final e = src[j + 1];
-            buf.write(switch (e) {
-              'n' => '\n',
-              't' => '\t',
-              'r' => '\r',
-              _ => e,
-            });
-            j += 2;
-          } else if (src[j] == '"') {
-            closed = true;
-            j++;
-            break;
-          } else {
-            buf.write(src[j]);
-            j++;
-          }
-        }
-        if (!closed) return GqlLexed(out, openString: true);
-        out.add(GqlToken(GqlTok.string, buf.toString(), start, j));
-        i = j;
-      }
+      final tok = src.startsWith('"""', i)
+          ? _lexBlockString(src, i)
+          : _lexString(src, i);
+      if (tok == null) return GqlLexed(out, openString: true);
+      out.add(tok);
+      i = tok.end;
     } else if (c == 36) {
       var j = i + 1;
       while (j < n && isPart(src.codeUnitAt(j))) {
@@ -130,6 +86,54 @@ GqlLexed lexGraphql(String src) {
     }
   }
   return GqlLexed(out);
+}
+
+/// A `"""` block string starting at [start], or null if it never closes.
+GqlToken? _lexBlockString(String src, int start) {
+  var j = start + 3;
+  final buf = StringBuffer();
+  while (j < src.length) {
+    if (src.startsWith(r'\"""', j)) {
+      buf.write('"""');
+      j += 4;
+    } else if (src.startsWith('"""', j)) {
+      return GqlToken(
+        GqlTok.blockString,
+        _dedent(buf.toString()),
+        start,
+        j + 3,
+      );
+    } else {
+      buf.write(src[j]);
+      j++;
+    }
+  }
+  return null;
+}
+
+/// A single-line string starting at [start], or null if it never closes.
+GqlToken? _lexString(String src, int start) {
+  var j = start + 1;
+  final n = src.length;
+  final buf = StringBuffer();
+  while (j < n && src[j] != '\n') {
+    if (src[j] == r'\' && j + 1 < n) {
+      final e = src[j + 1];
+      buf.write(switch (e) {
+        'n' => '\n',
+        't' => '\t',
+        'r' => '\r',
+        _ => e,
+      });
+      j += 2;
+    } else if (src[j] == '"') {
+      return GqlToken(GqlTok.string, buf.toString(), start, j + 1);
+    } else {
+      buf.write(src[j]);
+      j++;
+    }
+  }
+  return null;
 }
 
 /// Removes the common indentation of a block string, as the spec asks.

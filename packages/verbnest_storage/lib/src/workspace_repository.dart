@@ -8,6 +8,7 @@ import 'attachment_store.dart';
 import 'errors.dart';
 import 'models.dart';
 import 'repository_models.dart';
+import 'row_mapper.dart';
 import 'search_documents.dart';
 import 'workspace_database.dart';
 
@@ -38,7 +39,7 @@ class WorkspaceRepository {
 
   String? meta(String key) {
     final rows = _db.select('SELECT value FROM meta WHERE key = ?', [key]);
-    return rows.isEmpty ? null : rows.first['value'] as String;
+    return rows.isEmpty ? null : rows.first.str('value');
   }
 
   void setMeta(String key, String value) => _ws.transaction(() {
@@ -98,7 +99,7 @@ class WorkspaceRepository {
       ''',
       [id],
     );
-    return [for (final r in rows.skip(1)) r['id'] as String];
+    return [for (final r in rows.skip(1)) r.str('id')];
   }
 
   String createCollection(String name) =>
@@ -171,7 +172,7 @@ class WorkspaceRepository {
             'SELECT MAX(position) AS p FROM node WHERE parent_id = ?',
             [parentId],
           );
-    final max = rows.first['p'] as int?;
+    final max = rows.first.integerOrNull('p');
     return max == null ? _step : max + _step;
   }
 
@@ -204,7 +205,7 @@ class WorkspaceRepository {
   /// Moves [id] under [newParentId] at [index] among its new siblings.
   void move(String id, String? newParentId, int index) => _ws.transaction(() {
     final row = _row(id);
-    final kind = NodeKind.values.byName(row['kind'] as String);
+    final kind = NodeKind.values.byName(row.str('kind'));
     if (kind == NodeKind.collection) {
       if (newParentId != null) {
         throw const InvalidOperationError('A collection cannot be nested');
@@ -236,7 +237,7 @@ class WorkspaceRepository {
   /// Deep-copies [id] next to the original; returns the new root id.
   String duplicate(String id) => _ws.transaction(() {
     final row = _row(id);
-    final parentId = row['parent_id'] as String?;
+    final parentId = row.strOrNull('parent_id');
     final copyId = _copyNode(row, parentId, suffix: ' copy');
     final siblings = children(parentId).map((c) => c.id).toList()
       ..remove(copyId);
@@ -353,11 +354,11 @@ class WorkspaceRepository {
     }
     return HttpRequestItem.fromData(
       id: id,
-      name: r['name'] as String,
+      name: r.str('name'),
       data: _decode(r['data']),
       auth: _decodeOrNull(r['auth_json']),
       scripts: _decodeOrNull(r['scripts_json']),
-      description: r['description'] as String,
+      description: r.str('description'),
     );
   }
 
@@ -400,7 +401,7 @@ class WorkspaceRepository {
       [id],
     );
     if (last.isNotEmpty && last.first['snapshot'] == snapshot) return;
-    final rev = last.isEmpty ? 1 : (last.first['rev'] as int) + 1;
+    final rev = last.isEmpty ? 1 : (last.first.integer('rev')) + 1;
     _db.execute(
       'INSERT INTO revision(node_id, rev, saved_at, snapshot) VALUES (?, ?, ?, ?)',
       [id, rev, _now, snapshot],
@@ -417,8 +418,8 @@ class WorkspaceRepository {
       [id],
     ))
       RevisionInfo(
-        rev: r['rev'] as int,
-        savedAt: DateTime.fromMillisecondsSinceEpoch(r['saved_at'] as int),
+        rev: r.integer('rev'),
+        savedAt: DateTime.fromMillisecondsSinceEpoch(r.integer('saved_at')),
       ),
   ];
 
@@ -451,11 +452,11 @@ class WorkspaceRepository {
       [owner.kind, owner.id],
     ))
       Variable(
-        key: r['key'] as String,
-        value: (r['value'] as String?) ?? '',
+        key: r.str('key'),
+        value: (r.strOrNull('value')) ?? '',
         secret: r['type'] == 'secret',
-        enabled: (r['enabled'] as int) != 0,
-        description: r['description'] as String,
+        enabled: r.flag('enabled'),
+        description: r.str('description'),
       ),
   ];
 
@@ -498,10 +499,10 @@ class WorkspaceRepository {
       'SELECT * FROM environment ORDER BY position, name',
     ))
       Environment(
-        id: r['id'] as String,
-        name: r['name'] as String,
-        color: r['color'] as String?,
-        variables: variables(VariableOwner.environment(r['id'] as String)),
+        id: r.str('id'),
+        name: r.str('name'),
+        color: r.strOrNull('color'),
+        variables: variables(VariableOwner.environment(r.str('id'))),
       ),
   ];
 
@@ -591,7 +592,7 @@ class WorkspaceRepository {
       "SELECT id FROM node WHERE kind = 'request' "
       "AND json_extract(extra, '\$.favourite') = 1 ORDER BY name, id",
     ))
-      r['id'] as String,
+      r.str('id'),
   ];
 
   // ---- saved examples (FR-COL-005) -----------------------------------------
@@ -611,9 +612,9 @@ class WorkspaceRepository {
   }
 
   ExampleInfo _example(Row r) => ExampleInfo(
-    id: r['id'] as String,
-    requestId: r['request_id'] as String,
-    name: r['name'] as String,
+    id: r.str('id'),
+    requestId: r.str('request_id'),
+    name: r.str('name'),
     data: _decode(r['data']),
     body: (r['body_blob'] as Uint8List?) ?? Uint8List(0),
   );
@@ -638,7 +639,7 @@ class WorkspaceRepository {
   String restoreExample(ExampleInfo e) => _ws.transaction(() {
     final old = _db.select('SELECT position FROM example WHERE id = ?', [e.id]);
     final pos = old.isNotEmpty
-        ? old.first['position'] as int
+        ? old.first.integer('position')
         : ((_db.select(
                         'SELECT MAX(position) AS p FROM example WHERE request_id = ?',
                         [e.requestId],
@@ -713,7 +714,7 @@ class WorkspaceRepository {
   /// Ids of every stored attachment.
   List<String> attachmentIds() => [
     for (final r in _db.select('SELECT id FROM attachment ORDER BY id'))
-      r['id'] as String,
+      r.str('id'),
   ];
 
   void restoreAttachment(
@@ -744,13 +745,13 @@ class WorkspaceRepository {
   }
 
   NodeInfo _info(Row r) => NodeInfo(
-    id: r['id'] as String,
-    parentId: r['parent_id'] as String?,
-    kind: NodeKind.values.byName(r['kind'] as String),
-    type: r['type'] as String?,
-    name: r['name'] as String,
-    position: r['position'] as int,
-    method: r['method'] as String?,
+    id: r.str('id'),
+    parentId: r.strOrNull('parent_id'),
+    kind: NodeKind.values.byName(r.str('kind')),
+    type: r.strOrNull('type'),
+    name: r.str('name'),
+    position: r.integer('position'),
+    method: r.strOrNull('method'),
   );
 
   // ---- attachments (files kept inside the workspace) -----------------------
