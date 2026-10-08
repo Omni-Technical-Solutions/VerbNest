@@ -4,8 +4,11 @@ import 'dart:typed_data';
 import 'package:verbnest_core/verbnest_core.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'attachment_store.dart';
 import 'errors.dart';
 import 'models.dart';
+import 'repository_models.dart';
+import 'search_documents.dart';
 import 'workspace_database.dart';
 
 typedef Json = Map<String, Object?>;
@@ -752,207 +755,32 @@ class WorkspaceRepository {
 
   // ---- attachments (files kept inside the workspace) -----------------------
 
+  late final AttachmentStore _attachments = AttachmentStore(_db, _clock);
+
   /// Stores [bytes] and returns the attachment id.
-  String addAttachment(String name, Uint8List bytes, {String? mime}) {
-    final id = Ulid.generate(now: _clock());
-    _db.execute(
-      'INSERT INTO attachment(id, name, mime, content, created_at) '
-      'VALUES (?, ?, ?, ?, ?)',
-      [id, name, mime, bytes, _now],
-    );
-    return id;
-  }
+  String addAttachment(String name, Uint8List bytes, {String? mime}) =>
+      _attachments.add(name, bytes, mime: mime);
 
-  AttachmentInfo? attachment(String id) {
-    final rows = _db.select(
-      'SELECT id, name, mime, length(content) AS size FROM attachment '
-      'WHERE id = ?',
-      [id],
-    );
-    if (rows.isEmpty) return null;
-    final r = rows.first;
-    return AttachmentInfo(
-      id: r['id'] as String,
-      name: r['name'] as String,
-      mime: r['mime'] as String?,
-      size: r['size'] as int,
-    );
-  }
+  AttachmentInfo? attachment(String id) => _attachments.info(id);
 
-  Uint8List attachmentBytes(String id) {
-    final rows = _db.select('SELECT content FROM attachment WHERE id = ?', [
-      id,
-    ]);
-    if (rows.isEmpty) throw NotFoundError('Attachment $id');
-    return rows.first['content'] as Uint8List;
-  }
+  Uint8List attachmentBytes(String id) => _attachments.bytes(id);
 
-  void deleteAttachment(String id) =>
-      _db.execute('DELETE FROM attachment WHERE id = ?', [id]);
+  void deleteAttachment(String id) => _attachments.delete(id);
 
   /// Deletes attachments that no request, example or revision mentions.
-  /// Ids are unique strings, so a text search of the stored JSON is enough.
-  int pruneUnreferencedAttachments() {
-    final unseen = {
-      for (final r in _db.select('SELECT id FROM attachment'))
-        r['id'] as String,
-    };
-    if (unseen.isEmpty) return 0;
-    final all = {...unseen};
-    // One pass over the stored JSON; an id found once need not be searched
-    // for again, and the pass ends early when every id has been seen.
-    for (final sql in const [
-      'SELECT data FROM node',
-      'SELECT data FROM example',
-      'SELECT snapshot FROM revision',
-    ]) {
-      for (final r in _db.select(sql)) {
-        final text = r.values.first as String?;
-        if (text == null) continue;
-        unseen.removeWhere(text.contains);
-        if (unseen.isEmpty) return pruneAttachments(all);
-      }
-    }
-    return pruneAttachments(all.difference(unseen));
-  }
+  int pruneUnreferencedAttachments() => _attachments.pruneUnreferenced();
 
   /// Deletes every attachment not named in [referenced]. Returns the count.
-  int pruneAttachments(Set<String> referenced) {
-    final all = [
-      for (final r in _db.select('SELECT id FROM attachment'))
-        r['id'] as String,
-    ];
-    final orphans = all.where((id) => !referenced.contains(id)).toList();
-    for (final id in orphans) {
-      deleteAttachment(id);
-    }
-    return orphans.length;
-  }
+  int pruneAttachments(Set<String> referenced) =>
+      _attachments.prune(referenced);
 
   // ---- search documents ------------------------------------------------
 
   /// Text of every node for [SearchIndex]. Header values are not included.
-  List<SearchDoc> searchDocuments() {
-    final out = <SearchDoc>[];
-    for (final r in _db.select(
-      'SELECT id, parent_id, kind, name, description, data FROM node',
-    )) {
-      final kind = NodeKind.values.byName(r['kind'] as String);
-      if (kind != NodeKind.request) {
-        out.add(
-          SearchDoc(
-            id: r['id'] as String,
-            parentId: r['parent_id'] as String?,
-            kind: kind,
-            name: r['name'] as String,
-            meta: r['description'] as String,
-          ),
-        );
-        continue;
-      }
-      final item = HttpRequestItem.fromData(
-        id: r['id'] as String,
-        name: r['name'] as String,
-        data: _decode(r['data']),
-        description: r['description'] as String,
-      );
-      final body = item.body;
-      out.add(
-        SearchDoc(
-          id: item.id,
-          parentId: r['parent_id'] as String?,
-          kind: kind,
-          name: item.name,
-          method: item.method,
-          url: item.url,
-          meta:
-              '${item.method} ${item.url} ${item.description} '
-              '${item.headers.map((h) => h.key).join(' ')}',
-          body: switch (body) {
-            RawBody(:final text) => text,
-            GraphqlBody(:final query) => query,
-            _ => '',
-          },
-        ),
-      );
-    }
-    return out;
-  }
+  List<SearchDoc> searchDocuments() => readSearchDocuments(_db);
 
   Json _decode(Object? text) =>
       (jsonDecode(text as String) as Map).cast<String, Object?>();
 
   Json? _decodeOrNull(Object? text) => text == null ? null : _decode(text);
-}
-
-/// A saved request/response pair.
-class ExampleInfo {
-  const ExampleInfo({
-    required this.id,
-    required this.requestId,
-    required this.name,
-    required this.data,
-    required this.body,
-  });
-
-  final String id;
-  final String requestId;
-  final String name;
-
-  /// `status`, `reason`, `headers` (list of [name, value]), `request`.
-  final Map<String, Object?> data;
-  final Uint8List body;
-}
-
-/// Who owns a set of variables.
-class VariableOwner {
-  const VariableOwner._(this.kind, this.id);
-
-  factory VariableOwner.environment(String id) =>
-      VariableOwner._('environment', id);
-  factory VariableOwner.collection(String id) =>
-      VariableOwner._('collection', id);
-  factory VariableOwner.folder(String id) => VariableOwner._('folder', id);
-  static const global = VariableOwner._('global', '');
-
-  final String kind;
-  final String id;
-}
-
-/// Metadata of a stored attachment.
-class AttachmentInfo {
-  const AttachmentInfo({
-    required this.id,
-    required this.name,
-    required this.size,
-    this.mime,
-  });
-
-  final String id;
-  final String name;
-  final String? mime;
-  final int size;
-}
-
-/// One row of searchable text.
-class SearchDoc {
-  const SearchDoc({
-    required this.id,
-    required this.parentId,
-    required this.kind,
-    required this.name,
-    this.method,
-    this.url,
-    this.meta = '',
-    this.body = '',
-  });
-
-  final String id;
-  final String? parentId;
-  final NodeKind kind;
-  final String name;
-  final String? method;
-  final String? url;
-  final String meta;
-  final String body;
 }
