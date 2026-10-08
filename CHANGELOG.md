@@ -4,6 +4,10 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 
 ## Unreleased
 
+- Security: workspaces start with scripts off. Turn on "Run scripts in this workspace" in Settings for workspaces you trust. Scripts no longer receive secret variables, `pm.sendRequest` cannot reach link-local or cloud metadata addresses, and the CLI runs Node with `--permission` where available.
+- Security: on a cross-origin redirect only a short list of safe headers is kept (it was a denylist). Header values with CR, LF or NUL are refused. The OAuth sign-in callback is accepted only with the right `state`, the authorize URL must be http(s), and token requests never follow redirects.
+- Security: cURL export quotes the method and uses `--form-string` for text fields. Snapshot writes reject backslash, drive-letter and symlink paths.
+- Security: response bodies and decompressed bodies are capped at 512 MiB, YAML imports are limited in size and depth (alias bombs), and the mock server limits request bodies to 1 MiB and refuses non-loopback Host headers. The masker also hides percent-encoded and JSON-escaped secrets. Release signing can be made mandatory with `VERBNEST_REQUIRE_RELEASE_SIGNING=1`. CI actions are pinned by commit SHA.
 - Security: the CLI no longer runs workspace scripts by default. Pass `--allow-scripts` to run them (only for workspaces you trust). `--no-scripts` is still accepted.
 
 ## 0.44.0

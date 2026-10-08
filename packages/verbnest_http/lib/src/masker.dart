@@ -1,16 +1,30 @@
+import 'dart:convert';
+
 /// Hides secrets in anything that is displayed, logged or stored
 /// (constitution VII.3, FR-AUTH-006).
 class Masker {
   Masker({
     Iterable<String> secretValues = const [],
     Iterable<String> sensitiveHeaders = const [],
-  }) : _secrets = (secretValues.where((s) => s.isNotEmpty).toList()
-         ..sort((a, b) => b.length.compareTo(a.length))),
+  }) : _secrets = ({
+         for (final s in secretValues)
+           if (s.isNotEmpty) ...{
+             s,
+             // The same secret appears percent-encoded in URLs and forms.
+             Uri.encodeComponent(s),
+             Uri.encodeQueryComponent(s),
+             jsonEncode(s).substring(1, jsonEncode(s).length - 1),
+           },
+       }.toList()..sort((a, b) => b.length.compareTo(a.length))),
        _headers = {
          'authorization',
          'proxy-authorization',
          'cookie',
          'set-cookie',
+         'x-api-key',
+         'x-auth-token',
+         'x-csrf-token',
+         'x-amz-security-token',
          for (final h in sensitiveHeaders) h.toLowerCase(),
        };
 

@@ -52,8 +52,15 @@ android {
 
     buildTypes {
         release {
+            // Debug signing is for local and CI test builds. Set
+            // VERBNEST_REQUIRE_RELEASE_SIGNING=1 in the real release pipeline
+            // so it fails instead of shipping a debug-signed APK.
             signingConfig = signingConfigs.findByName("release")
-                ?: signingConfigs.getByName("debug")
+                ?: if (System.getenv("VERBNEST_REQUIRE_RELEASE_SIGNING") == null) {
+                    signingConfigs.getByName("debug")
+                } else {
+                    throw GradleException("android/key.properties is missing: refusing to sign a release with the debug key")
+                }
         }
     }
 }

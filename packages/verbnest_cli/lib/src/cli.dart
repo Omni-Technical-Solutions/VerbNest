@@ -59,7 +59,8 @@ ArgParser _runParser() => ArgParser()
     abbr: 'v',
     help:
         'Variable override, name=value (also VERBNEST_VAR_<name> in the '
-        'environment). Use it to supply secret values.',
+        'environment). For secret values prefer the environment variable: '
+        'command-line arguments show up in process lists.',
   )
   ..addOption(
     'data',
@@ -322,6 +323,11 @@ Future<int> _run(
 
   final s = repo.settings;
   const d = HttpSettings();
+  if (!(r['insecure'] as bool) && s['verifyTls'] == false) {
+    err.writeln(
+      'Warning: this workspace turns off TLS certificate verification.',
+    );
+  }
   final defaults = HttpSettings(
     timeout: Duration(
       milliseconds: s['timeoutMs'] as int? ?? d.timeout.inMilliseconds,
