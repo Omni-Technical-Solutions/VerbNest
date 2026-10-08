@@ -142,4 +142,11 @@ void main() {
     jar.clear();
     expect(changes, 2, reason: 'nothing to clear');
   });
+
+  test('plain HTTP cannot overwrite a Secure cookie', () {
+    final jar = CookieJar();
+    jar.storeFromResponse(u('https://a.test/'), ['k=good; Secure'], now: now);
+    jar.storeFromResponse(u('http://a.test/'), ['k=evil'], now: now);
+    expect(jar.cookies.single.value, 'good');
+  });
 }

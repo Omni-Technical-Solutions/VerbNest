@@ -148,7 +148,7 @@ String _js(_Plan p) {
     for (final f in p.fields) {
       b.writeln(
         f.type == KeyValueType.file
-            ? 'form.append(${q(f.key)}, /* file input or Blob for ${q(f.value)} */ new Blob([]));'
+            ? 'form.append(${q(f.key)}, /* file input or Blob for ${q(f.value).replaceAll('*/', r'*\/')} */ new Blob([]));'
             : 'form.append(${q(f.key)}, ${q(f.value)});',
       );
     }

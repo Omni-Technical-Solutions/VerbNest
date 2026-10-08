@@ -41,7 +41,25 @@ Future<PreparedRequest> prepareRequest({
   SecretHosts? secretHosts,
 }) async {
   var auth = effectiveAuth(item.auth, repo.authChain(requestId));
-  if (auth is OAuth2Auth) auth = await oauthToken(auth);
+  if (auth is OAuth2Auth) {
+    if (secretHosts != null) {
+      // Token requests carry client secrets to a workspace-controlled URL.
+      final names = <String>{};
+      auth.mapText((t) {
+        names.addAll(resolver.resolve(t).secretNames);
+        return t;
+      });
+      final tokenUrl = resolver.resolve(auth.tokenUrl).value;
+      final tokenUri = Uri.tryParse(tokenUrl) ?? Uri();
+      final blocked = names.isEmpty
+          ? const <String>[]
+          : secretHosts.blocked(names, tokenUri);
+      if (blocked.isNotEmpty) {
+        throw SecretHostNotApproved(blocked, SecretHosts.hostOf(tokenUri));
+      }
+    }
+    auth = await oauthToken(auth);
+  }
   final prepared = await RequestBuilder(
     defaults: defaults,
     readFile: (ref) async => repo.attachmentBytes(attachmentIdOf(ref) ?? ref),

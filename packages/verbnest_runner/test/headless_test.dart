@@ -82,6 +82,35 @@ void main() {
     expect(report.entries.single.url, isNot(contains('S3CRET')));
   });
 
+  test('OAuth client secrets are not sent to unapproved token hosts', () async {
+    final a = add(
+      'oauth',
+      (i) => i.copyWith(
+        url: '{{base}}/echo',
+        auth: OAuth2Auth(
+          grant: OAuth2Grant.clientCredentials,
+          tokenUrl: '{{base}}/token',
+          clientId: 'id',
+          clientSecret: '{{token}}',
+        ),
+      ),
+    );
+    final secrets = LocalDbSecretStore(LocalStore.memory());
+    secrets.put(repo.workspaceId, 'collection', col, 'token', 'S3CRET');
+    final sender = HeadlessSender(
+      repo: repo,
+      engine: HttpEngine(),
+      secrets: secrets,
+    );
+    final report = await executeRun(
+      config: RunConfig(name: 'API', requestIds: [a]),
+      repo: repo,
+      step: sender.step,
+    );
+    expect(report.entries.single.error, isNotNull);
+    expect(server.requests, isEmpty);
+  });
+
   test(
     'a connection failure becomes an entry error, not an exception',
     () async {

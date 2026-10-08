@@ -380,6 +380,19 @@ void main() {
         generateCode(CodeLanguage.javascriptFetch, multi),
         contains('form.append("t", "x")'),
       );
+      final evil = item.copyWith(
+        body: const FormDataBody([
+          KeyValue(
+            key: 'f',
+            value: 'x */ alert(1); /*',
+            type: KeyValueType.file,
+          ),
+        ]),
+      );
+      expect(
+        generateCode(CodeLanguage.javascriptFetch, evil),
+        isNot(contains('*/ alert(1)')),
+      );
     });
 
     test('curl delegates to toCurl', () {

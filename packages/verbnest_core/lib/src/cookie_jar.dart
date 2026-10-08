@@ -135,6 +135,14 @@ class CookieJar {
         continue;
       }
       final old = _cookies[c.id];
+      // A plain-HTTP response must not overwrite a Secure cookie.
+      if (old != null &&
+          old.secure &&
+          !c.secure &&
+          url.scheme != 'https' &&
+          !_isLoopback(url.host)) {
+        continue;
+      }
       _cookies[c.id] = old == null
           ? c
           : StoredCookie(
