@@ -22,7 +22,7 @@ abstract interface class FolderPort {
 }
 
 /// Writes [files] under [dir]. Throws [ArgumentError] for a path that is
-/// absolute or contains `..`, so a crafted name can never escape the folder.
+/// absolute, contains `..` or enters a `.git` directory, so a crafted name can never escape the folder.
 void writeSnapshotFiles(String dir, Map<String, List<int>> files) {
   for (final e in files.entries) {
     final parts = e.key.split('/');
@@ -34,6 +34,7 @@ void writeSnapshotFiles(String dir, Map<String, List<int>> files) {
               s == '..' ||
               s == '.' ||
               s.isEmpty ||
+              s.toLowerCase() == '.git' ||
               RegExp(r'^[A-Za-z]:').hasMatch(s),
         )) {
       throw ArgumentError('Unsafe path in snapshot: ${e.key}');

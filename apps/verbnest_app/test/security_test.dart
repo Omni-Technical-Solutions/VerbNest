@@ -55,4 +55,13 @@ void main() {
     );
     expect(File('${outside.path}/x.yaml').existsSync(), isFalse);
   });
+
+  test('snapshot writes refuse .git directories', () {
+    final dir = Directory.systemTemp.createTempSync('vn_git');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    expect(
+      () => writeSnapshotFiles(dir.path, {'.git/hooks/pre-commit': [1]}),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
 }

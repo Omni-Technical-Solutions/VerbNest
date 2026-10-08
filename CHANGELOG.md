@@ -10,6 +10,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - Security: response bodies and decompressed bodies are capped at 512 MiB, YAML imports are limited in size and depth (alias bombs), and the mock server limits request bodies to 1 MiB and refuses non-loopback Host headers. The masker also hides percent-encoded and JSON-escaped secrets. Release signing can be made mandatory with `VERBNEST_REQUIRE_RELEASE_SIGNING=1`. CI actions are pinned by commit SHA.
 - Security: WebSocket messages and SSE lines are capped at 16 MiB, HTTP/2 bodies at 512 MiB. Cookies with control characters, over 4096 bytes, or for common public suffixes (such as `co.uk`) are refused, and Max-Age is capped at 400 days. Assertion and JSON Schema regular expressions that are invalid, over 500 characters or have nested quantifiers are refused instead of run. Dependabot now watches Actions and pub dependencies.
 - Security: the CLI no longer runs workspace scripts by default. Pass `--allow-scripts` to run them (only for workspaces you trust). `--no-scripts` is still accepted.
+- Security: exporting a snapshot refuses paths inside `.git` directories (no git hooks can be written).
 
 ## 0.44.0
 
