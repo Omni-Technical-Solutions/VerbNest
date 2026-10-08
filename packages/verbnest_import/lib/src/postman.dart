@@ -2,6 +2,10 @@ import 'dart:convert';
 
 import 'package:verbnest_core/verbnest_core.dart';
 
+import 'json_util.dart';
+
+export 'json_util.dart' show Json;
+
 /// A node of an imported or exported collection tree.
 sealed class ImportNode {
   const ImportNode(this.name);
@@ -65,31 +69,24 @@ class PostmanImport {
 const postmanSchema =
     'https://schema.getpostman.com/json/collection/v2.1.0/collection.json';
 
-typedef Json = Map<String, Object?>;
-
-Json _map(Object? v) =>
-    v is Map ? v.cast<String, Object?>() : <String, Object?>{};
-List<Object?> _list(Object? v) => v is List ? v : const [];
-String _str(Object? v) => v is String ? v : '';
-
 /// Whether [json] looks like a Postman collection (v2.0 or v2.1).
 bool looksLikePostmanCollection(Object? json) {
-  final info = _map(_map(json)['info']);
+  final info = asJsonMap(asJsonMap(json)['info']);
   return info.containsKey('schema') || info.containsKey('_postman_id');
 }
 
 /// Imports a Postman collection v2.0/v2.1 (FR-IO-002).
 PostmanImport importPostmanCollection(Object? json) {
-  final root = _map(json);
+  final root = asJsonMap(json);
   if (!looksLikePostmanCollection(root)) {
     throw const FormatException('Not a Postman collection');
   }
   final warnings = <String>[];
-  final info = _map(root['info']);
+  final info = asJsonMap(root['info']);
   final folder = _folder(
-    name: _str(info['name']).isEmpty
+    name: asJsonString(info['name']).isEmpty
         ? 'Imported collection'
-        : _str(info['name']),
+        : asJsonString(info['name']),
     description: _description(info['description']),
     node: root,
     warnings: warnings,
@@ -98,7 +95,8 @@ PostmanImport importPostmanCollection(Object? json) {
   return PostmanImport(folder, warnings);
 }
 
-String _description(Object? d) => d is String ? d : _str(_map(d)['content']);
+String _description(Object? d) =>
+    d is String ? d : asJsonString(asJsonMap(d)['content']);
 
 FolderNode _folder({
   required String name,
@@ -107,17 +105,17 @@ FolderNode _folder({
   required List<String> warnings,
   required String path,
 }) {
-  if (_list(node['event']).isNotEmpty) {
+  if (asJsonList(node['event']).isNotEmpty) {
     warnings.add(
       'Scripts on "$path$name" were not kept (scripts run per request only)',
     );
   }
   final children = <ImportNode>[];
-  for (final raw in _list(node['item'])) {
-    final item = _map(raw);
-    final itemName = _str(item['name']).isEmpty
+  for (final raw in asJsonList(node['item'])) {
+    final item = asJsonMap(raw);
+    final itemName = asJsonString(item['name']).isEmpty
         ? 'Untitled'
-        : _str(item['name']);
+        : asJsonString(item['name']);
     if (item.containsKey('item')) {
       children.add(
         _folder(
@@ -142,12 +140,12 @@ FolderNode _folder({
     description: description,
     auth: node.containsKey('auth') ? _auth(node['auth']) : const InheritAuth(),
     variables: [
-      for (final v in _list(node['variable']))
-        if (_str(_map(v)['key']).isNotEmpty)
+      for (final v in asJsonList(node['variable']))
+        if (asJsonString(asJsonMap(v)['key']).isNotEmpty)
           Variable(
-            key: _str(_map(v)['key']),
-            value: _stringify(_map(v)['value']),
-            enabled: _map(v)['disabled'] != true,
+            key: asJsonString(asJsonMap(v)['key']),
+            value: _stringify(asJsonMap(v)['value']),
+            enabled: asJsonMap(v)['disabled'] != true,
           ),
     ],
     children: children,
@@ -156,24 +154,29 @@ FolderNode _folder({
 
 List<ImportedExample> _examples(Json item) {
   return [
-    for (final raw in _list(item['response']))
+    for (final raw in asJsonList(item['response']))
       () {
-        final r = _map(raw);
-        final original = _map(r['originalRequest']);
+        final r = asJsonMap(raw);
+        final original = asJsonMap(r['originalRequest']);
         final status = r['code'] is int ? r['code'] as int : 200;
         final (url, _, _) = _url(original['url']);
         return ImportedExample(
-          name: _str(r['name']).isEmpty ? '$status' : _str(r['name']),
+          name: asJsonString(r['name']).isEmpty
+              ? '$status'
+              : asJsonString(r['name']),
           status: status,
-          reason: _str(r['status']),
+          reason: asJsonString(r['status']),
           headers: [
-            for (final h in _list(r['header']))
-              (_str(_map(h)['key']), _stringify(_map(h)['value'])),
+            for (final h in asJsonList(r['header']))
+              (
+                asJsonString(asJsonMap(h)['key']),
+                _stringify(asJsonMap(h)['value']),
+              ),
           ],
-          body: _str(r['body']),
-          method: _str(original['method']).isEmpty
+          body: asJsonString(r['body']),
+          method: asJsonString(original['method']).isEmpty
               ? 'GET'
-              : _str(original['method']),
+              : asJsonString(original['method']),
           url: url,
         );
       }(),
@@ -185,26 +188,28 @@ String _stringify(Object? v) => v == null ? '' : '$v';
 HttpRequestItem _request(String name, Json item, List<String> warnings) {
   final req = item['request'] is String
       ? <String, Object?>{'url': item['request']}
-      : _map(item['request']);
+      : asJsonMap(item['request']);
 
   final (url, disabledParams, pathVars) = _url(req['url']);
   final headers = [
-    for (final h in _list(req['header']))
+    for (final h in asJsonList(req['header']))
       KeyValue(
-        key: _str(_map(h)['key']),
-        value: _stringify(_map(h)['value']),
-        enabled: _map(h)['disabled'] != true,
-        description: _description(_map(h)['description']),
+        key: asJsonString(asJsonMap(h)['key']),
+        value: _stringify(asJsonMap(h)['value']),
+        enabled: asJsonMap(h)['disabled'] != true,
+        description: _description(asJsonMap(h)['description']),
       ),
   ];
 
   final extra = <String, Object?>{};
-  final body = _body(_map(req['body']), extra, name, warnings);
+  final body = _body(asJsonMap(req['body']), extra, name, warnings);
 
   var scripts = const Scripts();
-  for (final e in _list(item['event'])) {
-    final ev = _map(e);
-    final exec = _list(_map(ev['script'])['exec']).map(_str).join('\n');
+  for (final e in asJsonList(item['event'])) {
+    final ev = asJsonMap(e);
+    final exec = asJsonList(asJsonMap(ev['script'])['exec'])
+        .map(asJsonString)
+        .join('\n');
     scripts = switch (ev['listen']) {
       'prerequest' => Scripts(pre: exec, post: scripts.post),
       'test' => Scripts(pre: scripts.pre, post: exec),
@@ -215,7 +220,9 @@ HttpRequestItem _request(String name, Json item, List<String> warnings) {
   return HttpRequestItem(
     id: '',
     name: name,
-    method: _str(req['method']).isEmpty ? 'GET' : _str(req['method']),
+    method: asJsonString(req['method']).isEmpty
+        ? 'GET'
+        : asJsonString(req['method']),
     url: url,
     params: [...UrlText.params(url), ...disabledParams],
     pathVars: pathVars,
@@ -236,21 +243,21 @@ HttpRequestItem _request(String name, Json item, List<String> warnings) {
       [for (final n in UrlText.pathVariables(u)) KeyValue(key: n)],
     );
   }
-  final m = _map(u);
-  var raw = _str(m['raw']);
+  final m = asJsonMap(u);
+  var raw = asJsonString(m['raw']);
   if (raw.isEmpty && m.containsKey('host')) raw = _rebuildUrl(m);
   final disabled = [
-    for (final q in _list(m['query']))
-      if (_map(q)['disabled'] == true)
+    for (final q in asJsonList(m['query']))
+      if (asJsonMap(q)['disabled'] == true)
         KeyValue(
-          key: _str(_map(q)['key']),
-          value: _stringify(_map(q)['value']),
+          key: asJsonString(asJsonMap(q)['key']),
+          value: _stringify(asJsonMap(q)['value']),
           enabled: false,
         ),
   ];
   final values = {
-    for (final v in _list(m['variable']))
-      _str(_map(v)['key']): _stringify(_map(v)['value']),
+    for (final v in asJsonList(m['variable']))
+      asJsonString(asJsonMap(v)['key']): _stringify(asJsonMap(v)['value']),
   };
   return (
     raw,
@@ -264,14 +271,17 @@ HttpRequestItem _request(String name, Json item, List<String> warnings) {
 
 String _rebuildUrl(Json m) {
   String join(Object? v, String sep) =>
-      v is List ? v.map(_str).join(sep) : _str(v);
-  final proto = _str(m['protocol']);
-  final port = _str(m['port']);
+      v is List ? v.map(asJsonString).join(sep) : asJsonString(v);
+  final proto = asJsonString(m['protocol']);
+  final port = asJsonString(m['port']);
   final host = join(m['host'], '.') + (port.isEmpty ? '' : ':$port');
   final path = join(m['path'], '/');
-  final query = _list(m['query'])
-      .where((q) => _map(q)['disabled'] != true)
-      .map((q) => '${_str(_map(q)['key'])}=${_stringify(_map(q)['value'])}')
+  final query = asJsonList(m['query'])
+      .where((q) => asJsonMap(q)['disabled'] != true)
+      .map(
+        (q) =>
+            '${asJsonString(asJsonMap(q)['key'])}=${_stringify(asJsonMap(q)['value'])}',
+      )
       .join('&');
   return '${proto.isEmpty ? '' : '$proto://'}$host${path.isEmpty ? '' : '/$path'}'
       '${query.isEmpty ? '' : '?$query'}';
@@ -287,7 +297,9 @@ RequestBody _body(
     case null:
       return const NoBody();
     case 'raw':
-      final lang = _str(_map(_map(_map(b['options'])['raw']))['language']);
+      final lang = asJsonString(
+        asJsonMap(asJsonMap(asJsonMap(b['options'])['raw']))['language'],
+      );
       final language = switch (lang) {
         'json' => RawBodyLanguage.json,
         'xml' => RawBodyLanguage.xml,
@@ -295,16 +307,16 @@ RequestBody _body(
         'javascript' => RawBodyLanguage.javascript,
         _ => RawBodyLanguage.text,
       };
-      return RawBody(language, _str(b['raw']));
+      return RawBody(language, asJsonString(b['raw']));
     case 'graphql':
-      final g = _map(b['graphql']);
+      final g = asJsonMap(b['graphql']);
       final vars = g['variables'];
       return GraphqlBody(
-        query: _str(g['query']),
+        query: asJsonString(g['query']),
         variables: vars is String
             ? vars
             : (vars is Map && vars.isNotEmpty ? jsonEncode(vars) : ''),
-        operationName: _str(g['operationName']),
+        operationName: asJsonString(g['operationName']),
       );
     case 'urlencoded':
       return UrlEncodedBody(_fields(b['urlencoded']));
@@ -322,24 +334,28 @@ RequestBody _body(
 }
 
 List<KeyValue> _fields(Object? list) => [
-  for (final f in _list(list))
+  for (final f in asJsonList(list))
     KeyValue(
-      key: _str(_map(f)['key']),
-      value: _map(f)['type'] == 'file'
-          ? _stringify(_map(f)['src'])
-          : _stringify(_map(f)['value']),
-      enabled: _map(f)['disabled'] != true,
-      description: _description(_map(f)['description']),
-      type: _map(f)['type'] == 'file' ? KeyValueType.file : KeyValueType.text,
+      key: asJsonString(asJsonMap(f)['key']),
+      value: asJsonMap(f)['type'] == 'file'
+          ? _stringify(asJsonMap(f)['src'])
+          : _stringify(asJsonMap(f)['value']),
+      enabled: asJsonMap(f)['disabled'] != true,
+      description: _description(asJsonMap(f)['description']),
+      type: asJsonMap(f)['type'] == 'file'
+          ? KeyValueType.file
+          : KeyValueType.text,
     ),
 ];
 
 Auth _auth(Object? a) {
-  final m = _map(a);
-  final type = _str(m['type']);
+  final m = asJsonMap(a);
+  final type = asJsonString(m['type']);
   String get(String key) {
-    for (final e in _list(m[type])) {
-      if (_str(_map(e)['key']) == key) return _stringify(_map(e)['value']);
+    for (final e in asJsonList(m[type])) {
+      if (asJsonString(asJsonMap(e)['key']) == key) {
+        return _stringify(asJsonMap(e)['value']);
+      }
     }
     return '';
   }
@@ -622,7 +638,7 @@ Json _exportAuth(Auth a) {
 
 /// Whether [json] is a Postman environment or globals export.
 bool looksLikePostmanEnvironment(Object? json) {
-  final m = _map(json);
+  final m = asJsonMap(json);
   return m['values'] is List && !m.containsKey('info');
 }
 
@@ -631,20 +647,22 @@ bool looksLikePostmanEnvironment(Object? json) {
 ({String name, List<Variable> variables}) importPostmanEnvironment(
   Object? json,
 ) {
-  final m = _map(json);
+  final m = asJsonMap(json);
   if (!looksLikePostmanEnvironment(m)) {
     throw const FormatException('Not a Postman environment');
   }
   return (
-    name: _str(m['name']).isEmpty ? 'Imported environment' : _str(m['name']),
+    name: asJsonString(m['name']).isEmpty
+        ? 'Imported environment'
+        : asJsonString(m['name']),
     variables: [
-      for (final v in _list(m['values']))
-        if (_str(_map(v)['key']).isNotEmpty)
+      for (final v in asJsonList(m['values']))
+        if (asJsonString(asJsonMap(v)['key']).isNotEmpty)
           Variable(
-            key: _str(_map(v)['key']),
-            value: _stringify(_map(v)['value']),
-            secret: _map(v)['type'] == 'secret',
-            enabled: _map(v)['enabled'] != false,
+            key: asJsonString(asJsonMap(v)['key']),
+            value: _stringify(asJsonMap(v)['value']),
+            secret: asJsonMap(v)['type'] == 'secret',
+            enabled: asJsonMap(v)['enabled'] != false,
           ),
     ],
   );

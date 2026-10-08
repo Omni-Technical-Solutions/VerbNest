@@ -4,6 +4,7 @@ import 'package:verbnest_core/verbnest_core.dart';
 import 'package:yaml/yaml.dart';
 
 import 'postman.dart';
+import 'json_util.dart';
 
 /// Decodes JSON or YAML text into plain maps and lists, or null when it is
 /// neither.
@@ -54,36 +55,36 @@ PostmanImport importOpenApi(Object? json) {
   if (!looksLikeOpenApi(json)) {
     throw const FormatException('Not an OpenAPI or Swagger document');
   }
-  final doc = _asMap(json);
+  final doc = asJsonMap(json);
   final warnings = <String>[];
   final swagger2 = doc['swagger'] != null;
-  final info = _asMap(doc['info']);
+  final info = asJsonMap(doc['info']);
   final name = _s(info['title']).isEmpty ? 'API' : _s(info['title']);
   final resolver = _Refs(doc, warnings);
 
   final base = _baseUrl(doc, swagger2);
   final securitySchemes = swagger2
-      ? _asMap(doc['securityDefinitions'])
-      : _asMap(_asMap(doc['components'])['securitySchemes']);
+      ? asJsonMap(doc['securityDefinitions'])
+      : asJsonMap(asJsonMap(doc['components'])['securitySchemes']);
   final auth = _collectionAuth(doc, securitySchemes, resolver, warnings);
 
   final byTag = <String, List<ImportNode>>{};
   final loose = <ImportNode>[];
   final tagDescriptions = {
-    for (final t in _asList(doc['tags']))
-      _s(_asMap(t)['name']): _s(_asMap(t)['description']),
+    for (final t in asJsonList(doc['tags']))
+      _s(asJsonMap(t)['name']): _s(asJsonMap(t)['description']),
   };
 
-  final paths = _asMap(doc['paths']);
+  final paths = asJsonMap(doc['paths']);
   for (final entry in paths.entries) {
     final path = entry.key;
     if (!path.startsWith('/')) continue;
-    final item = _asMap(resolver.deref(entry.value));
-    final shared = _asList(item['parameters']);
+    final item = asJsonMap(resolver.deref(entry.value));
+    final shared = asJsonList(item['parameters']);
     for (final m in _methods) {
       final opRaw = item[m];
       if (opRaw == null) continue;
-      final op = _asMap(resolver.deref(opRaw));
+      final op = asJsonMap(resolver.deref(opRaw));
       final request = _request(
         method: m.toUpperCase(),
         path: path,
@@ -94,7 +95,7 @@ PostmanImport importOpenApi(Object? json) {
         refs: resolver,
         warnings: warnings,
       );
-      final tags = _asList(op['tags']);
+      final tags = asJsonList(op['tags']);
       if (tags.isEmpty) {
         loose.add(RequestNode(request));
       } else {
@@ -125,19 +126,19 @@ String _baseUrl(Map<String, Object?> doc, bool swagger2) {
   if (swagger2) {
     final host = _s(doc['host']);
     final basePath = _s(doc['basePath']);
-    final schemes = _asList(doc['schemes']).map(_s).toList();
+    final schemes = asJsonList(doc['schemes']).map(_s).toList();
     if (host.isEmpty) return basePath.replaceAll(RegExp(r'/+$'), '');
     final scheme = schemes.contains('https')
         ? 'https'
         : (schemes.isEmpty ? 'https' : schemes.first);
     return '$scheme://$host${basePath.replaceAll(RegExp(r'/+$'), '')}';
   }
-  final servers = _asList(doc['servers']);
+  final servers = asJsonList(doc['servers']);
   if (servers.isEmpty) return '';
-  final s = _asMap(servers.first);
+  final s = asJsonMap(servers.first);
   var url = _s(s['url']);
-  _asMap(s['variables']).forEach((k, v) {
-    url = url.replaceAll('{$k}', _s(_asMap(v)['default']));
+  asJsonMap(s['variables']).forEach((k, v) {
+    url = url.replaceAll('{$k}', _s(asJsonMap(v)['default']));
   });
   return url.replaceAll(RegExp(r'/+$'), '');
 }
@@ -148,11 +149,11 @@ Auth _collectionAuth(
   _Refs refs,
   List<String> warnings,
 ) {
-  final security = _asList(doc['security']);
+  final security = asJsonList(doc['security']);
   if (security.isEmpty) return const InheritAuth();
-  final first = _asMap(security.first);
+  final first = asJsonMap(security.first);
   if (first.isEmpty) return const InheritAuth();
-  final scheme = _asMap(refs.deref(schemes[first.keys.first]));
+  final scheme = asJsonMap(refs.deref(schemes[first.keys.first]));
   final type = _s(scheme['type']);
   switch (type) {
     case 'http':
@@ -205,8 +206,8 @@ HttpRequestItem _request({
 
   // Operation parameters override path-level ones with the same name and place.
   final merged = <String, Map<String, Object?>>{};
-  for (final raw in [...shared, ..._asList(op['parameters'])]) {
-    final p = _asMap(refs.deref(raw));
+  for (final raw in [...shared, ...asJsonList(op['parameters'])]) {
+    final p = asJsonMap(refs.deref(raw));
     merged['${p['in']}:${p['name']}'] = p;
   }
 
@@ -219,7 +220,7 @@ HttpRequestItem _request({
     final where = _s(p['in']);
     final key = _s(p['name']);
     final required = p['required'] == true;
-    final schema = swagger2 ? p : _asMap(refs.deref(p['schema']));
+    final schema = swagger2 ? p : asJsonMap(refs.deref(p['schema']));
     final value = _exampleText(p, schema, refs);
     switch (where) {
       case 'query':
@@ -267,14 +268,14 @@ HttpRequestItem _request({
   String? contentType;
   if (swagger2) {
     final consumes = [
-      ..._asList(op['consumes']),
-      ..._asList(doc['consumes']),
+      ...asJsonList(op['consumes']),
+      ...asJsonList(doc['consumes']),
     ].map(_s).toList();
     if (bodyParam != null) {
       contentType = consumes.isNotEmpty ? consumes.first : 'application/json';
       body = _rawBody(
         contentType,
-        _schemaExampleText(_asMap(bodyParam['schema']), refs),
+        _schemaExampleText(asJsonMap(bodyParam['schema']), refs),
       );
     } else if (formParams.isNotEmpty) {
       final multipart =
@@ -293,14 +294,14 @@ HttpRequestItem _request({
       body = multipart ? FormDataBody(fields) : UrlEncodedBody(fields);
     }
   } else {
-    final rb = _asMap(refs.deref(op['requestBody']));
-    final content = _asMap(rb['content']);
+    final rb = asJsonMap(refs.deref(op['requestBody']));
+    final content = asJsonMap(rb['content']);
     if (content.isNotEmpty) {
       contentType = content.keys.firstWhere(
         (k) => k.contains('json'),
         orElse: () => content.keys.first,
       );
-      final media = _asMap(content[contentType]);
+      final media = asJsonMap(content[contentType]);
       body = _bodyFromMedia(contentType, media, refs);
     }
   }
@@ -346,26 +347,28 @@ RequestBody _bodyFromMedia(
   Map<String, Object?> media,
   _Refs refs,
 ) {
-  final schema = _asMap(refs.deref(media['schema']));
+  final schema = asJsonMap(refs.deref(media['schema']));
   Object? example;
   if (media.containsKey('example')) {
     example = media['example'];
   } else if (media['examples'] is Map &&
       (media['examples'] as Map).isNotEmpty) {
-    final first = _asMap(refs.deref((media['examples'] as Map).values.first));
+    final first = asJsonMap(
+      refs.deref((media['examples'] as Map).values.first),
+    );
     example = first['value'];
   }
   if (contentType.contains('x-www-form-urlencoded') ||
       contentType.contains('multipart/form-data')) {
-    final props = _asMap(_resolveSchema(schema, refs)['properties']);
+    final props = asJsonMap(_resolveSchema(schema, refs)['properties']);
     final fields = [
       for (final e in props.entries)
         KeyValue(
           key: e.key,
-          value: _s(_asMap(refs.deref(e.value))['format']) == 'binary'
+          value: _s(asJsonMap(refs.deref(e.value))['format']) == 'binary'
               ? ''
-              : _scalar(_example(_asMap(refs.deref(e.value)), refs, 0)),
-          type: _s(_asMap(refs.deref(e.value))['format']) == 'binary'
+              : _scalar(_example(asJsonMap(refs.deref(e.value)), refs, 0)),
+          type: _s(asJsonMap(refs.deref(e.value))['format']) == 'binary'
               ? KeyValueType.file
               : KeyValueType.text,
         ),
@@ -418,14 +421,14 @@ String _scalar(Object? v) =>
     v == null ? '' : (v is Map || v is List ? jsonEncode(v) : '$v');
 
 Map<String, Object?> _resolveSchema(Map<String, Object?> schema, _Refs refs) {
-  final s = _asMap(refs.deref(schema));
-  final all = _asList(s['allOf']);
+  final s = asJsonMap(refs.deref(schema));
+  final all = asJsonList(s['allOf']);
   if (all.isEmpty) return s;
   final merged = <String, Object?>{...s}..remove('allOf');
-  final props = <String, Object?>{..._asMap(s['properties'])};
+  final props = <String, Object?>{...asJsonMap(s['properties'])};
   for (final part in all) {
-    final p = _resolveSchema(_asMap(part), refs);
-    props.addAll(_asMap(p['properties']));
+    final p = _resolveSchema(asJsonMap(part), refs);
+    props.addAll(asJsonMap(p['properties']));
     p.forEach((k, v) => merged.putIfAbsent(k, () => v));
   }
   merged['properties'] = props;
@@ -440,12 +443,12 @@ Object? _example(Map<String, Object?> raw, _Refs refs, int depth) {
   final schema = _resolveSchema(raw, refs);
   if (schema.containsKey('example')) return schema['example'];
   if (schema.containsKey('default')) return schema['default'];
-  final en = _asList(schema['enum']);
+  final en = asJsonList(schema['enum']);
   if (en.isNotEmpty) return en.first;
   for (final key in ['oneOf', 'anyOf']) {
-    final options = _asList(schema[key]);
+    final options = asJsonList(schema[key]);
     if (options.isNotEmpty) {
-      return _example(_asMap(options.first), refs, depth + 1);
+      return _example(asJsonMap(options.first), refs, depth + 1);
     }
   }
   var type = schema['type'];
@@ -456,11 +459,11 @@ Object? _example(Map<String, Object?> raw, _Refs refs, int depth) {
   switch (type) {
     case 'object':
       return {
-        for (final e in _asMap(schema['properties']).entries)
-          e.key: _example(_asMap(e.value), refs, depth + 1),
+        for (final e in asJsonMap(schema['properties']).entries)
+          e.key: _example(asJsonMap(e.value), refs, depth + 1),
       };
     case 'array':
-      final items = _asMap(schema['items']);
+      final items = asJsonMap(schema['items']);
       return items.isEmpty ? [] : [_example(items, refs, depth + 1)];
     case 'integer':
       return 0;
@@ -508,7 +511,4 @@ class _Refs {
   }
 }
 
-Map<String, Object?> _asMap(Object? v) =>
-    v is Map ? v.cast<String, Object?>() : <String, Object?>{};
-List<Object?> _asList(Object? v) => v is List ? v : const [];
 String _s(Object? v) => v == null ? '' : '$v';
