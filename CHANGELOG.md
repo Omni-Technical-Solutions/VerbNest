@@ -13,6 +13,8 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - Security: exporting a snapshot refuses paths inside `.git` directories (no git hooks can be written).
 - Security: secret variables are only sent to hosts you approved for them. The first send of a secret to a new host stops with a banner ("Always allow and send" or Cancel); approvals are kept in the secret store, not in the workspace file, so a tampered copy of a workspace cannot send your secrets elsewhere. The CLI with `--vault` refuses unapproved hosts; approve them in the app or pass `--allow-secret-host NAME=HOST` (`*` works for either side).
 
+- Security: on a cross-origin redirect the Authorization, Proxy-Authorization and Cookie headers are now always dropped, even for requests that turned off auth stripping. Run reports (CLI stdout, JSON, JUnit, HTML) mask secrets that ended up in the resolved URL. Snapshot exports blank literal credentials in auth fields (variable references are kept), and snapshot imports ignore `verifyTls` and proxy settings from the file.
+
 ## 0.44.0
 
 - All dropdowns converted from `DropdownButton` to `DropdownMenu` (Material 3). The old `DropdownButton` had a hardcoded 300ms menu overlay animation that caused a visible fade when selecting an item. `DropdownMenu` uses `MenuAnchor` with `animated: false` by default, so menus open and close instantly. Affected: auth type, JWT algorithm, OAuth2 grant, HTTP method, body mode, HTTP version, language, GraphQL operation, code language, environment, assertion target, assertion operator.

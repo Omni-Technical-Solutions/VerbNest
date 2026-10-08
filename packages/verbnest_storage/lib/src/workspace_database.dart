@@ -154,8 +154,10 @@ class WorkspaceDatabase {
 
   int _depth = 0;
 
-  /// Writes a consistent copy with no history or secrets (FR-WS-007). The
-  /// workspace database holds neither, so a plain `VACUUM INTO` suffices.
+  /// Writes a consistent copy with no history or secret variables
+  /// (FR-WS-007): history lives in the local store and secret variables in
+  /// the secret store. Literal credentials typed into auth fields are part
+  /// of the workspace and are copied; share the file accordingly.
   void exportCopy(String destination) {
     if (File(destination).existsSync()) {
       throw InvalidOperationError('$destination already exists');

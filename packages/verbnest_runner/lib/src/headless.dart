@@ -148,7 +148,10 @@ class HeadlessSender {
       requestId: id,
       name: name,
       method: item.method,
-      url: response?.sent.url.toString() ?? item.url,
+      url: response == null
+          ? item.url
+          : sentPrepared?.masker.maskText(response.sent.url.toString()) ??
+                response.sent.url.toString(),
       status: response?.status,
       reason: response?.reason ?? '',
       timeMs: response?.timings.total.inMilliseconds ?? 0,

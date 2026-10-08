@@ -175,6 +175,32 @@ void main() {
       },
     );
 
+    test('authorization and cookie never cross origins, even when a request '
+        'opts out of stripping', () async {
+      final other = await TestServer.start();
+      addTearDown(other.close);
+      final to = Uri.encodeQueryComponent('${other.baseUrl}/echo');
+      final r = await engine.send(
+        req(
+          '/redirect-to?u=$to',
+          headers: [
+            ('Authorization', 'Bearer s'),
+            ('Cookie', 'a=b'),
+            ('X-Api-Key', 'k'),
+          ],
+          settings: const HttpSettings(stripAuthCrossOrigin: false),
+        ),
+      );
+      final names = [
+        for (final h in echoed(r)['headers'] as List)
+          (h as List)[0].toString().toLowerCase(),
+      ];
+      expect(names, isNot(contains('authorization')));
+      expect(names, isNot(contains('cookie')));
+      // Opting out still keeps other credential-like headers.
+      expect(names, contains('x-api-key'));
+    });
+
     test('a header with a line break is refused', () async {
       await expectLater(
         engine.send(req('/echo', headers: [('X-A', 'b\r\nX-Evil: 1')])),

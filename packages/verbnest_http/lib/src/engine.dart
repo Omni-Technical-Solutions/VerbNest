@@ -151,17 +151,29 @@ class HttpEngine {
       url: target,
       headers: [
         for (final h in spec.headers)
-          if (!_dropOnRedirect(h.$1, switchToGet, stripped)) h,
+          if (!_dropOnRedirect(h.$1, switchToGet, crossOrigin, stripped)) h,
       ],
       body: switchToGet ? null : spec.body,
       settings: s,
     );
   }
 
-  bool _dropOnRedirect(String name, bool switchToGet, bool stripAuth) {
+  bool _dropOnRedirect(
+    String name,
+    bool switchToGet,
+    bool crossOrigin,
+    bool stripAuth,
+  ) {
     final n = name.toLowerCase();
     if (n == 'host') return true;
     if (switchToGet && (n == 'content-length' || n == 'content-type')) {
+      return true;
+    }
+    // Even when a request opts out of stripping (stripAuthCrossOrigin: false),
+    // the common credential carriers never cross origins: imported requests
+    // could otherwise flip the flag and arrange a credential leak.
+    if (crossOrigin &&
+        (n == 'authorization' || n == 'proxy-authorization' || n == 'cookie')) {
       return true;
     }
     return stripAuth && _looksLikeCredential(n);

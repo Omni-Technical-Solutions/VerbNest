@@ -60,6 +60,28 @@ void main() {
     expect(server.requests.first.target, contains('t=abc'));
   });
 
+  test('report entries mask secrets in resolved URLs', () async {
+    final a = add('ok', (i) => i.copyWith(url: '{{base}}/echo?t={{token}}'));
+    final secrets = LocalDbSecretStore(LocalStore.memory());
+    secrets.put(repo.workspaceId, 'collection', col, 'token', 'S3CRET');
+    final sender = HeadlessSender(
+      repo: repo,
+      engine: HttpEngine(),
+      secrets: secrets,
+      secretHostFlags: const {
+        '*': {'*'},
+      },
+    );
+    final report = await executeRun(
+      config: RunConfig(name: 'API', requestIds: [a]),
+      repo: repo,
+      step: sender.step,
+    );
+    expect(report.entries.single.status, 200);
+    expect(server.requests.single.target, contains('t=S3CRET'));
+    expect(report.entries.single.url, isNot(contains('S3CRET')));
+  });
+
   test(
     'a connection failure becomes an entry error, not an exception',
     () async {

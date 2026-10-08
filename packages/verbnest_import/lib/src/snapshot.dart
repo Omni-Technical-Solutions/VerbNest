@@ -32,6 +32,39 @@ String _unique(String name, String id, Set<String> taken) {
   return stem;
 }
 
+/// Workspace settings an imported snapshot may not set: they decide whether
+/// TLS is verified and where traffic goes.
+const _sensitiveSettings = {
+  'verifyTls',
+  'useSystemProxy',
+  'proxyHost',
+  'proxyPort',
+  'proxyUsername',
+  'proxyPassword',
+};
+
+/// [auth] as stored on a node, with literal credential fields blanked.
+/// Snapshots are meant for version control, so only `{{variable}}`
+/// references survive (the values stay in the secret store).
+Object? redactAuth(Object? auth) {
+  if (auth is! Map) return auth;
+  const secretKeys = {
+    'value', // API key
+    'token', // bearer
+    'password', // basic, digest, OAuth2 password grant
+    'clientSecret',
+    'secret', // JWT
+    'secretKey', // AWS
+    'sessionToken',
+  };
+  final out = auth.cast<String, Object?>();
+  for (final k in secretKeys) {
+    final v = out[k];
+    if (v is String && v.isNotEmpty && !v.contains('{{')) out[k] = '';
+  }
+  return out;
+}
+
 List<Map<String, Object?>> _vars(List<Variable> vars) => [
   for (final v in vars)
     {
@@ -124,7 +157,7 @@ void _exportContainer(
       'id': node.id,
       'name': node.name,
       'description': raw['description'],
-      'auth': raw['auth'],
+      'auth': redactAuth(raw['auth']),
       'scripts': raw['scripts'],
       'extra': raw['extra'],
       'variables': _vars(repo.variables(owner)),
@@ -144,7 +177,7 @@ void _exportContainer(
       'name': k.name,
       'type': r['type'],
       'description': r['description'],
-      'auth': r['auth'],
+      'auth': redactAuth(r['auth']),
       'scripts': r['scripts'],
       'data': r['data'],
       'extra': r['extra'],
@@ -286,7 +319,12 @@ class _SnapshotImporter {
     }
     repo.name = '${manifest['name'] ?? repo.name}';
     if (manifest['settings'] is Map) {
-      repo.settings = (manifest['settings'] as Map).cast<String, Object?>();
+      final imported = (manifest['settings'] as Map).cast<String, Object?>();
+      // Security-sensitive settings never come from a shared snapshot: a
+      // crafted file must not turn off TLS verification or reroute traffic
+      // through an attacker's proxy.
+      imported.removeWhere((k, _) => _sensitiveSettings.contains(k));
+      repo.settings = imported;
     }
   }
 
