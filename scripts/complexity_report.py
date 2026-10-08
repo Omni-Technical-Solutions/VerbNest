@@ -1,9 +1,13 @@
 """Heuristic complexity report: longest, branchiest and deepest Dart functions.
 
 Run from the repo root: python3 scripts/complexity_report.py
+With --check the exit code is 1 when a function is longer than MAX_LINES or has
+more than MAX_BRANCHES branches (a ratchet: lower the limits as code improves).
 Branches are a rough count of if/for/while/case/catch/&&/||/?: tokens.
 """
 import re,sys,glob,os
+MAX_LINES=260
+MAX_BRANCHES=90
 files=[f for f in glob.glob('**/lib/**/*.dart',recursive=True) if not f.startswith('build') and 'l10n' not in f and '.dart_tool' not in f]
 sig=re.compile(r'^(\s*)(?:static\s+|Future<[^>]*>\s+|Future\s+|[\w<>?,\[\] ]+\s+)?(?:get\s+)?(\w+)\s*\([^;{]*\)\s*(?:async\*?\s*)?\{\s*$')
 res=[];
@@ -25,3 +29,8 @@ for f in files:
 print("LONGEST"); [print(r) for r in sorted(res,reverse=True)[:25]]
 print("BRANCHIEST"); [print(r) for r in sorted(res,key=lambda r:-r[1])[:20]]
 print("DEEPEST"); [print(r) for r in sorted(res,key=lambda r:-r[2])[:12]]
+
+if '--check' in sys.argv:
+    bad=[r for r in res if r[0]>MAX_LINES or r[1]>MAX_BRANCHES]
+    for r in bad: print('TOO COMPLEX',r)
+    sys.exit(1 if bad else 0)

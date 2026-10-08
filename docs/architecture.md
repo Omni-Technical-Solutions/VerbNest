@@ -38,3 +38,6 @@ Add new send paths on top of these; do not re-implement them.
 Run `python3 scripts/complexity_report.py` for the longest, branchiest and
 deepest functions. Prefer splitting a long `build` into small widgets or
 methods per section, and keep new functions under about 60 lines.
+
+## Not done (refactor leftovers)
+JS prelude asset (the CLI is pure Dart with no asset bundle), branch-heavy parser splits, typed storage mappers and mock_server_dialog.build remain. A CI function-size gate (scripts/complexity_report.py --check, limits 260 lines / 90 branches) now stops regressions.

@@ -17,7 +17,8 @@ class SecretHostNotApproved extends RequestBuildError {
   SecretHostNotApproved(this.names, this.host)
     : super(
         'Secret ${names.join(', ')} has not been approved for host $host. '
-        'Approve the host to send it there.',
+        'Send the request in the app to approve the host, or pass '
+        '--allow-secret-host in the CLI.',
       );
 
   final List<String> names;
