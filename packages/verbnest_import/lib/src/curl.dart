@@ -338,7 +338,7 @@ String toCurl(
   if (method == 'HEAD') {
     parts.add('-I');
   } else if (method != 'GET' && !(method == 'POST' && hasBody)) {
-    parts.addAll(['-X', method]);
+    parts.addAll(['-X', _q(method)]);
   } else if (method == 'POST' && hasBody) {
     parts.addAll(['-X', 'POST']);
   }
@@ -385,8 +385,13 @@ String toCurl(
       ]);
     case FormDataBody(:final fields):
       for (final f in fields.where((f) => f.enabled)) {
-        final v = f.type == KeyValueType.file ? '@${r(f.value)}' : r(f.value);
-        parts.addAll(['-F', _q('${r(f.key)}=$v')]);
+        if (f.type == KeyValueType.file) {
+          parts.addAll(['-F', _q('${r(f.key)}=@${r(f.value)}')]);
+        } else {
+          // --form-string keeps a value starting with @ or < from being
+          // read as a file.
+          parts.addAll(['--form-string', _q('${r(f.key)}=${r(f.value)}')]);
+        }
       }
     case BinaryBody() || NoBody():
   }

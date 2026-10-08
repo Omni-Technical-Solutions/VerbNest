@@ -27,11 +27,25 @@ void writeSnapshotFiles(String dir, Map<String, List<int>> files) {
   for (final e in files.entries) {
     final parts = e.key.split('/');
     if (e.key.startsWith('/') ||
-        parts.any((s) => s == '..' || s == '.' || s.isEmpty)) {
+        e.key.contains(r'\') ||
+        e.key.contains('\x00') ||
+        parts.any(
+          (s) =>
+              s == '..' ||
+              s == '.' ||
+              s.isEmpty ||
+              RegExp(r'^[A-Za-z]:').hasMatch(s),
+        )) {
       throw ArgumentError('Unsafe path in snapshot: ${e.key}');
     }
     final f = File(p.joinAll([dir, ...parts]));
+    final root = Directory(dir).resolveSymbolicLinksSync();
     f.parent.createSync(recursive: true);
+    // Symlinks already in the folder must not carry the write outside it.
+    if (!p.isWithin(root, f.parent.resolveSymbolicLinksSync()) ||
+        FileSystemEntity.isLinkSync(f.path)) {
+      throw ArgumentError('Unsafe path in snapshot: ${e.key}');
+    }
     f.writeAsBytesSync(e.value);
   }
 }

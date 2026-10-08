@@ -74,6 +74,20 @@ curl -X POST 'https://api.test/users/:id?a=1&b=2' \\
     expect(looksLikeCurl('curling'), isFalse);
   });
 
+  test('toCurl quotes the method and form text values', () {
+    final item = HttpRequestItem(
+      id: '',
+      name: 'n',
+      method: r'GET; id',
+      url: 'https://x.test/',
+      body: const FormDataBody([KeyValue(key: 'a', value: '@/etc/passwd')]),
+    );
+    final cmd = toCurl(item);
+    expect(cmd, contains("-X 'GET; ID'"));
+    expect(cmd, contains("--form-string 'a=@/etc/passwd'"));
+    expect(cmd, isNot(contains("-F 'a=@")));
+  });
+
   test('toCurl round trips through parseCurl', () {
     final item = HttpRequestItem(
       id: '',
