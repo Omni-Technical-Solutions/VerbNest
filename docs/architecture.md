@@ -40,4 +40,4 @@ deepest functions. Prefer splitting a long `build` into small widgets or
 methods per section, and keep new functions under about 60 lines.
 
 ## Not done (refactor leftovers)
-JS prelude asset (the CLI is pure Dart with no asset bundle), branch-heavy parser splits, typed storage mappers and mock_server_dialog.build remain. A CI function-size gate (scripts/complexity_report.py --check, limits 260 lines / 90 branches) now stops regressions.
+The JS prelude asset (the CLI is pure Dart with no asset bundle), the GraphQL lexer and completion splits and typed storage mappers remain. `mock_server_dialog.build`, `json_schema._check` and the cookie domain check are split. A CI function-size gate (scripts/complexity_report.py --check, limits 260 lines / 90 branches) now stops regressions.

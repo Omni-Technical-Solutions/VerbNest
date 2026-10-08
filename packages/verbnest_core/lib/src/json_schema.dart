@@ -59,63 +59,10 @@ void _check(Object? v, Object? schema, String at, List<String> errors) {
   if (schema.containsKey('const') && !_equal(schema['const'], v)) {
     errors.add('$at: expected ${jsonEncode(schema['const'])}');
   }
-  if (v is num) {
-    final min = schema['minimum'], max = schema['maximum'];
-    if (min is num && v < min) errors.add('$at: $v is below minimum $min');
-    if (max is num && v > max) errors.add('$at: $v is above maximum $max');
-  }
-  if (v is String) {
-    final min = schema['minLength'], max = schema['maxLength'];
-    if (min is int && v.length < min) {
-      errors.add('$at: shorter than $min characters');
-    }
-    if (max is int && v.length > max) {
-      errors.add('$at: longer than $max characters');
-    }
-    final pattern = schema['pattern'];
-    if (pattern is String) {
-      final hit = safeRegexMatch(pattern, v);
-      if (hit == null) {
-        errors.add('$at: pattern $pattern is invalid or unsafe');
-      } else if (!hit) {
-        errors.add('$at: does not match $pattern');
-      }
-    }
-  }
-  if (v is List) {
-    final min = schema['minItems'], max = schema['maxItems'];
-    if (min is int && v.length < min) {
-      errors.add('$at: fewer than $min items');
-    }
-    if (max is int && v.length > max) errors.add('$at: more than $max items');
-    final items = schema['items'];
-    if (items != null) {
-      for (var i = 0; i < v.length; i++) {
-        _check(v[i], items, '$at[$i]', errors);
-      }
-    }
-  }
-  if (v is Map) {
-    final required = schema['required'];
-    if (required is List) {
-      for (final r in required) {
-        if (!v.containsKey(r)) errors.add('$at: missing required "$r"');
-      }
-    }
-    final props = schema['properties'];
-    if (props is Map) {
-      for (final e in props.entries) {
-        if (v.containsKey(e.key)) {
-          _check(v[e.key], e.value, '$at.${e.key}', errors);
-        }
-      }
-      if (schema['additionalProperties'] == false) {
-        for (final k in v.keys) {
-          if (!props.containsKey(k)) errors.add('$at: unexpected "$k"');
-        }
-      }
-    }
-  }
+  if (v is num) _checkNumber(v, schema, at, errors);
+  if (v is String) _checkString(v, schema, at, errors);
+  if (v is List) _checkList(v, schema, at, errors);
+  if (v is Map) _checkMap(v, schema, at, errors);
   final allOf = schema['allOf'];
   if (allOf is List) {
     for (final s in allOf) {
@@ -130,5 +77,66 @@ void _check(Object? v, Object? schema, String at, List<String> errors) {
   if (oneOf is List) {
     final n = oneOf.where((s) => validateJsonSchema(v, s).isEmpty).length;
     if (n != 1) errors.add('$at: matches $n of the oneOf schemas, expected 1');
+  }
+}
+
+void _checkNumber(num v, Map schema, String at, List<String> errors) {
+  final min = schema['minimum'], max = schema['maximum'];
+  if (min is num && v < min) errors.add('$at: $v is below minimum $min');
+  if (max is num && v > max) errors.add('$at: $v is above maximum $max');
+}
+
+void _checkString(String v, Map schema, String at, List<String> errors) {
+  final min = schema['minLength'], max = schema['maxLength'];
+  if (min is int && v.length < min) {
+    errors.add('$at: shorter than $min characters');
+  }
+  if (max is int && v.length > max) {
+    errors.add('$at: longer than $max characters');
+  }
+  final pattern = schema['pattern'];
+  if (pattern is String) {
+    final hit = safeRegexMatch(pattern, v);
+    if (hit == null) {
+      errors.add('$at: pattern $pattern is invalid or unsafe');
+    } else if (!hit) {
+      errors.add('$at: does not match $pattern');
+    }
+  }
+}
+
+void _checkList(List v, Map schema, String at, List<String> errors) {
+  final min = schema['minItems'], max = schema['maxItems'];
+  if (min is int && v.length < min) {
+    errors.add('$at: fewer than $min items');
+  }
+  if (max is int && v.length > max) errors.add('$at: more than $max items');
+  final items = schema['items'];
+  if (items != null) {
+    for (var i = 0; i < v.length; i++) {
+      _check(v[i], items, '$at[$i]', errors);
+    }
+  }
+}
+
+void _checkMap(Map v, Map schema, String at, List<String> errors) {
+  final required = schema['required'];
+  if (required is List) {
+    for (final r in required) {
+      if (!v.containsKey(r)) errors.add('$at: missing required "$r"');
+    }
+  }
+  final props = schema['properties'];
+  if (props is Map) {
+    for (final e in props.entries) {
+      if (v.containsKey(e.key)) {
+        _check(v[e.key], e.value, '$at.${e.key}', errors);
+      }
+    }
+    if (schema['additionalProperties'] == false) {
+      for (final k in v.keys) {
+        if (!props.containsKey(k)) errors.add('$at: unexpected "$k"');
+      }
+    }
   }
 }

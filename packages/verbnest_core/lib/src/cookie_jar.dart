@@ -245,22 +245,9 @@ class CookieJar {
     if (host.isEmpty) return null;
     if (secure && url.scheme != 'https' && !_isLoopback(host)) return null;
 
-    String domain;
-    bool hostOnly;
-    if (domainAttr != null && domainAttr.isNotEmpty) {
-      final ok =
-          host == domainAttr ||
-          (!_isIp(host) &&
-              host.endsWith('.$domainAttr') &&
-              domainAttr.contains('.') &&
-              !_publicSuffixes.contains(domainAttr));
-      if (!ok) return null;
-      domain = domainAttr;
-      hostOnly = false;
-    } else {
-      domain = host;
-      hostOnly = true;
-    }
+    final scope = _scopeFor(host, domainAttr);
+    if (scope == null) return null;
+    final (domain, hostOnly) = scope;
 
     final path = pathAttr != null && pathAttr.startsWith('/')
         ? pathAttr
@@ -285,6 +272,19 @@ class CookieJar {
       sameSite: sameSite,
       createdAt: now,
     );
+  }
+
+  /// The cookie's domain and whether it is host-only, or null when [host] may
+  /// not set a cookie for [domainAttr].
+  (String, bool)? _scopeFor(String host, String? domainAttr) {
+    if (domainAttr == null || domainAttr.isEmpty) return (host, true);
+    final ok =
+        host == domainAttr ||
+        (!_isIp(host) &&
+            host.endsWith('.$domainAttr') &&
+            domainAttr.contains('.') &&
+            !_publicSuffixes.contains(domainAttr));
+    return ok ? (domainAttr, false) : null;
   }
 
   static final _control = RegExp(r'[\x00-\x1f\x7f]');

@@ -71,7 +71,6 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final running = _server;
     return AlertDialog(
       title: Text(context.l10n.mockTitle),
       content: SizedBox(
@@ -82,76 +81,8 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
           children: [
             if (_routes.isEmpty)
               Text(context.l10n.mockEmpty, key: const Key('mock-empty'))
-            else ...[
-              Row(
-                children: [
-                  SizedBox(
-                    width: 90,
-                    child: TextField(
-                      key: const Key('mock-port'),
-                      controller: _port,
-                      enabled: running == null,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.mockPort,
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  if (running == null)
-                    FilledButton(
-                      key: const Key('mock-start'),
-                      onPressed: _start,
-                      child: Text(context.l10n.mockStart),
-                    )
-                  else
-                    FilledButton.tonal(
-                      key: const Key('mock-stop'),
-                      onPressed: _stop,
-                      child: Text(context.l10n.mockStop),
-                    ),
-                ],
-              ),
-              if (running != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: SelectableText(
-                    context.l10n.mockServing(
-                      'http://127.0.0.1:${running.port}',
-                    ),
-                    key: const Key('mock-url'),
-                  ),
-                ),
-              if (_error != null)
-                Text(
-                  _error!,
-                  key: const Key('mock-error'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              const SizedBox(height: 12),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (final r in _routes)
-                      ListTile(
-                        dense: true,
-                        title: Text('${r.method} ${r.path}'),
-                        subtitle: Text(
-                          context.l10n.mockRouteSubtitle(
-                            r.requestName,
-                            r.examples.length,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Text(
-                context.l10n.mockHeaderHint,
-                style: const TextStyle(fontSize: 12),
-              ),
-            ],
+            else
+              ..._body(context),
           ],
         ),
       ),
@@ -160,6 +91,76 @@ class _MockServerDialogState extends ConsumerState<MockServerDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.close),
         ),
+      ],
+    );
+  }
+
+  List<Widget> _body(BuildContext context) {
+    final running = _server;
+    return [
+      _controls(context, running),
+      if (running != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: SelectableText(
+            context.l10n.mockServing('http://127.0.0.1:${running.port}'),
+            key: const Key('mock-url'),
+          ),
+        ),
+      if (_error != null)
+        Text(
+          _error!,
+          key: const Key('mock-error'),
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+      const SizedBox(height: 12),
+      Flexible(child: _routeList(context)),
+      Text(context.l10n.mockHeaderHint, style: const TextStyle(fontSize: 12)),
+    ];
+  }
+
+  Widget _controls(BuildContext context, MockServer? running) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 90,
+          child: TextField(
+            key: const Key('mock-port'),
+            controller: _port,
+            enabled: running == null,
+            decoration: InputDecoration(labelText: context.l10n.mockPort),
+            keyboardType: TextInputType.number,
+          ),
+        ),
+        const SizedBox(width: 12),
+        if (running == null)
+          FilledButton(
+            key: const Key('mock-start'),
+            onPressed: _start,
+            child: Text(context.l10n.mockStart),
+          )
+        else
+          FilledButton.tonal(
+            key: const Key('mock-stop'),
+            onPressed: _stop,
+            child: Text(context.l10n.mockStop),
+          ),
+      ],
+    );
+  }
+
+  Widget _routeList(BuildContext context) {
+    return ListView(
+      shrinkWrap: true,
+      children: [
+        for (final r in _routes)
+          ListTile(
+            dense: true,
+            title: Text('${r.method} ${r.path}'),
+            subtitle: Text(
+              context.l10n.mockRouteSubtitle(r.requestName, r.examples.length),
+            ),
+          ),
       ],
     );
   }
