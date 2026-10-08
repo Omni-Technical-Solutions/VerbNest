@@ -18,7 +18,7 @@ This kit is organised in the spirit of GitHub's spec-kit: principles first, then
 
 ## One-paragraph pitch
 
-Postman became the default API tool, then moved toward mandatory cloud accounts, workspaces in the vendor's cloud and per-seat pricing. Bruno, Insomnia, Hoppscotch and Yaak showed demand for local-first, git-friendly alternatives, but none is a native-feeling, single-codebase app that also runs on **phones and tablets**. Verbnest's wedge is: *every protocol you test, on every device you own, stored in a single portable SQLite file, with lossless export to Postman and git-friendly YAML.*
+Postman became the default API tool, then moved toward mandatory cloud accounts, workspaces in the vendor's cloud and per-seat pricing. Some of are more comfortable with local-first, git-friendly alternatives, but none is a native-feeling, single-codebase app that also runs on **phones and tablets**. Verbnest's wedge is: *every protocol you test, on every device you own, stored in a single portable SQLite file, with lossless export to Postman and git-friendly YAML.*
 
 ## Scope in one line per phase
 
