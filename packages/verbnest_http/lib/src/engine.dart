@@ -167,14 +167,24 @@ class HttpEngine {
     return stripAuth && _looksLikeCredential(n);
   }
 
-  /// Names such as `x-api-key` or `x-auth-token` carry secrets just like
-  /// `authorization`, so they must not follow a redirect to another origin.
-  static final _credentialName = RegExp(
-    r'auth|token|secret|api[-_]?key|password|credential|session|cookie',
-  );
+  /// Headers that may follow a redirect to another origin. Anything else,
+  /// including custom names that carry secrets, is dropped: a denylist cannot
+  /// know every credential header.
+  static const _crossOriginSafe = {
+    'accept',
+    'accept-encoding',
+    'accept-language',
+    'cache-control',
+    'content-length',
+    'content-type',
+    'user-agent',
+    'pragma',
+    'origin',
+    'referer',
+  };
 
   bool _looksLikeCredential(String lowerName) =>
-      _credentialName.hasMatch(lowerName);
+      !_crossOriginSafe.contains(lowerName);
 
   String _origin(Uri u) => '${u.scheme}://${u.host}:${u.port}';
 
@@ -208,6 +218,7 @@ class HttpEngine {
   }) {
     final body = Uint8List.fromList(spec.body ?? const []);
     final headers = _withAutoHeaders(spec, body.length);
+    _rejectLineBreaks(spec, headers);
     if (absoluteForm &&
         proxy!.hasAuth &&
         !headers.any((h) => h.$1.toLowerCase() == 'proxy-authorization')) {
@@ -224,6 +235,21 @@ class HttpEngine {
     }
     head.write('\r\n');
     return _Wire(head.toString(), body, spec.method, target, headers);
+  }
+
+  /// A CR, LF or NUL in the method, URL or a header would split the request
+  /// on the wire and let one field forge others.
+  void _rejectLineBreaks(HttpRequestSpec spec, List<Header> headers) {
+    final bad = RegExp(r'[\r\n\x00]');
+    final fields = [spec.method, spec.url.toString()];
+    for (final (k, v) in headers) {
+      fields
+        ..add(k)
+        ..add(v);
+    }
+    if (fields.any(bad.hasMatch)) {
+      throw ProtocolError('A request line or header contains a line break');
+    }
   }
 
   List<Header> _withAutoHeaders(HttpRequestSpec spec, int bodyLength) {

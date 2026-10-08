@@ -159,7 +159,8 @@ void main() {
           for (final h in echoed(r)['headers'] as List)
             (h as List)[0].toString().toLowerCase(),
         ];
-        expect(names, contains('x-trace'));
+        expect(names, isNot(contains('x-trace')));
+        expect(names, contains('user-agent'));
         expect(
           names,
           isNot(
@@ -173,6 +174,13 @@ void main() {
         );
       },
     );
+
+    test('a header with a line break is refused', () async {
+      await expectLater(
+        engine.send(req('/echo', headers: [('X-A', 'b\r\nX-Evil: 1')])),
+        throwsA(isA<ProtocolError>()),
+      );
+    });
 
     test('a 302 turns POST into GET without a body', () async {
       final r = await engine.send(

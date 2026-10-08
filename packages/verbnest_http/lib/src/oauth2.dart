@@ -87,6 +87,23 @@ class OAuth2TokenCache {
   void clear() => _tokens.clear();
 }
 
+/// A token request carries the client secret or user password, so it never
+/// follows a redirect to another host.
+HttpSettings _noRedirects(HttpSettings s) => HttpSettings(
+  httpVersion: s.httpVersion,
+  timeout: s.timeout,
+  followRedirects: false,
+  maxRedirects: s.maxRedirects,
+  verifyTls: s.verifyTls,
+  autoDecompress: s.autoDecompress,
+  keepMethodOnRedirect: s.keepMethodOnRedirect,
+  stripAuthCrossOrigin: s.stripAuthCrossOrigin,
+  sendCookies: s.sendCookies,
+  proxy: s.proxy,
+  useSystemProxy: s.useSystemProxy,
+  tls: s.tls,
+);
+
 Uri _tokenUri(OAuth2Auth auth) {
   try {
     final url = Uri.parse(auth.tokenUrl.trim());
@@ -228,7 +245,7 @@ Future<OAuth2Token> _tokenRequest(
         url: url,
         headers: headers,
         body: utf8.encode(body),
-        settings: settings,
+        settings: _noRedirects(settings),
       ),
       cancel: cancel,
     );

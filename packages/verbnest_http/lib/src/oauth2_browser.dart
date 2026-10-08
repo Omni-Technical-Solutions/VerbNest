@@ -39,7 +39,7 @@ Uri buildAuthorizeUrl(
   String? codeChallenge,
 }) {
   final base = Uri.parse(auth.authUrl.trim());
-  if (base.host.isEmpty) {
+  if (base.host.isEmpty || (base.scheme != 'http' && base.scheme != 'https')) {
     throw OAuth2Error('Invalid authorization URL "${auth.authUrl}"');
   }
   return base.replace(
@@ -62,16 +62,22 @@ Uri buildAuthorizeUrl(
 /// (FR-AUTH-003). The implicit flow returns its token in the URL fragment,
 /// which browsers do not send, so the first page forwards it as a query.
 class LoopbackReceiver {
-  LoopbackReceiver._(this._server) {
+  LoopbackReceiver._(this._server, this._state) {
     _server.listen(_handle);
   }
 
   final HttpServer _server;
+
+  /// Only a redirect carrying this `state` ends the wait, so another local
+  /// program or web page cannot cancel or feed the sign-in.
+  final String? _state;
   final _done = Completer<Map<String, String>>();
 
-  static Future<LoopbackReceiver> start() async => LoopbackReceiver._(
-    await HttpServer.bind(InternetAddress.loopbackIPv4, 0),
-  );
+  static Future<LoopbackReceiver> start({String? state}) async =>
+      LoopbackReceiver._(
+        await HttpServer.bind(InternetAddress.loopbackIPv4, 0),
+        state,
+      );
 
   String get redirectUri => 'http://127.0.0.1:${_server.port}/callback';
 
@@ -100,7 +106,10 @@ else { document.getElementById('m').textContent = 'No sign-in response was recei
       req.response.close();
       return;
     }
-    if (meaningful) {
+    if (meaningful && _state != null && q['state'] != _state) {
+      req.response.statusCode = 400;
+      req.response.write('Unexpected sign-in response.');
+    } else if (meaningful) {
       if (!_done.isCompleted) _done.complete(q);
       req.response.write(_finished);
     } else {
@@ -165,7 +174,7 @@ Future<OAuth2Token> authorizeInBrowser(
   final pkce = auth.grant == OAuth2Grant.authorizationCode && auth.usePkce
       ? PkcePair.generate(r)
       : null;
-  final receiver = await LoopbackReceiver.start();
+  final receiver = await LoopbackReceiver.start(state: state);
   try {
     final url = buildAuthorizeUrl(
       auth,

@@ -439,6 +439,7 @@ void main() {
         authorizeInBrowser(
           HttpEngine(),
           auth(),
+          timeout: const Duration(milliseconds: 600),
           openUrl: (u) async => unawaited(
             hit(
               Uri.parse(u.queryParameters['redirect_uri']!)
@@ -446,8 +447,9 @@ void main() {
             ),
           ),
         ),
+        // A forged redirect is ignored, so the sign-in just times out.
         throwsA(
-          isA<OAuth2Error>().having((e) => e.message, 'm', contains('state')),
+          isA<OAuth2Error>().having((e) => e.message, 'm', contains('timed')),
         ),
       );
       await expectLater(
