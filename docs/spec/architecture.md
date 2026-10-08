@@ -44,9 +44,9 @@ verbnest/
   apps/verbnest_app/        Flutter app (android, ios, linux, macos, windows)
   apps/verbnest_cli/
   packages/verbnest_*/      as above
-  native/quickjs/         QuickJS-ng sources + build hook
-  test_server/            local echo/protocol test server (Dart) used by all tests
-  docs/adr/  docs/spec/   (this kit)
+  native/quickjs/           QuickJS-ng sources + build hook
+  test_server/              local echo/protocol test server (Dart) used by all tests
+  docs/adr/  docs/spec/     (this kit)
 ```
 
 ## 3. Key design decisions
