@@ -12,29 +12,29 @@ Flutter **web is out of scope**: browsers cannot open raw sockets, set forbidden
 ## 2. Layered view
 
 ```
-┌────────────────────────────────────────────────────────────────────┐
-│ apps/verbnest_app (Flutter)                                          │
+┌─────────────────────────────────────────────────────────────────────┐
+│ apps/verbnest_app (Flutter)                                         │
 │   presentation: screens, adaptive layouts, widgets, editors         │
 │   application: Riverpod controllers / notifiers, use cases          │
-├────────────────────────────────────────────────────────────────────┤
-│ apps/verbnest_cli (dart compile exe)                                 │
-├────────────────────────────────────────────────────────────────────┤
+├─────────────────────────────────────────────────────────────────────┤
+│ apps/verbnest_cli (dart compile exe)                                │
+├─────────────────────────────────────────────────────────────────────┤
 │ Pure Dart packages (no Flutter import)                              │
-│  verbnest_core      models, variable resolver, auth signers, faker    │
-│  verbnest_http      HTTP/1.1 + HTTP/2 engine, cookies, proxy, TLS     │
-│  verbnest_realtime  WebSocket, SSE, Socket.IO                         │
-│  verbnest_graphql   introspection, schema cache, validation           │
-│  verbnest_rpc       gRPC (dynamic protobuf), JSON-RPC, SOAP, MQTT     │
-│  verbnest_script    JS runtime binding (QuickJS-ng via FFI), pm API   │
-│  verbnest_runner    collection runner, reporters                      │
-│  verbnest_io        importers/exporters, codegen                      │
-│  verbnest_storage   workspace + local SQLite (drift), repositories    │
-│  verbnest_mock      local mock server                                 │
-├────────────────────────────────────────────────────────────────────┤
+│  verbnest_core      models, variable resolver, auth signers, fake   │
+│  verbnest_http      HTTP/1.1 + HTTP/2 engine, cookies, proxy, TL    │
+│  verbnest_realtime  WebSocket, SSE, Socket.IO                       │
+│  verbnest_graphql   introspection, schema cache, validation         │
+│  verbnest_rpc       gRPC (dynamic protobuf), JSON-RPC, SOAP, MQTT   │
+│  verbnest_script    JS runtime binding (QuickJS-ng via FFI), pm API │
+│  verbnest_runner    collection runner, reporters                    │
+│  verbnest_io        importers/exporters, codegen                    │
+│  verbnest_storage   workspace + local SQLite (drift), repositories  │
+│  verbnest_mock      local mock server                               │
+├─────────────────────────────────────────────────────────────────────┤
 │ Platform services (interfaces in core, impls in app / cli)          │
 │  SecretStore · FilePicker · FolderAccess · Browser/OAuth launcher   │
 │  NativeHttpAdapter (optional) · Clipboard · Share · BackgroundTasks │
-└────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 Repository layout: a single monorepo using **Dart pub workspaces** (Dart ≥ 3.6) with **melos** for scripts.
