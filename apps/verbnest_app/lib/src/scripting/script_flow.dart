@@ -58,20 +58,42 @@ Future<ScriptPhaseResult> runScriptPhase({
   Map<String, String> local = const {},
   Map<String, String> data = const {},
   core.ScriptHost? host,
-}) => core.runScriptPhaseWith(
-  repo: session.repo,
-  variables: SessionScriptVariables(session),
-  engine: engine,
-  requestId: requestId,
-  item: item,
-  envId: envId,
-  phase: phase,
-  request: request,
-  response: response,
-  local: local,
-  data: data,
-  host: host,
-);
+}) {
+  final trusted =
+      session.local.kv(session.repo.workspaceId, 'pref.scriptsTrusted') ==
+      'true';
+  if (!trusted &&
+      core
+          .scriptsFor(session.repo, requestId, item.scripts, phase)
+          .isNotEmpty) {
+    return Future.value(
+      ScriptPhaseResult(
+        local: local,
+        logs: const [
+          ConsoleLine(
+            'warn',
+            'Scripts did not run. Turn on "Run scripts in this workspace" in '
+                'Settings if you trust this workspace.',
+          ),
+        ],
+      ),
+    );
+  }
+  return core.runScriptPhaseWith(
+    repo: session.repo,
+    variables: SessionScriptVariables(session),
+    engine: engine,
+    requestId: requestId,
+    item: item,
+    envId: envId,
+    phase: phase,
+    request: request,
+    response: response,
+    local: local,
+    data: data,
+    host: host,
+  );
+}
 
 Map<ScriptScope, Map<String, String>> _scopeValues(
   WorkspaceSession s,
@@ -81,7 +103,7 @@ Map<ScriptScope, Map<String, String>> _scopeValues(
 ) {
   Map<String, String> of(Iterable<Variable> vars) => {
     for (final v in vars)
-      if (v.enabled) v.key: v.value,
+      if (v.enabled && !v.secret) v.key: v.value,
   };
   final containers = s.repo.ancestors(requestId).reversed.toList();
   return {

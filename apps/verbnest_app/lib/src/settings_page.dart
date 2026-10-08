@@ -30,6 +30,14 @@ class SettingsPage extends ConsumerWidget {
         ..._appearance(context, prefs, prefsNotifier),
         const Divider(),
         _section(context, context.l10n.historySection),
+        SwitchListTile(
+          key: const Key('scripts-trusted'),
+          title: Text(context.l10n.trustScripts),
+          subtitle: Text(context.l10n.trustScriptsHint),
+          value: prefs.scriptsTrusted,
+          onChanged: (v) =>
+              prefsNotifier.update(prefs.copyWith(scriptsTrusted: v)),
+        ),
         ..._history(context, prefs, prefsNotifier),
       ],
     );

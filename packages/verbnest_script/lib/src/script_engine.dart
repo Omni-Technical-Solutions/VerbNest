@@ -35,6 +35,15 @@ class ProcessScriptEngine implements ScriptEngine {
       "try{process.stdout.write(String(vm.runInNewContext(src,Object.create(null),{timeout:ms})));}"
       "catch(e){process.stdout.write(JSON.stringify({error:String(e&&e.message||e)}));}";
 
+  /// `node:vm` is not a security boundary, so where Node has the permission
+  /// model the process also runs without file, child-process and worker access.
+  Future<bool> _supportsPermission() => _permission[executable] ??= Process.run(
+    executable,
+    const ['--permission', '-e', '0'],
+  ).then((r) => r.exitCode == 0).catchError((Object _) => false);
+
+  static final _permission = <String, Future<bool>>{};
+
   /// Whether the runtime can be started.
   static Future<bool> available([String executable = 'node']) async {
     try {
@@ -54,6 +63,7 @@ class ProcessScriptEngine implements ScriptEngine {
     final Process p;
     try {
       p = await Process.start(executable, [
+        if (await _supportsPermission()) '--permission',
         '--max-old-space-size=${scriptMemoryLimit ~/ (1024 * 1024)}',
         '-e',
         _runner,

@@ -12,6 +12,7 @@ class Prefs {
     this.historyBodies = true,
     this.fontScale = 1.0,
     this.editorFontSize = 13,
+    this.scriptsTrusted = false,
   });
 
   /// Entries older than this are removed; 0 keeps them forever.
@@ -23,6 +24,10 @@ class Prefs {
   final double fontScale;
   final double editorFontSize;
 
+  /// Whether scripts in this workspace may run. Off by default so imported or
+  /// shared workspaces cannot run code until the user allows it.
+  final bool scriptsTrusted;
+
   static const minScale = 0.8, maxScale = 1.6;
   static const minEditorSize = 10.0, maxEditorSize = 24.0;
 
@@ -32,6 +37,7 @@ class Prefs {
     bool? historyBodies,
     double? fontScale,
     double? editorFontSize,
+    bool? scriptsTrusted,
   }) => Prefs(
     historyDays: historyDays ?? this.historyDays,
     historyMax: historyMax ?? this.historyMax,
@@ -41,6 +47,7 @@ class Prefs {
       minEditorSize,
       maxEditorSize,
     ),
+    scriptsTrusted: scriptsTrusted ?? this.scriptsTrusted,
   );
 }
 
@@ -59,6 +66,7 @@ class PrefsNotifier extends Notifier<Prefs> {
           : get('historyBodies') == 'true',
       fontScale: double.tryParse(get('fontScale') ?? ''),
       editorFontSize: double.tryParse(get('editorFontSize') ?? ''),
+      scriptsTrusted: get('scriptsTrusted') == 'true',
     );
   }
 
@@ -71,6 +79,7 @@ class PrefsNotifier extends Notifier<Prefs> {
     put('historyBodies', next.historyBodies);
     put('fontScale', next.fontScale);
     put('editorFontSize', next.editorFontSize);
+    put('scriptsTrusted', next.scriptsTrusted);
     state = next;
   }
 }

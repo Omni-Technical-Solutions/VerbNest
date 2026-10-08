@@ -97,6 +97,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appearanceSection => 'المظهر (هذا الجهاز)';
 
   @override
+  String get trustScripts => 'تشغيل السكربتات في مساحة العمل هذه';
+
+  @override
+  String get trustScriptsHint =>
+      'يمكن للسكربتات قراءة المتغيرات وإرسال الطلبات. فعّلها فقط لمساحات العمل الموثوقة. لا تُمنح المتغيرات السرية للسكربتات.';
+
+  @override
   String get historySection => 'السجل (هذا الجهاز)';
 
   @override

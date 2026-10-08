@@ -266,6 +266,18 @@ abstract class AppLocalizations {
   /// **'Appearance (this device)'**
   String get appearanceSection;
 
+  /// No description provided for @trustScripts.
+  ///
+  /// In en, this message translates to:
+  /// **'Run scripts in this workspace'**
+  String get trustScripts;
+
+  /// No description provided for @trustScriptsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scripts can read variables and send requests. Turn on only for workspaces you trust. Secret variables are never given to scripts.'**
+  String get trustScriptsHint;
+
   /// No description provided for @historySection.
   ///
   /// In en, this message translates to:

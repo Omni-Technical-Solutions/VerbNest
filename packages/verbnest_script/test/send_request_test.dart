@@ -1,3 +1,4 @@
+import 'package:verbnest_http/verbnest_http.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_script/verbnest_script.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
@@ -48,6 +49,7 @@ class _Host implements ScriptHost {
 }
 
 void main() async {
+  blockedHostTests();
   final hasNode = await ProcessScriptEngine.available();
   final skip = hasNode ? null : 'node is not installed';
   final engine = ProcessScriptEngine();
@@ -155,4 +157,23 @@ for (let i = 0; i < 50; i++) pm.sendRequest('http://x.test/' + i, () => {});
     expect(r.error, contains('at most $maxScriptRequests'));
     expect(host.sent.length, maxScriptRequests);
   }, skip: skip);
+}
+
+void blockedHostTests() {
+  group('EngineScriptHost blocked hosts', () {
+    for (final url in [
+      'http://169.254.169.254/latest/meta-data',
+      'http://[fe80::1]/x',
+      'http://metadata.google.internal/x',
+      'http://[::ffff:169.254.169.254]/x',
+    ]) {
+      test(url, () {
+        final host = EngineScriptHost(HttpEngine());
+        expect(
+          host.send({'url': url, 'method': 'GET'}),
+          throwsA(isA<FormatException>()),
+        );
+      });
+    }
+  });
 }

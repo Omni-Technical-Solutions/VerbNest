@@ -98,6 +98,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceSection => 'Appearance (this device)';
 
   @override
+  String get trustScripts => 'Run scripts in this workspace';
+
+  @override
+  String get trustScriptsHint =>
+      'Scripts can read variables and send requests. Turn on only for workspaces you trust. Secret variables are never given to scripts.';
+
+  @override
   String get historySection => 'History (this device)';
 
   @override

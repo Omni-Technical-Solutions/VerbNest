@@ -35,6 +35,8 @@
   "warnUnresolved": "Warn before sending with undefined variables",
   "followRedirects": "Follow redirects",
   "appearanceSection": "Appearance (this device)",
+  "trustScripts": "Run scripts in this workspace",
+  "trustScriptsHint": "Scripts can read variables and send requests. Turn on only for workspaces you trust. Secret variables are never given to scripts.",
   "historySection": "History (this device)",
   "historyBodies": "Keep request and response bodies",
   "historyBodiesHint": "Off stores only URLs, headers and status",

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:verbnest_http/verbnest_http.dart';
 
@@ -33,6 +34,9 @@ class EngineScriptHost implements ScriptHost {
     if (url.scheme != 'http' && url.scheme != 'https') {
       throw FormatException('Only http and https URLs can be sent');
     }
+    if (_isMetadataOrLinkLocal(url.host)) {
+      throw FormatException('Scripts cannot send requests to ${url.host}');
+    }
     final body = request['body'] as String?;
     final spec = HttpRequestSpec(
       method: '${request['method'] ?? 'GET'}'.toUpperCase(),
@@ -60,4 +64,23 @@ class EngineScriptHost implements ScriptHost {
               .trim(),
     };
   }
+}
+
+/// Cloud metadata endpoints and link-local addresses hold instance
+/// credentials, so scripts never reach them. Hostnames are not resolved here.
+bool _isMetadataOrLinkLocal(String host) {
+  final h = host.toLowerCase();
+  if (h == 'metadata.google.internal' || h == 'metadata') return true;
+  final ip = InternetAddress.tryParse(h);
+  if (ip == null) return false;
+  final raw = ip.rawAddress;
+  if (ip.type == InternetAddressType.IPv4) {
+    return raw[0] == 169 && raw[1] == 254;
+  }
+  if (raw[0] == 0xfe && (raw[1] & 0xc0) == 0x80) return true;
+  final mapped =
+      raw.sublist(0, 10).every((b) => b == 0) &&
+      raw[10] == 0xff &&
+      raw[11] == 0xff;
+  return mapped && raw[12] == 169 && raw[13] == 254;
 }

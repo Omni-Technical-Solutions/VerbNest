@@ -40,6 +40,7 @@ typedef Env = ({
 
 Env setup(ScriptOutput Function(ScriptInput) handler) {
   final s = WorkspaceSession.memory();
+  s.local.setKv(s.repo.workspaceId, 'pref.scriptsTrusted', 'true');
   final http = FakeEngine();
   final js = FakeScripts(handler);
   final c = ProviderContainer(
@@ -68,6 +69,7 @@ Env setup(ScriptOutput Function(ScriptInput) handler) {
 }
 
 void main() {
+  untrustedWorkspaceTests();
   group('script source and output', () {
     test('user code is embedded as a string, not spliced into the runtime', () {
       const code = "a\n'\"\u2028\${x}\\";
@@ -349,6 +351,26 @@ void main() {
       n.edit((i) => i.copyWith(scripts: const Scripts()));
       await n.send(force: true);
       expect(t.js.inputs, isEmpty);
+    });
+  });
+}
+
+void untrustedWorkspaceTests() {
+  group('workspace trust', () {
+    test('scripts do not run until the workspace is trusted', () async {
+      final e = setup((_) => const ScriptOutput());
+      e.s.local.setKv(e.s.repo.workspaceId, 'pref.scriptsTrusted', null);
+      final r = await runScriptPhase(
+        session: e.s,
+        engine: e.js,
+        requestId: e.id,
+        item: e.s.repo.getRequest(e.id),
+        envId: null,
+        phase: ScriptPhase.pre,
+        request: const {},
+      );
+      expect(e.js.inputs, isEmpty);
+      expect(r.logs.single.level, 'warn');
     });
   });
 }

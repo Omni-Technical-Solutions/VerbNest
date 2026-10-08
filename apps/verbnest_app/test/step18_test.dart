@@ -19,6 +19,7 @@ typedef Env = ({
 
 Env setup([ScriptOutput Function(ScriptInput)? scripts]) {
   final s = WorkspaceSession.memory();
+  s.local.setKv(s.repo.workspaceId, 'pref.scriptsTrusted', 'true');
   final http = FakeEngine();
   final c = ProviderContainer(
     overrides: [
