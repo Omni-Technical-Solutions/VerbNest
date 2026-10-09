@@ -12,6 +12,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart'
+    show debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -27,9 +29,58 @@ import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_http/verbnest_http.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
-/// App Store accepts 2880 x 1800 (16:10) for Mac.
-const _logical = Size(1440, 900);
-const _ratio = 2.0;
+/// One output size per store listing. Pixel sizes match the Triplogger
+/// listings so both apps share the same store assets: iPhone 6.9" and iPad
+/// 13" for the App Store, phone and 10" tablet for Google Play, and 2880 x
+/// 1800 (16:10) for the Mac App Store.
+class _Profile {
+  const _Profile(this.pixels, this.ratio, this.platform, {this.only});
+
+  final Size pixels;
+  final double ratio;
+  final TargetPlatform platform;
+
+  /// Screens to keep; null keeps every screen the profile can show.
+  final Set<String>? only;
+
+  Size get logical => Size(pixels.width / ratio, pixels.height / ratio);
+  bool get phone => logical.width < 600;
+}
+
+const _tabletShots = {
+  '01-request-and-response',
+  '02-create-pet-body',
+  '03-auth-inherited-bearer',
+  '05-assertions-and-test-results',
+  '06-response-headers',
+  '07-command-palette',
+  '14-history',
+  '16-environments',
+  '17-settings',
+  '18-dark-theme',
+};
+
+const _profiles = {
+  // iOS typography stands in for macOS: the test engine ignores fonts
+  // registered under macOS's dot-prefixed family, and both use San Francisco
+  // with ⌘ shortcuts.
+  'macos': _Profile(Size(2880, 1800), 2, TargetPlatform.iOS),
+  'iphone': _Profile(Size(1320, 2868), 3, TargetPlatform.iOS),
+  'ipad': _Profile(Size(2064, 2752), 2, TargetPlatform.iOS, only: _tabletShots),
+  'android-phone': _Profile(Size(1080, 2424), 3, TargetPlatform.android),
+  'android-tablet': _Profile(
+    Size(2560, 1600),
+    2,
+    TargetPlatform.android,
+    only: _tabletShots,
+  ),
+};
+
+final _profile =
+    _profiles[Platform.environment['VERBNEST_SHOTS_PROFILE'] ?? 'macos'] ??
+    (throw ArgumentError('Unknown VERBNEST_SHOTS_PROFILE'));
+final _logical = _profile.logical;
+final _ratio = _profile.ratio;
 
 final _out = Platform.environment['VERBNEST_SHOTS_DIR'];
 final _boundary = GlobalKey();
@@ -135,6 +186,16 @@ Future<void> _loadFonts() async {
   // Roboto has no Arabic glyphs; Geeza Pro joins the family so they resolve.
   roboto.addFont(bytes('/System/Library/Fonts/GeezaPro.ttc'));
   await roboto.load();
+  // iOS asks for the San Francisco system families, which the test
+  // environment lacks; macOS ships the same typeface.
+  for (final family in const [
+    'CupertinoSystemText',
+    'CupertinoSystemDisplay',
+  ]) {
+    final sf = FontLoader(family)
+      ..addFont(bytes('/System/Library/Fonts/SFNS.ttf'));
+    await sf.load();
+  }
   final icons = FontLoader('MaterialIcons')
     ..addFont(bytes('$fonts/MaterialIcons-Regular.otf'));
   await icons.load();
@@ -331,11 +392,16 @@ class _App {
 
   Future<void> send() async {
     await tapKey('send');
+    // Secrets only go to approved hosts; approve the demo host like a user.
+    final allow = find.byKey(const Key('secret-host-allow'));
+    if (allow.evaluate().isNotEmpty) await tapKey('secret-host-allow');
     await tester.pump(const Duration(milliseconds: 300));
     await settle();
   }
 
   Future<void> snap(String name) async {
+    final only = _profile.only;
+    if (only != null && !only.contains(name)) return;
     await settle();
     final boundary = tester.renderObject<RenderRepaintBoundary>(
       find.byKey(_boundary),
@@ -355,6 +421,7 @@ class _App {
       await body();
       await snap(name);
     } on Object catch (e, st) {
+      if (_profile.only case final only? when !only.contains(name)) return;
       failures.add(
         '$name: $e\n${st.toString().split('\n').take(5).join('\n')}',
       );
@@ -383,6 +450,7 @@ Future<_App> _launch(
   );
   tester.view.devicePixelRatio = _ratio;
   addTearDown(tester.view.reset);
+  debugDefaultTargetPlatformOverride = _profile.platform;
   final session = WorkspaceSession.memory();
   addTearDown(session.close);
   final ids = _seed(session, name: name);
@@ -419,6 +487,20 @@ Future<_App> _launch(
   return app;
 }
 
+/// testWidgets that clears the platform override before the binding checks
+/// its debug variables, which happens before any tearDown callback.
+void _shots(
+  String name,
+  Future<void> Function(WidgetTester) body, {
+  required bool skip,
+}) => testWidgets(name, (t) async {
+  try {
+    await body(t);
+  } finally {
+    debugDefaultTargetPlatformOverride = null;
+  }
+}, skip: skip);
+
 void main() {
   final enabled = (_out ?? '').isNotEmpty;
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -427,7 +509,7 @@ void main() {
     if (enabled) await _loadFonts();
   });
 
-  testWidgets('main window: collections, request and response', (t) async {
+  _shots('main window: collections, request and response', (t) async {
     final a = await _launch(t);
     await a.open(a.ids.petStore);
     await a.open(a.ids.pets);
@@ -489,6 +571,7 @@ void main() {
     await a.closeDialogs();
 
     await a.shot('10-search-workspace', () async {
+      await a.tapKey('sidebar-more');
       await a.tapKey('search');
       await t.enterText(find.byType(TextField).last, 'pet');
       await a.settle();
@@ -496,11 +579,13 @@ void main() {
     await a.closeDialogs();
 
     await a.shot('11-import', () async {
+      await a.tapKey('sidebar-more');
       await a.tapKey('import');
     });
     await a.closeDialogs();
 
     await a.shot('12-workspaces', () async {
+      await a.tapKey('sidebar-more');
       await a.tapKey('workspaces');
     });
     await a.closeDialogs();
@@ -530,14 +615,75 @@ void main() {
     });
 
     expect(a.failures, isEmpty, reason: a.failures.join('\n'));
-  }, skip: !enabled);
+  }, skip: !enabled || _profile.phone);
 
-  testWidgets('dark theme', (t) async {
+  _shots('phone: bottom navigation and full-screen request', (t) async {
+    final a = await _launch(t);
+    await a.shot('01-collections', () async {
+      await a.open(a.ids.petStore);
+      await a.open(a.ids.pets);
+    });
+
+    await a.shot('02-request-and-response', () async {
+      await a.open(a.ids.list);
+      await a.send();
+    });
+
+    await a.shot('03-create-pet-body', () async {
+      await a.closeDialogs();
+      await a.open(a.ids.create);
+      await a.tapText('Body');
+    });
+
+    await a.shot('04-auth-inherited-bearer', () async {
+      await a.tapText('Auth');
+    });
+
+    await a.shot('05-assertions-and-test-results', () async {
+      await a.tapText('Assertions');
+      await a.send();
+      await t.tap(find.textContaining('Tests').first);
+      await a.settle();
+    });
+
+    await a.shot('06-response-headers', () async {
+      await t.tap(find.textContaining('Headers').last);
+      await a.settle();
+    });
+
+    await a.shot('07-history', () async {
+      await a.closeDialogs();
+      await a.tapText('History');
+    });
+
+    await a.shot('08-environments', () async {
+      await a.tapText('Environments');
+      await a.tapText('Development');
+    });
+
+    await a.shot('09-settings', () async {
+      await a.closeDialogs();
+      await a.tapText('Settings');
+    });
+
+    expect(a.failures, isEmpty, reason: a.failures.join('\n'));
+  }, skip: !enabled || !_profile.phone);
+
+  _shots('phone: dark theme', (t) async {
+    final a = await _launch(t, dark: true);
+    await a.open(a.ids.petStore);
+    await a.open(a.ids.pets);
+    await a.open(a.ids.list);
+    await a.send();
+    await a.snap('10-dark-theme');
+  }, skip: !enabled || !_profile.phone);
+
+  _shots('dark theme', (t) async {
     final a = await _launch(t, dark: true);
     await a.open(a.ids.petStore);
     await a.open(a.ids.pets);
     await a.open(a.ids.list);
     await a.send();
     await a.snap('18-dark-theme');
-  }, skip: !enabled);
+  }, skip: !enabled || _profile.phone);
 }

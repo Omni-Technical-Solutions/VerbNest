@@ -83,8 +83,9 @@ class _Toolbar extends StatelessWidget {
       alignment: AlignmentDirectional.centerEnd,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             FavouriteButton(requestId: requestId),
             TextButton(
