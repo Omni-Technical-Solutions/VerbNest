@@ -42,3 +42,10 @@ What is ready in the repository and what only the account owner can do. Nothing 
 
 ## Mac App Store package
 - With Xcode signed in: `xcodebuild archive` then `-exportArchive -allowProvisioningUpdates` using an `app-store-connect` export plist (team NYY6MADXHV, automatic signing) produces a signed `VerbNest.pkg`. Upload it with Transporter.
+
+## Store packages (how v0.46.0 build 16 was made)
+Use one build number for all three: `n=$(scripts/next_build.sh)`, then pass `--build-name=<VERSION> --build-number=$n` to each build from `apps/verbnest_app`.
+- **Android (Play):** `PATH=/usr/local/opt/rustup/bin:$PATH flutter build appbundle --release ...`. With `rustup` on PATH the `fjs` plugin compiles Rust from source; without it the plugin tries precompiled binaries, which do not cover Android, and the build fails with "Requested Rust target is not included in the signed build recipe". Output: `build/app/outputs/bundle/release/app-release.aab`, signed with the upload key from `key.properties` (arm64-v8a, armeabi-v7a, x86_64). About 10 minutes.
+- **iOS (App Store):** `flutter build ipa --release ...` (automatic signing, team NYY6MADXHV). Output: `build/ios/ipa/VerbNest.ipa`. Flutter warns that the launch image is the default placeholder.
+- **macOS (Mac App Store):** `flutter build macos --release ...`, then in `macos/`: `xcodebuild archive -workspace Runner.xcworkspace -scheme Runner -configuration Release -archivePath VerbNest.xcarchive -allowProvisioningUpdates DEVELOPMENT_TEAM=NYY6MADXHV`, then `xcodebuild -exportArchive -exportOptionsPlist <plist> -allowProvisioningUpdates` with `method=app-store-connect`, `teamID=NYY6MADXHV`, `signingStyle=automatic`, `destination=export`. Output: `VerbNest.pkg`, signed with the 3rd Party Mac Developer Installer certificate; the app inside is universal.
+- None of these has been uploaded. Upload the AAB in Play Console, and the IPA and PKG with Transporter.
