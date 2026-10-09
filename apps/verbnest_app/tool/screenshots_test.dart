@@ -30,7 +30,8 @@ import 'package:verbnest_http/verbnest_http.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
 /// One output size per store listing. Pixel sizes match the Triplogger
-/// listings so both apps share the same store assets: iPhone 6.9" and iPad
+/// listings so both apps share the same store assets: iPhone 6.3" (Dynamic
+/// Island, 402 x 874 pt) and iPad
 /// 13" for the App Store, phone and 10" tablet for Google Play, and 2880 x
 /// 1800 (16:10) for the Mac App Store.
 class _Profile {
@@ -65,7 +66,7 @@ const _profiles = {
   // registered under macOS's dot-prefixed family, and both use San Francisco
   // with ⌘ shortcuts.
   'macos': _Profile(Size(2880, 1800), 2, TargetPlatform.iOS),
-  'iphone': _Profile(Size(1320, 2868), 3, TargetPlatform.iOS),
+  'iphone': _Profile(Size(1206, 2622), 3, TargetPlatform.iOS),
   'ipad': _Profile(Size(2064, 2752), 2, TargetPlatform.iOS, only: _tabletShots),
   'android-phone': _Profile(Size(1080, 2424), 3, TargetPlatform.android),
   'android-tablet': _Profile(
