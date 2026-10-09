@@ -7,9 +7,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Verbnest</string>
+	<string>VerbNest</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Verbnest sends requests to servers on your local network when you ask it to.</string>
+	<string>VerbNest sends requests to servers on your local network when you ask it to.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -17,7 +17,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>verbnest_app</string>
+	<string>VerbNest</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

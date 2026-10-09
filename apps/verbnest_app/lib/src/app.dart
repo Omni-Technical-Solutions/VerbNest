@@ -17,7 +17,7 @@ class VerbnestApp extends ConsumerWidget {
     final prefs = ref.watch(prefsProvider);
     final seed = AppAccents.seed(prefs.accent);
     return MaterialApp(
-      title: 'Verbnest',
+      title: 'VerbNest',
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       locale: ref.watch(localeProvider),

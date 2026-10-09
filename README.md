@@ -1,13 +1,13 @@
-# Verbnest Spec Kit
+# VerbNest Spec Kit
 
-Verbnest is an open source, local-first API client in the spirit of Postman, built with Flutter for **Android, iOS, Linux, macOS and Windows**. It lets developers compose, send, organise, script and test HTTP/REST, GraphQL, WebSocket, SSE, gRPC and other remote function call (RPC) traffic, without requiring an account or a cloud service.
+VerbNest is an open source, local-first API client in the spirit of Postman, built with Flutter for **Android, iOS, Linux, macOS and Windows**. It lets developers compose, send, organise, script and test HTTP/REST, GraphQL, WebSocket, SSE, gRPC and other remote function call (RPC) traffic, without requiring an account or a cloud service.
 
 This kit is organised in the spirit of GitHub's spec-kit: principles first, then *what* to build, then *how*, then *in what order*.
 
 | # | File | What it answers |
 |---|------|-----------------|
 | 1 | [constitution.md](docs/spec/constitution.md) | Non-negotiable principles every decision is checked against |
-| 2 | [feature-inventory.md](docs/spec/feature-inventory.md) | Postman's feature set reviewed, mapped to Verbnest with MVP / v1 / later priority |
+| 2 | [feature-inventory.md](docs/spec/feature-inventory.md) | Postman's feature set reviewed, mapped to VerbNest with MVP / v1 / later priority |
 | 3 | [requirements.md](docs/spec/requirements.md) | Functional requirements (FR-xxx) and non-functional requirements (NFR-xxx) with acceptance criteria |
 | 4 | [architecture.md](docs/spec/architecture.md) | Layered architecture, tech stack, Flutter packages, per-platform constraints |
 | 5 | [data-model.md](docs/spec/data-model.md) | Entities, on-disk file format, database schema, variable resolution rules |
@@ -18,7 +18,7 @@ This kit is organised in the spirit of GitHub's spec-kit: principles first, then
 
 ## One-paragraph pitch
 
-Postman became the default API tool, then moved toward mandatory cloud accounts, workspaces in the vendor's cloud and per-seat pricing. Bruno, Insomnia, Hoppscotch and Yaak showed demand for local-first, git-friendly alternatives, but none is a native-feeling, single-codebase app that also runs on **phones and tablets**. Verbnest's wedge is: *every protocol you test, on every device you own, stored in a single portable SQLite file, with lossless export to Postman and git-friendly YAML.*
+Postman became the default API tool, then moved toward mandatory cloud accounts, workspaces in the vendor's cloud and per-seat pricing. Bruno, Insomnia, Hoppscotch and Yaak showed demand for local-first, git-friendly alternatives, but none is a native-feeling, single-codebase app that also runs on **phones and tablets**. VerbNest's wedge is: *every protocol you test, on every device you own, stored in a single portable SQLite file, with lossless export to Postman and git-friendly YAML.*
 
 ## Scope in one line per phase
 

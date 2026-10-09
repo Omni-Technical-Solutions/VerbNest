@@ -13,7 +13,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 number="$(scripts/next_build.sh)"
 name="$(tr -d '[:space:]' < VERSION)"
-echo "Building Verbnest ${name}+${number}"
+echo "Building VerbNest ${name}+${number}"
 
 cd apps/verbnest_app
 exec flutter build "$@" --build-name="$name" --build-number="$number"

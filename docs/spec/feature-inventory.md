@@ -1,6 +1,6 @@
-# Feature Inventory: Postman reviewed, mapped to Verbnest
+# Feature Inventory: Postman reviewed, mapped to VerbNest
 
-This inventory walks through Postman's feature set as of late 2026 (desktop app, web app, Newman/Postman CLI, and platform features), and decides for each one whether Verbnest builds it, when, and how it differs.
+This inventory walks through Postman's feature set as of late 2026 (desktop app, web app, Newman/Postman CLI, and platform features), and decides for each one whether VerbNest builds it, when, and how it differs.
 
 Priority key: **P0** MVP · **P1** v1 · **P2** later · **—** out of scope.
 "Mobile" notes cover Android/iOS-specific behaviour; everything else applies to all five platforms.
@@ -9,7 +9,7 @@ Priority key: **P0** MVP · **P1** v1 · **P2** later · **—** out of scope.
 
 ## 1. Request building (HTTP/REST)
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | Methods GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS | Yes | P0 | Plus custom method strings (e.g. `PROPFIND`, `PURGE`). |
 | URL bar with `{{var}}` highlighting & autocomplete | Yes | P0 | Unresolved vars shown in red; hover/long-press shows value and scope. |
@@ -29,7 +29,7 @@ Priority key: **P0** MVP · **P1** v1 · **P2** later · **—** out of scope.
 
 ## 2. Response viewing
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | Status, time, size | Yes | P0 | Size split into headers/body; compressed vs. decompressed. |
 | Pretty / Raw / Preview views | Yes | P0 | Pretty with syntax highlighting & folding for JSON/XML/HTML. Preview: HTML via webview (P1), images, PDF (P1). |
@@ -44,7 +44,7 @@ Priority key: **P0** MVP · **P1** v1 · **P2** later · **—** out of scope.
 
 ## 3. Collections & organisation
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | Collections with nested folders | Yes | P0 | Stored as a directory tree of files (see data-model.md). |
 | Collection/folder-level auth, variables, scripts | Yes | P0 auth & vars, P1 scripts | Inherited down the tree. |
@@ -58,7 +58,7 @@ Priority key: **P0** MVP · **P1** v1 · **P2** later · **—** out of scope.
 
 ## 4. Variables & environments
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | Scopes: global, collection, environment, data, local | Yes | P0 (data in P1) | Same precedence as Postman: local > data > environment > collection > global. |
 | Initial vs. current value | Yes | P0 | Initial value goes in files (shared); current value stays local (not committed). |
@@ -69,7 +69,7 @@ Priority key: **P0** MVP · **P1** v1 · **P2** later · **—** out of scope.
 
 ## 5. Authorization
 
-| Postman auth type | Verbnest | Priority |
+| Postman auth type | VerbNest | Priority |
 |---|---|---|
 | No auth, Inherit from parent | Yes | P0 |
 | API Key (header / query) | Yes | P0 |
@@ -88,12 +88,12 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 
 ## 6. Protocols beyond REST
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | GraphQL (query editor, variables, schema introspection, autocomplete, schema explorer) | Yes | P1 | Introspection cached per endpoint. |
 | WebSocket (raw) | Yes | P1 | Message log, saved messages, send JSON/text/binary, auto-reconnect option. |
 | Socket.IO | Yes | P2 | Via `socket_io_client`. |
-| Server-Sent Events | Yes | P1 | Event stream log with filtering. Postman treats SSE as an HTTP response mode; Verbnest adds a dedicated viewer. |
+| Server-Sent Events | Yes | P1 | Event stream log with filtering. Postman treats SSE as an HTTP response mode; VerbNest adds a dedicated viewer. |
 | gRPC (unary, server/client/bidi streaming, reflection, .proto import, metadata, TLS) | Yes | P2 | Requires dynamic protobuf (no codegen at runtime); see architecture.md. |
 | MQTT (connect, subscribe, publish, QoS) | Yes | P2 | |
 | SOAP / XML-RPC / JSON-RPC | Yes | P2 | Request templates over HTTP; WSDL import P2. |
@@ -101,7 +101,7 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 
 ## 7. Scripting & tests
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | Pre-request scripts (JavaScript) | Yes | P1 | Collection → folder → request order, same as Postman. |
 | Post-response / test scripts | Yes | P1 | |
@@ -116,7 +116,7 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 
 ## 8. Running & automation
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | Collection Runner (order, iterations, delay, data file CSV/JSON) | Yes | P1 | Run results saved; export JUnit/JSON/HTML. |
 | Performance / load testing (virtual users, ramp-up) | Later | P2 | Desktop only; modest limits. |
@@ -126,14 +126,14 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 
 ## 9. Mock servers
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | Mock server from saved examples | Yes | P2 | Local HTTP server (desktop; Android while app is foreground). Matching by method, path, query, headers, body like Postman. |
 | Cloud-hosted mock URLs | — | — | Out of scope; CLI mock mode can be self-hosted. |
 
 ## 10. API design & documentation
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | API Builder (spec editor, versions, linked collections) | Later | P2 | OpenAPI viewer/editor with validation. |
 | Generate collection from OpenAPI | Yes | P1 | |
@@ -143,7 +143,7 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 
 ## 11. History, import/export, data
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | History of sent requests with responses | Yes | P0 | Stored in SQLite with retention limits; restore to tab. |
 | Import cURL (paste anywhere) | Yes | P0 | Auto-detect when pasting into URL bar. |
@@ -154,7 +154,7 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 
 ## 12. Collaboration & platform
 
-| Postman feature | Verbnest | Priority | Notes |
+| Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | Cloud sync & real-time collaboration | Replaced | P1 | Explicit exchange: `.verbnest` file export/import and YAML snapshots committed to git by the user. No in-app git. |
 | Roles, SSO, audit logs, private API network | — | — | Enterprise cloud features; out of scope. |
@@ -164,7 +164,7 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 
 ## 13. App-level features
 
-| Feature | Verbnest | Priority |
+| Feature | VerbNest | Priority |
 |---|---|---|
 | Light / dark / system theme | Yes | P0 |
 | Keyboard shortcuts & command palette | Yes | P0 shortcuts, P1 palette |
@@ -176,7 +176,7 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 
 ---
 
-## Verbnest differentiators (not in Postman)
+## VerbNest differentiators (not in Postman)
 
 1. **Phone and tablet support** with a native-feeling responsive UI, e.g. test an API from the field, or hit a device-local endpoint on the LAN.
 2. **A single portable SQLite workspace file** with lossless export to Postman and git-friendly YAML snapshots.

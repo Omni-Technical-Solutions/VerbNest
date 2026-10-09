@@ -1,9 +1,9 @@
-# Verbnest Constitution
+# VerbNest Constitution
 
 These principles outrank every other document in the kit. When a feature request, PR or design conflicts with one of them, the principle wins unless the constitution itself is amended (see the end of this file).
 
 ## I. Local-first, account-free
-1. Verbnest MUST be fully usable offline with no account, no login and no telemetry by default.
+1. VerbNest MUST be fully usable offline with no account, no login and no telemetry by default.
 2. All user data (collections, environments, history) lives on the user's device. Any sharing or sync is opt-in and pluggable (workspace file/bundle exchange, YAML snapshots in git, or self-hosted), never a vendor cloud requirement.
 3. Telemetry, if ever added, is opt-in, anonymous, documented field by field, and off by default.
 
@@ -25,7 +25,7 @@ These principles outrank every other document in the kit. When a feature request
 
 ## V. Fidelity over convenience
 1. What the user sees is what was sent. The app MUST show the exact final request (resolved URL, headers incl. auto-added ones, body bytes) and the raw response, including timing and TLS details where the platform allows.
-2. Verbnest never silently rewrites user input (header casing, URL encoding, body formatting) unless the user opted in.
+2. VerbNest never silently rewrites user input (header casing, URL encoding, body formatting) unless the user opted in.
 
 ## VI. Interoperability, not lock-in
 1. Import from Postman (v2.0/v2.1 collections, environments, globals, data dumps), Insomnia, Bruno, OpenAPI 3.x/Swagger 2.0, HAR, cURL.

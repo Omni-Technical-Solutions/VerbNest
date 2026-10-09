@@ -25,7 +25,7 @@ class RawRequest {
   }
 }
 
-/// Local HTTP/1.1 server used by every Verbnest test (constitution X).
+/// Local HTTP/1.1 server used by every VerbNest test (constitution X).
 ///
 /// It parses requests itself instead of using `HttpServer`, because
 /// `HttpServer` normalises header names and would hide wire-fidelity bugs.

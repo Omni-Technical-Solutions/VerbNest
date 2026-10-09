@@ -41,4 +41,4 @@ What is ready in the repository and what only the account owner can do. Nothing 
 - Arabic screenshot omitted: the headless test has no Arabic fallback font.
 
 ## Mac App Store package
-- With Xcode signed in: `xcodebuild archive` then `-exportArchive -allowProvisioningUpdates` using an `app-store-connect` export plist (team NYY6MADXHV, automatic signing) produces a signed `Verbnest.pkg`. Upload it with Transporter.
+- With Xcode signed in: `xcodebuild archive` then `-exportArchive -allowProvisioningUpdates` using an `app-store-connect` export plist (team NYY6MADXHV, automatic signing) produces a signed `VerbNest.pkg`. Upload it with Transporter.

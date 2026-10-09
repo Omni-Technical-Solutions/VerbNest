@@ -58,7 +58,7 @@ Goal: cover the modern API surface beyond REST.
 **Exit:** FR-GQL-001..003, FR-RT-001/002/004 complete with integration tests on all platforms.
 
 ## Phase 4: v2.0 ("every RPC")
-Goal: make Verbnest the best open source tool for remote function call testing.
+Goal: make VerbNest the best open source tool for remote function call testing.
 
 - 4a: gRPC via reflection and descriptor sets (all call types, metadata, TLS), dynamic protobuf codec.
 - 4b: pure-Dart `.proto` parser; gRPC-Web.
@@ -96,7 +96,7 @@ Rules:
 4. `feature`, `minor` and `fix` commits update `CHANGELOG.md` and get an annotated tag `v<version>`; `chore` gets neither.
 5. Pushing and publishing releases stay manual.
 6. `.claude/context.md` is updated twice per phase step: before work starts (goal, FR IDs, ⏳/✅ checklist, planned version) and on completion (result, what was left out, what is untested). The completion update is part of the phase commit.
-7. Release build (macOS): after the phase commit, `scripts/package_macos.sh` builds `flutter build macos --release` through `scripts/build.sh` (which raises the build number), signs `Verbnest.app` with the Apple Distribution certificate (hardened runtime, timestamp, entitlements; overridable via `SIGN_IDENTITY`), packages a styled DMG with `create-dmg` (plain `hdiutil` fallback) and moves it to `~/Downloads` as `Verbnest-<version>+<build>-macos-<arch>.dmg`. The build number change is committed afterwards as a `chore`. Notarisation needs a Developer ID Application certificate and stays manual (`scripts/notarize_macos.sh`).
+7. Release build (macOS): after the phase commit, `scripts/package_macos.sh` builds `flutter build macos --release` through `scripts/build.sh` (which raises the build number), signs `VerbNest.app` with the Apple Distribution certificate (hardened runtime, timestamp, entitlements; overridable via `SIGN_IDENTITY`), packages a styled DMG with `create-dmg` (plain `hdiutil` fallback) and moves it to `~/Downloads` as `VerbNest-<version>+<build>-macos-<arch>.dmg`. The build number change is committed afterwards as a `chore`. Notarisation needs a Developer ID Application certificate and stays manual (`scripts/notarize_macos.sh`).
 8. Claude Code runs this with `/phase-commit <type> <summary>` (see `.claude/commands/phase-commit.md`).
 
 Because `feature` bumps major, the first `feature` commit moves the project to 1.0.0. Treat that as the MVP release (end of Phase 1); use `minor` for steps before it.

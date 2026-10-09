@@ -316,7 +316,7 @@ Drift migrations are versioned and tested (`drift_dev` schema dumps) for every r
 
 ## 6. Postman mapping
 
-| Postman v2.1 | Verbnest |
+| Postman v2.1 | VerbNest |
 |---|---|
 | `info` | `node` row, kind `collection`: name/description (Postman `_postman_id` kept as `postmanId` in `extra`) |
 | `item[]` with `item[]` | `node` row, kind `folder`, with `parent_id` and `position` |

@@ -73,7 +73,7 @@ class StoredCookie {
 /// Stores `Set-Cookie` responses and builds `Cookie` request headers
 /// (RFC 6265). Not handled: the public suffix list, so a site can set a
 /// cookie for a shared suffix such as `co.uk`; `SameSite` is kept but not
-/// enforced, because Verbnest is not a browser.
+/// enforced, because VerbNest is not a browser.
 class CookieJar {
   CookieJar([Iterable<StoredCookie> initial = const []]) {
     for (final c in initial) {

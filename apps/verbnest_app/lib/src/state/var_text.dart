@@ -131,7 +131,7 @@ List<String> matchSuggestions(
 List<(String name, String value)> autoHeaders(
   HttpRequestItem item,
   Auth effectiveAuth, {
-  String userAgent = 'Verbnest',
+  String userAgent = 'VerbNest',
   bool autoDecompress = true,
 }) {
   final set = {

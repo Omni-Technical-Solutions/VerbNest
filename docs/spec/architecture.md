@@ -3,7 +3,7 @@
 ## 1. Goals that drive the architecture
 
 1. **Same behaviour in app and CLI** → protocol, scripting, variables and runner are pure Dart packages (constitution IV).
-2. **Wire fidelity and timing** → Verbnest owns its HTTP engine instead of relying solely on `package:http` (constitution V).
+2. **Wire fidelity and timing** → VerbNest owns its HTTP engine instead of relying solely on `package:http` (constitution V).
 3. **Five platforms, one codebase** → platform specifics isolated behind interfaces (constitution III).
 4. **SQLite as source of truth with lossless export** → workspace data lives in a per-workspace SQLite database; users can always export to `.verbnest`, Postman and YAML snapshots (constitution II, ADR-007).
 
@@ -53,7 +53,7 @@ verbnest/
 
 ### 3.1 HTTP engine (`verbnest_http`)
 - **Default engine:** custom client built on `dart:io` `Socket`/`SecureSocket`, which work on all five native platforms.
-  - HTTP/1.1 implemented in-house so Verbnest can (a) preserve header order and casing exactly, (b) send custom methods and non-standard headers, (c) record raw request/response bytes, (d) measure DNS (`InternetAddress.lookup`), TCP connect, TLS handshake, TTFB and download separately.
+  - HTTP/1.1 implemented in-house so VerbNest can (a) preserve header order and casing exactly, (b) send custom methods and non-standard headers, (c) record raw request/response bytes, (d) measure DNS (`InternetAddress.lookup`), TCP connect, TLS handshake, TTFB and download separately.
   - HTTP/2 via the official `package:http2` over `SecureSocket` with ALPN `h2`; fallback to HTTP/1.1.
   - Connection pooling per (scheme, host, port, proxy, client-cert) key; keep-alive; gzip/deflate/br decoding (`brotli` via `es_compression` or a pure-Dart decoder).
   - Proxies: HTTP CONNECT and SOCKS5 implemented in the engine; system proxy discovery per platform through the platform service.
@@ -96,7 +96,7 @@ Decision: ADR-007 (supersedes ADR-003).
 
 ### 3.7 gRPC
 - Transport: `package:grpc` client channel with a custom codec that passes raw bytes.
-- Messages: Verbnest implements a **descriptor-driven dynamic protobuf codec** (JSON ⇄ proto3 wire format) because Dart's `protobuf` package requires generated classes.
+- Messages: VerbNest implements a **descriptor-driven dynamic protobuf codec** (JSON ⇄ proto3 wire format) because Dart's `protobuf` package requires generated classes.
 - Service discovery: server reflection (v1 and v1alpha) first; `FileDescriptorSet` (`.pb`/`.binpb`) import second; pure-Dart `.proto` parser third (Phase 4b). Desktop may optionally shell out to `protoc` if found on PATH.
 
 ### 3.8 Real-time protocols
@@ -144,7 +144,7 @@ Each package is evaluated for: licence compatible with Apache-2.0, maintained in
 
 ### Android
 - Min SDK 24, target latest. Permissions: `INTERNET`, `ACCESS_NETWORK_STATE`; `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` (or `DATA_SYNC`) only for long collection runs / mock server, with Play policy justification.
-- Cleartext HTTP: `android:usesCleartextTraffic="true"` and a network security config allowing user CAs, because testing `http://` and local endpoints is core. (Applies to the native adapter; the `dart:io` engine uses its own trust settings, and Verbnest's custom CA feature covers user CAs.)
+- Cleartext HTTP: `android:usesCleartextTraffic="true"` and a network security config allowing user CAs, because testing `http://` and local endpoints is core. (Applies to the native adapter; the `dart:io` engine uses its own trust settings, and VerbNest's custom CA feature covers user CAs.)
 - Emulator → host machine is `10.0.2.2`; surface a hint when users type `localhost`.
 - Workspace databases live in app storage, so no folder permission is needed. Import/export files go through the Storage Access Framework picker.
 - Background: OS may kill sockets when backgrounded; runner uses a foreground service with notification.
@@ -178,7 +178,7 @@ Each package is evaluated for: licence compatible with Apache-2.0, maintained in
 ## 6. Cross-cutting concerns
 
 - **Concurrency:** UI isolate stays light; network I/O is async on the main isolate (Dart I/O is non-blocking), CPU-heavy work (pretty print, large JSON parse, script execution, import of big files, runner) in worker isolates.
-- **Error model:** sealed `VerbnestError` hierarchy (network, TLS, timeout, script, resolution, storage) with user-facing message, technical detail and remediation hint.
+- **Error model:** sealed `VerbNestError` hierarchy (network, TLS, timeout, script, resolution, storage) with user-facing message, technical detail and remediation hint.
 - **Logging:** structured logs to a rotating file in app support dir; no request bodies or secrets in logs.
 - **Security:** dependency audit in CI, SBOM (CycloneDX) per release, signed builds (Apple notarisation, Windows Authenticode, Android Play signing, Flatpak GPG).
 - **Extensibility (P2):** plugin API in JS (same QuickJS runtime) for auth providers, importers, dynamic variables and response visualisers, loaded from `<workspace>/.verbnest/plugins/`.

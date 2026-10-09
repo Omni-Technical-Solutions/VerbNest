@@ -9,7 +9,7 @@ Requirement IDs are stable. Priority: **P0** MVP, **P1** v1, **P2** later. Each 
 Storage decision: ADR-007. A workspace is a SQLite database file (`.verbnest`); device-local state lives in a separate local database.
 
 **FR-WS-001 (P0) Create/open workspace.** A workspace is a single `.verbnest` SQLite file. Users can create a new one (stored in app storage), import a `.verbnest` file (copied into app storage), or, on desktop, open a `.verbnest` file in place.
-- AC: A file that is not a Verbnest database, or has a newer schema version than the app, is rejected with a clear message and left untouched.
+- AC: A file that is not a VerbNest database, or has a newer schema version than the app, is rejected with a clear message and left untouched.
 - AC: A file with an older schema version is migrated after an automatic backup copy.
 - AC (mobile): No folder permission is required for the default flow; import/export use the platform file picker.
 
@@ -17,7 +17,7 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.verbnest`); 
 
 **FR-WS-003 (withdrawn)** File watching. Replaced by reactive database queries (UI updates from drift `watch()`); no external file edits to track.
 
-**FR-WS-004 (P0) Single-writer safety.** A workspace open in one Verbnest process cannot be opened for writing by another; the second attempt shows "in use" and offers read-only.
+**FR-WS-004 (P0) Single-writer safety.** A workspace open in one VerbNest process cannot be opened for writing by another; the second attempt shows "in use" and offers read-only.
 - AC: Killing the app mid-write never leaves a half-applied change (transactional); verified by crash-injection tests (NFR-REL-001).
 
 **FR-WS-005 (withdrawn)** Git integration. Replaced by the YAML snapshot workflow (FR-WS-006); in-app git UI is dropped from scope (open-questions.md #7).

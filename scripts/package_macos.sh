@@ -25,36 +25,36 @@ scripts/build.sh macos --release
 
 version="$(tr -d '[:space:]' < VERSION)"
 build="$(tr -d '[:space:]' < BUILD_NUMBER)"
-app="apps/verbnest_app/build/macos/Build/Products/Release/Verbnest.app"
+app="apps/verbnest_app/build/macos/Build/Products/Release/VerbNest.app"
 icon="apps/verbnest_app/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png"
 [ -d "$app" ] || { echo "Missing $app" >&2; exit 1; }
 
 arch="$(uname -m)"
-name="Verbnest-${version}+${build}-macos-${arch}.dmg"
+name="VerbNest-${version}+${build}-macos-${arch}.dmg"
 stage="$(mktemp -d)"
 work="$(mktemp -d)"
 trap 'rm -rf "$stage" "$work"' EXIT
 
-cp -R "$app" "$stage/Verbnest.app"
+cp -R "$app" "$stage/VerbNest.app"
 codesign --force --deep --options runtime --timestamp \
   --entitlements "$ENTITLEMENTS" \
-  --sign "$SIGN_IDENTITY" "$stage/Verbnest.app"
-codesign --verify --deep --strict "$stage/Verbnest.app"
+  --sign "$SIGN_IDENTITY" "$stage/VerbNest.app"
+codesign --verify --deep --strict "$stage/VerbNest.app"
 echo "Signed with: $SIGN_IDENTITY"
 
 if command -v create-dmg >/dev/null; then
   create-dmg \
-    --volname "Verbnest ${version}" \
+    --volname "VerbNest ${version}" \
     --volicon "$icon" \
     --window-pos 200 120 --window-size 600 400 \
     --icon-size 100 \
-    --icon "Verbnest.app" 175 190 \
-    --hide-extension "Verbnest.app" \
+    --icon "VerbNest.app" 175 190 \
+    --hide-extension "VerbNest.app" \
     --app-drop-link 425 190 \
     "$work/$name" "$stage/" >/dev/null
 else
   ln -s /Applications "$stage/Applications"
-  hdiutil create -volname "Verbnest ${version}" -srcfolder "$stage" \
+  hdiutil create -volname "VerbNest ${version}" -srcfolder "$stage" \
     -ov -format UDZO "$work/$name" >/dev/null
 fi
 

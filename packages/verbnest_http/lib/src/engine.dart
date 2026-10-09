@@ -37,11 +37,11 @@ class CancelToken {
 }
 
 /// HTTP/1.1 client over raw sockets so header order, casing and raw bytes
-/// are under Verbnest's control (architecture §3.1). Each exchange uses its own
+/// are under VerbNest's control (architecture §3.1). Each exchange uses its own
 /// connection (`Connection: close`); pooling is a later optimisation.
 class HttpEngine {
   HttpEngine({
-    this.userAgent = 'Verbnest/0.1',
+    this.userAgent = 'VerbNest/0.1',
     this.cookieJar,
     this.environment,
   });

@@ -11,7 +11,7 @@ import 'package:verbnest_storage/verbnest_storage.dart';
 import 'system_vault.dart';
 
 const _usage = '''
-Verbnest CLI
+VerbNest CLI
 
 Usage: verbnest run <workspace.verbnest> [options]
        verbnest mock <workspace.verbnest> [options]

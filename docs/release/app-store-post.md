@@ -1,13 +1,13 @@
-# Verbnest: App Store listing copy
+# VerbNest: App Store listing copy
 
-**Name:** Verbnest
+**Name:** VerbNest
 **Subtitle:** Local-first API client
 
 ## Promotional text
 Send requests, write tests and keep every collection on your own machine. No account, no cloud, no sync service.
 
 ## Description
-Verbnest is a fast API client for developers who want their work to stay on their own computer. Your collections, environments and history live in a local workspace. There is nothing to sign in to.
+VerbNest is a fast API client for developers who want their work to stay on their own computer. Your collections, environments and history live in a local workspace. There is nothing to sign in to.
 
 **Build and send requests.** Every HTTP method, query params, headers, JSON, form, multipart and binary bodies, and GraphQL. Variables like `{{baseUrl}}` resolve from globals, environments, collections and folders. Secret values stay on your device.
 

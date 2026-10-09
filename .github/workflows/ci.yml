@@ -71,7 +71,7 @@ jobs:
           - name: macos
             os: macos-latest
             build: flutter build macos --release
-            test: ../../scripts/ci_integration.sh macos Verbnest
+            test: ../../scripts/ci_integration.sh macos VerbNest
           - name: android
             os: ubuntu-latest
             build: flutter build apk --release

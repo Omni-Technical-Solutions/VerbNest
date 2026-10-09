@@ -1,6 +1,6 @@
 name: verbnest_runner
-description: Collection runner for Verbnest, shared by the app and the CLI. No Flutter code.
-version: 0.45.0
+description: Collection runner for VerbNest, shared by the app and the CLI. No Flutter code.
+version: 0.46.0
 publish_to: none
 resolution: workspace
 

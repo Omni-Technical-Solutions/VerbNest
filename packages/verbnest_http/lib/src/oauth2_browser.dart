@@ -82,7 +82,7 @@ class LoopbackReceiver {
   String get redirectUri => 'http://127.0.0.1:${_server.port}/callback';
 
   static const _forward =
-      '''<!doctype html><meta charset="utf-8"><title>Verbnest</title>
+      '''<!doctype html><meta charset="utf-8"><title>VerbNest</title>
 <body><p id="m">Finishing sign-in…</p>
 <script>
 var h = location.hash.slice(1);
@@ -91,8 +91,8 @@ else { document.getElementById('m').textContent = 'No sign-in response was recei
 </script></body>''';
 
   static const _finished =
-      '''<!doctype html><meta charset="utf-8"><title>Verbnest</title>
-<body><p>Signed in. You can close this tab and return to Verbnest.</p></body>''';
+      '''<!doctype html><meta charset="utf-8"><title>VerbNest</title>
+<body><p>Signed in. You can close this tab and return to VerbNest.</p></body>''';
 
   void _handle(HttpRequest req) {
     final q = req.uri.queryParameters;

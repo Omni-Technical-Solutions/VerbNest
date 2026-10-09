@@ -282,13 +282,13 @@ class _SnapshotImporter {
     final bytes = files[name];
     if (bytes == null) {
       throw const FormatException(
-        'verbnest.yaml is missing: not a Verbnest snapshot',
+        'verbnest.yaml is missing: not a VerbNest snapshot',
       );
     }
     final m = _doc(bytes, name);
     if (((legacy ? m['postit'] : m['verbnest']) as int? ?? 0) >
         snapshotVersion) {
-      throw const FormatException('This snapshot is from a newer Verbnest');
+      throw const FormatException('This snapshot is from a newer VerbNest');
     }
     return m;
   }

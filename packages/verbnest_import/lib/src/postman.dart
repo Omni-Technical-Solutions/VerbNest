@@ -62,7 +62,7 @@ class PostmanImport {
 
   final FolderNode collection;
 
-  /// Things Verbnest cannot keep yet (folder scripts, ...).
+  /// Things VerbNest cannot keep yet (folder scripts, ...).
   final List<String> warnings;
 }
 

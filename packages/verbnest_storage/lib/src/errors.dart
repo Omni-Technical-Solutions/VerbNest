@@ -7,18 +7,18 @@ sealed class StorageError implements Exception {
   String toString() => message;
 }
 
-/// The file is not a Verbnest workspace database.
+/// The file is not a VerbNest workspace database.
 class NotAWorkspaceError extends StorageError {
   const NotAWorkspaceError(String path)
-    : super('$path is not a Verbnest workspace file');
+    : super('$path is not a VerbNest workspace file');
 }
 
-/// The file was written by a newer Verbnest (FR-WS-001).
+/// The file was written by a newer VerbNest (FR-WS-001).
 class UnsupportedSchemaError extends StorageError {
   UnsupportedSchemaError(this.found, this.supported)
     : super(
         'Workspace schema v$found is newer than this app supports (v$supported). '
-        'Update Verbnest to open it.',
+        'Update VerbNest to open it.',
       );
 
   final int found;
@@ -28,14 +28,14 @@ class UnsupportedSchemaError extends StorageError {
 /// Another process holds the workspace open (FR-WS-004).
 class WorkspaceLockedError extends StorageError {
   const WorkspaceLockedError(String path)
-    : super('$path is in use by another Verbnest window or process');
+    : super('$path is in use by another VerbNest window or process');
 }
 
 /// The operating system refused access to the file or its folder.
 class WorkspaceAccessError extends StorageError {
   const WorkspaceAccessError(String path)
     : super(
-        'Verbnest cannot read or write $path. Check the folder permissions '
+        'VerbNest cannot read or write $path. Check the folder permissions '
         '(on macOS, allow access to the Documents folder in System Settings, '
         'Privacy & Security).',
       );

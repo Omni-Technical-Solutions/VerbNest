@@ -5,7 +5,7 @@
 ## Decision
 Scripts (FR-SCR-*) run in QuickJS through the `fjs` Flutter package (a Rust wrapper around QuickJS). One engine on every platform, so scripts behave the same everywhere. The decision was made by the owner after comparing:
 
-- `fjs`: has a memory limit, a stack limit, and `engine.close()` interrupts a script that never returns (this is how Verbnest enforces the 5 s timeout). Host modules (fs, net, fetch, process) are opt-in, and Verbnest enables none. Cost: builds on Android, Windows and Linux need a Rust toolchain (`rustup`, plus the Android targets). Apple targets use signed prebuilt binaries.
+- `fjs`: has a memory limit, a stack limit, and `engine.close()` interrupts a script that never returns (this is how VerbNest enforces the 5 s timeout). Host modules (fs, net, fetch, process) are opt-in, and VerbNest enables none. Cost: builds on Android, Windows and Linux need a Rust toolchain (`rustup`, plus the Android targets). Apple targets use signed prebuilt binaries.
 - `quickjs_engine` (QuickJS-ng 0.14, plain C): builds without Rust, but exposes no interrupt handler, so an infinite loop cannot be stopped. Rejected.
 
 ## Consequences

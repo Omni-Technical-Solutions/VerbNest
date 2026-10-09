@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Signs Verbnest.app with a Developer ID Application certificate, notarises it
+# Signs VerbNest.app with a Developer ID Application certificate, notarises it
 # with Apple and staples the ticket, then builds the DMG. Needs an Apple
 # Developer account; never run in CI without secrets set.
 #
@@ -22,26 +22,26 @@ cd "$(git rev-parse --show-toplevel)"
 out="${1:-$HOME/Downloads}"
 
 scripts/build.sh macos --release
-app="apps/verbnest_app/build/macos/Build/Products/Release/Verbnest.app"
+app="apps/verbnest_app/build/macos/Build/Products/Release/VerbNest.app"
 [ -d "$app" ] || { echo "Missing $app" >&2; exit 1; }
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-cp -R "$app" "$work/Verbnest.app"
+cp -R "$app" "$work/VerbNest.app"
 
 codesign --force --deep --options runtime --timestamp \
   --entitlements apps/verbnest_app/macos/Runner/Release.entitlements \
-  --sign "$DEVELOPER_ID" "$work/Verbnest.app"
-codesign --verify --deep --strict "$work/Verbnest.app"
+  --sign "$DEVELOPER_ID" "$work/VerbNest.app"
+codesign --verify --deep --strict "$work/VerbNest.app"
 
-ditto -c -k --keepParent "$work/Verbnest.app" "$work/Verbnest.zip"
-xcrun notarytool submit "$work/Verbnest.zip" --keychain-profile "$NOTARY_PROFILE" --wait
-xcrun stapler staple "$work/Verbnest.app"
+ditto -c -k --keepParent "$work/VerbNest.app" "$work/VerbNest.zip"
+xcrun notarytool submit "$work/VerbNest.zip" --keychain-profile "$NOTARY_PROFILE" --wait
+xcrun stapler staple "$work/VerbNest.app"
 
 version="$(tr -d '[:space:]' < VERSION)"
 build="$(tr -d '[:space:]' < BUILD_NUMBER)"
-dmg="$out/Verbnest-${version}+${build}-macos-notarized.dmg"
-hdiutil create -volname "Verbnest ${version}" -srcfolder "$work/Verbnest.app" -ov -format UDZO "$dmg"
+dmg="$out/VerbNest-${version}+${build}-macos-notarized.dmg"
+hdiutil create -volname "VerbNest ${version}" -srcfolder "$work/VerbNest.app" -ov -format UDZO "$dmg"
 codesign --sign "$DEVELOPER_ID" --timestamp "$dmg"
 xcrun notarytool submit "$dmg" --keychain-profile "$NOTARY_PROFILE" --wait
 xcrun stapler staple "$dmg"

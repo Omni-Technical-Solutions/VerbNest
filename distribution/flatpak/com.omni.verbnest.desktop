@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Verbnest
+Name=VerbNest
 Comment=Local-first API client
 Exec=verbnest_app
 Icon=com.omni.verbnest

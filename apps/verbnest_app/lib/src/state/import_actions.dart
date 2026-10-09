@@ -137,7 +137,7 @@ ImportOutcome _importDump(WorkspaceSession s, Map<Object?, Object?> dump) {
   String? firstId;
   for (final c in (dump['collections'] as List? ?? const [])) {
     if (!looksLikePostmanCollection(c)) {
-      warnings.add('Skipped a collection in a format Verbnest does not read');
+      warnings.add('Skipped a collection in a format VerbNest does not read');
       continue;
     }
     final r = importPostmanCollection(c);

@@ -29,7 +29,7 @@ class StartupErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Verbnest',
+      title: 'VerbNest',
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Center(
@@ -41,7 +41,7 @@ class StartupErrorApp extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'Verbnest could not open your workspace',
+                    'VerbNest could not open your workspace',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),

@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.46.0
+
+- Rename: the product name is now written **VerbNest** (capital N) everywhere it is shown: window titles on every platform, the Android, iOS and macOS app names (the macOS bundle is `VerbNest.app`), Windows file properties, the OAuth sign-in page, error messages, CLI help, store listings, README and docs. Identifiers stay as they were: package and binary names (`verbnest_*`), bundle id `com.omni.verbnest`, the `X-Verbnest-Example` and `X-Verbnest-Delay` headers, and the `Verbnest` workspace folder, so existing workspaces and scripts keep working. The User-Agent is now `VerbNest/<version>`.
+
 ## 0.45.0
 
 - UI: new design foundation. Theme tokens (spacing, radii, motion) and an `AppColors` extension replace the hard-coded colours for HTTP methods, status classes, syntax and highlights, so they follow light and dark mode. Rounded inputs, dialogs, menus, tabs and tooltips, with a visible focus ring. Animations respect the system "reduce motion" setting.

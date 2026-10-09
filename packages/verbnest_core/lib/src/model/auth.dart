@@ -277,7 +277,7 @@ enum JwtAlgorithm {
   final String label;
 }
 
-/// A bearer JWT signed by Verbnest for each send (FR-AUTH-004). [payload] is
+/// A bearer JWT signed by VerbNest for each send (FR-AUTH-004). [payload] is
 /// JSON text; `iat` is added when the payload does not set it.
 class JwtAuth extends Auth {
   const JwtAuth({

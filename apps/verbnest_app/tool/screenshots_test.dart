@@ -148,7 +148,7 @@ class _ShotEngine extends HttpEngine {
             'Host: ${spec.url.host}\r\n'
             'Authorization: Bearer ••••••\r\n'
             'Accept: */*\r\n'
-            'User-Agent: Verbnest/0.25\r\n',
+            'User-Agent: VerbNest/0.25\r\n',
         body: Uint8List(0),
         url: spec.url,
       ),

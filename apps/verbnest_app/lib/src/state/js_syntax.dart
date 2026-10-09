@@ -86,7 +86,7 @@ List<JsToken> tokenizeJs(String s) {
   return out;
 }
 
-/// The members Verbnest scripts can use, for completion.
+/// The members VerbNest scripts can use, for completion.
 const scriptApi = [
   'pm.variables.get',
   'pm.variables.set',
