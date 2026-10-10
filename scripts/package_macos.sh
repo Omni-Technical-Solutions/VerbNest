@@ -3,7 +3,8 @@
 #
 # Usage: scripts/package_macos.sh [output-dir]   (default: ~/Downloads)
 #
-# Goes through scripts/build.sh, so the build number is incremented first.
+# Goes through scripts/build.sh, so the build number is incremented first
+# (unless SKIP_BUILD=1, see below).
 # The DMG gets a drag-to-Applications layout when `create-dmg` is installed
 # (brew install create-dmg) and falls back to a plain `hdiutil` image.
 #
@@ -21,7 +22,12 @@ out="${1:-$HOME/Downloads}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Apple Distribution: Omni Technical Solutions Pty Ltd (NYY6MADXHV)}"
 ENTITLEMENTS="apps/verbnest_app/macos/Runner/Release.entitlements"
 
-scripts/build.sh macos --release
+# SKIP_BUILD=1 packages the app already built (with the build number in
+# BUILD_NUMBER) instead of building and bumping the number again, so the DMG
+# and the store packages of one release share a build number.
+if [ "${SKIP_BUILD:-}" != "1" ]; then
+  scripts/build.sh macos --release
+fi
 
 version="$(tr -d '[:space:]' < VERSION)"
 build="$(tr -d '[:space:]' < BUILD_NUMBER)"
