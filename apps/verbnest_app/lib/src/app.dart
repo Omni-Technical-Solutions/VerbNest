@@ -1,5 +1,7 @@
 import '../l10n/app_localizations.dart';
 
+import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +19,7 @@ class VerbnestApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final prefs = ref.watch(prefsProvider);
     final seed = AppAccents.seed(prefs.accent);
-    return MaterialApp(
+    Widget app(ColorScheme? light, ColorScheme? dark) => MaterialApp(
       title: 'VerbNest',
       // The package's delegates cover Material, Cupertino and widgets; the
       // generated list names the old flutter_localizations ones.
@@ -28,11 +30,17 @@ class VerbnestApp extends ConsumerWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       locale: ref.watch(localeProvider),
       debugShowCheckedModeBanner: false,
-      theme: buildTheme(Brightness.light, seed: seed, compact: prefs.compact),
+      theme: buildTheme(
+        Brightness.light,
+        seed: seed,
+        compact: prefs.compact,
+        dynamicScheme: light,
+      ),
       darkTheme: buildTheme(
         Brightness.dark,
         seed: seed,
         compact: prefs.compact,
+        dynamicScheme: dark,
       ),
       themeMode: ref.watch(themeModeProvider),
       // On top of the system text size, not instead of it.
@@ -61,5 +69,17 @@ class VerbnestApp extends ConsumerWidget {
       },
       home: const AdaptiveScaffold(),
     );
+    // Material You is Android only. The builder always wraps the app there and
+    // the setting only decides whether its colours are used: adding or removing
+    // the wrapper when the switch flips would rebuild the whole app and send you
+    // back to the first screen. Where the system offers no colours the builder
+    // gives null and the accent colour is used.
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return DynamicColorBuilder(
+        builder: (light, dark) =>
+            prefs.dynamicColor ? app(light, dark) : app(null, null),
+      );
+    }
+    return app(null, null);
   }
 }

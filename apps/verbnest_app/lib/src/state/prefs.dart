@@ -15,6 +15,7 @@ class Prefs {
     this.scriptsTrusted = false,
     this.accent = 0,
     this.compact = false,
+    this.dynamicColor = false,
   });
 
   /// Entries older than this are removed; 0 keeps them forever.
@@ -36,6 +37,10 @@ class Prefs {
   /// Tighter spacing for dense screens.
   final bool compact;
 
+  /// Android only: take the colour scheme from the system (Material You)
+  /// instead of the accent colour.
+  final bool dynamicColor;
+
   static const minScale = 0.8, maxScale = 1.6;
   static const minEditorSize = 10.0, maxEditorSize = 24.0;
 
@@ -48,6 +53,7 @@ class Prefs {
     bool? scriptsTrusted,
     int? accent,
     bool? compact,
+    bool? dynamicColor,
   }) => Prefs(
     historyDays: historyDays ?? this.historyDays,
     historyMax: historyMax ?? this.historyMax,
@@ -60,6 +66,7 @@ class Prefs {
     scriptsTrusted: scriptsTrusted ?? this.scriptsTrusted,
     accent: accent ?? this.accent,
     compact: compact ?? this.compact,
+    dynamicColor: dynamicColor ?? this.dynamicColor,
   );
 }
 
@@ -81,6 +88,7 @@ class PrefsNotifier extends Notifier<Prefs> {
       scriptsTrusted: get('scriptsTrusted') == 'true',
       accent: int.tryParse(get('accent') ?? ''),
       compact: get('compact') == 'true',
+      dynamicColor: get('dynamicColor') == 'true',
     );
   }
 
@@ -96,6 +104,7 @@ class PrefsNotifier extends Notifier<Prefs> {
     put('scriptsTrusted', next.scriptsTrusted);
     put('accent', next.accent);
     put('compact', next.compact);
+    put('dynamicColor', next.dynamicColor);
     state = next;
   }
 }

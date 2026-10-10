@@ -1477,4 +1477,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get menuPalette => 'Command palette';
+
+  @override
+  String get settingsDynamicColor => 'Use system colours';
+
+  @override
+  String get settingsDynamicColorHint =>
+      'Match your wallpaper colours (Android 12 and newer). The accent colour below is used otherwise.';
 }

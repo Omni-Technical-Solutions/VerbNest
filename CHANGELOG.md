@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.53.0
+
+- UI: Android Material You. A new Settings switch, "Use system colours", takes the colour scheme from the wallpaper on Android 12 and newer. It is off by default, shown only on Android, and the accent picker is dimmed while it is on. Where the system offers no colours the accent colour is used. Flipping the switch keeps you on the Settings page.
+- Tests: `dynamic_color_test.dart` (a system scheme is used as is, the preference is remembered, the switch is shown only on Android, the page stays put).
+- Not verified on a device: the system colours themselves come from Android's palette API, which tests cannot reach.
+
 ## 0.52.0
 
 - UI: bundled fonts. Text is set in Inter and code (the body, headers, URLs, scripts and JSON viewer) in JetBrains Mono, so the app looks and measures the same on every platform instead of depending on what is installed. Scripts the bundled fonts lack, such as Arabic, fall back to the system font. Both fonts are licensed under the SIL Open Font License; their texts ship with the app and appear on the licence page. App size grows by about 2 MB.

@@ -2761,6 +2761,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Command palette'**
   String get menuPalette;
+
+  /// No description provided for @settingsDynamicColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Use system colours'**
+  String get settingsDynamicColor;
+
+  /// No description provided for @settingsDynamicColorHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Match your wallpaper colours (Android 12 and newer). The accent colour below is used otherwise.'**
+  String get settingsDynamicColorHint;
 }
 
 class _AppLocalizationsDelegate

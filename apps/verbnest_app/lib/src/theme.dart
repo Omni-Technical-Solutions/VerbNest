@@ -10,15 +10,20 @@ ThemeData buildTheme(
   Brightness brightness, {
   Color? seed,
   bool compact = false,
+
+  /// A scheme from the system (Material You). Used as is when given.
+  ColorScheme? dynamicScheme,
 }) {
   final dark = brightness == Brightness.dark;
   // `vibrant` keeps the orange orange; the default variant turns it brown and
   // `expressive` turns it purple.
-  final scheme = ColorScheme.fromSeed(
-    seedColor: seed ?? AppAccents.seed(0),
-    brightness: brightness,
-    dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
-  );
+  final scheme =
+      dynamicScheme ??
+      ColorScheme.fromSeed(
+        seedColor: seed ?? AppAccents.seed(0),
+        brightness: brightness,
+        dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+      );
   final shape = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(Radii.md),
   );

@@ -163,8 +163,20 @@ class SettingsPage extends ConsumerWidget {
     Prefs prefs,
     PrefsNotifier prefsNotifier,
   ) {
+    final android = Theme.of(context).platform == TargetPlatform.android;
     return [
+      // Material You exists on Android 12 and newer only.
+      if (android)
+        SwitchListTile(
+          key: const Key('dynamic-color'),
+          title: Text(context.l10n.settingsDynamicColor),
+          subtitle: Text(context.l10n.settingsDynamicColorHint),
+          value: prefs.dynamicColor,
+          onChanged: (v) =>
+              prefsNotifier.update(prefs.copyWith(dynamicColor: v)),
+        ),
       ListTile(
+        enabled: !(android && prefs.dynamicColor),
         title: Text(context.l10n.settingsAccent),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: Space.sm),

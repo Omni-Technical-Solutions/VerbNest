@@ -450,5 +450,7 @@
   "menuCut": "قص",
   "menuPaste": "لصق",
   "menuSelectAll": "تحديد الكل",
-  "menuPalette": "لوحة الأوامر"
+  "menuPalette": "لوحة الأوامر",
+  "settingsDynamicColor": "استخدام ألوان النظام",
+  "settingsDynamicColorHint": "مطابقة ألوان خلفية الشاشة (أندرويد 12 وما بعده). يُستخدم لون التمييز أدناه في غير ذلك."
 }

@@ -1478,4 +1478,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get menuPalette => 'لوحة الأوامر';
+
+  @override
+  String get settingsDynamicColor => 'استخدام ألوان النظام';
+
+  @override
+  String get settingsDynamicColorHint =>
+      'مطابقة ألوان خلفية الشاشة (أندرويد 12 وما بعده). يُستخدم لون التمييز أدناه في غير ذلك.';
 }
