@@ -423,5 +423,32 @@
   "gqlPersisted": "استعلام محفوظ",
   "gqlPersistedHint": "أرسل التجزئة SHA-256 أولاً، ولا يُرسل الاستعلام الكامل إلا إذا لم يعرفه الخادم",
   "rvPdfTooLarge": "ملف PDF هذا كبير جدًا للمعاينة. استخدم الخام أو احفظه.",
-  "rvPdfError": "تعذّر فتح ملف PDF هذا."
+  "rvPdfError": "تعذّر فتح ملف PDF هذا.",
+  "sbSaved": "تم الحفظ",
+  "sbSaving": "جارٍ الحفظ…",
+  "sbTlsOff": "فحص شهادات TLS متوقف",
+  "sbProxyOn": "الوكيل مفعّل",
+  "sbConsole": "وحدة التحكم",
+  "sbCookiesTooltip": "إدارة ملفات الارتباط",
+  "sbEnvTooltip": "البيئة المستخدمة",
+  "cmdSwitchEnv": "التبديل إلى البيئة {name}",
+  "@cmdSwitchEnv": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cmdNoEnvironment": "عدم استخدام بيئة",
+  "menuFile": "ملف",
+  "menuEdit": "تحرير",
+  "menuRequest": "الطلب",
+  "menuView": "عرض",
+  "menuWindow": "نافذة",
+  "menuUndo": "تراجع",
+  "menuRedo": "إعادة",
+  "menuCut": "قص",
+  "menuPaste": "لصق",
+  "menuSelectAll": "تحديد الكل",
+  "menuPalette": "لوحة الأوامر"
 }

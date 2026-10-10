@@ -1416,4 +1416,66 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get rvPdfError => 'تعذّر فتح ملف PDF هذا.';
+
+  @override
+  String get sbSaved => 'تم الحفظ';
+
+  @override
+  String get sbSaving => 'جارٍ الحفظ…';
+
+  @override
+  String get sbTlsOff => 'فحص شهادات TLS متوقف';
+
+  @override
+  String get sbProxyOn => 'الوكيل مفعّل';
+
+  @override
+  String get sbConsole => 'وحدة التحكم';
+
+  @override
+  String get sbCookiesTooltip => 'إدارة ملفات الارتباط';
+
+  @override
+  String get sbEnvTooltip => 'البيئة المستخدمة';
+
+  @override
+  String cmdSwitchEnv(String name) {
+    return 'التبديل إلى البيئة $name';
+  }
+
+  @override
+  String get cmdNoEnvironment => 'عدم استخدام بيئة';
+
+  @override
+  String get menuFile => 'ملف';
+
+  @override
+  String get menuEdit => 'تحرير';
+
+  @override
+  String get menuRequest => 'الطلب';
+
+  @override
+  String get menuView => 'عرض';
+
+  @override
+  String get menuWindow => 'نافذة';
+
+  @override
+  String get menuUndo => 'تراجع';
+
+  @override
+  String get menuRedo => 'إعادة';
+
+  @override
+  String get menuCut => 'قص';
+
+  @override
+  String get menuPaste => 'لصق';
+
+  @override
+  String get menuSelectAll => 'تحديد الكل';
+
+  @override
+  String get menuPalette => 'لوحة الأوامر';
 }

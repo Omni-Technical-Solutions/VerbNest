@@ -1415,4 +1415,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rvPdfError => 'This PDF could not be opened.';
+
+  @override
+  String get sbSaved => 'Saved';
+
+  @override
+  String get sbSaving => 'Saving…';
+
+  @override
+  String get sbTlsOff => 'TLS checks off';
+
+  @override
+  String get sbProxyOn => 'Proxy on';
+
+  @override
+  String get sbConsole => 'Console';
+
+  @override
+  String get sbCookiesTooltip => 'Manage cookies';
+
+  @override
+  String get sbEnvTooltip => 'Environment in use';
+
+  @override
+  String cmdSwitchEnv(String name) {
+    return 'Switch environment to $name';
+  }
+
+  @override
+  String get cmdNoEnvironment => 'Use no environment';
+
+  @override
+  String get menuFile => 'File';
+
+  @override
+  String get menuEdit => 'Edit';
+
+  @override
+  String get menuRequest => 'Request';
+
+  @override
+  String get menuView => 'View';
+
+  @override
+  String get menuWindow => 'Window';
+
+  @override
+  String get menuUndo => 'Undo';
+
+  @override
+  String get menuRedo => 'Redo';
+
+  @override
+  String get menuCut => 'Cut';
+
+  @override
+  String get menuPaste => 'Paste';
+
+  @override
+  String get menuSelectAll => 'Select All';
+
+  @override
+  String get menuPalette => 'Command palette';
 }

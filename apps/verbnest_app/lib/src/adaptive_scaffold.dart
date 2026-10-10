@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import 'layout_class.dart';
+import 'macos_menu.dart';
 import 'pages/command_palette.dart';
 import 'pages/environments_page.dart';
 import 'pages/history_page.dart';
@@ -16,9 +17,11 @@ import 'state/session.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
 import 'state/tree_state.dart';
+import 'state/variables.dart';
 import 'theme.dart';
 import 'widgets/collections_sidebar.dart';
 import 'widgets/request_editor.dart';
+import 'widgets/status_bar.dart';
 import 'widgets/ui/toast.dart';
 import 'widgets/ui/ui.dart';
 
@@ -127,6 +130,20 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
           icon: d.icon,
           run: () => setState(() => _selected = d),
         ),
+      // Environments are reachable without a mouse too.
+      PaletteEntry(
+        id: 'env-none',
+        title: l.cmdNoEnvironment,
+        icon: Icons.tune,
+        run: () => ref.read(activeEnvProvider.notifier).select(null),
+      ),
+      for (final e in ref.read(environmentsProvider))
+        PaletteEntry(
+          id: 'env-${e.id}',
+          title: l.cmdSwitchEnv(e.name),
+          icon: Icons.tune,
+          run: () => ref.read(activeEnvProvider.notifier).select(e.id),
+        ),
       for (final d in repo.searchDocuments())
         if (d.kind == NodeKind.request)
           PaletteEntry(
@@ -227,48 +244,63 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    return CallbackShortcuts(
-      bindings: {
-        for (final mod in [
-          const SingleActivator(LogicalKeyboardKey.enter, control: true),
-          const SingleActivator(LogicalKeyboardKey.enter, meta: true),
-        ])
-          mod: _sendActive,
-        const SingleActivator(LogicalKeyboardKey.slash, control: true):
-            _showShortcuts,
-        const SingleActivator(LogicalKeyboardKey.slash, meta: true):
-            _showShortcuts,
-        const SingleActivator(LogicalKeyboardKey.keyK, control: true): _palette,
-        const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _palette,
-        const SingleActivator(
-          LogicalKeyboardKey.keyF,
-          control: true,
-          shift: true,
-        ): _search,
-        const SingleActivator(LogicalKeyboardKey.keyF, meta: true, shift: true):
-            _search,
-        const SingleActivator(LogicalKeyboardKey.keyW, control: true):
-            _closeActive,
-        const SingleActivator(LogicalKeyboardKey.keyW, meta: true):
-            _closeActive,
-        for (final (key, fn) in <(LogicalKeyboardKey, VoidCallback)>[
-          (LogicalKeyboardKey.keyN, _newRequest),
-          (LogicalKeyboardKey.keyS, _saveActive),
-          (LogicalKeyboardKey.backslash, _toggleSidebar),
-        ]) ...{
-          SingleActivator(key, control: true): fn,
-          SingleActivator(key, meta: true): fn,
+    return MacMenuBar(
+      actions: MenuActions(
+        newRequest: _newRequest,
+        closeTab: _closeActive,
+        search: _search,
+        send: _sendActive,
+        palette: _palette,
+        toggleSidebar: _toggleSidebar,
+        shortcuts: _showShortcuts,
+      ),
+      child: CallbackShortcuts(
+        bindings: {
+          for (final mod in [
+            const SingleActivator(LogicalKeyboardKey.enter, control: true),
+            const SingleActivator(LogicalKeyboardKey.enter, meta: true),
+          ])
+            mod: _sendActive,
+          const SingleActivator(LogicalKeyboardKey.slash, control: true):
+              _showShortcuts,
+          const SingleActivator(LogicalKeyboardKey.slash, meta: true):
+              _showShortcuts,
+          const SingleActivator(LogicalKeyboardKey.keyK, control: true):
+              _palette,
+          const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _palette,
+          const SingleActivator(
+            LogicalKeyboardKey.keyF,
+            control: true,
+            shift: true,
+          ): _search,
+          const SingleActivator(
+            LogicalKeyboardKey.keyF,
+            meta: true,
+            shift: true,
+          ): _search,
+          const SingleActivator(LogicalKeyboardKey.keyW, control: true):
+              _closeActive,
+          const SingleActivator(LogicalKeyboardKey.keyW, meta: true):
+              _closeActive,
+          for (final (key, fn) in <(LogicalKeyboardKey, VoidCallback)>[
+            (LogicalKeyboardKey.keyN, _newRequest),
+            (LogicalKeyboardKey.keyS, _saveActive),
+            (LogicalKeyboardKey.backslash, _toggleSidebar),
+          ]) ...{
+            SingleActivator(key, control: true): fn,
+            SingleActivator(key, meta: true): fn,
+          },
+          const SingleActivator(LogicalKeyboardKey.tab, control: true): () =>
+              ref.read(tabsProvider.notifier).step(1),
+          const SingleActivator(
+            LogicalKeyboardKey.tab,
+            control: true,
+            shift: true,
+          ): () =>
+              ref.read(tabsProvider.notifier).step(-1),
         },
-        const SingleActivator(LogicalKeyboardKey.tab, control: true): () =>
-            ref.read(tabsProvider.notifier).step(1),
-        const SingleActivator(
-          LogicalKeyboardKey.tab,
-          control: true,
-          shift: true,
-        ): () =>
-            ref.read(tabsProvider.notifier).step(-1),
-      },
-      child: Focus(autofocus: true, child: _layout()),
+        child: Focus(autofocus: true, child: _layout()),
+      ),
     );
   }
 
@@ -310,45 +342,53 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   Widget _withRail({required bool sidebar}) {
     return Scaffold(
       key: Key(sidebar ? 'layout-expanded' : 'layout-medium'),
-      body: Row(
+      body: Column(
         children: [
-          NavigationRail(
-            selectedIndex: _selected.index,
-            onDestinationSelected: _select,
-            labelType: NavigationRailLabelType.all,
-            destinations: [
-              for (final d in _Destination.values)
-                NavigationRailDestination(
-                  icon: Icon(d.icon),
-                  selectedIcon: Icon(d.selectedIcon),
-                  label: Text(d.label(context)),
-                ),
-            ],
-          ),
-          const VerticalDivider(width: 1),
-          if (sidebar && _selected == _Destination.collections)
-            TweenAnimationBuilder<double>(
-              tween: Tween(end: _sidebarVisible ? 1 : 0),
-              duration: Motion.of(context, Motion.base),
-              curve: Motion.curve,
-              // Fully collapsed means unmounted, as before the animation.
-              builder: (context, t, child) => t == 0
-                  ? const SizedBox.shrink()
-                  : ClipRect(
-                      child: Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        widthFactor: t,
-                        child: child,
+          Expanded(
+            child: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _selected.index,
+                  onDestinationSelected: _select,
+                  labelType: NavigationRailLabelType.all,
+                  destinations: [
+                    for (final d in _Destination.values)
+                      NavigationRailDestination(
+                        icon: Icon(d.icon),
+                        selectedIcon: Icon(d.selectedIcon),
+                        label: Text(d.label(context)),
                       ),
+                  ],
+                ),
+                const VerticalDivider(width: 1),
+                if (sidebar && _selected == _Destination.collections)
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(end: _sidebarVisible ? 1 : 0),
+                    duration: Motion.of(context, Motion.base),
+                    curve: Motion.curve,
+                    // Fully collapsed means unmounted, as before the animation.
+                    builder: (context, t, child) => t == 0
+                        ? const SizedBox.shrink()
+                        : ClipRect(
+                            child: Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              widthFactor: t,
+                              child: child,
+                            ),
+                          ),
+                    child: Row(
+                      children: [
+                        SizedBox(width: _sidebarWidth, child: _sidebar()),
+                        _sidebarHandle(),
+                      ],
                     ),
-              child: Row(
-                children: [
-                  SizedBox(width: _sidebarWidth, child: _sidebar()),
-                  _sidebarHandle(),
-                ],
-              ),
+                  ),
+                Expanded(child: _content()),
+              ],
             ),
-          Expanded(child: _content()),
+          ),
+          // Desktop-size windows get a status bar; a tablet has no room.
+          if (sidebar) const StatusBar(),
         ],
       ),
     );
@@ -406,17 +446,28 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
       children: [
         SizedBox(
           height: 40,
-          child: ListView(
+          // Drag a tab to reorder; the drag starts at once (no long press) so
+          // it works with a mouse.
+          child: ReorderableListView(
             scrollDirection: Axis.horizontal,
+            buildDefaultDragHandles: false,
+            proxyDecorator: (child, _, _) =>
+                Material(color: Colors.transparent, child: child),
+            onReorderItem: ref.read(tabsProvider.notifier).move,
             children: [
-              for (final id in tabs.open)
-                _TabChip(
+              for (final (i, id) in tabs.open.indexed)
+                ReorderableDragStartListener(
                   key: Key('tab-$id'),
-                  title: repo.node(id).name,
-                  method: repo.node(id).method,
-                  selected: id == active,
-                  onTap: () => ref.read(tabsProvider.notifier).activate(id),
-                  onClose: () => _closeTab(id),
+                  index: i,
+                  child: _TabChip(
+                    title: repo.node(id).name,
+                    method: repo.node(id).method,
+                    selected: id == active,
+                    preview: id == tabs.preview,
+                    onTap: () => ref.read(tabsProvider.notifier).activate(id),
+                    onPin: () => ref.read(tabsProvider.notifier).pin(id),
+                    onClose: () => _closeTab(id),
+                  ),
                 ),
             ],
           ),
@@ -473,18 +524,23 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
 
 class _TabChip extends StatefulWidget {
   const _TabChip({
-    super.key,
     required this.title,
     required this.method,
     required this.selected,
+    required this.preview,
     required this.onTap,
+    required this.onPin,
     required this.onClose,
   });
 
   final String title;
   final String? method;
   final bool selected;
+
+  /// A preview tab (italic) is replaced by the next single click.
+  final bool preview;
   final VoidCallback onTap;
+  final VoidCallback onPin;
   final VoidCallback onClose;
 
   @override
@@ -508,6 +564,7 @@ class _TabChipState extends State<_TabChip> {
         },
         child: InkWell(
           onTap: widget.onTap,
+          onDoubleTap: widget.onPin,
           child: AnimatedContainer(
             duration: Motion.of(context, Motion.base),
             curve: Motion.curve,
@@ -534,6 +591,9 @@ class _TabChipState extends State<_TabChip> {
                   widget.title,
                   style: TextStyle(
                     fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                    fontStyle: widget.preview
+                        ? FontStyle.italic
+                        : FontStyle.normal,
                   ),
                 ),
                 Opacity(

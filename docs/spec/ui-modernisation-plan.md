@@ -177,7 +177,7 @@ Fixes findings 4, 5 and 6.
 - Risk: open tab, scroll position and selection must survive a layout change
   when a window is resized or a tablet rotates.
 
-## Phase 4: Desktop polish (minor, v0.49.0)
+## Phase 4: Desktop polish (minor, v0.49.0) - done, with notes
 
 - 4a. Bottom status bar from `ux.md` (console toggle, cookies, proxy and TLS
   state, workspace and save state).
@@ -188,6 +188,12 @@ Fixes findings 4, 5 and 6.
 - 4d. Visible focus ring and logical focus order on every control.
 - Done when: a keyboard-only pass covers send, switch tab, open the palette and
   change environment with no mouse.
+- Delivered: 4a (status bar from 840 dp; the item set is workspace, environment,
+  save state, cookies, TLS warning, proxy, console), 4b (preview/pinned tabs,
+  drag to reorder; pane layout was already stored per workspace), 4c (native
+  macOS menu bar, structure unit-tested, not checked in a live window), 4d
+  (keyboard-only pass test and environment commands in the palette; focus
+  rings are the Material 3 defaults, not audited control by control).
 
 ## Phase 5: Platform polish and accessibility (minor, v0.50.0)
 

@@ -299,9 +299,21 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       ref.read(expandedProvider.notifier).toggle(node.id);
       return;
     }
-    ref.read(tabsProvider.notifier).open(node.id);
+    // A single click previews; a second click on the same row pins the tab.
+    final now = DateTime.now();
+    final again =
+        _lastTapId == node.id &&
+        now.difference(_lastTapAt) < const Duration(milliseconds: 400);
+    _lastTapId = node.id;
+    _lastTapAt = now;
+    ref.read(tabsProvider.notifier)
+      ..open(node.id, preview: true)
+      ..pin(again ? node.id : '');
     widget.onOpenRequest?.call(node.id);
   }
+
+  String? _lastTapId;
+  DateTime _lastTapAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   Widget _menu(BuildContext context, NodeInfo node) {
     return PopupMenuButton<_Action>(

@@ -24,6 +24,7 @@ import 'console_log.dart';
 import 'network_state.dart';
 import 'prefs.dart';
 import 'session.dart';
+import 'tree_state.dart';
 import 'settings_state.dart';
 import 'variables.dart';
 
@@ -57,7 +58,11 @@ class EditorState {
     this.scriptLogs = const [],
     this.scriptError,
     this.flow = const ScriptFlow(),
+    this.dirty = false,
   });
+
+  /// Edits not yet written to the workspace (autosave is pending).
+  final bool dirty;
 
   final HttpRequestItem item;
   final bool sending;
@@ -109,7 +114,9 @@ class EditorState {
     String? scriptError,
     ScriptFlow? flow,
     bool clearResult = false,
+    bool? dirty,
   }) => EditorState(
+    dirty: dirty ?? this.dirty,
     item: item ?? this.item,
     sending: sending ?? this.sending,
     response: clearResult ? null : (response ?? this.response),
@@ -168,7 +175,9 @@ class EditorNotifier extends Notifier<EditorState> {
   }
 
   void edit(HttpRequestItem Function(HttpRequestItem) change) {
-    state = state.copyWith(item: change(state.item));
+    state = state.copyWith(item: change(state.item), dirty: true);
+    // Editing a preview tab keeps it.
+    ref.read(tabsProvider.notifier).pin(id);
     _dirty = true;
     _timer?.cancel();
     _timer = Timer(saveDelay, flush);
@@ -181,6 +190,7 @@ class EditorNotifier extends Notifier<EditorState> {
     if (!_dirty) return;
     _dirty = false;
     _save(ref.read(repositoryProvider), state.item);
+    state = state.copyWith(dirty: false);
   }
 
   void _save(WorkspaceRepository repo, HttpRequestItem item) {

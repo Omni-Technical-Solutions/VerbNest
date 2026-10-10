@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:verbnest_app/src/app.dart';
 import 'package:verbnest_app/src/state/session.dart';
 import 'package:verbnest_app/src/state/tree_state.dart';

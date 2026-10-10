@@ -2641,6 +2641,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This PDF could not be opened.'**
   String get rvPdfError;
+
+  /// No description provided for @sbSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get sbSaved;
+
+  /// No description provided for @sbSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get sbSaving;
+
+  /// No description provided for @sbTlsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'TLS checks off'**
+  String get sbTlsOff;
+
+  /// No description provided for @sbProxyOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy on'**
+  String get sbProxyOn;
+
+  /// No description provided for @sbConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'Console'**
+  String get sbConsole;
+
+  /// No description provided for @sbCookiesTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage cookies'**
+  String get sbCookiesTooltip;
+
+  /// No description provided for @sbEnvTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment in use'**
+  String get sbEnvTooltip;
+
+  /// No description provided for @cmdSwitchEnv.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch environment to {name}'**
+  String cmdSwitchEnv(String name);
+
+  /// No description provided for @cmdNoEnvironment.
+  ///
+  /// In en, this message translates to:
+  /// **'Use no environment'**
+  String get cmdNoEnvironment;
+
+  /// No description provided for @menuFile.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get menuFile;
+
+  /// No description provided for @menuEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get menuEdit;
+
+  /// No description provided for @menuRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request'**
+  String get menuRequest;
+
+  /// No description provided for @menuView.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get menuView;
+
+  /// No description provided for @menuWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Window'**
+  String get menuWindow;
+
+  /// No description provided for @menuUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get menuUndo;
+
+  /// No description provided for @menuRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get menuRedo;
+
+  /// No description provided for @menuCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut'**
+  String get menuCut;
+
+  /// No description provided for @menuPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get menuPaste;
+
+  /// No description provided for @menuSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get menuSelectAll;
+
+  /// No description provided for @menuPalette.
+  ///
+  /// In en, this message translates to:
+  /// **'Command palette'**
+  String get menuPalette;
 }
 
 class _AppLocalizationsDelegate

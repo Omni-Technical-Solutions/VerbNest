@@ -773,19 +773,25 @@
   "tabClosedToast": "Closed {name}",
   "@tabClosedToast": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "toastDeleted": "Deleted {name}",
   "toastMoved": "Moved {name}",
   "@toastDeleted": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "@toastMoved": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "paletteGroupCommands": "Commands",
@@ -798,7 +804,9 @@
   "codePathCopied": "Copied {path}",
   "@codePathCopied": {
     "placeholders": {
-      "path": {"type": "String"}
+      "path": {
+        "type": "String"
+      }
     }
   },
   "reTabSettings": "Settings",
@@ -851,5 +859,32 @@
   "gqlPersisted": "Persisted query",
   "gqlPersistedHint": "Send a SHA-256 hash first; the full query is sent only if the server does not know it",
   "rvPdfTooLarge": "This PDF is too large to preview. Use Raw or Save.",
-  "rvPdfError": "This PDF could not be opened."
+  "rvPdfError": "This PDF could not be opened.",
+  "sbSaved": "Saved",
+  "sbSaving": "Saving…",
+  "sbTlsOff": "TLS checks off",
+  "sbProxyOn": "Proxy on",
+  "sbConsole": "Console",
+  "sbCookiesTooltip": "Manage cookies",
+  "sbEnvTooltip": "Environment in use",
+  "cmdSwitchEnv": "Switch environment to {name}",
+  "@cmdSwitchEnv": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cmdNoEnvironment": "Use no environment",
+  "menuFile": "File",
+  "menuEdit": "Edit",
+  "menuRequest": "Request",
+  "menuView": "View",
+  "menuWindow": "Window",
+  "menuUndo": "Undo",
+  "menuRedo": "Redo",
+  "menuCut": "Cut",
+  "menuPaste": "Paste",
+  "menuSelectAll": "Select All",
+  "menuPalette": "Command palette"
 }

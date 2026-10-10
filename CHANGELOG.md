@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.49.0
+
+- UI: a status bar along the bottom of windows 840 dp and wider: workspace name, the environment in use, whether the open request is saved ("Saved" or "Saving…"), cookie count (opens the cookie manager), a warning when certificate checks are off, a proxy indicator, and the network console with its entry count.
+- UI: preview and pinned tabs. A single click on a request opens it in an italic preview tab that the next single click replaces; a second click on the same row, a double-click on the tab, or any edit pins it. Tabs can be dragged to reorder.
+- UI: the macOS menu bar is native: VerbNest, File, Edit, Request, View and Window menus with the app's shortcuts (New request, Close tab, Search, Send, Toggle sidebar, Command palette, Keyboard shortcuts), the standard application and window items, and Cut, Copy, Paste, Select All, Undo and Redo that act on whatever has focus.
+- UI: environments can be switched from the command palette ("Switch environment to …", "Use no environment"), so the whole send flow works from the keyboard.
+- Tests: tabs (preview, pin, move, drag), status bar, a keyboard-only pass (palette, environment, tab switch, send) and the macOS menu structure.
+- Not verified on a real Mac window: the native menu bar. A check with the running app was blocked by a macOS Accessibility prompt, so it is covered by unit tests of the menu structure only.
+
 ## 0.48.0
 
 - UI: the app follows the five Material 3 window size classes (compact under 600, medium 600 to 839, expanded 840 to 1199, large 1200 to 1599, extra large 1600 and up). The collection list now sits beside the editor from 840 dp (it used to need 1024), so an iPad in portrait or a narrow desktop window gets list and detail.

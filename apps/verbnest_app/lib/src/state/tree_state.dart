@@ -45,10 +45,14 @@ final expandedProvider = NotifierProvider<ExpandedNotifier, Set<String>>(
 
 /// Open request tabs and the active one.
 class TabsState {
-  const TabsState({this.open = const [], this.active});
+  const TabsState({this.open = const [], this.active, this.preview});
 
   final List<String> open;
   final String? active;
+
+  /// The tab opened by a single click, shown in italics. The next single click
+  /// on another request replaces it; editing it or double-clicking pins it.
+  final String? preview;
 }
 
 class TabsNotifier extends Notifier<TabsState> {
@@ -100,17 +104,56 @@ class TabsNotifier extends Notifier<TabsState> {
     if (open.length < 2) return;
     final i = open.indexOf(state.active ?? '');
     final next = open[((i == -1 ? 0 : i) + delta) % open.length];
-    state = TabsState(open: open, active: next);
+    state = TabsState(open: open, active: next, preview: state.preview);
   }
 
-  void open(String id) => state = TabsState(
-    open: state.open.contains(id) ? state.open : [...state.open, id],
-    active: id,
-  );
+  /// Opens [id] and makes it active. With [preview] the tab is a preview: it
+  /// takes the place of the current preview tab if there is one. Opening an
+  /// existing tab without [preview] pins it.
+  void open(String id, {bool preview = false}) {
+    final open = state.open;
+    final current = state.preview;
+    if (open.contains(id)) {
+      state = TabsState(
+        open: open,
+        active: id,
+        preview: !preview && current == id ? null : current,
+      );
+      return;
+    }
+    if (preview && current != null && open.contains(current)) {
+      state = TabsState(
+        open: [for (final t in open) t == current ? id : t],
+        active: id,
+        preview: id,
+      );
+      return;
+    }
+    state = TabsState(
+      open: [...open, id],
+      active: id,
+      preview: preview ? id : current,
+    );
+  }
+
+  /// Turns a preview tab into a normal one.
+  void pin(String id) {
+    if (state.preview != id) return;
+    state = TabsState(open: state.open, active: state.active);
+  }
+
+  /// Moves a tab to [newIndex], its index once it has been taken out of its
+  /// old place (what `ReorderableListView.onReorderItem` reports).
+  void move(int oldIndex, int newIndex) {
+    final open = [...state.open];
+    if (oldIndex < 0 || oldIndex >= open.length) return;
+    open.insert(newIndex.clamp(0, open.length - 1), open.removeAt(oldIndex));
+    state = TabsState(open: open, active: state.active, preview: state.preview);
+  }
 
   void activate(String id) {
     if (state.open.contains(id)) {
-      state = TabsState(open: state.open, active: id);
+      state = TabsState(open: state.open, active: id, preview: state.preview);
     }
   }
 
@@ -123,7 +166,11 @@ class TabsNotifier extends Notifier<TabsState> {
         : (remaining.isEmpty
               ? null
               : remaining[index.clamp(0, remaining.length - 1)]);
-    state = TabsState(open: remaining, active: active);
+    state = TabsState(
+      open: remaining,
+      active: active,
+      preview: state.preview == id ? null : state.preview,
+    );
   }
 
   /// Drops tabs whose request no longer exists.
