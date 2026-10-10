@@ -7,6 +7,8 @@ import '../state/session.dart';
 import '../state/variables.dart';
 import '../widgets/name_dialog.dart';
 import '../../l10n/l10n.dart';
+import '../theme.dart';
+import '../layout_class.dart';
 import '../widgets/ui/toast.dart';
 
 /// Environments and globals with their variables (FR-VAR-002..004).
@@ -251,6 +253,77 @@ class _VariablesEditorState extends State<VariablesEditor> {
 
   Widget _row(BuildContext context, int i) {
     final v = _vars[i];
+    // Four fields in one line leave each about 50 px on a phone: stack them.
+    return LayoutBuilder(
+      builder: (context, c) => c.maxWidth < LayoutClass.mediumBreakpoint
+          ? _compactRow(context, i, v)
+          : _wideRow(context, i, v),
+    );
+  }
+
+  Widget _keyField(BuildContext context, int i, Variable v) => TextFormField(
+    key: ValueKey('var-key-$i'),
+    initialValue: v.key,
+    decoration: InputDecoration(
+      isDense: true,
+      hintText: context.l10n.envVarName,
+    ),
+    onChanged: (x) => _set(i, _copy(v, key: x)),
+  );
+
+  Widget _secretButton(BuildContext context, int i, Variable v) => IconButton(
+    key: ValueKey('var-secret-$i'),
+    tooltip: v.secret ? context.l10n.envSecret : context.l10n.envMarkSecret,
+    icon: Icon(v.secret ? Icons.lock : Icons.lock_open, size: 18),
+    onPressed: () => _set(i, _copy(v, secret: !v.secret)),
+  );
+
+  Widget _removeButton(BuildContext context, int i) => IconButton(
+    tooltip: context.l10n.remove,
+    icon: const Icon(Icons.close, size: 18),
+    onPressed: () => _update([..._vars]..removeAt(i)),
+  );
+
+  Widget _compactRow(BuildContext context, int i, Variable v) {
+    return Padding(
+      key: ValueKey('var-row-$i'),
+      padding: const EdgeInsets.only(bottom: Space.md),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Checkbox(
+                value: v.enabled,
+                onChanged: (x) => _set(i, _copy(v, enabled: x)),
+              ),
+              Expanded(child: _keyField(context, i, v)),
+              _secretButton(context, i, v),
+              _removeButton(context, i),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 48),
+            child: Row(
+              children: [
+                Expanded(child: _valueField(context, i)),
+                if (v.secret) _revealButton(context, i),
+              ],
+            ),
+          ),
+          if (!v.secret)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: 48,
+                top: Space.sm,
+              ),
+              child: _currentField(context, i),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _wideRow(BuildContext context, int i, Variable v) {
     return Row(
       key: ValueKey('var-row-$i'),
       children: [
@@ -258,17 +331,7 @@ class _VariablesEditorState extends State<VariablesEditor> {
           value: v.enabled,
           onChanged: (x) => _set(i, _copy(v, enabled: x)),
         ),
-        Expanded(
-          child: TextFormField(
-            key: ValueKey('var-key-$i'),
-            initialValue: v.key,
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: context.l10n.envVarName,
-            ),
-            onChanged: (x) => _set(i, _copy(v, key: x)),
-          ),
-        ),
+        Expanded(child: _keyField(context, i, v)),
         const SizedBox(width: 8),
         Expanded(child: _valueField(context, i)),
         if (v.secret)
@@ -277,19 +340,8 @@ class _VariablesEditorState extends State<VariablesEditor> {
           const SizedBox(width: 8),
           Expanded(child: _currentField(context, i)),
         ],
-        IconButton(
-          key: ValueKey('var-secret-$i'),
-          tooltip: v.secret
-              ? context.l10n.envSecret
-              : context.l10n.envMarkSecret,
-          icon: Icon(v.secret ? Icons.lock : Icons.lock_open, size: 18),
-          onPressed: () => _set(i, _copy(v, secret: !v.secret)),
-        ),
-        IconButton(
-          tooltip: context.l10n.remove,
-          icon: const Icon(Icons.close, size: 18),
-          onPressed: () => _update([..._vars]..removeAt(i)),
-        ),
+        _secretButton(context, i, v),
+        _removeButton(context, i),
       ],
     );
   }

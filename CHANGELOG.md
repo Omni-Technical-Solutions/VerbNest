@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.46.1
+
+- UI: the request editor now fits a phone. Method and URL share one row with an icon-only Send button (the URL gets about 20 characters on a 402 pt screen instead of 3), the favourite, examples, live and environment controls sit in one wrapping toolbar, and the environment picker shrinks to the available width. The response pane stays out of the way until you send, response tabs scroll instead of cutting labels, and the view toggle, search and copy button stack on narrow screens. Environment variables stack name, value and current value on phones. The split-direction button no longer floats over the request tabs on phones.
+- UI: keyboard shortcut hints (the Send badge and "Ctrl/Cmd + Enter") only show on macOS, Windows and Linux.
+- Tests: `phone_fit_test.dart` pumps the request editor and environments page at 320, 360, 402 and 599 pt and fails on any overflow, a URL field under 110 pt, or lost request-tab selection.
+
 ## 0.46.0
 
 - Rename: the product name is now written **VerbNest** (capital N) everywhere it is shown: window titles on every platform, the Android, iOS and macOS app names (the macOS bundle is `VerbNest.app`), Windows file properties, the OAuth sign-in page, error messages, CLI help, store listings, README and docs. Identifiers stay as they were: package and binary names (`verbnest_*`), bundle id `com.omni.verbnest`, the `X-Verbnest-Example` and `X-Verbnest-Delay` headers, and the `Verbnest` workspace folder, so existing workspaces and scripts keep working. The User-Agent is now `VerbNest/<version>`.

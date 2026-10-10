@@ -43,39 +43,66 @@ class RequestEditor extends ConsumerWidget {
 
     return VariableContext(
       scopes: () => buildScopes(session, requestId: requestId, envId: envId),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _Toolbar(requestId: requestId),
-          UrlBar(state: state, notifier: notifier),
-          if (state.pendingUnresolved.isNotEmpty)
-            _PendingBanner(state: state, notifier: notifier),
-          if (state.pendingSecretHost != null)
-            _SecretHostBanner(state: state, notifier: notifier),
-          if (state.unresolved.isNotEmpty)
-            _Banner(
-              context.l10n.reUndefined(
-                state.unresolved.map((n) => '{{$n}}').join(', '),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final compact = c.maxWidth < LayoutClass.mediumBreakpoint;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _Toolbar(
+                requestId: requestId,
+                compact: compact,
+                item: state.item,
+                notifier: notifier,
               ),
-            ),
-          for (final w in state.warnings) _Banner(w),
-          Expanded(
-            child: _Panes(
-              requestId: requestId,
-              state: state,
-              notifier: notifier,
-            ),
-          ),
-        ],
+              UrlBar(state: state, notifier: notifier, compact: compact),
+              if (state.pendingUnresolved.isNotEmpty)
+                _PendingBanner(state: state, notifier: notifier),
+              if (state.pendingSecretHost != null)
+                _SecretHostBanner(state: state, notifier: notifier),
+              if (state.unresolved.isNotEmpty)
+                _Banner(
+                  context.l10n.reUndefined(
+                    state.unresolved.map((n) => '{{$n}}').join(', '),
+                  ),
+                ),
+              for (final w in state.warnings) _Banner(w),
+              Expanded(
+                child: _Panes(
+                  requestId: requestId,
+                  state: state,
+                  notifier: notifier,
+                  compact: compact,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 class _Toolbar extends StatelessWidget {
-  const _Toolbar({required this.requestId});
+  const _Toolbar({
+    required this.requestId,
+    required this.compact,
+    required this.item,
+    required this.notifier,
+  });
 
   final String requestId;
+  final bool compact;
+  final HttpRequestItem item;
+  final EditorNotifier notifier;
+
+  void _examples(BuildContext context) => showDialog<void>(
+    context: context,
+    builder: (_) => UncontrolledProviderScope(
+      container: ProviderScope.containerOf(context),
+      child: ExamplesDialog(requestId: requestId),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -88,17 +115,21 @@ class _Toolbar extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             FavouriteButton(requestId: requestId),
-            TextButton(
-              key: const Key('examples'),
-              onPressed: () => showDialog<void>(
-                context: context,
-                builder: (_) => UncontrolledProviderScope(
-                  container: ProviderScope.containerOf(context),
-                  child: ExamplesDialog(requestId: requestId),
-                ),
+            if (compact)
+              IconButton(
+                key: const Key('examples'),
+                tooltip: context.l10n.reExamples,
+                icon: const Icon(Icons.bookmarks_outlined),
+                onPressed: () => _examples(context),
+              )
+            else
+              TextButton(
+                key: const Key('examples'),
+                onPressed: () => _examples(context),
+                child: Text(context.l10n.reExamples),
               ),
-              child: Text(context.l10n.reExamples),
-            ),
+            // On a phone the URL row has no room for this menu.
+            if (compact) LiveMenu(item: item, notifier: notifier),
             EnvSelector(requestId: requestId),
           ],
         ),
@@ -209,11 +240,13 @@ class _Panes extends ConsumerWidget {
     required this.requestId,
     required this.state,
     required this.notifier,
+    required this.compact,
   });
 
   final String requestId;
   final EditorState state;
   final EditorNotifier notifier;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -224,6 +257,14 @@ class _Panes extends ConsumerWidget {
           item: state.item,
           notifier: notifier,
         );
+        // Nothing to show yet: on a phone the request gets the whole screen.
+        // The pane is collapsed rather than removed so the request tabs keep
+        // their selection when the first response arrives.
+        final collapsed =
+            compact &&
+            state.response == null &&
+            state.error == null &&
+            !state.sending;
         final response = _response(context, ref);
         final layout = ref.watch(splitLayoutProvider);
         // Side by side is cramped below tablet width; stack instead.
@@ -233,31 +274,37 @@ class _Panes extends ConsumerWidget {
           children: [
             SplitView(
               axis: sideBySide ? Axis.horizontal : Axis.vertical,
-              ratio: layout.ratio,
-              onRatioChanged: (r) => ref
-                  .read(splitLayoutProvider.notifier)
-                  .update(layout.copyWith(ratio: r)),
-              first: request,
-              second: response,
-            ),
-            PositionedDirectional(
-              end: 4,
-              top: 4,
-              child: IconButton(
-                key: const Key('split-orientation'),
-                visualDensity: VisualDensity.compact,
-                tooltip: sideBySide
-                    ? context.l10n.reSplitStacked
-                    : context.l10n.reSplitSideBySide,
-                icon: Icon(
-                  sideBySide ? Icons.view_agenda_outlined : Icons.view_column,
-                  size: 18,
-                ),
-                onPressed: () => ref
+              ratio: collapsed ? 1 : layout.ratio,
+              onRatioChanged: (r) {
+                if (collapsed) return;
+                ref
                     .read(splitLayoutProvider.notifier)
-                    .update(layout.copyWith(horizontal: !layout.horizontal)),
-              ),
+                    .update(layout.copyWith(ratio: r));
+              },
+              first: request,
+              second: collapsed ? const SizedBox.shrink() : response,
             ),
+            // The toggle floats over the tab row, and a phone cannot split
+            // sideways anyway.
+            if (!compact)
+              PositionedDirectional(
+                end: 4,
+                top: 4,
+                child: IconButton(
+                  key: const Key('split-orientation'),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: sideBySide
+                      ? context.l10n.reSplitStacked
+                      : context.l10n.reSplitSideBySide,
+                  icon: Icon(
+                    sideBySide ? Icons.view_agenda_outlined : Icons.view_column,
+                    size: 18,
+                  ),
+                  onPressed: () => ref
+                      .read(splitLayoutProvider.notifier)
+                      .update(layout.copyWith(horizontal: !layout.horizontal)),
+                ),
+              ),
           ],
         );
       },

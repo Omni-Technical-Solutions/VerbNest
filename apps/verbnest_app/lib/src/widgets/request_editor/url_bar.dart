@@ -28,10 +28,19 @@ const httpMethods = [
 ];
 
 class UrlBar extends StatelessWidget {
-  const UrlBar({super.key, required this.state, required this.notifier});
+  const UrlBar({
+    super.key,
+    required this.state,
+    required this.notifier,
+    this.compact = false,
+  });
 
   final EditorState state;
   final EditorNotifier notifier;
+
+  /// Phone width: a shorter method box and an icon-only Send button, so the
+  /// URL keeps room to be read.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -40,13 +49,13 @@ class UrlBar extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       child: Row(
         children: [
-          _MethodDropdown(item: item, notifier: notifier),
+          _MethodDropdown(item: item, notifier: notifier, compact: compact),
           const SizedBox(width: 8),
           Expanded(
             child: _UrlField(item: item, notifier: notifier),
           ),
           const SizedBox(width: 8),
-          _LiveMenu(item: item, notifier: notifier),
+          if (!compact) LiveMenu(item: item, notifier: notifier),
           AnimatedSwitcher(
             duration: Motion.of(context, Motion.fast),
             transitionBuilder: (child, anim) => FadeTransition(
@@ -56,7 +65,21 @@ class UrlBar extends StatelessWidget {
                 child: child,
               ),
             ),
-            child: state.sending
+            child: compact
+                ? (state.sending
+                      ? IconButton.filledTonal(
+                          key: const Key('cancel'),
+                          tooltip: context.l10n.reCancel,
+                          onPressed: notifier.cancel,
+                          icon: const Icon(Icons.stop),
+                        )
+                      : IconButton.filled(
+                          key: const Key('send'),
+                          tooltip: context.l10n.reSend,
+                          onPressed: notifier.send,
+                          icon: const Icon(Icons.send),
+                        ))
+                : state.sending
                 ? FilledButton.tonal(
                     key: const Key('cancel'),
                     onPressed: notifier.cancel,
@@ -69,11 +92,13 @@ class UrlBar extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(context.l10n.reSend),
-                        const SizedBox(width: Space.sm),
-                        Kbd(
-                          _sendHint(context),
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
+                        if (showsKeyboardHints(context)) ...[
+                          const SizedBox(width: Space.sm),
+                          Kbd(
+                            _sendHint(context),
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -90,10 +115,15 @@ String _sendHint(BuildContext context) => switch (Theme.of(context).platform) {
 };
 
 class _MethodDropdown extends StatelessWidget {
-  const _MethodDropdown({required this.item, required this.notifier});
+  const _MethodDropdown({
+    required this.item,
+    required this.notifier,
+    required this.compact,
+  });
 
   final HttpRequestItem item;
   final EditorNotifier notifier;
+  final bool compact;
 
   Future<void> _onSelected(BuildContext context, String? m) async {
     if (m == null) return;
@@ -117,7 +147,7 @@ class _MethodDropdown extends StatelessWidget {
     return DropdownMenu<String>(
       key: const Key('method'),
       initialSelection: httpMethods.contains(item.method) ? item.method : null,
-      width: 120,
+      width: compact ? 124 : 120,
       textStyle: TextStyle(
         fontWeight: FontWeight.bold,
         color: AppColors.of(context).method(item.method),
@@ -127,6 +157,10 @@ class _MethodDropdown extends StatelessWidget {
         border: InputBorder.none,
         isDense: true,
         hintText: item.method,
+        // The default 16 px inset leaves no room for "DELETE" in a narrow box.
+        contentPadding: compact
+            ? const EdgeInsetsDirectional.only(start: 10)
+            : null,
       ),
       dropdownMenuEntries: [
         for (final m in httpMethods) DropdownMenuEntry(value: m, label: m),
@@ -194,8 +228,9 @@ class _UrlField extends StatelessWidget {
   }
 }
 
-class _LiveMenu extends ConsumerWidget {
-  const _LiveMenu({required this.item, required this.notifier});
+/// Menu that opens a WebSocket, SSE or subscription session for the request.
+class LiveMenu extends ConsumerWidget {
+  const LiveMenu({super.key, required this.item, required this.notifier});
 
   final HttpRequestItem item;
   final EditorNotifier notifier;

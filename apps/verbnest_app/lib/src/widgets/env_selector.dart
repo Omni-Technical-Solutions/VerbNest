@@ -18,31 +18,38 @@ class EnvSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final envs = ref.watch(environmentsProvider);
     final active = ref.watch(activeEnvProvider);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        DropdownMenu<String?>(
-          key: const Key('env-select'),
-          initialSelection: envs.any((e) => e.id == active) ? active : null,
-          requestFocusOnTap: false,
-          decorationBuilder: (_, _) =>
-              InputDecoration(border: InputBorder.none, isDense: true),
-          dropdownMenuEntries: [
-            DropdownMenuEntry(value: null, label: context.l10n.noEnvironment),
-            for (final e in envs) DropdownMenuEntry(value: e.id, label: e.name),
-          ],
-          onSelected: ref.read(activeEnvProvider.notifier).select,
-        ),
-        IconButton(
-          key: const Key('quick-look'),
-          tooltip: context.l10n.variablesInEffect,
-          icon: const Icon(Icons.visibility_outlined),
-          onPressed: () => showDialog<void>(
-            context: context,
-            builder: (_) => _QuickLook(requestId: requestId),
+    return LayoutBuilder(
+      builder: (context, c) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DropdownMenu<String?>(
+            key: const Key('env-select'),
+            // Fits the row; the eye button takes the other 48.
+            width: c.maxWidth.isFinite
+                ? (c.maxWidth - 48).clamp(96.0, 220.0)
+                : null,
+            initialSelection: envs.any((e) => e.id == active) ? active : null,
+            requestFocusOnTap: false,
+            decorationBuilder: (_, _) =>
+                InputDecoration(border: InputBorder.none, isDense: true),
+            dropdownMenuEntries: [
+              DropdownMenuEntry(value: null, label: context.l10n.noEnvironment),
+              for (final e in envs)
+                DropdownMenuEntry(value: e.id, label: e.name),
+            ],
+            onSelected: ref.read(activeEnvProvider.notifier).select,
           ),
-        ),
-      ],
+          IconButton(
+            key: const Key('quick-look'),
+            tooltip: context.l10n.variablesInEffect,
+            icon: const Icon(Icons.visibility_outlined),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (_) => _QuickLook(requestId: requestId),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

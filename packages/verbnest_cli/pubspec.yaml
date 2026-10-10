@@ -1,6 +1,6 @@
 name: verbnest_cli
 description: Command-line runner for VerbNest workspaces. No Flutter code.
-version: 0.46.0
+version: 0.46.1
 publish_to: none
 resolution: workspace
 

@@ -383,6 +383,8 @@ class _App {
   }
 
   Future<void> tapText(String text) async {
+    // Tabs can sit past the screen edge on a phone.
+    await tester.ensureVisible(find.text(text).first);
     await tester.tap(find.text(text).first);
     await settle();
   }

@@ -77,7 +77,7 @@ golden test kit are in place. Desktop (1440 px) reads well.
   system fonts.
 - Android Material You dynamic colour: opt-in, or skip.
 
-## Phase 0: Move to `material_ui` (chore)
+## Phase 0: Move to `material_ui` (chore) - done
 
 Material left the framework. Do this first so later work targets the package
 that will receive fixes.
@@ -90,7 +90,7 @@ that will receive fixes.
   Android succeed with no visual change (compare screenshots).
 - Risk: a mechanical change touching many files; keep it a commit of its own.
 
-## Phase 1: Fit phones (patch, v0.46.1)
+## Phase 1: Fit phones (patch, v0.46.1) - done
 
 Fixes findings 1 and 2. No visual redesign yet, so it ships fast and improves
 the store screenshots.
@@ -99,8 +99,9 @@ the store screenshots.
   own row, favourite, Examples and environment behind one overflow menu.
 - 1b. Scrollable tab bars (request and response) with an edge fade, no overlap
   with the layout toggle; hide the layout toggle on Compact.
-- 1c. Hide keyboard hints when there is no hardware keyboard; replace the `↵`
-  glyph with one the mono font has.
+- 1c. Hide keyboard hints on touch platforms. (The `↵` box seen in the
+  screenshots is the test harness's mono font lacking the glyph; real devices
+  fall back to a font that has it.)
 - 1d. Compact environments and key/value editors stack name above value.
 - 1e. Response pane on Compact follows its content (collapsed until a send).
 - Done when: no overflow at 320, 360, 402 and 600 wide; the URL shows at least

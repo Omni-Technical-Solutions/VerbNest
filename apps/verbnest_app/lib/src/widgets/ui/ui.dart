@@ -178,6 +178,16 @@ class InlineBanner extends StatelessWidget {
   }
 }
 
+/// Whether to show keyboard shortcut hints. Phones and tablets are driven by
+/// touch, so the hints would only be noise there.
+bool showsKeyboardHints(BuildContext context) =>
+    switch (Theme.of(context).platform) {
+      TargetPlatform.macOS ||
+      TargetPlatform.windows ||
+      TargetPlatform.linux => true,
+      _ => false,
+    };
+
 /// Keyboard shortcut hint such as `Ctrl+Enter`.
 class Kbd extends StatelessWidget {
   const Kbd(this.label, {super.key, this.color});

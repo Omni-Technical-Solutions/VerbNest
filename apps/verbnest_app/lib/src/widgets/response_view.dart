@@ -14,6 +14,7 @@ import 'html_preview.dart';
 import 'pdf_preview.dart';
 import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
+import '../layout_class.dart';
 import 'ui/toast.dart';
 
 String formatBytes(int n) {
@@ -156,7 +157,7 @@ class _ResponseViewState extends State<ResponseView> {
       return EmptyState(
         icon: Icons.bolt_outlined,
         title: context.l10n.rvEmpty,
-        hint: 'Ctrl/Cmd + Enter',
+        hint: showsKeyboardHints(context) ? 'Ctrl/Cmd + Enter' : null,
       );
     }
     final cookies = [
@@ -257,6 +258,13 @@ class _ResponseViewState extends State<ResponseView> {
     List<SetCookie> cookies,
   ) {
     return TabBar(
+      // Five tabs do not fit a phone; scroll them rather than cut the labels.
+      isScrollable:
+          MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint,
+      tabAlignment:
+          MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint
+          ? TabAlignment.start
+          : null,
       tabs: [
         Tab(text: context.l10n.rvTabBody),
         Tab(
@@ -530,65 +538,78 @@ class _ResponseViewState extends State<ResponseView> {
   Widget _bodyToolbar(HttpResponseRecord r, String text, _Preview preview) {
     final canPreview =
         isImageResponse(r) || isHtmlResponse(r) || isPdfResponse(r);
+    final modes = SegmentedButton<String>(
+      key: const Key('body-view'),
+      showSelectedIcon: false,
+      // On a phone the modes share the full line instead of scrolling.
+      expandedInsets:
+          MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint
+          ? EdgeInsets.zero
+          : null,
+      segments: [
+        ButtonSegment(value: 'pretty', label: Text(context.l10n.rvPretty)),
+        ButtonSegment(value: 'raw', label: Text(context.l10n.rvRaw)),
+        ButtonSegment(value: 'hex', label: Text(context.l10n.rvHex)),
+        if (canPreview)
+          ButtonSegment(value: 'preview', label: Text(context.l10n.rvPreview)),
+      ],
+      selected: {
+        preview != _Preview.none
+            ? 'preview'
+            : _hex
+            ? 'hex'
+            : (_pretty ? 'pretty' : 'raw'),
+      },
+      onSelectionChanged: (s) => setState(() {
+        _preview = s.first == 'preview';
+        _hex = s.first == 'hex';
+        if (!_preview && !_hex) _pretty = s.first == 'pretty';
+      }),
+    );
+    final search = TextField(
+      key: const Key('response-search'),
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: context.l10n.rvSearch,
+        prefixIcon: const Icon(Icons.search, size: 18),
+        suffixText: _query.isEmpty ? null : '${countMatches(text, _query)}',
+      ),
+      onChanged: (v) => setState(() => _query = v),
+    );
+    final copy = IconButton(
+      key: const Key('copy-body'),
+      tooltip: context.l10n.rvCopyBody,
+      icon: const Icon(Icons.copy, size: 18),
+      onPressed: () async {
+        await Clipboard.setData(ClipboardData(text: text));
+        if (!mounted) return;
+        showToast(context, context.l10n.rvBodyCopied);
+      },
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          SegmentedButton<String>(
-            key: const Key('body-view'),
-            showSelectedIcon: false,
-            segments: [
-              ButtonSegment(
-                value: 'pretty',
-                label: Text(context.l10n.rvPretty),
+      child: LayoutBuilder(
+        builder: (context, c) => c.maxWidth < LayoutClass.mediumBreakpoint
+            // A phone has no room for the modes, search and copy side by side.
+            ? Column(
+                children: [
+                  modes,
+                  Row(
+                    children: [
+                      Expanded(child: search),
+                      copy,
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  modes,
+                  const SizedBox(width: 8),
+                  Expanded(child: search),
+                  copy,
+                ],
               ),
-              ButtonSegment(value: 'raw', label: Text(context.l10n.rvRaw)),
-              ButtonSegment(value: 'hex', label: Text(context.l10n.rvHex)),
-              if (canPreview)
-                ButtonSegment(
-                  value: 'preview',
-                  label: Text(context.l10n.rvPreview),
-                ),
-            ],
-            selected: {
-              preview != _Preview.none
-                  ? 'preview'
-                  : _hex
-                  ? 'hex'
-                  : (_pretty ? 'pretty' : 'raw'),
-            },
-            onSelectionChanged: (s) => setState(() {
-              _preview = s.first == 'preview';
-              _hex = s.first == 'hex';
-              if (!_preview && !_hex) _pretty = s.first == 'pretty';
-            }),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              key: const Key('response-search'),
-              decoration: InputDecoration(
-                isDense: true,
-                hintText: context.l10n.rvSearch,
-                prefixIcon: const Icon(Icons.search, size: 18),
-                suffixText: _query.isEmpty
-                    ? null
-                    : '${countMatches(text, _query)}',
-              ),
-              onChanged: (v) => setState(() => _query = v),
-            ),
-          ),
-          IconButton(
-            key: const Key('copy-body'),
-            tooltip: context.l10n.rvCopyBody,
-            icon: const Icon(Icons.copy, size: 18),
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: text));
-              if (!mounted) return;
-              showToast(context, context.l10n.rvBodyCopied);
-            },
-          ),
-        ],
       ),
     );
   }
