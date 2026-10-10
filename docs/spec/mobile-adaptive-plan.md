@@ -77,7 +77,7 @@ system bars, a foldable's unfolded 6:5 shape, and split-screen windows.
 - 0d. Check the "not yet checked" list above and add findings here.
 - Done when: the matrix runs in CI and the known failures are listed.
 
-## Phase 1: Stop overflowing; keep the focused field visible (patch)
+## Phase 1: Stop overflowing; keep the focused field visible (patch) - done, with notes
 
 Fixes finding 2 and the first half of finding 1 with the smallest change.
 
@@ -89,6 +89,11 @@ Fixes finding 2 and the first half of finding 1 with the smallest change.
   text fields.
 - Done when: the matrix passes at every keyboard profile, and a test types in
   the URL field at 740x360 with the keyboard up and can still reach Send.
+- Result: portrait sizes and landscape up to about 700 wide pass. Still failing,
+  and recorded in `device_matrix_test.dart`: the rail overflows landscape phones
+  874 wide and up (phase 3), and the URL row sits under the keyboard at 740x360
+  until it is pinned (phase 2). The page scroll was built with slivers
+  (`SliverLayoutBuilder` gives the header's extent), which phase 2 builds on.
 - Risk: the panes below (code view, response body) need a bounded height;
   give them a sensible minimum (about 240 pt) and let the page scroll past it.
 

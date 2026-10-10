@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.53.1
+
+- Fix: the request editor no longer overflows when the window is short. The page scrolls: the panes get the space that is left (at least 240 dp) and you scroll past the rest. This fixes the on-screen keyboard on a 360x640 phone and landscape phones up to about 700 wide. Dragging the page dismisses the keyboard.
+- Tests: a device size matrix (nine phone sizes, each with and without the keyboard) checks the editor, the URL field and Send above the keyboard, and the other screens; baseline goldens for the editor at five sizes; scroll tests. Known remaining failures are listed per plan phase in the matrix test: landscape phones 874 wide and up overflow the navigation rail (height classes, phase 3), and the URL row on a 740x360 phone sits under the keyboard until it is pinned (phase 2).
+
 ## 0.53.0
 
 - UI: Android Material You. A new Settings switch, "Use system colours", takes the colour scheme from the wallpaper on Android 12 and newer. It is off by default, shown only on Android, and the accent picker is dimmed while it is on. Where the system offers no colours the accent colour is used. Flipping the switch keeps you on the Settings page.

@@ -47,34 +47,55 @@ class RequestEditor extends ConsumerWidget {
       child: LayoutBuilder(
         builder: (context, c) {
           final compact = c.maxWidth < LayoutClass.mediumBreakpoint;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _Toolbar(
-                requestId: requestId,
-                compact: compact,
-                item: state.item,
-                notifier: notifier,
+          // The page scrolls, so a short window (landscape, or a keyboard on
+          // screen) never overflows: the panes get what is left, but at least
+          // [_minPaneHeight], and the page scrolls past the rest.
+          return CustomScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Toolbar(
+                      requestId: requestId,
+                      compact: compact,
+                      item: state.item,
+                      notifier: notifier,
+                    ),
+                    UrlBar(state: state, notifier: notifier, compact: compact),
+                    if (state.pendingUnresolved.isNotEmpty)
+                      _PendingBanner(state: state, notifier: notifier),
+                    if (state.pendingSecretHost != null)
+                      _SecretHostBanner(state: state, notifier: notifier),
+                    if (state.unresolved.isNotEmpty)
+                      _Banner(
+                        context.l10n.reUndefined(
+                          state.unresolved.map((n) => '{{$n}}').join(', '),
+                        ),
+                      ),
+                    for (final w in state.warnings) _Banner(w),
+                  ],
+                ),
               ),
-              UrlBar(state: state, notifier: notifier, compact: compact),
-              if (state.pendingUnresolved.isNotEmpty)
-                _PendingBanner(state: state, notifier: notifier),
-              if (state.pendingSecretHost != null)
-                _SecretHostBanner(state: state, notifier: notifier),
-              if (state.unresolved.isNotEmpty)
-                _Banner(
-                  context.l10n.reUndefined(
-                    state.unresolved.map((n) => '{{$n}}').join(', '),
-                  ),
-                ),
-              for (final w in state.warnings) _Banner(w),
-              Expanded(
-                child: _Panes(
-                  requestId: requestId,
-                  state: state,
-                  notifier: notifier,
-                  compact: compact,
-                ),
+              SliverLayoutBuilder(
+                builder: (context, sc) {
+                  final remaining =
+                      sc.viewportMainAxisExtent - sc.precedingScrollExtent;
+                  return SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: remaining < _minPaneHeight
+                          ? _minPaneHeight
+                          : remaining,
+                      child: _Panes(
+                        requestId: requestId,
+                        state: state,
+                        notifier: notifier,
+                        compact: compact,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           );
@@ -82,6 +103,9 @@ class RequestEditor extends ConsumerWidget {
       ),
     );
   }
+
+  /// The least height the request and response panes are given.
+  static const _minPaneHeight = 240.0;
 }
 
 class _Toolbar extends StatelessWidget {

@@ -11,14 +11,15 @@ import 'support/matrix_support.dart';
 /// docs/spec/mobile-adaptive-plan.md that fixes them. A profile listed here is
 /// skipped; the list shrinks as the phases land and ends empty.
 const _knownEditorFailures = <String, String>{
-  'android-360x640+keyboard': 'phase 1',
-  'landscape-667x375+keyboard': 'phase 1',
-  'landscape-740x360+keyboard': 'phase 1',
-  'landscape-874x402+keyboard': 'phase 1',
-  'landscape-932x430+keyboard': 'phase 1',
+  // The navigation rail overflows a landscape phone's height (needs the height
+  // classes of phase 3).
+  'landscape-874x402+keyboard': 'phase 3',
+  'landscape-932x430+keyboard': 'phase 3',
 };
 const _knownReachFailures = <String, String>{
-  'landscape-740x360+keyboard': 'phase 1',
+  // The URL row sits under the keyboard until it is pinned under the app bar
+  // (phase 2); the tablet-class layout of 874 wide needs phase 3.
+  'landscape-740x360+keyboard': 'phase 2',
   'landscape-874x402+keyboard': 'phase 3',
 };
 

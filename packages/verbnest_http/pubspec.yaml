@@ -1,6 +1,6 @@
 name: verbnest_http
 description: VerbNest HTTP/1.1 engine built on dart:io sockets.
-version: 0.53.0
+version: 0.53.1
 publish_to: none
 resolution: workspace
 
