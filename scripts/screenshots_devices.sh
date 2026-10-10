@@ -3,7 +3,8 @@
 # tablet. The pixel sizes match the Triplogger store listings.
 #
 # Usage: scripts/screenshots_devices.sh [profile...]
-#        profiles: iphone ipad android-phone android-tablet (default: all)
+#        profiles: iphone ipad android-phone android-tablet iphone-landscape
+#                  android-phone-landscape (default: all)
 #        Output:   docs/release/screenshots/<profile>/
 #
 # Same headless harness as scripts/screenshots_macos.sh (see its header), run
@@ -12,7 +13,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 profiles=("$@")
-[ ${#profiles[@]} -gt 0 ] || profiles=(iphone ipad android-phone android-tablet)
+[ ${#profiles[@]} -gt 0 ] || profiles=(iphone ipad android-phone android-tablet iphone-landscape android-phone-landscape)
 
 flutter_bin="$(command -v flutter)"
 flutter_root="$(cd "$(dirname "$(readlink "$flutter_bin" || echo "$flutter_bin")")/.." && pwd)"

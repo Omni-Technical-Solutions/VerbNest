@@ -187,13 +187,16 @@ Fixes finding 7.
   for every request tab. Not covered by the matrix yet: the import dialog, the
   environments editor with the keyboard up, and settings with the keyboard up.
 
-## Phase 6: Device checks (chore)
+## Phase 6: Device checks (chore) - done except the device run
 
 - 6a. A manual checklist in `docs/release`: one small phone, one large phone,
   one tablet, one foldable, portrait and landscape, with the keyboard, large
   text and a screen reader.
 - 6b. Refresh the store screenshots and add a landscape phone set.
 - Done when: the checklist has been run once and its results are recorded.
+- Delivered: the checklist is `docs/release/device-checklist.md`, and landscape
+  store screenshot sets exist for iPhone (2622x1206) and Android (2424x1080).
+  The run on real devices is still to do: record it in the checklist.
 
 ## Order and effort
 

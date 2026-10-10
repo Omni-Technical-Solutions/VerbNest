@@ -3,7 +3,8 @@
 # from the committed set, so a UI change shows which store images to review.
 #
 # Usage: scripts/compare_screenshots.sh [profile...]
-#        profiles: macos iphone ipad android-phone android-tablet (default: all)
+#        profiles: macos iphone ipad android-phone android-tablet
+#                  iphone-landscape android-phone-landscape (default: all)
 #
 # Nothing in docs/release/screenshots is overwritten. Exit code 1 when any
 # screenshot changed. To accept the changes run scripts/screenshots_macos.sh
@@ -12,7 +13,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 profiles=("$@")
-[ ${#profiles[@]} -gt 0 ] || profiles=(macos iphone ipad android-phone android-tablet)
+[ ${#profiles[@]} -gt 0 ] || profiles=(macos iphone ipad android-phone android-tablet iphone-landscape android-phone-landscape)
 
 flutter_bin="$(command -v flutter)"
 flutter_root="$(cd "$(dirname "$(readlink "$flutter_bin" || echo "$flutter_bin")")/.." && pwd)"

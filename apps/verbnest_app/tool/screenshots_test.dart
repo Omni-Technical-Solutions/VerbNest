@@ -45,7 +45,9 @@ class _Profile {
   final Set<String>? only;
 
   Size get logical => Size(pixels.width / ratio, pixels.height / ratio);
-  bool get phone => logical.width < 600;
+
+  /// A phone is short on its shortest side, in either orientation.
+  bool get phone => logical.shortestSide < 600;
 }
 
 const _tabletShots = {
@@ -69,6 +71,14 @@ const _profiles = {
   'iphone': _Profile(Size(1206, 2622), 3, TargetPlatform.iOS),
   'ipad': _Profile(Size(2064, 2752), 2, TargetPlatform.iOS, only: _tabletShots),
   'android-phone': _Profile(Size(1080, 2424), 3, TargetPlatform.android),
+  // Landscape phones: 874 x 402 and 808 x 360 pt. Wide but short, so they get
+  // the one-pane layout with a rail (see HeightClass).
+  'iphone-landscape': _Profile(Size(2622, 1206), 3, TargetPlatform.iOS),
+  'android-phone-landscape': _Profile(
+    Size(2424, 1080),
+    3,
+    TargetPlatform.android,
+  ),
   'android-tablet': _Profile(
     Size(2560, 1600),
     2,
