@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart'
+    show LicenseEntryWithLineBreaks, LicenseRegistry;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -9,6 +11,17 @@ import 'src/workspace_host.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // The bundled fonts' licence texts appear on the licence page.
+  LicenseRegistry.addLicense(() async* {
+    for (final (name, asset) in const [
+      ('Inter', 'assets/fonts/Inter-LICENSE.txt'),
+      ('JetBrains Mono', 'assets/fonts/JetBrainsMono-OFL.txt'),
+    ]) {
+      yield LicenseEntryWithLineBreaks([
+        name,
+      ], await rootBundle.loadString(asset));
+    }
+  });
   // Draw behind the system bars on Android; Scaffold and the bars keep content
   // clear of them. A no-op on other platforms.
   unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));

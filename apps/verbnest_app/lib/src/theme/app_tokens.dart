@@ -32,13 +32,16 @@ abstract final class Motion {
       MediaQuery.maybeDisableAnimationsOf(context) == true ? Duration.zero : d;
 }
 
-/// Font family for code, headers and URLs. System-installed monospaced fonts
-/// are preferred; the generic `monospace` last so there is always a match.
-const kMonoFamily = 'monospace';
+/// Family of the UI text. Bundled (`assets/fonts`), so it is the same on every
+/// platform; scripts it lacks, such as Arabic, fall back to the system font.
+const kUiFamily = 'Inter';
 
-/// Preferred monospaced families, first available wins. No font is bundled,
-/// so this only picks a nicer face when the machine already has one.
-const kMonoFallback = ['JetBrains Mono', 'SF Mono', 'Menlo', 'Consolas'];
+/// Font family for code, headers and URLs. Bundled.
+const kMonoFamily = 'JetBrains Mono';
+
+/// Used for a character the bundled mono font does not have, then the generic
+/// `monospace` so there is always a match.
+const kMonoFallback = ['SF Mono', 'Menlo', 'Consolas', 'monospace'];
 
 /// Digits of equal width, so timings and sizes do not jitter as they change.
 const kTabularFigures = [FontFeature.tabularFigures()];

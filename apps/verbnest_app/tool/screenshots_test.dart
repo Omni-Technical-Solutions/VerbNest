@@ -180,29 +180,23 @@ Future<void> _loadFonts() async {
   Future<ByteData> bytes(String path) async =>
       ByteData.sublistView(await File(path).readAsBytes());
 
-  final roboto = FontLoader('Roboto');
-  for (final f in const ['Regular', 'Medium', 'Bold', 'Italic', 'Light']) {
-    roboto.addFont(bytes('$fonts/Roboto-$f.ttf'));
+  // The app's own fonts, bundled in assets/fonts (the test runs from the app
+  // folder). Inter has no Arabic, so Geeza Pro joins its family for the glyphs
+  // it lacks.
+  final inter = FontLoader('Inter');
+  for (final f in const ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+    inter.addFont(bytes('assets/fonts/Inter-$f.ttf'));
   }
-  // Roboto has no Arabic glyphs; Geeza Pro joins the family so they resolve.
-  roboto.addFont(bytes('/System/Library/Fonts/GeezaPro.ttc'));
-  await roboto.load();
-  // iOS asks for the San Francisco system families, which the test
-  // environment lacks; macOS ships the same typeface.
-  for (final family in const [
-    'CupertinoSystemText',
-    'CupertinoSystemDisplay',
-  ]) {
-    final sf = FontLoader(family)
-      ..addFont(bytes('/System/Library/Fonts/SFNS.ttf'));
-    await sf.load();
+  inter.addFont(bytes('/System/Library/Fonts/GeezaPro.ttc'));
+  await inter.load();
+  final jetbrains = FontLoader('JetBrains Mono');
+  for (final f in const ['Regular', 'Bold']) {
+    jetbrains.addFont(bytes('assets/fonts/JetBrainsMono-$f.ttf'));
   }
+  await jetbrains.load();
   final icons = FontLoader('MaterialIcons')
     ..addFont(bytes('$fonts/MaterialIcons-Regular.otf'));
   await icons.load();
-  final mono = FontLoader('monospace')
-    ..addFont(bytes('/System/Library/Fonts/SFNSMono.ttf'));
-  await mono.load();
   // Arabic: macOS ships Geeza Pro; the fallback needs a name to find it.
   final arabic = FontLoader('GeezaPro')
     ..addFont(bytes('/System/Library/Fonts/GeezaPro.ttc'));

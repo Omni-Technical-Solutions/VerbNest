@@ -29,6 +29,7 @@ ThemeData buildTheme(
 
   return ThemeData(
     useMaterial3: true,
+    fontFamily: kUiFamily,
     colorScheme: scheme,
     visualDensity: compact
         ? VisualDensity.compact

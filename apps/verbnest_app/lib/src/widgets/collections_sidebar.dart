@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -302,13 +304,15 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       ref.read(expandedProvider.notifier).toggle(node.id);
       return;
     }
-    // A single click previews; a second click on the same row pins the tab.
-    final now = DateTime.now();
-    final again =
-        _lastTapId == node.id &&
-        now.difference(_lastTapAt) < const Duration(milliseconds: 400);
+    // A single click previews; a second click on the same row soon after pins
+    // the tab. A timer, not a clock, marks "soon" so it follows test time too.
+    final again = _lastTapId == node.id;
     _lastTapId = node.id;
-    _lastTapAt = now;
+    _tapWindow?.cancel();
+    _tapWindow = Timer(
+      const Duration(milliseconds: 400),
+      () => _lastTapId = null,
+    );
     ref.read(tabsProvider.notifier)
       ..open(node.id, preview: true)
       ..pin(again ? node.id : '');
@@ -316,7 +320,13 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
   }
 
   String? _lastTapId;
-  DateTime _lastTapAt = DateTime.fromMillisecondsSinceEpoch(0);
+  Timer? _tapWindow;
+
+  @override
+  void dispose() {
+    _tapWindow?.cancel();
+    super.dispose();
+  }
 
   Widget _menu(BuildContext context, NodeInfo node) {
     return PopupMenuButton<_Action>(

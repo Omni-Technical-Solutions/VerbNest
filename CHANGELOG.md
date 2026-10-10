@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.52.0
+
+- UI: bundled fonts. Text is set in Inter and code (the body, headers, URLs, scripts and JSON viewer) in JetBrains Mono, so the app looks and measures the same on every platform instead of depending on what is installed. Scripts the bundled fonts lack, such as Arabic, fall back to the system font. Both fonts are licensed under the SIL Open Font License; their texts ship with the app and appear on the licence page. App size grows by about 2 MB.
+- Fix: a second click on a collection row soon after the first (which pins the tab) now uses a timer rather than the wall clock, so it behaves the same under load and in tests.
+- Tests: `fonts_test.dart` (fonts and licences declared, present and valid, theme and code use them). Goldens now render with the bundled fonts instead of Roboto; the Roboto test fonts were removed.
+
 ## 0.51.0
 
 - UI: windows 1200 dp and wider use a permanent Material 3 navigation drawer (logo, name, and the four destinations with labels beside the icons) instead of the rail. Windows from 840 to 1199 dp keep the rail. In right-to-left languages the drawer sits on the right.
