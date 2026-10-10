@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.51.0
+
+- UI: windows 1200 dp and wider use a permanent Material 3 navigation drawer (logo, name, and the four destinations with labels beside the icons) instead of the rail. Windows from 840 to 1199 dp keep the rail. In right-to-left languages the drawer sits on the right.
+- Tests: drawer tests (shown from 1200, rail below, choosing a destination, right-to-left).
+
 ## 0.50.0
 
 - Accessibility: the main screens (collections, request, response, history, environments, settings) pass Flutter's accessibility guidelines on a phone: every tappable element has a label, touch targets are at least 48 dp (Android) and 44 dp (iOS), and text meets WCAG AA contrast in light and dark. The sidebar's right-click detector no longer shows up to screen readers as an unlabelled button (its actions are in the labelled row menu). The response timing chip is 48 dp tall on touch screens.

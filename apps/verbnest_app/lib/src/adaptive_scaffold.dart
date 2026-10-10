@@ -25,6 +25,9 @@ import 'widgets/status_bar.dart';
 import 'widgets/ui/toast.dart';
 import 'widgets/ui/ui.dart';
 
+/// The product name; it is not translated.
+const kAppName = 'VerbNest';
+
 enum _Destination {
   collections(Icons.folder_outlined, Icons.folder),
   history(Icons.history, Icons.history),
@@ -313,6 +316,9 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
         return switch (layout) {
           LayoutClass.compact => _compact(),
           LayoutClass.medium => _withRail(sidebar: false),
+          // Large and extra large: a permanent drawer instead of the rail.
+          LayoutClass.large ||
+          LayoutClass.extraLarge => _withRail(sidebar: true, drawer: true),
           _ => _withRail(sidebar: true),
         };
       },
@@ -339,7 +345,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     );
   }
 
-  Widget _withRail({required bool sidebar}) {
+  Widget _withRail({required bool sidebar, bool drawer = false}) {
     return Scaffold(
       key: Key(sidebar ? 'layout-expanded' : 'layout-medium'),
       body: Column(
@@ -347,19 +353,22 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
           Expanded(
             child: Row(
               children: [
-                NavigationRail(
-                  selectedIndex: _selected.index,
-                  onDestinationSelected: _select,
-                  labelType: NavigationRailLabelType.all,
-                  destinations: [
-                    for (final d in _Destination.values)
-                      NavigationRailDestination(
-                        icon: Icon(d.icon),
-                        selectedIcon: Icon(d.selectedIcon),
-                        label: Text(d.label(context)),
-                      ),
-                  ],
-                ),
+                if (drawer)
+                  _navDrawer()
+                else
+                  NavigationRail(
+                    selectedIndex: _selected.index,
+                    onDestinationSelected: _select,
+                    labelType: NavigationRailLabelType.all,
+                    destinations: [
+                      for (final d in _Destination.values)
+                        NavigationRailDestination(
+                          icon: Icon(d.icon),
+                          selectedIcon: Icon(d.selectedIcon),
+                          label: Text(d.label(context)),
+                        ),
+                    ],
+                  ),
                 const VerticalDivider(width: 1),
                 if (sidebar && _selected == _Destination.collections)
                   TweenAnimationBuilder<double>(
@@ -389,6 +398,55 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
           ),
           // Desktop-size windows get a status bar; a tablet has no room.
           if (sidebar) const StatusBar(),
+        ],
+      ),
+    );
+  }
+
+  /// Material 3 permanent navigation drawer for large windows: the same four
+  /// destinations as the rail, with labels beside the icons and the app name.
+  Widget _navDrawer() {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      key: const Key('nav-drawer'),
+      width: 240,
+      child: NavigationDrawer(
+        selectedIndex: _selected.index,
+        onDestinationSelected: _select,
+        elevation: 0,
+        backgroundColor: scheme.surfaceContainerLow,
+        tilePadding: const EdgeInsets.symmetric(horizontal: Space.sm),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Space.xl,
+              Space.lg,
+              Space.lg,
+              Space.md,
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(Radii.sm),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 28,
+                    height: 28,
+                    errorBuilder: (_, _, _) =>
+                        const SizedBox(width: 28, height: 28),
+                  ),
+                ),
+                const SizedBox(width: Space.md),
+                Text(kAppName, style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
+          ),
+          for (final d in _Destination.values)
+            NavigationDrawerDestination(
+              icon: Icon(d.icon),
+              selectedIcon: Icon(d.selectedIcon),
+              label: Text(d.label(context)),
+            ),
         ],
       ),
     );

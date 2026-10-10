@@ -214,4 +214,64 @@ void main() {
     expect(find.byKey(const Key('url')), findsOneWidget);
     expect(find.byKey(const Key('sidebar-filter')), findsOneWidget);
   });
+
+  group('navigation drawer on large windows', () {
+    testWidgets('large windows have a permanent drawer, not a rail', (t) async {
+      await _pumpApp(t, const Size(1200, 800));
+      expect(find.byKey(const Key('nav-drawer')), findsOneWidget);
+      expect(find.byType(NavigationDrawer), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+      expect(find.text('VerbNest'), findsOneWidget);
+      for (final label in [
+        'Collections',
+        'History',
+        'Environments',
+        'Settings',
+      ]) {
+        expect(
+          find.descendant(
+            of: find.byType(NavigationDrawer),
+            matching: find.text(label),
+          ),
+          findsOneWidget,
+        );
+      }
+      // The sidebar and editor still fit beside it.
+      expect(find.byKey(const Key('sidebar-filter')), findsOneWidget);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('expanded windows keep the rail', (t) async {
+      await _pumpApp(t, const Size(1199, 800));
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.byType(NavigationDrawer), findsNothing);
+      expect(find.byKey(const Key('layout-expanded')), findsOneWidget);
+    });
+
+    testWidgets('choosing a destination in the drawer changes the page', (
+      t,
+    ) async {
+      await _pumpApp(t, const Size(1440, 900));
+      await t.tap(
+        find.descendant(
+          of: find.byType(NavigationDrawer),
+          matching: find.text('Settings'),
+        ),
+      );
+      await t.pump(const Duration(milliseconds: 500));
+      expect(find.text('Verify TLS certificates'), findsOneWidget);
+      expect(find.byKey(const Key('sidebar-filter')), findsNothing);
+    });
+
+    testWidgets('the drawer is on the right in right-to-left', (t) async {
+      t.platformDispatcher.localesTestValue = const [Locale('ar')];
+      addTearDown(t.platformDispatcher.clearLocalesTestValue);
+      await _pumpApp(t, const Size(1440, 900));
+      await t.pumpAndSettle();
+      expect(
+        t.getTopRight(find.byKey(const Key('nav-drawer'))).dx,
+        closeTo(1440, 1),
+      );
+    });
+  });
 }

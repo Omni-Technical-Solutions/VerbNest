@@ -82,7 +82,7 @@ void main() {
   });
 
   testWidgets('Ctrl+K opens the palette and lists requests', (tester) async {
-    final s = await pumpApp(tester, const Size(1200, 900));
+    final s = await pumpApp(tester, const Size(1100, 900));
     final c = s.repo.createCollection('C');
     s.repo.createRequest(
       c,
@@ -109,7 +109,7 @@ void main() {
   ) async {
     tester.platformDispatcher.localesTestValue = const [Locale('ar')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-    await pumpApp(tester, const Size(1200, 900));
+    await pumpApp(tester, const Size(1100, 900));
     await tester.pumpAndSettle();
     expect(find.text('المجموعات'), findsWidgets);
     expect(find.text('الإعدادات'), findsWidgets);
@@ -117,14 +117,14 @@ void main() {
     expect(dir, TextDirection.rtl);
     // The rail sits on the right edge in right-to-left.
     final rail = tester.getTopRight(find.byType(NavigationRail));
-    expect(rail.dx, closeTo(1200, 1));
+    expect(rail.dx, closeTo(1100, 1));
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('language setting switches the UI and is remembered', (
     tester,
   ) async {
-    final s = await pumpApp(tester, const Size(1200, 900));
+    final s = await pumpApp(tester, const Size(1100, 900));
     await tester.pumpAndSettle();
     final container = ProviderScope.containerOf(
       tester.element(find.byType(NavigationRail)),
@@ -142,7 +142,7 @@ void main() {
   testWidgets('favourites: star in the editor, mark in the tree, filter', (
     tester,
   ) async {
-    final s = await pumpApp(tester, const Size(1200, 900));
+    final s = await pumpApp(tester, const Size(1100, 900));
     final c = s.repo.createCollection('C');
     final a = s.repo.createRequest(
       c,
