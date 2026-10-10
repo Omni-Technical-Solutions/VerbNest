@@ -214,7 +214,7 @@ Fixes finding 9.
   a human VoiceOver and TalkBack walkthrough, and any on-device check. Treat
   this phase as automated coverage only until someone runs both screen readers.
 
-## Phase 6: Visual regression (chore)
+## Phase 6: Visual regression (chore) - done
 
 Fixes finding 10. Start alongside phase 2 so it guards every later phase.
 
@@ -226,6 +226,10 @@ Fixes finding 10. Start alongside phase 2 so it guards every later phase.
 - 6d. A script compares new device screenshots with the committed ones and
   lists the screens that changed.
 - Done when: CI fails on a layout overflow or an unreviewed visual change.
+- Delivered: 6a, 6b, 6c (overflow matrix at nine widths) and 6d
+  (`scripts/compare_screenshots.sh`). Goldens and the overflow matrix run with
+  `flutter test`, so CI catches them; the screenshot comparison is a manual
+  script because rendering all five sets takes several minutes.
 
 ## Order and effort
 
