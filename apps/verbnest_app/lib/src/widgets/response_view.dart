@@ -106,6 +106,11 @@ class _ResponseViewState extends State<ResponseView> {
   bool _pretty = true;
   bool _preview = false;
   bool _hex = false;
+
+  /// Phone only: the search and filter fields open from toolbar buttons so
+  /// the toolbar is one row.
+  bool _showSearch = false;
+  bool _showFilter = false;
   String _query = '';
   String _filter = '';
 
@@ -196,10 +201,15 @@ class _ResponseViewState extends State<ResponseView> {
   }
 
   Widget _statusBar(BuildContext context, HttpResponseRecord r) {
+    // Tighter on a phone, where every row counts.
+    final phone =
+        MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint;
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: phone
+          ? const EdgeInsets.symmetric(horizontal: 8)
+          : const EdgeInsets.all(8),
       child: Wrap(
-        spacing: 12,
+        spacing: phone ? 8 : 12,
         runSpacing: 4,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
@@ -239,10 +249,12 @@ class _ResponseViewState extends State<ResponseView> {
               ),
             ),
           ),
-          Text(
-            context.l10n.rvHttpVersion(r.httpVersion),
-            key: const Key('response-http'),
-          ),
+          // The protocol version is the first thing to go on a very narrow screen.
+          if (MediaQuery.sizeOf(context).width >= 360)
+            Text(
+              context.l10n.rvHttpVersion(r.httpVersion),
+              key: const Key('response-http'),
+            ),
           Text(sizeLabel(r, onWire: context.l10n.rvOnWire)),
           if (r.tls != null)
             InkWell(
@@ -264,10 +276,24 @@ class _ResponseViewState extends State<ResponseView> {
   }
 
   Widget _saveButton(BuildContext context) {
+    final label = widget.share ? context.l10n.rvShare : context.l10n.rvSave;
+    final icon = Icon(
+      widget.share ? Icons.ios_share : Icons.save_alt,
+      size: 18,
+    );
+    // A phone's status line is one row: the button is icon only there.
+    if (MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint) {
+      return IconButton(
+        key: const Key('response-save'),
+        tooltip: label,
+        icon: icon,
+        onPressed: widget.onSave,
+      );
+    }
     return TextButton.icon(
       key: const Key('response-save'),
-      icon: Icon(widget.share ? Icons.ios_share : Icons.save_alt, size: 18),
-      label: Text(widget.share ? context.l10n.rvShare : context.l10n.rvSave),
+      icon: icon,
+      label: Text(label),
       onPressed: widget.onSave,
     );
   }
@@ -531,6 +557,10 @@ class _ResponseViewState extends State<ResponseView> {
     final preview = _previewOf(r);
     final filtering =
         !_hex && kind != BodyKind.other && _filter.trim().isNotEmpty;
+    final phone =
+        MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint;
+    final filterable =
+        kind != BodyKind.other && !_hex && preview == _Preview.none;
     final text = _hex
         ? hexDump(r.body)
         : filtering
@@ -548,10 +578,11 @@ class _ResponseViewState extends State<ResponseView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _bodyToolbar(r, text, preview),
-                  if (kind != BodyKind.other &&
-                      !_hex &&
-                      preview == _Preview.none)
+                  _bodyToolbar(r, text, preview, canFilter: filterable),
+                  // On a phone the filter opens from the toolbar, and stays
+                  // open while it is doing something.
+                  if (filterable &&
+                      (!phone || _showFilter || _filter.isNotEmpty))
                     _filterField(kind, filtering),
                 ],
               ),
@@ -572,12 +603,30 @@ class _ResponseViewState extends State<ResponseView> {
     return _Preview.none;
   }
 
-  Widget _bodyToolbar(HttpResponseRecord r, String text, _Preview preview) {
+  Widget _bodyToolbar(
+    HttpResponseRecord r,
+    String text,
+    _Preview preview, {
+    required bool canFilter,
+  }) {
     final canPreview =
         isImageResponse(r) || isHtmlResponse(r) || isPdfResponse(r);
     final modes = SegmentedButton<String>(
       key: const Key('body-view'),
       showSelectedIcon: false,
+      // Tighter on a very narrow phone so "Pretty" does not wrap.
+      style: MediaQuery.sizeOf(context).width < 360
+          ? ButtonStyle(
+              padding: const WidgetStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: 4),
+              ),
+              // From the theme's label style, so the font family is kept.
+              textStyle: WidgetStatePropertyAll(
+                Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 13),
+              ),
+              visualDensity: VisualDensity.compact,
+            )
+          : null,
       // On a phone the modes share the full line instead of scrolling.
       expandedInsets:
           MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint
@@ -631,13 +680,30 @@ class _ResponseViewState extends State<ResponseView> {
             // A phone has no room for the modes, search and copy side by side.
             ? Column(
                 children: [
-                  modes,
                   Row(
                     children: [
-                      Expanded(child: search),
+                      Expanded(child: modes),
+                      IconButton(
+                        key: const Key('response-search-toggle'),
+                        tooltip: context.l10n.rvSearch,
+                        isSelected: _showSearch || _query.isNotEmpty,
+                        icon: const Icon(Icons.search),
+                        onPressed: () =>
+                            setState(() => _showSearch = !_showSearch),
+                      ),
+                      if (canFilter)
+                        IconButton(
+                          key: const Key('response-filter-toggle'),
+                          tooltip: context.l10n.rvFilter,
+                          isSelected: _showFilter || _filter.isNotEmpty,
+                          icon: const Icon(Icons.filter_alt_outlined),
+                          onPressed: () =>
+                              setState(() => _showFilter = !_showFilter),
+                        ),
                       copy,
                     ],
                   ),
+                  if (_showSearch || _query.isNotEmpty) search,
                 ],
               )
             : Row(

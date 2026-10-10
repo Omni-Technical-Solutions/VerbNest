@@ -21,7 +21,7 @@ class _Engine extends HttpEngine {
     return HttpResponseRecord(
       status: 200,
       reason: 'OK',
-      httpVersion: 'HTTP/1.1',
+      httpVersion: '1.1',
       headers: [('Content-Type', 'application/json')],
       body: body,
       wireBodySize: body.length,

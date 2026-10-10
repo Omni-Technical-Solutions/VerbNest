@@ -1485,4 +1485,7 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get settingsDynamicColorHint =>
       'مطابقة ألوان خلفية الشاشة (أندرويد 12 وما بعده). يُستخدم لون التمييز أدناه في غير ذلك.';
+
+  @override
+  String get rvFilter => 'تصفية';
 }

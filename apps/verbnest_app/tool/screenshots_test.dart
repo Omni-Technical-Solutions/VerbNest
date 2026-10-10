@@ -123,7 +123,7 @@ class _ShotEngine extends HttpEngine {
     return HttpResponseRecord(
       status: status,
       reason: reason,
-      httpVersion: 'HTTP/1.1',
+      httpVersion: '1.1',
       headers: [
         if (bytes.isNotEmpty) ('Content-Type', 'application/json'),
         ('Content-Length', '${bytes.length}'),

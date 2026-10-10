@@ -888,5 +888,6 @@
   "menuSelectAll": "Select All",
   "menuPalette": "Command palette",
   "settingsDynamicColor": "Use system colours",
-  "settingsDynamicColorHint": "Match your wallpaper colours (Android 12 and newer). The accent colour below is used otherwise."
+  "settingsDynamicColorHint": "Match your wallpaper colours (Android 12 and newer). The accent colour below is used otherwise.",
+  "rvFilter": "Filter"
 }

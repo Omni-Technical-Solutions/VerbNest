@@ -30,13 +30,43 @@ import 'ui/toast.dart';
 export 'request_editor/url_bar.dart' show httpMethods;
 
 /// Editor for one request: URL bar, request tabs and the response.
-class RequestEditor extends ConsumerWidget {
+///
+/// On a phone the URL bar is pinned and everything above it (the toolbar)
+/// gets out of the way: it folds up while the keyboard is open and while you
+/// scroll the content down, and comes back when you scroll up. Elsewhere the
+/// toolbar stays put.
+class RequestEditor extends ConsumerStatefulWidget {
   const RequestEditor({super.key, required this.requestId});
 
   final String requestId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RequestEditor> createState() => _RequestEditorState();
+}
+
+class _RequestEditorState extends ConsumerState<RequestEditor> {
+  /// Set while content is scrolled down and the toolbar is folded away.
+  bool _hiddenByScroll = false;
+
+  String get requestId => widget.requestId;
+
+  bool _onScroll(ScrollNotification n) {
+    // Only the panes' own vertical scrolling counts, not the page's, and only
+    // while a finger is dragging.
+    if (n.depth == 0 || n.metrics.axis != Axis.vertical) return false;
+    if (n is! ScrollUpdateNotification || n.dragDetails == null) return false;
+    final delta = n.scrollDelta ?? 0;
+    final bool? hide = n.metrics.pixels <= 8
+        ? false // back at the top
+        : (delta > 2 ? true : (delta < -2 ? false : null));
+    if (hide != null && hide != _hiddenByScroll) {
+      setState(() => _hiddenByScroll = hide);
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(editorProvider(requestId));
     final notifier = ref.read(editorProvider(requestId).notifier);
     final session = ref.read(sessionProvider);
@@ -47,77 +77,144 @@ class RequestEditor extends ConsumerWidget {
       child: LayoutBuilder(
         builder: (context, c) {
           final compact = c.maxWidth < LayoutClass.mediumBreakpoint;
-          // The page scrolls, so a short window (landscape, or a keyboard on
-          // screen) never overflows: the panes get what is left, but at least
-          // [_minPaneHeight], and the page scrolls past the rest.
-          return CustomScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            slivers: [
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _Toolbar(
-                      requestId: requestId,
-                      compact: compact,
-                      item: state.item,
+          final narrow = c.maxWidth < 360;
+          // A phone: narrow, or a landscape phone that is wide but short.
+          final phone = compact || c.maxHeight < 480;
+          // Read from the view: Scaffold removes the keyboard from the body's
+          // MediaQuery. This builder re-runs when the keyboard resizes the body.
+          final keyboardUp = View.of(context).viewInsets.bottom > 0;
+          final hideToolbar = phone && (keyboardUp || _hiddenByScroll);
+          // The page scrolls, so a short window never overflows: the panes get
+          // what is left, but at least [_minPaneHeight], and the page scrolls
+          // past the rest. The URL bar is pinned so it is never scrolled away.
+          return NotificationListener<ScrollNotification>(
+            onNotification: _onScroll,
+            child: CustomScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: AnimatedSize(
+                    duration: Motion.of(context, Motion.base),
+                    curve: Motion.curve,
+                    alignment: Alignment.topCenter,
+                    child: hideToolbar
+                        ? const SizedBox(width: double.infinity)
+                        : _Toolbar(
+                            requestId: requestId,
+                            compact: compact,
+                            narrow: narrow,
+                            item: state.item,
+                            notifier: notifier,
+                          ),
+                  ),
+                ),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _PinnedHeader(
+                    height: narrow ? _urlBarHeight - 8 : _urlBarHeight,
+                    child: UrlBar(
+                      state: state,
                       notifier: notifier,
+                      compact: compact,
+                      narrow: narrow,
                     ),
-                    UrlBar(state: state, notifier: notifier, compact: compact),
-                    if (state.pendingUnresolved.isNotEmpty)
-                      _PendingBanner(state: state, notifier: notifier),
-                    if (state.pendingSecretHost != null)
-                      _SecretHostBanner(state: state, notifier: notifier),
-                    if (state.unresolved.isNotEmpty)
-                      _Banner(
-                        context.l10n.reUndefined(
-                          state.unresolved.map((n) => '{{$n}}').join(', '),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (state.pendingUnresolved.isNotEmpty)
+                        _PendingBanner(state: state, notifier: notifier),
+                      if (state.pendingSecretHost != null)
+                        _SecretHostBanner(state: state, notifier: notifier),
+                      if (state.unresolved.isNotEmpty)
+                        _Banner(
+                          context.l10n.reUndefined(
+                            state.unresolved.map((n) => '{{$n}}').join(', '),
+                          ),
+                        ),
+                      for (final w in state.warnings) _Banner(w),
+                    ],
+                  ),
+                ),
+                SliverLayoutBuilder(
+                  builder: (context, sc) {
+                    final remaining =
+                        sc.viewportMainAxisExtent - sc.precedingScrollExtent;
+                    return SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: remaining < _minPaneHeight
+                            ? _minPaneHeight
+                            : remaining,
+                        child: _Panes(
+                          requestId: requestId,
+                          state: state,
+                          notifier: notifier,
+                          compact: compact,
                         ),
                       ),
-                    for (final w in state.warnings) _Banner(w),
-                  ],
+                    );
+                  },
                 ),
-              ),
-              SliverLayoutBuilder(
-                builder: (context, sc) {
-                  final remaining =
-                      sc.viewportMainAxisExtent - sc.precedingScrollExtent;
-                  return SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: remaining < _minPaneHeight
-                          ? _minPaneHeight
-                          : remaining,
-                      child: _Panes(
-                        requestId: requestId,
-                        state: state,
-                        notifier: notifier,
-                        compact: compact,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
     );
   }
 
+  /// Height of the pinned URL bar: its padding plus a 56 dp field.
+  static const _urlBarHeight = 72.0;
+
   /// The least height the request and response panes are given.
   static const _minPaneHeight = 240.0;
 }
 
-class _Toolbar extends StatelessWidget {
+/// Keeps the URL bar at the top of the editor's scroll view. It has a solid
+/// background so content scrolls under it cleanly.
+class _PinnedHeader extends SliverPersistentHeaderDelegate {
+  const _PinnedHeader({required this.height, required this.child});
+
+  final double height;
+  final Widget child;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => Material(
+    color: Theme.of(context).colorScheme.surface,
+    child: SizedBox(height: height, child: child),
+  );
+
+  @override
+  bool shouldRebuild(_PinnedHeader old) =>
+      old.height != height || old.child != child;
+}
+
+class _Toolbar extends ConsumerWidget {
   const _Toolbar({
     required this.requestId,
     required this.compact,
+    required this.narrow,
     required this.item,
     required this.notifier,
   });
 
   final String requestId;
   final bool compact;
+
+  /// Under 360 dp: favourite, examples and live sessions share one menu.
+  final bool narrow;
   final HttpRequestItem item;
   final EditorNotifier notifier;
 
@@ -130,7 +227,8 @@ class _Toolbar extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (narrow) return _narrow(context, ref);
     return Align(
       alignment: AlignmentDirectional.centerEnd,
       child: Padding(
@@ -158,6 +256,66 @@ class _Toolbar extends StatelessWidget {
             EnvSelector(requestId: requestId),
           ],
         ),
+      ),
+    );
+  }
+
+  /// One row: the environment, and a menu with the rest.
+  Widget _narrow(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final repo = ref.read(repositoryProvider);
+    final fav = repo.isFavourite(requestId);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: EnvSelector(requestId: requestId),
+            ),
+          ),
+          PopupMenuButton<String>(
+            key: const Key('toolbar-more'),
+            tooltip: l.sbActions,
+            icon: const Icon(Icons.more_vert),
+            onSelected: (v) {
+              switch (v) {
+                case 'favourite':
+                  repo.setFavourite(requestId, !fav);
+                case 'examples':
+                  _examples(context);
+                case 'ws':
+                  showLiveSession(context, ref, notifier, LiveKind.websocket);
+                case 'sse':
+                  showLiveSession(context, ref, notifier, LiveKind.sse);
+                case 'sub':
+                  showLiveSession(
+                    context,
+                    ref,
+                    notifier,
+                    LiveKind.graphqlSubscription,
+                  );
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                key: const Key('more-favourite'),
+                value: 'favourite',
+                child: Text(fav ? l.exFavRemove : l.exFavAdd),
+              ),
+              PopupMenuItem(
+                key: const Key('more-examples'),
+                value: 'examples',
+                child: Text(l.reExamples),
+              ),
+              PopupMenuItem(value: 'ws', child: Text(l.reLiveWs)),
+              PopupMenuItem(value: 'sse', child: Text(l.reLiveSse)),
+              if (item.body is GraphqlBody)
+                PopupMenuItem(value: 'sub', child: Text(l.reLiveSub)),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -361,12 +519,7 @@ class _PanesState extends ConsumerState<_Panes> {
         // The slot always exists so the panes below keep their state.
         _hasResult
             ? Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Space.md,
-                  0,
-                  Space.md,
-                  Space.sm,
-                ),
+                padding: const EdgeInsets.fromLTRB(Space.md, 0, Space.md, 0),
                 child: SegmentedButton<bool>(
                   key: const Key('pane-switch'),
                   showSelectedIcon: false,

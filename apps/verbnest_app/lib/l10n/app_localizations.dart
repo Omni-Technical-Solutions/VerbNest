@@ -2773,6 +2773,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Match your wallpaper colours (Android 12 and newer). The accent colour below is used otherwise.'**
   String get settingsDynamicColorHint;
+
+  /// No description provided for @rvFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get rvFilter;
 }
 
 class _AppLocalizationsDelegate

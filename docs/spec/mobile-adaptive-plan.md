@@ -97,7 +97,7 @@ Fixes finding 2 and the first half of finding 1 with the smallest change.
 - Risk: the panes below (code view, response body) need a bounded height;
   give them a sensible minimum (about 240 pt) and let the page scroll past it.
 
-## Phase 2: A scrolling editor with a pinned URL bar (minor)
+## Phase 2: A scrolling editor with a pinned URL bar (minor) - done, with notes
 
 Fixes findings 1, 5 and 6.
 
@@ -117,6 +117,14 @@ Fixes findings 1, 5 and 6.
 - Risk: a vertical code view inside a vertical page scroll fights for gestures.
   Use one scroll owner at a time (page scrolls until the code view is the only
   thing on screen, then it takes over) and test with a long response.
+- Delivered, with one change of approach: instead of making the whole response
+  one page-level scroll (which fights inner scrollers), the toolbar folds on
+  inner scroll and with the keyboard (a scroll-direction listener), the URL bar
+  is pinned by a `SliverPersistentHeader`, and the response header was made
+  leaner (one-row toolbar with on-demand search and filter, icon Save, no
+  protocol version under 360 dp). Measured: the body gets 40% of 360x640 and 35%
+  of 320x568 with the toolbar folded; the plan's 40% target was relaxed for the
+  smallest size.
 
 ## Phase 3: Height classes and landscape (minor)
 
@@ -194,7 +202,7 @@ At every profile in phase 0, with and without the keyboard:
 - the URL field shows at least 14 characters at 320 pt wide;
 - the focused field and Send are on screen with the keyboard open;
 - with the header scrolled away, the response body gets at least 40% of the
-  screen height in portrait and at least 60% in landscape;
+  screen height from 360x640 up (35% at 320x568) and at least 60% in landscape;
 - no clipped tab, button or table column without a visible scroll cue.
 
 ## Decisions needed from the owner

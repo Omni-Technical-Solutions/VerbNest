@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.54.0
+
+- UI: on a phone the URL bar is pinned at the top of the editor and the toolbar above it gets out of the way. It folds up while the on-screen keyboard is open and while you scroll the response down, and comes back when you scroll up. On wider windows it stays put.
+- UI: under 360 dp the toolbar is one row: the environment picker plus a menu (favourite, examples, WebSocket, SSE and, for GraphQL, subscription). The method box and padding are tighter so the URL shows about 16 characters on a 320 pt phone (it showed 11).
+- UI: on a phone the response toolbar is one row: Pretty, Raw and Hex, then buttons that open search and the JSONPath filter on demand (an active filter or search stays visible), and Copy. Save is an icon on phones, and the protocol version is dropped from the status line under 360 dp. With the toolbar folded the response body gets about 40% of a 360x640 screen and 35% of a 320x568 one (it was about 15%).
+- Fix: the bottom of the response pane no longer needs the keyboard out of the way before you can read it: with the keyboard open the page scrolls, the URL bar stays visible, and Send is reachable at 740x360 landscape.
+- Fix: the Pretty/Raw/Hex labels on very narrow phones keep the theme font (an override had dropped the font family).
+- Tests: toolbar folding, pinned URL bar, narrow menu, one-row response toolbar and the screen-share targets (`editor_chrome_test.dart`); the device matrix now passes everywhere except three landscape-rail cases recorded for phase 3. Test fakes report the HTTP version as `1.1`, so the status line and the store screenshots read "HTTP/1.1" instead of "HTTP/HTTP/1.1" (the app itself was correct).
+
 ## 0.53.1
 
 - Fix: the request editor no longer overflows when the window is short. The page scrolls: the panes get the space that is left (at least 240 dp) and you scroll past the rest. This fixes the on-screen keyboard on a 360x640 phone and landscape phones up to about 700 wide. Dragging the page dismisses the keyboard.

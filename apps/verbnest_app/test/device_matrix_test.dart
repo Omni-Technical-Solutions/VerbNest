@@ -19,7 +19,6 @@ const _knownEditorFailures = <String, String>{
 const _knownReachFailures = <String, String>{
   // The URL row sits under the keyboard until it is pinned under the app bar
   // (phase 2); the tablet-class layout of 874 wide needs phase 3.
-  'landscape-740x360+keyboard': 'phase 2',
   'landscape-874x402+keyboard': 'phase 3',
 };
 

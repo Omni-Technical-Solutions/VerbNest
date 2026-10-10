@@ -1484,4 +1484,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsDynamicColorHint =>
       'Match your wallpaper colours (Android 12 and newer). The accent colour below is used otherwise.';
+
+  @override
+  String get rvFilter => 'Filter';
 }

@@ -31,7 +31,7 @@ class ScriptedEngine extends HttpEngine {
     return HttpResponseRecord(
       status: status,
       reason: status == 200 ? 'OK' : 'Other',
-      httpVersion: 'HTTP/1.1',
+      httpVersion: '1.1',
       headers: headers,
       body: body,
       wireBodySize: body.length,

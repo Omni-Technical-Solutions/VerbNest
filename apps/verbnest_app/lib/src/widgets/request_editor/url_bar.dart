@@ -33,6 +33,7 @@ class UrlBar extends StatelessWidget {
     required this.state,
     required this.notifier,
     this.compact = false,
+    this.narrow = false,
   });
 
   final EditorState state;
@@ -42,19 +43,29 @@ class UrlBar extends StatelessWidget {
   /// URL keeps room to be read.
   final bool compact;
 
+  /// Under 360 dp: an even narrower method box, to keep the URL readable.
+  final bool narrow;
+
   @override
   Widget build(BuildContext context) {
     final item = state.item;
+    // The tightest screens give up some padding for URL room.
+    final gap = narrow ? 4.0 : 8.0;
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.all(gap),
       child: Row(
         children: [
-          _MethodDropdown(item: item, notifier: notifier, compact: compact),
-          const SizedBox(width: 8),
+          _MethodDropdown(
+            item: item,
+            notifier: notifier,
+            compact: compact,
+            narrow: narrow,
+          ),
+          SizedBox(width: gap),
           Expanded(
             child: _UrlField(item: item, notifier: notifier),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: gap),
           if (!compact) LiveMenu(item: item, notifier: notifier),
           AnimatedSwitcher(
             duration: Motion.of(context, Motion.fast),
@@ -125,11 +136,13 @@ class _MethodDropdown extends StatelessWidget {
     required this.item,
     required this.notifier,
     required this.compact,
+    required this.narrow,
   });
 
   final HttpRequestItem item;
   final EditorNotifier notifier;
   final bool compact;
+  final bool narrow;
 
   Future<void> _onSelected(BuildContext context, String? m) async {
     if (m == null) return;
@@ -153,7 +166,7 @@ class _MethodDropdown extends StatelessWidget {
     return DropdownMenu<String>(
       key: const Key('method'),
       initialSelection: httpMethods.contains(item.method) ? item.method : null,
-      width: compact ? 124 : 120,
+      width: narrow ? 108 : (compact ? 124 : 120),
       textStyle: TextStyle(
         fontWeight: FontWeight.bold,
         color: AppColors.of(context).method(item.method),
@@ -234,6 +247,36 @@ class _UrlField extends StatelessWidget {
   }
 }
 
+/// Opens a WebSocket, SSE or subscription session for the request.
+void showLiveSession(
+  BuildContext context,
+  WidgetRef ref,
+  EditorNotifier notifier,
+  LiveKind kind,
+) {
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => RealtimeDialog(
+      sse: kind != LiveKind.websocket,
+      title: switch (kind) {
+        LiveKind.websocket => context.l10n.reLiveWs,
+        LiveKind.sse => context.l10n.reLiveSseTitle,
+        LiveKind.graphqlSubscription => context.l10n.reLiveSub,
+      },
+      connect: () => notifier.connectRealtime(kind),
+      onSave: (text) async {
+        final port = ref.read(filePortProvider);
+        await port.save(
+          'live-log.txt',
+          Uint8List.fromList(utf8.encode(text)),
+          mime: 'text/plain',
+        );
+      },
+    ),
+  );
+}
+
 /// Menu that opens a WebSocket, SSE or subscription session for the request.
 class LiveMenu extends ConsumerWidget {
   const LiveMenu({super.key, required this.item, required this.notifier});
@@ -241,37 +284,13 @@ class LiveMenu extends ConsumerWidget {
   final HttpRequestItem item;
   final EditorNotifier notifier;
 
-  void _open(BuildContext context, WidgetRef ref, LiveKind kind) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => RealtimeDialog(
-        sse: kind != LiveKind.websocket,
-        title: switch (kind) {
-          LiveKind.websocket => context.l10n.reLiveWs,
-          LiveKind.sse => context.l10n.reLiveSseTitle,
-          LiveKind.graphqlSubscription => context.l10n.reLiveSub,
-        },
-        connect: () => notifier.connectRealtime(kind),
-        onSave: (text) async {
-          final port = ref.read(filePortProvider);
-          await port.save(
-            'live-log.txt',
-            Uint8List.fromList(utf8.encode(text)),
-            mime: 'text/plain',
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<LiveKind>(
       key: const Key('live'),
       tooltip: context.l10n.reLiveTooltip,
       icon: const Icon(Icons.sync_alt),
-      onSelected: (kind) => _open(context, ref, kind),
+      onSelected: (kind) => showLiveSession(context, ref, notifier, kind),
       itemBuilder: (_) => [
         PopupMenuItem(
           value: LiveKind.websocket,

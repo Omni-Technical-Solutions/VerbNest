@@ -15,6 +15,11 @@ import 'device_profiles.dart';
 /// Shared by the device matrix and the phone goldens: a seeded app on a fake
 /// engine, opened the way a person would on each size.
 class FakeEngine extends HttpEngine {
+  FakeEngine({this.items = 2});
+
+  /// How many objects the JSON response holds; more makes it scroll.
+  final int items;
+
   @override
   Future<HttpResponseRecord> send(
     HttpRequestSpec spec, {
@@ -22,15 +27,17 @@ class FakeEngine extends HttpEngine {
   }) async {
     final body = Uint8List.fromList(
       utf8.encode(
-        '[{"id": 1, "name": "Biscuit", "species": "dog"}, '
-        '{"id": 2, "name": "Mochi", "species": "cat"}]',
+        jsonEncode([
+          for (var i = 1; i <= items; i++)
+            {'id': i, 'name': 'Pet $i', 'species': i.isEven ? 'cat' : 'dog'},
+        ]),
       ),
     );
     const zero = Duration.zero;
     return HttpResponseRecord(
       status: 200,
       reason: 'OK',
-      httpVersion: 'HTTP/1.1',
+      httpVersion: '1.1',
       headers: [('Content-Type', 'application/json')],
       body: body,
       wireBodySize: body.length,
@@ -59,7 +66,11 @@ class MatrixApp {
   final String col, id;
 }
 
-Future<MatrixApp> launchApp(WidgetTester t, DeviceProfile p) async {
+Future<MatrixApp> launchApp(
+  WidgetTester t,
+  DeviceProfile p, {
+  HttpEngine? engine,
+}) async {
   t.view.physicalSize = p.size;
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
@@ -89,7 +100,7 @@ Future<MatrixApp> launchApp(WidgetTester t, DeviceProfile p) async {
   final c = ProviderContainer(
     overrides: [
       sessionProvider.overrideWithValue(s),
-      engineProvider.overrideWithValue(FakeEngine()),
+      engineProvider.overrideWithValue(engine ?? FakeEngine()),
     ],
   );
   addTearDown(c.dispose);
@@ -121,6 +132,8 @@ Future<void> raiseKeyboard(MatrixApp a, DeviceProfile p, Finder field) async {
   if (p.keyboard == 0) return;
   a.t.view.viewInsets = FakeViewPadding(bottom: p.keyboard);
   await a.t.tap(field);
+  // One frame starts the toolbar's fold animation, the next lets it run.
+  await a.t.pump(const Duration(milliseconds: 50));
   await a.t.pump(const Duration(milliseconds: 600));
 }
 

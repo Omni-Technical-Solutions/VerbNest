@@ -92,7 +92,7 @@ void main() {
     final r = HttpResponseRecord(
       status: 200,
       reason: 'OK',
-      httpVersion: 'HTTP/1.1',
+      httpVersion: '1.1',
       headers: [('Content-Type', 'image/png'), ('X-Id', 'abc')],
       body: Uint8List.fromList(png),
       wireBodySize: 10,
