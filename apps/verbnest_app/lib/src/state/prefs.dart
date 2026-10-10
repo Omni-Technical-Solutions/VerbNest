@@ -105,10 +105,13 @@ final prefsProvider = NotifierProvider<PrefsNotifier, Prefs>(PrefsNotifier.new);
 /// Where the divider sits between request and response, and whether they
 /// sit side by side. Stored with the other device-local preferences.
 class SplitLayout {
-  const SplitLayout({this.ratio = 0.5, this.horizontal = false});
+  const SplitLayout({this.ratio = 0.5, this.horizontal});
 
   final double ratio;
-  final bool horizontal;
+
+  /// Null until the user picks a direction; the editor then chooses by width
+  /// (side by side when it is wide enough, stacked otherwise).
+  final bool? horizontal;
 
   static const minRatio = 0.15, maxRatio = 0.85;
 
@@ -126,7 +129,11 @@ class SplitLayoutNotifier extends Notifier<SplitLayout> {
     String? get(String k) => s.local.kv(ws, 'pref.$k');
     return const SplitLayout().copyWith(
       ratio: double.tryParse(get('splitRatio') ?? ''),
-      horizontal: get('splitHorizontal') == 'true',
+      horizontal: switch (get('splitHorizontal')) {
+        'true' => true,
+        'false' => false,
+        _ => null,
+      },
     );
   }
 
@@ -134,7 +141,9 @@ class SplitLayoutNotifier extends Notifier<SplitLayout> {
     final s = ref.read(sessionProvider);
     final ws = s.repo.workspaceId;
     s.local.setKv(ws, 'pref.splitRatio', '${next.ratio}');
-    s.local.setKv(ws, 'pref.splitHorizontal', '${next.horizontal}');
+    if (next.horizontal != null) {
+      s.local.setKv(ws, 'pref.splitHorizontal', '${next.horizontal}');
+    }
     state = next;
   }
 }

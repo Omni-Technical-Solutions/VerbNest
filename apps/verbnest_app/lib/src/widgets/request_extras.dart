@@ -10,6 +10,8 @@ import '../state/editor_state.dart';
 import '../state/session.dart';
 import 'response_view.dart';
 import '../../l10n/l10n.dart';
+import '../layout_class.dart';
+import 'ui/adaptive_dialog.dart';
 import '../theme.dart';
 
 /// Star toggle for a request (FR-COL-004).
@@ -73,41 +75,45 @@ class _ExamplesDialogState extends ConsumerState<ExamplesDialog> {
     final examples = repo.examples(widget.requestId);
     final current = examples.where((e) => e.id == _selected).firstOrNull;
     final response = state.response;
-    return AlertDialog(
-      title: Text(context.l10n.exTitle),
-      content: SizedBox(
-        width: 640,
-        height: 420,
-        child: Row(
-          children: [
-            SizedBox(
-              width: 200,
-              child: examples.isEmpty
-                  ? Center(
-                      key: const Key('no-examples'),
-                      child: Text(context.l10n.exEmpty),
-                    )
-                  : ListView(
-                      children: [
-                        for (final e in examples)
-                          ListTile(
-                            key: Key('example-${e.id}'),
-                            dense: true,
-                            selected: e.id == _selected,
-                            title: Text(
-                              e.name,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Text('${e.data['status'] ?? ''}'),
-                            onTap: () => setState(() => _selected = e.id),
-                          ),
-                      ],
-                    ),
-            ),
-            const VerticalDivider(),
-            Expanded(child: _detail(current, repo)),
-          ],
-        ),
+    final list = examples.isEmpty
+        ? Center(
+            key: const Key('no-examples'),
+            child: Text(context.l10n.exEmpty),
+          )
+        : ListView(
+            children: [
+              for (final e in examples)
+                ListTile(
+                  key: Key('example-${e.id}'),
+                  dense: true,
+                  selected: e.id == _selected,
+                  title: Text(e.name, overflow: TextOverflow.ellipsis),
+                  subtitle: Text('${e.data['status'] ?? ''}'),
+                  onTap: () => setState(() => _selected = e.id),
+                ),
+            ],
+          );
+    return AdaptiveDialog(
+      title: context.l10n.exTitle,
+      width: 640,
+      height: 420,
+      // Side by side when there is room, stacked on a phone.
+      content: LayoutBuilder(
+        builder: (context, c) => c.maxWidth < LayoutClass.mediumBreakpoint
+            ? Column(
+                children: [
+                  SizedBox(height: 140, child: list),
+                  const Divider(),
+                  Expanded(child: _detail(current, repo)),
+                ],
+              )
+            : Row(
+                children: [
+                  SizedBox(width: 200, child: list),
+                  const VerticalDivider(),
+                  Expanded(child: _detail(current, repo)),
+                ],
+              ),
       ),
       actions: [
         TextButton(

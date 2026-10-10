@@ -7,6 +7,7 @@ import 'package:verbnest_import/verbnest_import.dart';
 import '../state/file_port.dart';
 import '../state/folder_port.dart';
 import '../state/session.dart';
+import '../widgets/ui/adaptive_dialog.dart';
 import '../widgets/name_dialog.dart';
 import '../workspace_host.dart';
 import '../../l10n/l10n.dart';
@@ -48,27 +49,25 @@ class _WorkspacesDialog extends ConsumerWidget {
     final currentId = session.repo.workspaceId;
     final recent = switcher.recent();
 
-    return AlertDialog(
-      title: Text(context.l10n.wsTitle),
-      content: SizedBox(
-        width: 440,
-        height: 360,
-        child: ListView(
-          children: [
-            _currentTile(context, session, currentId),
-            const Divider(),
-            for (final w in recent)
-              if (w.id != currentId)
-                ListTile(
-                  key: Key('ws-${w.id}'),
-                  dense: true,
-                  leading: const Icon(Icons.folder_outlined),
-                  title: Text(w.name),
-                  subtitle: Text(w.dbPath, overflow: TextOverflow.ellipsis),
-                  onTap: () => _guard(context, () => switcher.open(w.dbPath)),
-                ),
-          ],
-        ),
+    return AdaptiveDialog(
+      title: context.l10n.wsTitle,
+      width: 440,
+      height: 360,
+      content: ListView(
+        children: [
+          _currentTile(context, session, currentId),
+          const Divider(),
+          for (final w in recent)
+            if (w.id != currentId)
+              ListTile(
+                key: Key('ws-${w.id}'),
+                dense: true,
+                leading: const Icon(Icons.folder_outlined),
+                title: Text(w.name),
+                subtitle: Text(w.dbPath, overflow: TextOverflow.ellipsis),
+                onTap: () => _guard(context, () => switcher.open(w.dbPath)),
+              ),
+        ],
       ),
       actions: _actions(context, ref, session, switcher),
     );

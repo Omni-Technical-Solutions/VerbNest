@@ -21,6 +21,7 @@ import 'response_view.dart';
 import 'scripts_editor.dart';
 import 'synced_field.dart';
 import '../layout_class.dart';
+import '../theme.dart';
 import 'ui/split_view.dart';
 import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
@@ -234,8 +235,13 @@ class _Banner extends StatelessWidget {
   }
 }
 
-/// Request tabs stacked above the response.
-class _Panes extends ConsumerWidget {
+/// Request and response panes.
+///
+/// Compact: one at a time behind a segmented switch, so each gets the whole
+/// screen. Otherwise a split view; it sits side by side once the editor is
+/// wide enough (the response becomes a supporting pane), unless the user chose
+/// a direction.
+class _Panes extends ConsumerStatefulWidget {
   const _Panes({
     required this.requestId,
     required this.state,
@@ -248,74 +254,131 @@ class _Panes extends ConsumerWidget {
   final EditorNotifier notifier;
   final bool compact;
 
+  /// Editor width from which the response sits beside the request by default.
+  static const sideBySideWidth = 1100.0;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Panes> createState() => _PanesState();
+}
+
+class _PanesState extends ConsumerState<_Panes> {
+  /// Compact only: which pane is showing.
+  bool _showResponse = false;
+
+  @override
+  void didUpdateWidget(_Panes old) {
+    super.didUpdateWidget(old);
+    // A send takes you to its result.
+    if (!_resultOf(old.state) && _resultOf(widget.state)) _showResponse = true;
+  }
+
+  EditorState get _state => widget.state;
+
+  static bool _resultOf(EditorState s) =>
+      s.response != null || s.error != null || s.sending;
+
+  bool get _hasResult => _resultOf(_state);
+
+  @override
+  Widget build(BuildContext context) {
+    final request = _RequestTabs(
+      requestId: widget.requestId,
+      item: _state.item,
+      notifier: widget.notifier,
+    );
+    final response = _response(context, ref);
+    if (widget.compact) return _compactPanes(context, request, response);
+
     return LayoutBuilder(
       builder: (context, c) {
-        final request = _RequestTabs(
-          requestId: requestId,
-          item: state.item,
-          notifier: notifier,
-        );
-        // Nothing to show yet: on a phone the request gets the whole screen.
-        // The pane is collapsed rather than removed so the request tabs keep
-        // their selection when the first response arrives.
-        final collapsed =
-            compact &&
-            state.response == null &&
-            state.error == null &&
-            !state.sending;
-        final response = _response(context, ref);
         final layout = ref.watch(splitLayoutProvider);
-        // Side by side is cramped below tablet width; stack instead.
         final sideBySide =
-            layout.horizontal && c.maxWidth >= LayoutClass.mediumBreakpoint;
+            (layout.horizontal ?? c.maxWidth >= _Panes.sideBySideWidth) &&
+            c.maxWidth >= LayoutClass.mediumBreakpoint;
         return Stack(
           children: [
             SplitView(
               axis: sideBySide ? Axis.horizontal : Axis.vertical,
-              ratio: collapsed ? 1 : layout.ratio,
-              onRatioChanged: (r) {
-                if (collapsed) return;
-                ref
-                    .read(splitLayoutProvider.notifier)
-                    .update(layout.copyWith(ratio: r));
-              },
+              ratio: layout.ratio,
+              onRatioChanged: (r) => ref
+                  .read(splitLayoutProvider.notifier)
+                  .update(layout.copyWith(ratio: r)),
               first: request,
-              second: collapsed ? const SizedBox.shrink() : response,
+              second: response,
             ),
-            // The toggle floats over the tab row, and a phone cannot split
-            // sideways anyway.
-            if (!compact)
-              PositionedDirectional(
-                end: 4,
-                top: 4,
-                child: IconButton(
-                  key: const Key('split-orientation'),
-                  visualDensity: VisualDensity.compact,
-                  tooltip: sideBySide
-                      ? context.l10n.reSplitStacked
-                      : context.l10n.reSplitSideBySide,
-                  icon: Icon(
-                    sideBySide ? Icons.view_agenda_outlined : Icons.view_column,
-                    size: 18,
-                  ),
-                  onPressed: () => ref
-                      .read(splitLayoutProvider.notifier)
-                      .update(layout.copyWith(horizontal: !layout.horizontal)),
+            PositionedDirectional(
+              end: 4,
+              top: 4,
+              child: IconButton(
+                key: const Key('split-orientation'),
+                visualDensity: VisualDensity.compact,
+                tooltip: sideBySide
+                    ? context.l10n.reSplitStacked
+                    : context.l10n.reSplitSideBySide,
+                icon: Icon(
+                  sideBySide ? Icons.view_agenda_outlined : Icons.view_column,
+                  size: 18,
                 ),
+                onPressed: () => ref
+                    .read(splitLayoutProvider.notifier)
+                    .update(layout.copyWith(horizontal: !sideBySide)),
               ),
+            ),
           ],
         );
       },
     );
   }
 
+  Widget _compactPanes(BuildContext context, Widget request, Widget response) {
+    final showResponse = _hasResult && _showResponse;
+    return Column(
+      children: [
+        // The slot always exists so the panes below keep their state.
+        _hasResult
+            ? Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Space.md,
+                  0,
+                  Space.md,
+                  Space.sm,
+                ),
+                child: SegmentedButton<bool>(
+                  key: const Key('pane-switch'),
+                  showSelectedIcon: false,
+                  expandedInsets: EdgeInsets.zero,
+                  segments: [
+                    ButtonSegment(
+                      value: false,
+                      label: Text(context.l10n.histTabRequest),
+                    ),
+                    ButtonSegment(
+                      value: true,
+                      label: Text(context.l10n.histTabResponse),
+                    ),
+                  ],
+                  selected: {showResponse},
+                  onSelectionChanged: (s) =>
+                      setState(() => _showResponse = s.first),
+                ),
+              )
+            : const SizedBox.shrink(),
+        // Both stay mounted, so the selected request tab survives a send.
+        Expanded(
+          child: IndexedStack(
+            index: showResponse ? 1 : 0,
+            children: [request, response],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _response(BuildContext context, WidgetRef ref) {
     final port = ref.read(filePortProvider);
-    final r = state.response;
+    final r = _state.response;
     return ResponseView(
-      state: state,
+      state: _state,
       codeFontSize: ref.watch(prefsProvider).editorFontSize,
       share: port.savesBySharing,
       onSave: r == null

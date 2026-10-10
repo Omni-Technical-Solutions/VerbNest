@@ -105,18 +105,25 @@ Future<String> _pump(
 void main() {
   testWidgets('the selected request tab survives the first send', (t) async {
     await _pump(t, 402, body: (id) => RequestEditor(requestId: id));
+    // The request pane is the first tab view, even when it is offstage.
+    int requestTab() => DefaultTabController.of(
+      t.element(find.byType(TabBarView, skipOffstage: false).first),
+    ).index;
     await t.tap(find.text('Auth'));
     await t.pump(const Duration(milliseconds: 300));
-    final before = DefaultTabController.of(
-      t.element(find.byType(TabBarView).first),
-    ).index;
-    expect(before, 2);
+    expect(requestTab(), 2);
+
     await t.tap(find.byKey(const Key('send')));
     await t.pump(const Duration(milliseconds: 400));
-    final after = DefaultTabController.of(
-      t.element(find.byType(TabBarView).first),
-    ).index;
-    expect(after, 2);
+    // The send moves to the response; the request pane stays mounted.
+    expect(find.byKey(const Key('pane-switch')), findsOneWidget);
+    expect(find.text('Cookies'), findsOneWidget);
+    expect(requestTab(), 2);
+
+    await t.tap(find.text('Request'));
+    await t.pump(const Duration(milliseconds: 300));
+    expect(requestTab(), 2);
+    expect(find.byKey(const Key('auth-type')), findsOneWidget);
   });
 
   for (final w in _widths) {

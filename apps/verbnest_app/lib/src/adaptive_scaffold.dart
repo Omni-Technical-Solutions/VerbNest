@@ -276,11 +276,12 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final layout = LayoutClass.forWidth(constraints.maxWidth);
-        _expanded = layout == LayoutClass.expanded;
+        // List and detail side by side from expanded (840 dp) upwards.
+        _expanded = layout.atLeast(LayoutClass.expanded);
         return switch (layout) {
           LayoutClass.compact => _compact(),
           LayoutClass.medium => _withRail(sidebar: false),
-          LayoutClass.expanded => _withRail(sidebar: true),
+          _ => _withRail(sidebar: true),
         };
       },
     );

@@ -147,7 +147,7 @@ motion rows of the baseline.
 - Risk: every golden changes at once; do this phase alone and review the new
   goldens by eye before accepting them.
 
-## Phase 3: Adaptive layout (minor, v0.48.0)
+## Phase 3: Adaptive layout (minor, v0.48.0) - done, with notes
 
 Fixes findings 4, 5 and 6.
 
@@ -167,6 +167,13 @@ Fixes findings 4, 5 and 6.
 - 3g. Max content width (about 720) for Settings, Environments and History.
 - Done when: every screen is checked at 360, 402, 600, 840, 1032, 1280 and
   1600 wide with no overflow, and the screenshot sets show the new layouts.
+- Delivered: 3a, 3b, 3d (list and detail from 840 dp), 3e's supporting pane
+  (response beside the request from 1100 dp of editor width), 3f (palette,
+  search, code, workspaces and examples; import still uses a plain dialog) and
+  3g (History; Settings and Environments were already capped). Not done: the
+  permanent navigation drawer for Large and up. The rail plus collection list
+  already gives desktop its navigation and list, and a drawer would add a third
+  column; revisit if users ask. 3c is unchanged: Medium keeps the one-pane flow.
 - Risk: open tab, scroll position and selection must survive a layout change
   when a window is resized or a tablet rotates.
 

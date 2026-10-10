@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
+import '../widgets/ui/adaptive_dialog.dart';
 import '../../l10n/l10n.dart';
 import '../widgets/ui/ui.dart';
 
@@ -160,87 +161,80 @@ class _PaletteState extends State<_Palette> {
       rows.add(i);
     }
 
-    return Dialog(
-      alignment: Alignment.topCenter,
-      insetPadding: const EdgeInsets.only(top: 80, left: 16, right: 16),
-      child: SizedBox(
-        width: 560,
-        height: 420,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: CallbackShortcuts(
-                bindings: {
-                  const SingleActivator(LogicalKeyboardKey.arrowDown): () =>
-                      setState(
-                        () => _index = shown.isEmpty
-                            ? 0
-                            : (_index + 1) % shown.length,
-                      ),
-                  const SingleActivator(LogicalKeyboardKey.arrowUp): () =>
-                      setState(
-                        () => _index = shown.isEmpty
-                            ? 0
-                            : (_index - 1 + shown.length) % shown.length,
-                      ),
-                },
-                child: TextField(
-                  key: const Key('palette-input'),
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.keyboard_command_key),
-                    hintText: context.l10n.paletteHint,
-                  ),
-                  onChanged: (v) => setState(() {
-                    _query = v;
-                    _index = 0;
-                  }),
-                  onSubmitted: (_) => choose(_index),
+    return AdaptiveDialogShell(
+      width: 560,
+      height: 420,
+      top: 80,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: CallbackShortcuts(
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.arrowDown): () =>
+                    setState(
+                      () => _index = shown.isEmpty
+                          ? 0
+                          : (_index + 1) % shown.length,
+                    ),
+                const SingleActivator(LogicalKeyboardKey.arrowUp): () =>
+                    setState(
+                      () => _index = shown.isEmpty
+                          ? 0
+                          : (_index - 1 + shown.length) % shown.length,
+                    ),
+              },
+              child: TextField(
+                key: const Key('palette-input'),
+                autofocus: true,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.keyboard_command_key),
+                  hintText: context.l10n.paletteHint,
                 ),
+                onChanged: (v) => setState(() {
+                  _query = v;
+                  _index = 0;
+                }),
+                onSubmitted: (_) => choose(_index),
               ),
             ),
-            Expanded(
-              child: shown.isEmpty
-                  ? Center(
-                      key: const Key('palette-empty'),
-                      child: Text(context.l10n.paletteNothing),
-                    )
-                  : ListView.builder(
-                      itemCount: rows.length,
-                      itemBuilder: (_, r) {
-                        final row = rows[r];
-                        if (row is PaletteGroup) {
-                          return _groupHeader(context, row);
-                        }
-                        final i = row as int;
-                        return ListTile(
-                          key: Key('palette-${shown[i].id}'),
-                          dense: true,
-                          selected: i == _index,
-                          leading: Icon(shown[i].icon ?? Icons.http, size: 18),
-                          title: Text.rich(
-                            _highlight(context, shown[i].title, _query),
-                          ),
-                          trailing: shown[i].shortcut == null
-                              ? null
-                              : Kbd(shown[i].shortcut!),
-                          subtitle: shown[i].subtitle == null
-                              ? null
-                              : Text.rich(
-                                  _highlight(
-                                    context,
-                                    shown[i].subtitle!,
-                                    _query,
-                                  ),
-                                ),
-                          onTap: () => choose(i),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: shown.isEmpty
+                ? Center(
+                    key: const Key('palette-empty'),
+                    child: Text(context.l10n.paletteNothing),
+                  )
+                : ListView.builder(
+                    itemCount: rows.length,
+                    itemBuilder: (_, r) {
+                      final row = rows[r];
+                      if (row is PaletteGroup) {
+                        return _groupHeader(context, row);
+                      }
+                      final i = row as int;
+                      return ListTile(
+                        key: Key('palette-${shown[i].id}'),
+                        dense: true,
+                        selected: i == _index,
+                        leading: Icon(shown[i].icon ?? Icons.http, size: 18),
+                        title: Text.rich(
+                          _highlight(context, shown[i].title, _query),
+                        ),
+                        trailing: shown[i].shortcut == null
+                            ? null
+                            : Kbd(shown[i].shortcut!),
+                        subtitle: shown[i].subtitle == null
+                            ? null
+                            : Text.rich(
+                                _highlight(context, shown[i].subtitle!, _query),
+                              ),
+                        onTap: () => choose(i),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

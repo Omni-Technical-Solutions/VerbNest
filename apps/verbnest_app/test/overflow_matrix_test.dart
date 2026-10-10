@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -65,6 +66,22 @@ void main() {
         await t.tap(find.text(label).last);
         await t.pump(const Duration(milliseconds: 400));
         expect(t.takeException(), isNull, reason: label);
+      }
+      // Dialogs: the palette and workspace search (full screen on a phone).
+      for (final key in [LogicalKeyboardKey.keyK, LogicalKeyboardKey.keyF]) {
+        await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        if (key == LogicalKeyboardKey.keyF) {
+          await t.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+        }
+        await t.sendKeyEvent(key);
+        if (key == LogicalKeyboardKey.keyF) {
+          await t.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+        }
+        await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await t.pump(const Duration(milliseconds: 400));
+        expect(t.takeException(), isNull, reason: 'dialog $key');
+        await t.sendKeyEvent(LogicalKeyboardKey.escape);
+        await t.pump(const Duration(milliseconds: 400));
       }
       // A request open in the editor (opens full screen on a phone).
       c.read(tabsProvider.notifier).open(id);

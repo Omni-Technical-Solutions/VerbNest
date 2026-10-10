@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.48.0
+
+- UI: the app follows the five Material 3 window size classes (compact under 600, medium 600 to 839, expanded 840 to 1199, large 1200 to 1599, extra large 1600 and up). The collection list now sits beside the editor from 840 dp (it used to need 1024), so an iPad in portrait or a narrow desktop window gets list and detail.
+- UI: on a phone the request and response are no longer stacked. After Send, a Request | Response switch gives the result the whole screen; both stay mounted, so the selected request tab and what you typed are kept.
+- UI: on a wide editor (1100 dp or more) the response sits beside the request by default, as a supporting pane. Once you pick a direction with the toggle, that choice wins. Saved layouts without a choice follow the width.
+- UI: the command palette and workspace search are full screen on a phone and a box near the top on a wide window. Generate code, Workspaces and Examples use a new shared adaptive dialog: full screen with a close button and a bottom action bar on a phone, a centred dialog otherwise. Examples stack the list above the detail on a phone.
+- UI: the History page is a readable column (up to 960 dp) on wide windows.
+- Tests: `adaptive_layout_test.dart` (size-class breakpoints, dialog forms, pane direction, list beside editor at 840), and the overflow matrix now also opens the palette and search at every width.
+
 ## 0.47.0
 
 - UI: Material 3 visual system. The accent now follows the icon's orange (seed `#EB6A1A` with the `vibrant` scheme variant, which keeps the colour orange where the default turned it brown and `expressive` turned it purple). Text roles meet WCAG AA in light and dark for every accent; the light-theme orange for POST, warnings and numbers was darkened because it was under 4.5:1.

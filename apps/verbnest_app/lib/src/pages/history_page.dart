@@ -37,21 +37,28 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       session.repo.workspaceId,
       query: _query,
     );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _toolbar(session, entries.isEmpty),
-        Expanded(
-          child: entries.isEmpty
-              ? EmptyState(
-                  icon: _query.isEmpty ? Icons.history : Icons.search_off,
-                  title: _query.isEmpty
-                      ? context.l10n.histEmpty
-                      : context.l10n.histNoMatch(_query),
-                )
-              : _grouped(entries),
+    // A list this wide is hard to scan; keep it a readable column.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 960),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _toolbar(session, entries.isEmpty),
+            Expanded(
+              child: entries.isEmpty
+                  ? EmptyState(
+                      icon: _query.isEmpty ? Icons.history : Icons.search_off,
+                      title: _query.isEmpty
+                          ? context.l10n.histEmpty
+                          : context.l10n.histNoMatch(_query),
+                    )
+                  : _grouped(entries),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 

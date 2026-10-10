@@ -28,8 +28,14 @@ void main() {
   test('layout class breakpoints', () {
     expect(LayoutClass.forWidth(599), LayoutClass.compact);
     expect(LayoutClass.forWidth(600), LayoutClass.medium);
-    expect(LayoutClass.forWidth(1023), LayoutClass.medium);
-    expect(LayoutClass.forWidth(1024), LayoutClass.expanded);
+    expect(LayoutClass.forWidth(839), LayoutClass.medium);
+    expect(LayoutClass.forWidth(840), LayoutClass.expanded);
+    expect(LayoutClass.forWidth(1199), LayoutClass.expanded);
+    expect(LayoutClass.forWidth(1200), LayoutClass.large);
+    expect(LayoutClass.forWidth(1599), LayoutClass.large);
+    expect(LayoutClass.forWidth(1600), LayoutClass.extraLarge);
+    expect(LayoutClass.large.atLeast(LayoutClass.expanded), isTrue);
+    expect(LayoutClass.medium.atLeast(LayoutClass.expanded), isFalse);
   });
 
   testWidgets('phone width uses a bottom navigation bar', (tester) async {

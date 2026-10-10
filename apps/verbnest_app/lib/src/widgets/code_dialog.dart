@@ -7,6 +7,7 @@ import '../state/import_actions.dart';
 import '../state/session.dart';
 import '../state/variables.dart';
 import '../../l10n/l10n.dart';
+import 'ui/adaptive_dialog.dart';
 import 'ui/toast.dart';
 import '../theme.dart';
 
@@ -33,49 +34,47 @@ class _CodeDialogState extends ConsumerState<CodeDialog> {
       resolve: _resolve,
       envId: ref.read(activeEnvProvider),
     );
-    return AlertDialog(
-      title: Text(context.l10n.codeTitle),
-      content: SizedBox(
-        width: 560,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropdownMenu<CodeLanguage>(
-              key: const Key('code-language'),
-              initialSelection: _language,
-              expandedInsets: EdgeInsets.zero,
-              requestFocusOnTap: false,
-              dropdownMenuEntries: [
-                for (final l in CodeLanguage.values)
-                  DropdownMenuEntry(value: l, label: l.label),
-              ],
-              onSelected: (l) => setState(() => _language = l ?? _language),
-            ),
-            SwitchListTile(
-              key: const Key('code-resolve'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(context.l10n.codeFillVariables),
-              subtitle: Text(context.l10n.codeSecretsWarning),
-              value: _resolve,
-              onChanged: (v) => setState(() => _resolve = v),
-            ),
-            Flexible(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    code,
-                    key: const Key('code-text'),
-                    style: monoStyle(fontSize: 12),
-                  ),
+    return AdaptiveDialog(
+      title: context.l10n.codeTitle,
+      width: 560,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownMenu<CodeLanguage>(
+            key: const Key('code-language'),
+            initialSelection: _language,
+            expandedInsets: EdgeInsets.zero,
+            requestFocusOnTap: false,
+            dropdownMenuEntries: [
+              for (final l in CodeLanguage.values)
+                DropdownMenuEntry(value: l, label: l.label),
+            ],
+            onSelected: (l) => setState(() => _language = l ?? _language),
+          ),
+          SwitchListTile(
+            key: const Key('code-resolve'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(context.l10n.codeFillVariables),
+            subtitle: Text(context.l10n.codeSecretsWarning),
+            value: _resolve,
+            onChanged: (v) => setState(() => _resolve = v),
+          ),
+          Flexible(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  code,
+                  key: const Key('code-text'),
+                  style: monoStyle(fontSize: 12),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       actions: [
         TextButton(
