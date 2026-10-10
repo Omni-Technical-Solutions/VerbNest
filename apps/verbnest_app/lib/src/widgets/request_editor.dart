@@ -83,7 +83,12 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
           // Read from the view: Scaffold removes the keyboard from the body's
           // MediaQuery. This builder re-runs when the keyboard resizes the body.
           final keyboardUp = View.of(context).viewInsets.bottom > 0;
-          final hideToolbar = phone && (keyboardUp || _hiddenByScroll);
+          // A short window (a landscape phone) has no height for a toolbar row:
+          // the environment and the menu move into the URL row.
+          final short =
+              MediaQuery.sizeOf(context).height < HeightClass.mediumBreakpoint;
+          final hideToolbar =
+              short || (phone && (keyboardUp || _hiddenByScroll));
           // The page scrolls, so a short window never overflows: the panes get
           // what is left, but at least [_minPaneHeight], and the page scrolls
           // past the rest. The URL bar is pinned so it is never scrolled away.
@@ -117,6 +122,22 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
                       notifier: notifier,
                       compact: compact,
                       narrow: narrow,
+                      trailing: short
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // A fixed width keeps the URL readable beside it.
+                                EnvSelector(requestId: requestId, width: 140),
+                                ToolbarMenu(
+                                  requestId: requestId,
+                                  item: state.item,
+                                  notifier: notifier,
+                                  onExamples: () =>
+                                      showExamples(context, requestId),
+                                ),
+                              ],
+                            )
+                          : null,
                     ),
                   ),
                 ),
@@ -172,6 +193,15 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
   static const _minPaneHeight = 240.0;
 }
 
+/// Opens the saved examples of a request.
+void showExamples(BuildContext context, String requestId) => showDialog<void>(
+  context: context,
+  builder: (_) => UncontrolledProviderScope(
+    container: ProviderScope.containerOf(context),
+    child: ExamplesDialog(requestId: requestId),
+  ),
+);
+
 /// Keeps the URL bar at the top of the editor's scroll view. It has a solid
 /// background so content scrolls under it cleanly.
 class _PinnedHeader extends SliverPersistentHeaderDelegate {
@@ -218,13 +248,7 @@ class _Toolbar extends ConsumerWidget {
   final HttpRequestItem item;
   final EditorNotifier notifier;
 
-  void _examples(BuildContext context) => showDialog<void>(
-    context: context,
-    builder: (_) => UncontrolledProviderScope(
-      container: ProviderScope.containerOf(context),
-      child: ExamplesDialog(requestId: requestId),
-    ),
-  );
+  void _examples(BuildContext context) => showExamples(context, requestId);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -262,9 +286,6 @@ class _Toolbar extends ConsumerWidget {
 
   /// One row: the environment, and a menu with the rest.
   Widget _narrow(BuildContext context, WidgetRef ref) {
-    final l = context.l10n;
-    final repo = ref.read(repositoryProvider);
-    final fav = repo.isFavourite(requestId);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
@@ -275,48 +296,79 @@ class _Toolbar extends ConsumerWidget {
               child: EnvSelector(requestId: requestId),
             ),
           ),
-          PopupMenuButton<String>(
-            key: const Key('toolbar-more'),
-            tooltip: l.sbActions,
-            icon: const Icon(Icons.more_vert),
-            onSelected: (v) {
-              switch (v) {
-                case 'favourite':
-                  repo.setFavourite(requestId, !fav);
-                case 'examples':
-                  _examples(context);
-                case 'ws':
-                  showLiveSession(context, ref, notifier, LiveKind.websocket);
-                case 'sse':
-                  showLiveSession(context, ref, notifier, LiveKind.sse);
-                case 'sub':
-                  showLiveSession(
-                    context,
-                    ref,
-                    notifier,
-                    LiveKind.graphqlSubscription,
-                  );
-              }
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                key: const Key('more-favourite'),
-                value: 'favourite',
-                child: Text(fav ? l.exFavRemove : l.exFavAdd),
-              ),
-              PopupMenuItem(
-                key: const Key('more-examples'),
-                value: 'examples',
-                child: Text(l.reExamples),
-              ),
-              PopupMenuItem(value: 'ws', child: Text(l.reLiveWs)),
-              PopupMenuItem(value: 'sse', child: Text(l.reLiveSse)),
-              if (item.body is GraphqlBody)
-                PopupMenuItem(value: 'sub', child: Text(l.reLiveSub)),
-            ],
+          ToolbarMenu(
+            requestId: requestId,
+            item: item,
+            notifier: notifier,
+            onExamples: () => _examples(context),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The menu behind the toolbar's "more" button: favourite, examples and live
+/// sessions. Used when the toolbar is one row (under 360 dp) and in the URL row
+/// of a short window.
+class ToolbarMenu extends ConsumerWidget {
+  const ToolbarMenu({
+    super.key,
+    required this.requestId,
+    required this.item,
+    required this.notifier,
+    required this.onExamples,
+  });
+
+  final String requestId;
+  final HttpRequestItem item;
+  final EditorNotifier notifier;
+  final VoidCallback onExamples;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final repo = ref.read(repositoryProvider);
+    final fav = repo.isFavourite(requestId);
+    return PopupMenuButton<String>(
+      key: const Key('toolbar-more'),
+      tooltip: l.sbActions,
+      icon: const Icon(Icons.more_vert),
+      onSelected: (v) {
+        switch (v) {
+          case 'favourite':
+            repo.setFavourite(requestId, !fav);
+          case 'examples':
+            onExamples();
+          case 'ws':
+            showLiveSession(context, ref, notifier, LiveKind.websocket);
+          case 'sse':
+            showLiveSession(context, ref, notifier, LiveKind.sse);
+          case 'sub':
+            showLiveSession(
+              context,
+              ref,
+              notifier,
+              LiveKind.graphqlSubscription,
+            );
+        }
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          key: const Key('more-favourite'),
+          value: 'favourite',
+          child: Text(fav ? l.exFavRemove : l.exFavAdd),
+        ),
+        PopupMenuItem(
+          key: const Key('more-examples'),
+          value: 'examples',
+          child: Text(l.reExamples),
+        ),
+        PopupMenuItem(value: 'ws', child: Text(l.reLiveWs)),
+        PopupMenuItem(value: 'sse', child: Text(l.reLiveSse)),
+        if (item.body is GraphqlBody)
+          PopupMenuItem(value: 'sub', child: Text(l.reLiveSub)),
+      ],
     );
   }
 }
@@ -474,9 +526,14 @@ class _PanesState extends ConsumerState<_Panes> {
     return LayoutBuilder(
       builder: (context, c) {
         final layout = ref.watch(splitLayoutProvider);
+        // A short window (a landscape phone) never stacks the panes: there is
+        // width to spare and no height, so they sit side by side.
+        final short =
+            MediaQuery.sizeOf(context).height < HeightClass.mediumBreakpoint;
         final sideBySide =
-            (layout.horizontal ?? c.maxWidth >= _Panes.sideBySideWidth) &&
-            c.maxWidth >= LayoutClass.mediumBreakpoint;
+            c.maxWidth >= LayoutClass.mediumBreakpoint &&
+            (short ||
+                (layout.horizontal ?? c.maxWidth >= _Panes.sideBySideWidth));
         return Stack(
           children: [
             SplitView(
@@ -488,24 +545,25 @@ class _PanesState extends ConsumerState<_Panes> {
               first: request,
               second: response,
             ),
-            PositionedDirectional(
-              end: 4,
-              top: 4,
-              child: IconButton(
-                key: const Key('split-orientation'),
-                visualDensity: VisualDensity.compact,
-                tooltip: sideBySide
-                    ? context.l10n.reSplitStacked
-                    : context.l10n.reSplitSideBySide,
-                icon: Icon(
-                  sideBySide ? Icons.view_agenda_outlined : Icons.view_column,
-                  size: 18,
+            if (!short)
+              PositionedDirectional(
+                end: 4,
+                top: 4,
+                child: IconButton(
+                  key: const Key('split-orientation'),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: sideBySide
+                      ? context.l10n.reSplitStacked
+                      : context.l10n.reSplitSideBySide,
+                  icon: Icon(
+                    sideBySide ? Icons.view_agenda_outlined : Icons.view_column,
+                    size: 18,
+                  ),
+                  onPressed: () => ref
+                      .read(splitLayoutProvider.notifier)
+                      .update(layout.copyWith(horizontal: !sideBySide)),
                 ),
-                onPressed: () => ref
-                    .read(splitLayoutProvider.notifier)
-                    .update(layout.copyWith(horizontal: !sideBySide)),
               ),
-            ),
           ],
         );
       },

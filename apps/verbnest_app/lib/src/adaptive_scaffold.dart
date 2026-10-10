@@ -310,7 +310,14 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   Widget _layout() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final layout = LayoutClass.forWidth(constraints.maxWidth);
+        final byWidth = LayoutClass.forWidth(constraints.maxWidth);
+        // A short window (a landscape phone) has no height for a list beside
+        // an editor, however wide it is: it gets the one-pane layout.
+        final short =
+            HeightClass.forHeight(constraints.maxHeight) == HeightClass.compact;
+        final layout = short && byWidth.atLeast(LayoutClass.expanded)
+            ? LayoutClass.medium
+            : byWidth;
         // List and detail side by side from expanded (840 dp) upwards.
         _expanded = layout.atLeast(LayoutClass.expanded);
         return switch (layout) {
@@ -356,18 +363,28 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
                 if (drawer)
                   _navDrawer()
                 else
-                  NavigationRail(
-                    selectedIndex: _selected.index,
-                    onDestinationSelected: _select,
-                    labelType: NavigationRailLabelType.all,
-                    destinations: [
-                      for (final d in _Destination.values)
-                        NavigationRailDestination(
-                          icon: Icon(d.icon),
-                          selectedIcon: Icon(d.selectedIcon),
-                          label: Text(d.label(context)),
+                  // Scrolls when the window is too short for four destinations.
+                  LayoutBuilder(
+                    builder: (context, c) => SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: c.maxHeight),
+                        child: IntrinsicHeight(
+                          child: NavigationRail(
+                            selectedIndex: _selected.index,
+                            onDestinationSelected: _select,
+                            labelType: NavigationRailLabelType.all,
+                            destinations: [
+                              for (final d in _Destination.values)
+                                NavigationRailDestination(
+                                  icon: Icon(d.icon),
+                                  selectedIcon: Icon(d.selectedIcon),
+                                  label: Text(d.label(context)),
+                                ),
+                            ],
+                          ),
                         ),
-                    ],
+                      ),
+                    ),
                   ),
                 const VerticalDivider(width: 1),
                 if (sidebar && _selected == _Destination.collections)

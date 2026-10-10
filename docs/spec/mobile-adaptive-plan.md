@@ -126,7 +126,7 @@ Fixes findings 1, 5 and 6.
   of 320x568 with the toolbar folded; the plan's 40% target was relaxed for the
   smallest size.
 
-## Phase 3: Height classes and landscape (minor)
+## Phase 3: Height classes and landscape (minor) - done
 
 Fixes findings 3 and 4.
 
@@ -140,6 +140,9 @@ Fixes findings 3 and 4.
 - 3d. Respect landscape cutouts and system bars (`SafeArea` on the sides).
 - Done when: 874x402 and 667x375 show the request and the response body both
   readable, and the matrix passes.
+- Delivered: 3a to 3d. A short window uses the medium layout, no status bar,
+  side-by-side panes and the toolbar folded into the URL row (environment picker
+  and menu). The status bar's information is simply not shown in landscape.
 - Risk: side by side at 667 pt gives each pane about 300 pt; verify the request
   tabs still read.
 

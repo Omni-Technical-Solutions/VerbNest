@@ -25,3 +25,23 @@ enum LayoutClass {
   /// side from expanded".
   bool atLeast(LayoutClass other) => index >= other.index;
 }
+
+/// Material 3 window height classes. A landscape phone is wide but *compact*
+/// in height, and needs the one-pane layout whatever its width says.
+enum HeightClass {
+  compact,
+  medium,
+  expanded;
+
+  static const mediumBreakpoint = 480.0;
+  static const expandedBreakpoint = 900.0;
+
+  static HeightClass forHeight(double height) {
+    if (height >= expandedBreakpoint) return expanded;
+    if (height >= mediumBreakpoint) return medium;
+    return compact;
+  }
+
+  /// True from [other] upwards.
+  bool atLeast(HeightClass other) => index >= other.index;
+}

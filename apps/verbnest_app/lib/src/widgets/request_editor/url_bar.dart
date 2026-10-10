@@ -34,6 +34,7 @@ class UrlBar extends StatelessWidget {
     required this.notifier,
     this.compact = false,
     this.narrow = false,
+    this.trailing,
   });
 
   final EditorState state;
@@ -45,6 +46,10 @@ class UrlBar extends StatelessWidget {
 
   /// Under 360 dp: an even narrower method box, to keep the URL readable.
   final bool narrow;
+
+  /// Extra controls after Send, used in a short window where the toolbar is
+  /// folded into this row.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +71,8 @@ class UrlBar extends StatelessWidget {
             child: _UrlField(item: item, notifier: notifier),
           ),
           SizedBox(width: gap),
-          if (!compact) LiveMenu(item: item, notifier: notifier),
+          if (!compact && trailing == null)
+            LiveMenu(item: item, notifier: notifier),
           AnimatedSwitcher(
             duration: Motion.of(context, Motion.fast),
             transitionBuilder: (child, anim) => FadeTransition(
@@ -120,6 +126,7 @@ class UrlBar extends StatelessWidget {
                     ),
                   ),
           ),
+          ?trailing,
         ],
       ),
     );

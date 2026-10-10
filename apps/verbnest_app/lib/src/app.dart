@@ -63,7 +63,8 @@ class VerbnestApp extends ConsumerWidget {
             data: mq.copyWith(
               textScaler: TextScaler.linear(mq.textScaler.scale(1) * scale),
             ),
-            child: child!,
+            // Keep content clear of a landscape display cutout (the notch).
+            child: SafeArea(top: false, bottom: false, child: child!),
           ),
         );
       },

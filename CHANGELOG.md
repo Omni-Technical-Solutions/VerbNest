@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.55.0
+
+- UI: height classes. A window under 480 dp tall (a landscape phone) never gets the list-beside-editor layout, however wide it is: 874x402 and 932x430 now use the one-pane layout with a navigation rail, and no status bar. Windows that are wide and tall enough keep list and detail.
+- UI: in a short window the request and response sit side by side (the stacked split left each about 120 dp tall) and the split-direction button is hidden. The toolbar row is gone there: the environment picker and the menu (favourite, examples, WebSocket, SSE, subscription) sit in the URL row beside Send.
+- UI: the navigation rail scrolls when the window is too short for its four destinations, and content stays clear of a display cutout (notch) on both sides in landscape.
+- Tests: `landscape_test.dart` (height classes, layout choice, side-by-side panes, toolbar in the URL row, the rail scrolling, cutouts). The device matrix has no known failures left.
+
 ## 0.54.0
 
 - UI: on a phone the URL bar is pinned at the top of the editor and the toolbar above it gets out of the way. It folds up while the on-screen keyboard is open and while you scroll the response down, and comes back when you scroll up. On wider windows it stays put.

@@ -10,17 +10,8 @@ import 'support/matrix_support.dart';
 /// Profiles whose checks are known to fail, with the phase of
 /// docs/spec/mobile-adaptive-plan.md that fixes them. A profile listed here is
 /// skipped; the list shrinks as the phases land and ends empty.
-const _knownEditorFailures = <String, String>{
-  // The navigation rail overflows a landscape phone's height (needs the height
-  // classes of phase 3).
-  'landscape-874x402+keyboard': 'phase 3',
-  'landscape-932x430+keyboard': 'phase 3',
-};
-const _knownReachFailures = <String, String>{
-  // The URL row sits under the keyboard until it is pinned under the app bar
-  // (phase 2); the tablet-class layout of 874 wide needs phase 3.
-  'landscape-874x402+keyboard': 'phase 3',
-};
+const _knownEditorFailures = <String, String>{};
+const _knownReachFailures = <String, String>{};
 
 void main() {
   group('request editor with a response has no overflow', () {

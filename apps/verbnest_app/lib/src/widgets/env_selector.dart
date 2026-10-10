@@ -9,10 +9,13 @@ import '../../l10n/l10n.dart';
 /// Environment dropdown plus a quick-look of the variables in effect
 /// (FR-VAR-004).
 class EnvSelector extends ConsumerWidget {
-  const EnvSelector({super.key, this.requestId});
+  const EnvSelector({super.key, this.requestId, this.width});
 
   /// When set, quick-look also shows that request's collection/folder scopes.
   final String? requestId;
+
+  /// A fixed width for the picker; by default it fits the row.
+  final double? width;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,9 +28,11 @@ class EnvSelector extends ConsumerWidget {
           DropdownMenu<String?>(
             key: const Key('env-select'),
             // Fits the row; the eye button takes the other 48.
-            width: c.maxWidth.isFinite
-                ? (c.maxWidth - 48).clamp(96.0, 220.0)
-                : null,
+            width:
+                width ??
+                (c.maxWidth.isFinite
+                    ? (c.maxWidth - 48).clamp(96.0, 220.0)
+                    : null),
             initialSelection: envs.any((e) => e.id == active) ? active : null,
             requestFocusOnTap: false,
             decorationBuilder: (_, _) =>

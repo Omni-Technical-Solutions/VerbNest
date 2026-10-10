@@ -115,7 +115,8 @@ Future<MatrixApp> launchApp(
 /// keyboard by focusing the URL field when the profile has one.
 Future<void> openRequest(MatrixApp a, DeviceProfile p) async {
   final t = a.t;
-  if (p.size.width >= 840) {
+  // List and detail share the screen only when it is wide and tall enough.
+  if (p.size.width >= 840 && p.size.height >= 480) {
     a.c.read(tabsProvider.notifier).open(a.id);
   } else {
     if (find.byKey(Key('node-${a.id}')).evaluate().isEmpty) {
