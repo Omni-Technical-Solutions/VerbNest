@@ -195,7 +195,7 @@ Fixes findings 4, 5 and 6.
   (keyboard-only pass test and environment commands in the palette; focus
   rings are the Material 3 defaults, not audited control by control).
 
-## Phase 5: Platform polish and accessibility (minor, v0.50.0)
+## Phase 5: Platform polish and accessibility (minor, v0.50.0) - done, with notes
 
 Fixes finding 9.
 
@@ -207,6 +207,12 @@ Fixes finding 9.
   without clipping, TalkBack and VoiceOver walkthrough of the send flow.
 - Done when: text scale 2.0 shows no clipped or overlapping text on the main
   screens, and both screen readers can send a request unaided.
+- Delivered: 5a (haptics, Cupertino transitions kept, safe areas via Scaffold;
+  full-screen forms instead of iOS sheets), 5b (edge to edge, predictive back;
+  Material You skipped as an optional decision), 5c (automated guideline tests
+  for labels, 48 and 44 dp targets and contrast; 200% and 310% text). Not done:
+  a human VoiceOver and TalkBack walkthrough, and any on-device check. Treat
+  this phase as automated coverage only until someone runs both screen readers.
 
 ## Phase 6: Visual regression (chore)
 

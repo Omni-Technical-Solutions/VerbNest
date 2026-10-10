@@ -1,3 +1,5 @@
+import 'package:cupertino_ui/cupertino_ui.dart'
+    show CupertinoPageTransitionsBuilder;
 import 'package:material_ui/material_ui.dart';
 
 import 'theme/app_tokens.dart';
@@ -32,6 +34,19 @@ ThemeData buildTheme(
         ? VisualDensity.compact
         : VisualDensity.adaptivePlatformDensity,
     extensions: [dark ? AppColors.dark : AppColors.light],
+    // Android's predictive back gesture previews the page underneath. Every
+    // platform is listed: a platform missing from the map falls back to the
+    // zoom transition, which would take away iOS swipe-back.
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+        TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: ZoomPageTransitionsBuilder(),
+      },
+    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.4),

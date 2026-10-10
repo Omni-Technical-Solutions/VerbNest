@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../theme.dart';
@@ -86,43 +87,49 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // Scrolls when large text makes it taller than the space it is given.
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Space.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (logo)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(Radii.lg),
-                child: Image.asset(
-                  'assets/logo.png',
-                  width: 72,
-                  height: 72,
-                  errorBuilder: (_, _, _) =>
-                      Icon(icon, size: 40, color: scheme.outline),
-                ),
-              )
-            else
-              Icon(icon, size: 40, color: scheme.outline),
-            const SizedBox(height: Space.md),
-            Text(
-              title,
-              key: titleKey,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(color: titleColor),
-            ),
-            if (hint != null) ...[
-              const SizedBox(height: Space.xs),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(Space.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (logo)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(Radii.lg),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 72,
+                    height: 72,
+                    errorBuilder: (_, _, _) =>
+                        Icon(icon, size: 40, color: scheme.outline),
+                  ),
+                )
+              else
+                Icon(icon, size: 40, color: scheme.outline),
+              const SizedBox(height: Space.md),
               Text(
-                hint!,
+                title,
+                key: titleKey,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: scheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(color: titleColor),
               ),
+              if (hint != null) ...[
+                const SizedBox(height: Space.xs),
+                Text(
+                  hint!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+              ],
+              if (action != null) ...[
+                const SizedBox(height: Space.lg),
+                action!,
+              ],
             ],
-            if (action != null) ...[const SizedBox(height: Space.lg), action!],
-          ],
+          ),
         ),
       ),
     );
@@ -196,6 +203,12 @@ class InlineBanner extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A light tap of feedback on touch platforms for actions that matter (send,
+/// copy). Nothing on desktop, where there is no motor to drive.
+void lightHaptic(BuildContext context) {
+  if (!showsKeyboardHints(context)) HapticFeedback.lightImpact();
 }
 
 /// Whether to show keyboard shortcut hints. Phones and tablets are driven by

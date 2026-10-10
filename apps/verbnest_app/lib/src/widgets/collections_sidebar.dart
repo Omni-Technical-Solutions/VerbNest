@@ -239,6 +239,9 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
     final selected = node.id == active;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
+      // A pointer shortcut only. Its actions are all in the row's labelled
+      // menu, and it would otherwise show up as an unlabelled button.
+      excludeFromSemantics: true,
       onSecondaryTapUp: (d) => _contextMenu(context, node, d.globalPosition),
       child: _rowTile(context, row, selected),
     );

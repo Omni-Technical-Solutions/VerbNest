@@ -76,7 +76,10 @@ class UrlBar extends StatelessWidget {
                       : IconButton.filled(
                           key: const Key('send'),
                           tooltip: context.l10n.reSend,
-                          onPressed: notifier.send,
+                          onPressed: () {
+                            lightHaptic(context);
+                            notifier.send();
+                          },
                           icon: const Icon(Icons.send),
                         ))
                 : state.sending
@@ -87,7 +90,10 @@ class UrlBar extends StatelessWidget {
                   )
                 : FilledButton(
                     key: const Key('send'),
-                    onPressed: notifier.send,
+                    onPressed: () {
+                      lightHaptic(context);
+                      notifier.send();
+                    },
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

@@ -1,5 +1,6 @@
 import '../l10n/app_localizations.dart';
 
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -38,11 +39,24 @@ class VerbnestApp extends ConsumerWidget {
       builder: (context, child) {
         final mq = MediaQuery.of(context);
         final scale = prefs.fontScale;
-        return MediaQuery(
-          data: mq.copyWith(
-            textScaler: TextScaler.linear(mq.textScaler.scale(1) * scale),
+        final dark = Theme.of(context).brightness == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          // Edge to edge: the app draws behind the system navigation bar, so
+          // it is transparent and its icons follow the theme.
+          value: SystemUiOverlayStyle(
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarDividerColor: Colors.transparent,
+            systemNavigationBarContrastEnforced: false,
+            systemNavigationBarIconBrightness: dark
+                ? Brightness.light
+                : Brightness.dark,
           ),
-          child: child!,
+          child: MediaQuery(
+            data: mq.copyWith(
+              textScaler: TextScaler.linear(mq.textScaler.scale(1) * scale),
+            ),
+            child: child!,
+          ),
         );
       },
       home: const AdaptiveScaffold(),

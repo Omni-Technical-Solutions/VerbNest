@@ -8,6 +8,7 @@ import '../state/session.dart';
 import '../state/variables.dart';
 import '../../l10n/l10n.dart';
 import 'ui/adaptive_dialog.dart';
+import 'ui/ui.dart';
 import 'ui/toast.dart';
 import '../theme.dart';
 
@@ -80,6 +81,7 @@ class _CodeDialogState extends ConsumerState<CodeDialog> {
         TextButton(
           key: const Key('code-copy'),
           onPressed: () async {
+            lightHaptic(context);
             await Clipboard.setData(ClipboardData(text: code));
             if (!context.mounted) return;
             showToast(context, context.l10n.codeCopied);

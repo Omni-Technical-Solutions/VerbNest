@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'src/app.dart';
@@ -6,6 +9,9 @@ import 'src/workspace_host.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Draw behind the system bars on Android; Scaffold and the bars keep content
+  // clear of them. A no-op on other platforms.
+  unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
   try {
     final session = await WorkspaceSession.openDefault();
     runApp(WorkspaceHost(initial: session, child: const VerbnestApp()));

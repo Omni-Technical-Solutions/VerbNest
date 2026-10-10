@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.50.0
+
+- Accessibility: the main screens (collections, request, response, history, environments, settings) pass Flutter's accessibility guidelines on a phone: every tappable element has a label, touch targets are at least 48 dp (Android) and 44 dp (iOS), and text meets WCAG AA contrast in light and dark. The sidebar's right-click detector no longer shows up to screen readers as an unlabelled button (its actions are in the labelled row menu). The response timing chip is 48 dp tall on touch screens.
+- Accessibility: the app copes with very large text. The main screens are tested at 200% and 310% (iOS Dynamic Type's largest accessibility size) with no overflow; the response status line, body toolbar and empty states scroll when large text leaves them no room.
+- iOS: a light haptic tap on Send and on Copy (response body, generated code) on touch platforms; none on desktop. iOS and macOS keep the Cupertino swipe-back transition (the page transition theme now lists every platform).
+- Android: edge to edge with a transparent system navigation bar whose icons follow the theme, and predictive back (the back gesture previews the page underneath).
+- Tests: `accessibility_test.dart` (labels, 48 and 44 dp targets, text contrast in both themes, 200% and 310% text) and `platform_polish_test.dart` (haptics, transitions, navigation bar style).
+- Not verified on devices: VoiceOver and TalkBack walkthroughs, predictive back and edge to edge on a real Android 14+ device, and haptics on hardware. These are covered by automated semantics and unit tests only. Android Material You colour was not added (it was an optional decision).
+
 ## 0.49.0
 
 - UI: a status bar along the bottom of windows 840 dp and wider: workspace name, the environment in use, whether the open request is saved ("Saved" or "Saving…"), cookie count (opens the cookie manager), a warning when certificate checks are off, a proxy indicator, and the network console with its entry count.

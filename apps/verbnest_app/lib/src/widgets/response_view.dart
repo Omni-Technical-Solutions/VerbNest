@@ -166,23 +166,31 @@ class _ResponseViewState extends State<ResponseView> {
     ];
     return DefaultTabController(
       length: 5,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _statusBar(context, r),
-          _tabBar(context, state, cookies),
-          Expanded(
-            child: TabBarView(
-              children: [
-                _body(r),
-                _cookies(cookies),
-                _headers(r),
-                _scroll(_sentText(state), key: const Key('response-sent')),
-                _tests(state),
-              ],
+      // Measured from outside the column: inside it the height is unbounded.
+      child: LayoutBuilder(
+        builder: (context, c) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Capped at a third of the pane so large text scrolls the status
+            // line instead of overflowing.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: c.maxHeight / 3),
+              child: SingleChildScrollView(child: _statusBar(context, r)),
             ),
-          ),
-        ],
+            _tabBar(context, state, cookies),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _body(r),
+                  _cookies(cookies),
+                  _headers(r),
+                  _scroll(_sentText(state), key: const Key('response-sent')),
+                  _tests(state),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -206,18 +214,27 @@ class _ResponseViewState extends State<ResponseView> {
               key: const Key('response-timing'),
               borderRadius: BorderRadius.circular(Radii.sm),
               onTap: () => _showTiming(r),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.timer_outlined, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${r.timings.total.inMilliseconds} ms',
-                      style: const TextStyle(fontFeatures: kTabularFigures),
-                    ),
-                  ],
+              child: ConstrainedBox(
+                // 48 dp on touch screens, tighter with a pointer.
+                constraints: BoxConstraints(
+                  minHeight: showsKeyboardHints(context) ? 0 : 48,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.timer_outlined, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${r.timings.total.inMilliseconds} ms',
+                        style: const TextStyle(fontFeatures: kTabularFigures),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -519,14 +536,30 @@ class _ResponseViewState extends State<ResponseView> {
         : filtering
         ? _applyFilter(r, kind)
         : _bodyText(r);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _bodyToolbar(r, text, preview),
-        if (kind != BodyKind.other && !_hex && preview == _Preview.none)
-          _filterField(kind, filtering),
-        Expanded(child: _bodyContent(r, text, preview)),
-      ],
+    return LayoutBuilder(
+      builder: (context, c) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // At normal sizes this is just its content. Large text caps it at
+          // half the pane and it scrolls, so the body keeps some room.
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: c.maxHeight * 0.5),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _bodyToolbar(r, text, preview),
+                  if (kind != BodyKind.other &&
+                      !_hex &&
+                      preview == _Preview.none)
+                    _filterField(kind, filtering),
+                ],
+              ),
+            ),
+          ),
+          Expanded(child: _bodyContent(r, text, preview)),
+        ],
+      ),
     );
   }
 
@@ -585,6 +618,7 @@ class _ResponseViewState extends State<ResponseView> {
       tooltip: context.l10n.rvCopyBody,
       icon: const Icon(Icons.copy, size: 18),
       onPressed: () async {
+        lightHaptic(context);
         await Clipboard.setData(ClipboardData(text: text));
         if (!mounted) return;
         showToast(context, context.l10n.rvBodyCopied);
