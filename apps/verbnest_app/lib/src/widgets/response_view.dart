@@ -213,7 +213,10 @@ class _ResponseViewState extends State<ResponseView> {
                   children: [
                     const Icon(Icons.timer_outlined, size: 16),
                     const SizedBox(width: 4),
-                    Text('${r.timings.total.inMilliseconds} ms'),
+                    Text(
+                      '${r.timings.total.inMilliseconds} ms',
+                      style: const TextStyle(fontFeatures: kTabularFigures),
+                    ),
                   ],
                 ),
               ),
@@ -257,7 +260,8 @@ class _ResponseViewState extends State<ResponseView> {
     EditorState state,
     List<SetCookie> cookies,
   ) {
-    return TabBar(
+    // Secondary tabs: these sit inside the response panel, under the status.
+    return TabBar.secondary(
       // Five tabs do not fit a phone; scroll them rather than cut the labels.
       isScrollable:
           MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint,

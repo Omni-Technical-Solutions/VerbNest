@@ -6,11 +6,17 @@ export 'theme/app_tokens.dart';
 
 ThemeData buildTheme(
   Brightness brightness, {
-  Color seed = const Color(0xFFFF6C37),
+  Color? seed,
   bool compact = false,
 }) {
   final dark = brightness == Brightness.dark;
-  final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
+  // `vibrant` keeps the orange orange; the default variant turns it brown and
+  // `expressive` turns it purple.
+  final scheme = ColorScheme.fromSeed(
+    seedColor: seed ?? AppAccents.seed(0),
+    brightness: brightness,
+    dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+  );
   final shape = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(Radii.md),
   );
@@ -35,18 +41,16 @@ ThemeData buildTheme(
       errorBorder: border(scheme.error),
       focusedErrorBorder: border(scheme.error, 2),
     ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(shape: shape),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(shape: shape),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(shape: shape),
+    // Buttons keep the Material 3 default (fully rounded).
+    cardTheme: CardThemeData(
+      elevation: 0,
+      color: scheme.surfaceContainerLow,
+      surfaceTintColor: Colors.transparent,
+      shape: shape,
     ),
     dialogTheme: DialogThemeData(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Radii.lg),
+        borderRadius: BorderRadius.circular(Radii.xl),
       ),
     ),
     popupMenuTheme: PopupMenuThemeData(shape: shape),
@@ -72,8 +76,8 @@ ThemeData buildTheme(
       selectedTileColor: scheme.primaryContainer.withValues(alpha: 0.5),
     ),
     navigationRailTheme: NavigationRailThemeData(
-      indicatorShape: shape,
-      indicatorColor: scheme.primaryContainer,
+      backgroundColor: scheme.surfaceContainerLow,
+      indicatorColor: scheme.secondaryContainer,
     ),
     scrollbarTheme: ScrollbarThemeData(
       thickness: const WidgetStatePropertyAll(6),

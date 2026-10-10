@@ -9,17 +9,23 @@ abstract final class Space {
   static const double xl = 24;
 }
 
+/// Material 3 shape scale (extra small 4, small 8, medium 12, large 16, extra
+/// large 28), so every corner in the app is one of these steps.
 abstract final class Radii {
-  static const double sm = 6;
-  static const double md = 10;
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
   static const double lg = 16;
+  static const double xl = 28;
 }
 
 abstract final class Motion {
-  static const fast = Duration(milliseconds: 120);
-  static const base = Duration(milliseconds: 200);
-  static const slow = Duration(milliseconds: 320);
-  static const curve = Curves.easeOutCubic;
+  // Material 3 motion tokens: short for small state changes, medium for
+  // elements entering or leaving, with the standard easing.
+  static const fast = Durations.short3;
+  static const base = Durations.medium1;
+  static const slow = Durations.medium3;
+  static const curve = Easing.standard;
 
   /// Zero when the platform asks for reduced motion.
   static Duration of(BuildContext context, Duration d) =>
@@ -33,6 +39,9 @@ const kMonoFamily = 'monospace';
 /// Preferred monospaced families, first available wins. No font is bundled,
 /// so this only picks a nicer face when the machine already has one.
 const kMonoFallback = ['JetBrains Mono', 'SF Mono', 'Menlo', 'Consolas'];
+
+/// Digits of equal width, so timings and sizes do not jitter as they change.
+const kTabularFigures = [FontFeature.tabularFigures()];
 
 /// Fixed-width text style for code, headers and URLs.
 ///
@@ -89,18 +98,18 @@ class AppColors extends ThemeExtension<AppColors> {
 
   static const light = AppColors(
     get: Color(0xFF2E7D32),
-    post: Color(0xFFEF6C00),
+    post: Color(0xFFB04F00),
     put: Color(0xFF1565C0),
     patch: Color(0xFF8E24AA),
     delete: Color(0xFFC62828),
     otherMethod: Color(0xFF616161),
     success: Color(0xFF2E7D32),
     info: Color(0xFF1565C0),
-    warning: Color(0xFFEF6C00),
+    warning: Color(0xFFB04F00),
     danger: Color(0xFFC62828),
     favourite: Color(0xFFF9A825),
     synString: Color(0xFF2E7D32),
-    synNumber: Color(0xFFEF6C00),
+    synNumber: Color(0xFFB04F00),
     synLiteral: Color(0xFF8E24AA),
     searchMark: Color(0xFFFFE082),
     onSearchMark: Colors.black,
@@ -194,7 +203,8 @@ class AppColors extends ThemeExtension<AppColors> {
 /// Accent colours the user can pick; the theme is generated from the seed.
 abstract final class AppAccents {
   static const seeds = <Color>[
-    Color(0xFFFF6C37),
+    // The icon's orange; the first accent and the default.
+    Color(0xFFEB6A1A),
     Color(0xFF2979FF),
     Color(0xFF00BFA5),
     Color(0xFF7C4DFF),

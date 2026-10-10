@@ -1,12 +1,20 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:verbnest_app/src/theme.dart';
+
+import 'support/golden_setup.dart';
+
 import 'package:verbnest_app/src/widgets/ui/ui.dart';
 
-/// Golden shots of the shared kit in both themes. The test font is Ahem, so
-/// these guard colour and layout, not glyph shapes. Regenerate with
+/// Golden shots of the shared kit in both themes, with real Roboto text and
+/// Material icons (see `support/golden_setup.dart`). Regenerate with
 /// `flutter test --update-goldens`.
 void main() {
+  setUpAll(() async {
+    await loadGoldenFonts();
+    useTolerantGoldens('test/ui_goldens_test.dart');
+  });
+
   Future<void> shot(
     WidgetTester tester,
     String name,

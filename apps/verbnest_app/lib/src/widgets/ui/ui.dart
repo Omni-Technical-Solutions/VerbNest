@@ -50,7 +50,11 @@ class StatusPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontFeatures: kTabularFigures,
+        ),
       ),
     );
   }
@@ -66,7 +70,11 @@ class EmptyState extends StatelessWidget {
     this.action,
     this.titleKey,
     this.titleColor,
+    this.logo = false,
   });
+
+  /// Show the app logo above the title instead of [icon].
+  final bool logo;
 
   final IconData icon;
   final String title;
@@ -84,7 +92,19 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 40, color: scheme.outline),
+            if (logo)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(Radii.lg),
+                child: Image.asset(
+                  'assets/logo.png',
+                  width: 72,
+                  height: 72,
+                  errorBuilder: (_, _, _) =>
+                      Icon(icon, size: 40, color: scheme.outline),
+                ),
+              )
+            else
+              Icon(icon, size: 40, color: scheme.outline),
             const SizedBox(height: Space.md),
             Text(
               title,

@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.47.0
+
+- UI: Material 3 visual system. The accent now follows the icon's orange (seed `#EB6A1A` with the `vibrant` scheme variant, which keeps the colour orange where the default turned it brown and `expressive` turned it purple). Text roles meet WCAG AA in light and dark for every accent; the light-theme orange for POST, warnings and numbers was darkened because it was under 4.5:1.
+- UI: shape, elevation and motion follow Material 3. Corner radii are steps of the shape scale (4, 8, 12, 16, 28; dialogs use 28), buttons are fully rounded again, cards are tonal instead of outlined, the sidebar and navigation rail use the low surface-container tone, and animation durations and easing come from the Material 3 tokens. The response panel uses secondary tabs. Timings, sizes and status pills use tabular figures. The empty state shows the app logo.
+- Tests: new `material3_theme_test.dart` (contrast for every accent in both themes, method and status colours, the shape scale, motion tokens, and a check that no colour literal appears outside the tokens file). Goldens now render with real Roboto and Material icons from `test/fonts/` (about 2 MB, Apache 2.0 licence included) and a 0.5% comparison tolerance for cross-OS text smoothing. New `layout_goldens_test.dart`: the workspace at phone, tablet and desktop widths, light and dark, plus Arabic right to left.
+- Fix: the sidebar background no longer hides list-row highlights.
+
 ## 0.46.1
 
 - UI: the request editor now fits a phone. Method and URL share one row with an icon-only Send button (the URL gets about 20 characters on a 402 pt screen instead of 3), the favourite, examples, live and environment controls sit in one wrapping toolbar, and the environment picker shrinks to the available width. The response pane stays out of the way until you send, response tabs scroll instead of cutting labels, and the view toggle, search and copy button stack on narrow screens. Environment variables stack name, value and current value on phones. The split-direction button no longer floats over the request tabs on phones.

@@ -353,7 +353,12 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     );
   }
 
-  Widget _sidebar() => const CollectionsSidebar();
+  // A Material, not a ColoredBox: list rows paint their ink on the nearest
+  // Material and a ColoredBox would hide it.
+  Widget _sidebar() => Material(
+    color: Theme.of(context).colorScheme.surfaceContainerLow,
+    child: const CollectionsSidebar(),
+  );
 
   double _sidebarWidth = 280;
   static const _minSidebar = 200.0, _maxSidebar = 480.0;
@@ -387,6 +392,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     final active = ref.watch(tabsProvider).active;
     if (active == null) {
       return EmptyState(
+        logo: true,
         icon: Icons.http,
         title: context.l10n.selectOrCreateRequest,
         hint: '${_modKey()} + N',

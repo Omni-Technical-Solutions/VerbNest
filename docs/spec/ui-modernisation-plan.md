@@ -63,7 +63,9 @@ golden test kit are in place. Desktop (1440 px) reads well.
    `baseUr`, `https://`, `Curr…`. Settings is a very wide column of outlined
    cards.
 7. **Typography is defaults**, with small response text.
-8. **Hard-coded colours remain** (about 20 sites outside `app_tokens.dart`).
+8. ~~Hard-coded colours remain.~~ A review error: the count matched
+   `AppColors.of(...)` too. Nothing outside the tokens file used a literal; a
+   test now enforces it.
 9. **Platform feel is uniform** and safe-area, predictive-back and
    edge-to-edge were never reviewed.
 10. **No visual regression net.** Goldens use the Ahem font; the screenshot
@@ -108,7 +110,7 @@ the store screenshots.
   20 characters on a 402 pt phone; screenshots regenerated and read by eye.
 - Risk: widget tests find controls by key; keep keys stable.
 
-## Phase 2: Material 3 visual system (minor, v0.47.0)
+## Phase 2: Material 3 visual system (minor, v0.47.0) - done, with notes
 
 Fixes findings 3, 7 and 8, and the colour, type, shape, elevation, state and
 motion rows of the baseline.
@@ -135,6 +137,13 @@ motion rows of the baseline.
   outside the tokens file.
 - Done when: goldens regenerated in both themes, contrast test passes, no
   hard-coded colours outside tokens.
+- Delivered: 2a (seed `#EB6A1A` with the `vibrant` variant; `expressive` makes
+  the orange purple so it is not offered), 2b, 2d (tonal cards, sidebar and rail
+  surfaces), 2e, 2g (logo in the empty state, colour lint test), secondary tabs
+  and tabular figures from 2c and 2f. Not done: bundled fonts (system fonts
+  kept, the default), the type-scale tuning and the remaining 2f components
+  (filled tonal buttons, primary versus secondary tab audit); an About screen
+  with the logo.
 - Risk: every golden changes at once; do this phase alone and review the new
   goldens by eye before accepting them.
 
