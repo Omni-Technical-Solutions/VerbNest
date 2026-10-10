@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Spacing, radii and motion timings shared by every screen.
 abstract final class Space {

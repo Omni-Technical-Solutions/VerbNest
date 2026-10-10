@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 
 import '../state/js_syntax.dart';

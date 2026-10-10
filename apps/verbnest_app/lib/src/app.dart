@@ -1,6 +1,6 @@
 import '../l10n/app_localizations.dart';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'adaptive_scaffold.dart';
@@ -18,7 +18,12 @@ class VerbnestApp extends ConsumerWidget {
     final seed = AppAccents.seed(prefs.accent);
     return MaterialApp(
       title: 'VerbNest',
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // The package's delegates cover Material, Cupertino and widgets; the
+      // generated list names the old flutter_localizations ones.
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        ...GlobalMaterialLocalizations.delegates,
+      ],
       supportedLocales: AppLocalizations.supportedLocales,
       locale: ref.watch(localeProvider),
       debugShowCheckedModeBanner: false,

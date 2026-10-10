@@ -54,6 +54,8 @@ dependencies:
   url_launcher: ^6.3.0
   flutter_widget_from_html_core: ^0.17.4
   pdfrx: ^2.6.5
+  material_ui: ^1.6.0
+  cupertino_ui: ^1.1.2
 dev_dependencies:
   integration_test:
     sdk: flutter
