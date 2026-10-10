@@ -2,6 +2,15 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.56.0
+
+- UI: scroll cues. A row that scrolls sideways now fades at the edge that has hidden content (the request and response tab bars on phones, where "Scripts" and "Assertions" used to be cut off with no hint). The fade follows the reading direction, shows only where something is hidden, and is invisible to touch and to screen readers.
+- UI: the response code view shows a horizontal scrollbar whenever a line runs past the edge.
+- UI: key/value tables (params, headers, form bodies) stack the value under the key on screens under 360 dp, so each field is about 270 dp wide instead of 90.
+- UI: timings and TLS details open as a draggable bottom sheet on phones (swipe down to dismiss, drag up for more room) and stay a dialog with a Close button on larger windows.
+- Not done: soft wrap in the code view (its fixed row height makes it a larger change), a swipe between Request and Response (the segmented switch stays), and the variables quick-look, which is still a dialog.
+- Tests: `scroll_cues_test.dart` (the fade, including right-to-left and touch/semantics exclusion, the real tab bars, the scrollbar, stacked tables) and `detail_sheet_test.dart`.
+
 ## 0.55.0
 
 - UI: height classes. A window under 480 dp tall (a landscape phone) never gets the list-beside-editor layout, however wide it is: 874x402 and 932x430 now use the one-pane layout with a navigation rail, and no status bar. Windows that are wide and tall enough keep list and detail.

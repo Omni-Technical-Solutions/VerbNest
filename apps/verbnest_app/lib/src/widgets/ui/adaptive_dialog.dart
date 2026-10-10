@@ -101,3 +101,53 @@ class AdaptiveDialogShell extends StatelessWidget {
     );
   }
 }
+
+/// Shows secondary detail (timings, a certificate, the variables in effect).
+/// On a compact window it is a draggable bottom sheet you can swipe away, with
+/// the content scrolling inside it; above that, a centred dialog with a Close
+/// button.
+Future<void> showDetail(
+  BuildContext context, {
+  required String title,
+  required Widget content,
+  required String closeLabel,
+  double width = 360,
+}) {
+  if (_compact(context)) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.95,
+        builder: (context, controller) => ListView(
+          key: const Key('detail-sheet'),
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(Space.lg, 0, Space.lg, Space.xl),
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: Space.md),
+            content,
+          ],
+        ),
+      ),
+    );
+  }
+  return showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: SizedBox(width: width, child: content),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(closeLabel),
+        ),
+      ],
+    ),
+  );
+}

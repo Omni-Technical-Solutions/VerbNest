@@ -12,6 +12,8 @@ import '../theme.dart';
 import 'code_view.dart';
 import 'html_preview.dart';
 import 'pdf_preview.dart';
+import 'ui/adaptive_dialog.dart';
+import 'ui/scroll_edge_fade.dart';
 import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
 import '../layout_class.dart';
@@ -304,73 +306,65 @@ class _ResponseViewState extends State<ResponseView> {
     List<SetCookie> cookies,
   ) {
     // Secondary tabs: these sit inside the response panel, under the status.
-    return TabBar.secondary(
-      // Five tabs do not fit a phone; scroll them rather than cut the labels.
-      isScrollable:
-          MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint,
-      tabAlignment:
-          MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint
-          ? TabAlignment.start
-          : null,
-      tabs: [
-        Tab(text: context.l10n.rvTabBody),
-        Tab(
-          text: cookies.isEmpty
-              ? context.l10n.rvTabCookies
-              : context.l10n.rvTabCookiesN(cookies.length),
-        ),
-        Tab(text: context.l10n.rvTabHeaders),
-        Tab(text: context.l10n.rvTabSent),
-        Tab(text: _testsLabel(context, state)),
-      ],
+    return ScrollEdgeFade(
+      child: TabBar.secondary(
+        // Five tabs do not fit a phone; scroll them rather than cut the labels.
+        isScrollable:
+            MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint,
+        tabAlignment:
+            MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint
+            ? TabAlignment.start
+            : null,
+        tabs: [
+          Tab(text: context.l10n.rvTabBody),
+          Tab(
+            text: cookies.isEmpty
+                ? context.l10n.rvTabCookies
+                : context.l10n.rvTabCookiesN(cookies.length),
+          ),
+          Tab(text: context.l10n.rvTabHeaders),
+          Tab(text: context.l10n.rvTabSent),
+          Tab(text: _testsLabel(context, state)),
+        ],
+      ),
     );
   }
 
   void _showTiming(HttpResponseRecord r) {
     final rows = timingRows(r.timings);
     final total = r.timings.total.inMicroseconds;
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(context.l10n.rvTiming),
-        content: SizedBox(
-          width: 360,
-          child: Column(
-            key: const Key('timing-rows'),
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final (label, d) in rows)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    showDetail(
+      context,
+      title: context.l10n.rvTiming,
+      closeLabel: context.l10n.rvClose,
+      content: Column(
+        key: const Key('timing-rows'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final (label, d) in rows)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(child: Text(_timingLabel(context, label))),
-                          Text(formatDuration(d)),
-                        ],
-                      ),
-                      LinearProgressIndicator(
-                        value: total == 0 ? 0 : d.inMicroseconds / total,
-                      ),
+                      Expanded(child: Text(_timingLabel(context, label))),
+                      Text(formatDuration(d)),
                     ],
                   ),
-                ),
-              const Divider(),
-              Row(
-                children: [
-                  Expanded(child: Text(context.l10n.rvTotal)),
-                  Text(formatDuration(r.timings.total)),
+                  LinearProgressIndicator(
+                    value: total == 0 ? 0 : d.inMicroseconds / total,
+                  ),
                 ],
               ),
+            ),
+          const Divider(),
+          Row(
+            children: [
+              Expanded(child: Text(context.l10n.rvTotal)),
+              Text(formatDuration(r.timings.total)),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.rvClose),
           ),
         ],
       ),
@@ -379,27 +373,20 @@ class _ResponseViewState extends State<ResponseView> {
 
   void _showTls(TlsInfo t) {
     String d(DateTime x) => x.toUtc().toIso8601String().substring(0, 10);
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(context.l10n.rvTlsTitle),
-        content: SelectableText(
-          [
-            context.l10n.rvTlsSubject(t.subject),
-            context.l10n.rvTlsIssuer(t.issuer),
-            context.l10n.rvTlsValid(d(t.validFrom), d(t.validTo)),
-            if (t.protocol != null) context.l10n.rvTlsProtocol(t.protocol!),
-            context.l10n.rvTlsClientCert(
-              t.clientCertificateSent ? context.l10n.rvYes : context.l10n.rvNo,
-            ),
-          ].join('\n'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.rvClose),
+    showDetail(
+      context,
+      title: context.l10n.rvTlsTitle,
+      closeLabel: context.l10n.rvClose,
+      content: SelectableText(
+        [
+          context.l10n.rvTlsSubject(t.subject),
+          context.l10n.rvTlsIssuer(t.issuer),
+          context.l10n.rvTlsValid(d(t.validFrom), d(t.validTo)),
+          if (t.protocol != null) context.l10n.rvTlsProtocol(t.protocol!),
+          context.l10n.rvTlsClientCert(
+            t.clientCertificateSent ? context.l10n.rvYes : context.l10n.rvNo,
           ),
-        ],
+        ].join('\n'),
       ),
     );
   }

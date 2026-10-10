@@ -148,36 +148,65 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
       key: ValueKey('$idPrefix-row-$i'),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Checkbox(
-              value: rows[i].enabled,
-              onChanged: (v) => _set(i, rows[i].copyWith(enabled: v)),
-            ),
-            Expanded(
-              child: SyncedTextField(
-                key: ValueKey('$idPrefix-key-$i'),
-                value: rows[i].key,
-                hint: context.l10n.kvKey,
-                variables: true,
-                suggestions: widget.keySuggestions,
-                onChanged: (v) => _set(i, rows[i].copyWith(key: v)),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: _valueCell(i)),
-            if (widget.onPickFile != null) _typeToggle(i),
-            IconButton(
-              tooltip: context.l10n.remove,
-              icon: const Icon(Icons.close, size: 18),
-              onPressed: () => onChanged([...rows]..removeAt(i)),
-            ),
-          ],
+        // Two fields and two buttons leave each field about 90 dp on a phone
+        // under 360 dp: stack the value under the key there.
+        child: LayoutBuilder(
+          builder: (context, c) =>
+              c.maxWidth < 360 ? _stackedRow(i) : _wideRow(i),
         ),
       ),
     );
   }
+
+  Widget _enabledBox(int i) => Checkbox(
+    value: rows[i].enabled,
+    onChanged: (v) => _set(i, rows[i].copyWith(enabled: v)),
+  );
+
+  Widget _keyField(int i) => SyncedTextField(
+    key: ValueKey('$idPrefix-key-$i'),
+    value: rows[i].key,
+    hint: context.l10n.kvKey,
+    variables: true,
+    suggestions: widget.keySuggestions,
+    onChanged: (v) => _set(i, rows[i].copyWith(key: v)),
+  );
+
+  Widget _removeButton(int i) => IconButton(
+    tooltip: context.l10n.remove,
+    icon: const Icon(Icons.close, size: 18),
+    onPressed: () => onChanged([...rows]..removeAt(i)),
+  );
+
+  Widget _wideRow(int i) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _enabledBox(i),
+      Expanded(child: _keyField(i)),
+      const SizedBox(width: 8),
+      Expanded(child: _valueCell(i)),
+      if (widget.onPickFile != null) _typeToggle(i),
+      _removeButton(i),
+    ],
+  );
+
+  Widget _stackedRow(int i) => Column(
+    children: [
+      Row(
+        children: [
+          _enabledBox(i),
+          Expanded(child: _keyField(i)),
+          if (widget.onPickFile != null) _typeToggle(i),
+          _removeButton(i),
+        ],
+      ),
+      // Lined up under the key field (a checkbox is 48 dp wide).
+      Padding(
+        padding: const EdgeInsetsDirectional.only(start: 48, bottom: 6),
+        child: _valueCell(i),
+      ),
+    ],
+  );
 
   Widget _valueCell(int i) {
     if (rows[i].type == KeyValueType.file) return _fileCell(i);

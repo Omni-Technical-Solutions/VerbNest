@@ -22,6 +22,7 @@ import 'scripts_editor.dart';
 import 'synced_field.dart';
 import '../layout_class.dart';
 import '../theme.dart';
+import 'ui/scroll_edge_fade.dart';
 import 'ui/split_view.dart';
 import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
@@ -653,18 +654,20 @@ class _RequestTabs extends StatelessWidget {
       length: 7,
       child: Column(
         children: [
-          TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            tabs: [
-              _tab(context.l10n.reTabParams, _active(item.params)),
-              _tab(context.l10n.reTabHeaders, _active(item.headers)),
-              Tab(text: context.l10n.reTabAuth),
-              Tab(text: context.l10n.reTabBody),
-              Tab(text: context.l10n.reTabScripts),
-              _tab(context.l10n.reTabAssertions, item.assertions.length),
-              Tab(text: context.l10n.reTabSettings),
-            ],
+          ScrollEdgeFade(
+            child: TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              tabs: [
+                _tab(context.l10n.reTabParams, _active(item.params)),
+                _tab(context.l10n.reTabHeaders, _active(item.headers)),
+                Tab(text: context.l10n.reTabAuth),
+                Tab(text: context.l10n.reTabBody),
+                Tab(text: context.l10n.reTabScripts),
+                _tab(context.l10n.reTabAssertions, item.assertions.length),
+                Tab(text: context.l10n.reTabSettings),
+              ],
+            ),
           ),
           Expanded(child: TabBarView(children: _views())),
         ],

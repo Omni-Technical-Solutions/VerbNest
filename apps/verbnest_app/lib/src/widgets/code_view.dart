@@ -36,11 +36,18 @@ class _CodeViewState extends State<CodeView> {
   final Set<int> _collapsed = {};
   late int _maxLen;
   int? _hoverRow;
+  final _hScroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _hScroll.dispose();
+    super.dispose();
   }
 
   @override
@@ -164,99 +171,107 @@ class _CodeViewState extends State<CodeView> {
         final width = contentWidth + gutter > c.maxWidth
             ? contentWidth + gutter
             : c.maxWidth;
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: width,
-            child: SelectionArea(
-              child: ListView.builder(
-                key: const Key('response-body'),
-                itemExtent: rowHeight,
-                itemCount: visible.length,
-                itemBuilder: (context, row) {
-                  final i = visible[row];
-                  final foldable = _folds.containsKey(i);
-                  final folded = _collapsed.contains(i);
-                  return MouseRegion(
-                    onEnter: (_) => setState(() => _hoverRow = i),
-                    onExit: (_) {
-                      if (_hoverRow == i) setState(() => _hoverRow = null);
-                    },
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: gutter,
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: 18,
-                                child: foldable
-                                    ? InkWell(
-                                        key: ValueKey('fold-$i'),
-                                        onTap: () => setState(
-                                          () => folded
-                                              ? _collapsed.remove(i)
-                                              : _collapsed.add(i),
-                                        ),
-                                        child: Icon(
-                                          folded
-                                              ? Icons.chevron_right
-                                              : Icons.expand_more,
-                                          size: 16,
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                              Expanded(
-                                child: SelectionContainer.disabled(
-                                  child: widget.json && _hoverRow == i
-                                      ? Align(
-                                          alignment:
-                                              AlignmentDirectional.centerEnd,
-                                          child: InkWell(
-                                            key: ValueKey('copy-path-$i'),
-                                            onTap: () => _copyPath(i),
-                                            child: Tooltip(
-                                              message:
-                                                  context.l10n.codeCopyPath,
-                                              child: Icon(
-                                                Icons.copy,
-                                                size: 12,
-                                                color: scheme.primary,
-                                              ),
-                                            ),
+        // A visible bar when lines run past the edge, so wide content reads as
+        // scrollable and not as cut off.
+        return Scrollbar(
+          controller: _hScroll,
+          thumbVisibility: width > c.maxWidth,
+          notificationPredicate: (n) => n.metrics.axis == Axis.horizontal,
+          child: SingleChildScrollView(
+            controller: _hScroll,
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: width,
+              child: SelectionArea(
+                child: ListView.builder(
+                  key: const Key('response-body'),
+                  itemExtent: rowHeight,
+                  itemCount: visible.length,
+                  itemBuilder: (context, row) {
+                    final i = visible[row];
+                    final foldable = _folds.containsKey(i);
+                    final folded = _collapsed.contains(i);
+                    return MouseRegion(
+                      onEnter: (_) => setState(() => _hoverRow = i),
+                      onExit: (_) {
+                        if (_hoverRow == i) setState(() => _hoverRow = null);
+                      },
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: gutter,
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 18,
+                                  child: foldable
+                                      ? InkWell(
+                                          key: ValueKey('fold-$i'),
+                                          onTap: () => setState(
+                                            () => folded
+                                                ? _collapsed.remove(i)
+                                                : _collapsed.add(i),
+                                          ),
+                                          child: Icon(
+                                            folded
+                                                ? Icons.chevron_right
+                                                : Icons.expand_more,
+                                            size: 16,
                                           ),
                                         )
-                                      : Text(
-                                          '${i + 1}',
-                                          textAlign: TextAlign.right,
-                                          style: base.copyWith(
-                                            color: scheme.outline,
-                                            fontSize: 11,
-                                          ),
-                                        ),
+                                      : null,
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Text.rich(
-                            _span(
-                              folded ? '${_lines[i]} …' : _lines[i],
-                              base,
-                              scheme,
+                                Expanded(
+                                  child: SelectionContainer.disabled(
+                                    child: widget.json && _hoverRow == i
+                                        ? Align(
+                                            alignment:
+                                                AlignmentDirectional.centerEnd,
+                                            child: InkWell(
+                                              key: ValueKey('copy-path-$i'),
+                                              onTap: () => _copyPath(i),
+                                              child: Tooltip(
+                                                message:
+                                                    context.l10n.codeCopyPath,
+                                                child: Icon(
+                                                  Icons.copy,
+                                                  size: 12,
+                                                  color: scheme.primary,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : Text(
+                                            '${i + 1}',
+                                            textAlign: TextAlign.right,
+                                            style: base.copyWith(
+                                              color: scheme.outline,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
                             ),
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.clip,
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                          Expanded(
+                            child: Text.rich(
+                              _span(
+                                folded ? '${_lines[i]} …' : _lines[i],
+                                base,
+                                scheme,
+                              ),
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.clip,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
