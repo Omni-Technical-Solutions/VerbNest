@@ -171,7 +171,7 @@ Fixes finding 7.
 - Risk: a `PageView` swipe conflicts with horizontal scrolling inside the pane;
   restrict the swipe to the edge zones or the switch.
 
-## Phase 5: The other screens (minor)
+## Phase 5: The other screens (minor) - done
 
 - 5a. Environments, history, settings, runner, GraphQL and scripts editors and
   the dialogs, checked at the matrix sizes and fixed (stacked rows, sticky
@@ -181,6 +181,11 @@ Fixes finding 7.
 - 5c. Large text (200% and 310%) re-run across the matrix, since scrolling now
   covers more than before.
 - Done when: every screen passes the matrix, with and without the keyboard.
+- Delivered: the matrix now covers every request tab, the GraphQL editor, the
+  runner and the code dialog, and large text at five sizes; fixes in the Scripts
+  tab, GraphQL editor, runner (pinned Run button) and a `ScrollIfShort` wrapper
+  for every request tab. Not covered by the matrix yet: the import dialog, the
+  environments editor with the keyboard up, and settings with the keyboard up.
 
 ## Phase 6: Device checks (chore)
 

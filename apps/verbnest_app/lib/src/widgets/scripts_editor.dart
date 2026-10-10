@@ -43,29 +43,34 @@ class _ScriptsEditorState extends State<ScriptsEditor> {
         children: [
           Row(
             children: [
-              SegmentedButton<bool>(
-                key: Key('$p-phase'),
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                    value: false,
-                    label: Text(
-                      _scripts.pre.isEmpty
-                          ? context.l10n.scriptPre
-                          : context.l10n.scriptPreSet,
+              // The segments share the width, so long labels wrap instead of
+              // running off a narrow screen.
+              Expanded(
+                child: SegmentedButton<bool>(
+                  key: Key('$p-phase'),
+                  showSelectedIcon: false,
+                  expandedInsets: EdgeInsets.zero,
+                  segments: [
+                    ButtonSegment(
+                      value: false,
+                      label: Text(
+                        _scripts.pre.isEmpty
+                            ? context.l10n.scriptPre
+                            : context.l10n.scriptPreSet,
+                      ),
                     ),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    label: Text(
-                      _scripts.post.isEmpty
-                          ? context.l10n.scriptPost
-                          : context.l10n.scriptPostSet,
+                    ButtonSegment(
+                      value: true,
+                      label: Text(
+                        _scripts.post.isEmpty
+                            ? context.l10n.scriptPost
+                            : context.l10n.scriptPostSet,
+                      ),
                     ),
-                  ),
-                ],
-                selected: {_post},
-                onSelectionChanged: (s) => setState(() => _post = s.first),
+                  ],
+                  selected: {_post},
+                  onSelectionChanged: (s) => setState(() => _post = s.first),
+                ),
               ),
             ],
           ),
@@ -95,9 +100,15 @@ class _ScriptsEditorState extends State<ScriptsEditor> {
                   ),
           ),
           const SizedBox(height: 4),
-          Text(
-            context.l10n.scriptHelp,
-            style: Theme.of(context).textTheme.bodySmall,
+          // A few lines at most; it scrolls when the window leaves less room.
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 72),
+            child: SingleChildScrollView(
+              child: Text(
+                context.l10n.scriptHelp,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           ),
         ],
       ),

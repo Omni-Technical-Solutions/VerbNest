@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.57.0
+
+- Fix: the Scripts tab's Pre-request / Post-response switch no longer runs off a phone screen (the segments share the width and wrap), and its help text scrolls instead of overflowing.
+- Fix: the GraphQL editor scrolls when the window is short or the keyboard is up, instead of squeezing the query and variables fields below a usable height.
+- Fix: the collection runner's setup scrolls inside a share of the screen and the Run button is pinned below it, so it is always on screen; on a phone it is full width.
+- Fix: large text. Every request tab scrolls when it is given less room than its form needs (the room grows with the text size), so the tabs no longer overflow at 200% or at iOS's largest size (310%), on a small phone, in landscape, or with the keyboard up.
+- Tests: the device matrix now also covers every request tab, the GraphQL editor, the runner and the dialogs at every size with and without the keyboard, and large text (200%, 310%) at five sizes, all passing; `scroll_if_short_test.dart`.
+
 ## 0.56.0
 
 - UI: scroll cues. A row that scrolls sideways now fades at the edge that has hidden content (the request and response tab bars on phones, where "Scripts" and "Assertions" used to be cut off with no hint). The fade follows the reading direction, shows only where something is hidden, and is invisible to touch and to screen readers.

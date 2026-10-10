@@ -70,6 +70,9 @@ Future<MatrixApp> launchApp(
   WidgetTester t,
   DeviceProfile p, {
   HttpEngine? engine,
+
+  /// The request to seed; a plain GET by default.
+  HttpRequestItem? request,
 }) async {
   t.view.physicalSize = p.size;
   t.view.devicePixelRatio = 1;
@@ -80,12 +83,13 @@ Future<MatrixApp> launchApp(
   final col = s.repo.createCollection('Pet Store API');
   final id = s.repo.createRequest(
     col,
-    HttpRequestItem(
-      id: '',
-      name: 'List pets',
-      url: 'https://api.petstore.dev/v2/pets?limit=20',
-      params: [KeyValue(key: 'limit', value: '20')],
-    ),
+    request ??
+        HttpRequestItem(
+          id: '',
+          name: 'List pets',
+          url: 'https://api.petstore.dev/v2/pets?limit=20',
+          params: [KeyValue(key: 'limit', value: '20')],
+        ),
   );
   s.repo.saveEnvironment(
     const Environment(
@@ -142,8 +146,16 @@ Future<void> raiseKeyboard(MatrixApp a, DeviceProfile p, Finder field) async {
 Future<List<String>> collectErrors(Future<void> Function() body) async {
   final errors = <String>[];
   final old = FlutterError.onError;
-  FlutterError.onError = (d) =>
-      errors.add(d.exceptionAsString().split('\n').first);
+  FlutterError.onError = (d) {
+    // The message and the first of our files it names, to find the cause.
+    final where = RegExp(r'apps/verbnest_app/lib/src/[\w/]+\.dart:\d+')
+        .firstMatch(d.toString())
+        ?.group(0);
+    final chain = RegExp(r'creator: ([^\n]*)')
+        .firstMatch(d.toString())
+        ?.group(1);
+    errors.add('${d.exceptionAsString().split('\n').first} @ $where [$chain]');
+  };
   try {
     await body();
   } finally {

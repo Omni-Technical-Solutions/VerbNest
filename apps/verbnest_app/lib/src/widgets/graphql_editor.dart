@@ -75,39 +75,65 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
     final body = widget.body;
     final schema = ref.watch(graphqlSchemaProvider(widget.url));
     final ops = graphqlOperationNames(body.query);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Wrap(
-            spacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              _buildFetchButton(context),
-              TextButton(
-                key: const Key('gql-import-sdl'),
-                onPressed: _importSdl,
-                child: Text(context.l10n.gqlImportSdl),
-              ),
-              _buildExploreButton(context, schema),
-              Text(
-                key: const Key('gql-status'),
-                schema == null
-                    ? context.l10n.gqlNoSchema
-                    : context.l10n.gqlTypeCount(schema.userTypes.length),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (ops.length > 1) _buildOperationMenu(context, ops),
-              _buildPersistedChip(context),
-            ],
+    // The page scrolls: the header takes what it needs and the two fields share
+    // the rest, but never get less than a usable height (a field with a label
+    // overflows below about 90 dp), so a short window or the keyboard scrolls.
+    return CustomScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _buildFetchButton(context),
+                TextButton(
+                  key: const Key('gql-import-sdl'),
+                  onPressed: _importSdl,
+                  child: Text(context.l10n.gqlImportSdl),
+                ),
+                _buildExploreButton(context, schema),
+                Text(
+                  key: const Key('gql-status'),
+                  schema == null
+                      ? context.l10n.gqlNoSchema
+                      : context.l10n.gqlTypeCount(schema.userTypes.length),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (ops.length > 1) _buildOperationMenu(context, ops),
+                _buildPersistedChip(context),
+              ],
+            ),
           ),
         ),
-        Expanded(flex: 3, child: _buildQueryField(context, schema)),
-        Expanded(flex: 2, child: _buildVariablesField(context)),
+        SliverLayoutBuilder(
+          builder: (context, sc) {
+            final remaining =
+                sc.viewportMainAxisExtent - sc.precedingScrollExtent;
+            return SliverToBoxAdapter(
+              child: SizedBox(
+                height: remaining < _minFieldsHeight
+                    ? _minFieldsHeight
+                    : remaining,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 3, child: _buildQueryField(context, schema)),
+                    Expanded(flex: 2, child: _buildVariablesField(context)),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
+
+  /// The least height the query and variables fields share.
+  static const _minFieldsHeight = 300.0;
 
   Widget _buildFetchButton(BuildContext context) {
     return FilledButton.tonalIcon(

@@ -23,6 +23,7 @@ import 'synced_field.dart';
 import '../layout_class.dart';
 import '../theme.dart';
 import 'ui/scroll_edge_fade.dart';
+import 'ui/scroll_if_short.dart';
 import 'ui/split_view.dart';
 import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
@@ -688,25 +689,31 @@ class _RequestTabs extends StatelessWidget {
     ),
   );
 
+  // Each tab scrolls when it is given less room than a form needs (large
+  // text, a landscape phone, the keyboard) instead of overflowing.
   List<Widget> _views() => [
-    ParamsTab(item: item, notifier: notifier),
-    HeadersTab(item: item, notifier: notifier, requestId: requestId),
-    AuthEditor(
-      auth: item.auth,
-      onChanged: (a) => notifier.edit((i) => i.copyWith(auth: a)),
-    ),
-    BodyTab(item: item, notifier: notifier),
-    Consumer(
-      builder: (context, ref, _) => ScriptsEditor(
-        scripts: item.scripts,
-        fontSize: ref.watch(prefsProvider).editorFontSize,
-        onChanged: (s) => notifier.edit((i) => i.copyWith(scripts: s)),
+    for (final v in [
+      ParamsTab(item: item, notifier: notifier),
+      HeadersTab(item: item, notifier: notifier, requestId: requestId),
+      AuthEditor(
+        auth: item.auth,
+        onChanged: (a) => notifier.edit((i) => i.copyWith(auth: a)),
       ),
-    ),
-    AssertionsEditor(
-      assertions: item.assertions,
-      onChanged: (a) => notifier.edit((i) => i.copyWith(assertions: a)),
-    ),
-    SettingsTab(item: item, notifier: notifier),
+      BodyTab(item: item, notifier: notifier),
+      Consumer(
+        builder: (context, ref, _) => ScriptsEditor(
+          scripts: item.scripts,
+          fontSize: ref.watch(prefsProvider).editorFontSize,
+          onChanged: (s) => notifier.edit((i) => i.copyWith(scripts: s)),
+        ),
+      ),
+      AssertionsEditor(
+        assertions: item.assertions,
+        onChanged: (a) => notifier.edit((i) => i.copyWith(assertions: a)),
+      ),
+      SettingsTab(item: item, notifier: notifier),
+    ])
+      // Headers stacks an expandable group over the table: it needs more.
+      ScrollIfShort(minHeight: v is HeadersTab ? 420 : 280, child: v),
   ];
 }

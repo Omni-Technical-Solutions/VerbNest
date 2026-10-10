@@ -11,6 +11,7 @@ import '../state/session.dart';
 import '../theme.dart';
 import '../widgets/mock_server_dialog.dart';
 import '../../l10n/l10n.dart';
+import '../layout_class.dart';
 import '../widgets/ui/toast.dart';
 import '../widgets/ui/ui.dart';
 
@@ -143,7 +144,16 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!run.running) _setup(context),
+          // The setup scrolls inside a share of the screen, so a short window
+          // keeps room for the results.
+          if (!run.running)
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.45,
+              ),
+              child: SingleChildScrollView(child: _setup(context)),
+            ),
+          if (!run.running) _startBar(context),
           if (run.running) _progress(context, run),
           const Divider(height: 1),
           Expanded(child: _results(context, run)),
@@ -160,7 +170,12 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 220),
+            constraints: BoxConstraints(
+              maxHeight: (MediaQuery.sizeOf(context).height * 0.3).clamp(
+                96.0,
+                220.0,
+              ),
+            ),
             child: _pickList(context),
           ),
           _options(context),
@@ -266,13 +281,26 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
               _dataName = null;
             }),
           ),
-        FilledButton.icon(
-          key: const Key('run-start'),
-          onPressed: _picks.any((p) => p.on) ? _start : null,
-          icon: const Icon(Icons.play_arrow),
-          label: Text(context.l10n.runStart),
-        ),
       ],
+    );
+  }
+
+  /// The primary action stays below the scrolling setup, so it is on screen
+  /// however short the window is.
+  Widget _startBar(BuildContext context) {
+    final compact =
+        MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint;
+    final button = FilledButton.icon(
+      key: const Key('run-start'),
+      onPressed: _picks.any((p) => p.on) ? _start : null,
+      icon: const Icon(Icons.play_arrow),
+      label: Text(context.l10n.runStart),
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: compact
+          ? SizedBox(width: double.infinity, child: button)
+          : Align(alignment: AlignmentDirectional.centerEnd, child: button),
     );
   }
 
