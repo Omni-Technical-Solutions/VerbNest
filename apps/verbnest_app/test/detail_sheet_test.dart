@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:verbnest_app/src/state/editor_state.dart';
+import 'package:verbnest_app/src/state/variables.dart';
 
 import 'support/device_profiles.dart';
 import 'support/matrix_support.dart';
@@ -63,5 +64,38 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     await t.pump(EditorNotifier.saveDelay);
+  });
+
+  group('the variables quick-look', () {
+    Future<MatrixApp> openLook(WidgetTester t, DeviceProfile p) async {
+      final a = await launchApp(t, p);
+      await openRequest(a, p);
+      a.c.read(activeEnvProvider.notifier).select('env-dev');
+      await t.pump(const Duration(milliseconds: 300));
+      await t.tap(find.byKey(const Key('quick-look')));
+      await t.pumpAndSettle();
+      return a;
+    }
+
+    testWidgets('is a bottom sheet on a phone', (t) async {
+      await openLook(t, phone);
+      expect(find.byKey(const Key('detail-sheet')), findsOneWidget);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('baseUrl'), findsOneWidget);
+      // A secret shows masked, never its value.
+      expect(find.text('token'), findsOneWidget);
+      expect(find.text('dev-token'), findsNothing);
+      await t.pump(EditorNotifier.saveDelay);
+    });
+
+    testWidgets('and a dialog with Close on a wide window', (t) async {
+      await openLook(t, desktop);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('baseUrl'), findsOneWidget);
+      await t.tap(find.text('Close'));
+      await t.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      await t.pump(EditorNotifier.saveDelay);
+    });
   });
 }

@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.58.1
+
+- Fix: the iOS launch screen shows the VerbNest icon on a warm off-white background instead of a 1x1 placeholder image (the App Store build warned about the default launch image).
+- Fix: the import dialog scrolls when the window is short and the keyboard is up (it overflowed by 16 px on a landscape phone).
+- Fix: the environment chips on the Environments page scroll sideways with an edge fade on the smallest phones, so every environment can be reached.
+- UI: the variables quick-look opens as a bottom sheet on phones and a dialog with a Close button elsewhere, like timings and TLS.
+- Tests: the device matrix now covers the import dialog, examples dialog, and the Environments and Settings pages with the keyboard up; quick-look sheet and dialog tests.
+
 ## 0.58.0
 
 - Removed: Arabic. VerbNest is now English only. The Arabic translations, the Language setting and the right-to-left language tests are gone. A workspace that had Arabic selected opens in English; its saved setting is left alone and nothing else changes. Strings stay in ARB files and the layout keeps using directional APIs, so a language (including a right-to-left one) can be added again later.

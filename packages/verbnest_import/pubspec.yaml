@@ -1,6 +1,6 @@
 name: verbnest_import
 description: cURL, Postman, OpenAPI and HAR import/export, code generation for VerbNest.
-version: 0.58.0
+version: 0.58.1
 publish_to: none
 resolution: workspace
 

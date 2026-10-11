@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 
 import '../state/session.dart';
+import 'ui/adaptive_dialog.dart';
 import '../state/variables.dart';
 import '../../l10n/l10n.dart';
 
@@ -48,9 +49,13 @@ class EnvSelector extends ConsumerWidget {
             key: const Key('quick-look'),
             tooltip: context.l10n.variablesInEffect,
             icon: const Icon(Icons.visibility_outlined),
-            onPressed: () => showDialog<void>(
-              context: context,
-              builder: (_) => _QuickLook(requestId: requestId),
+            // A bottom sheet on a phone, a dialog elsewhere.
+            onPressed: () => showDetail(
+              context,
+              title: context.l10n.variablesInEffect,
+              closeLabel: context.l10n.close,
+              width: 420,
+              content: _QuickLook(requestId: requestId),
             ),
           ),
         ],
@@ -59,6 +64,8 @@ class EnvSelector extends ConsumerWidget {
   }
 }
 
+/// The variables in effect for a request: name, value (masked for secrets)
+/// and the scope each comes from. The caller supplies the title and frame.
 class _QuickLook extends ConsumerWidget {
   const _QuickLook({this.requestId});
 
@@ -73,34 +80,21 @@ class _QuickLook extends ConsumerWidget {
       envId: ref.watch(activeEnvProvider),
     );
     final vars = scopes.visible();
-    return AlertDialog(
-      title: Text(context.l10n.variablesInEffect),
-      content: SizedBox(
-        width: 420,
-        child: vars.isEmpty
-            ? Text(context.l10n.noVariablesDefined)
-            : ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final r in vars)
-                    ListTile(
-                      dense: true,
-                      title: Text(r.variable.key),
-                      subtitle: Text(
-                        r.variable.secret
-                            ? VariableResolver.maskText
-                            : r.variable.value,
-                      ),
-                      trailing: Text(r.scope.name),
-                    ),
-                ],
-              ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.l10n.close),
-        ),
+    if (vars.isEmpty) return Text(context.l10n.noVariablesDefined);
+    return ListView(
+      shrinkWrap: true,
+      // The frame (sheet or dialog) does the scrolling.
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        for (final r in vars)
+          ListTile(
+            dense: true,
+            title: Text(r.variable.key),
+            subtitle: Text(
+              r.variable.secret ? VariableResolver.maskText : r.variable.value,
+            ),
+            trailing: Text(r.scope.name),
+          ),
       ],
     );
   }

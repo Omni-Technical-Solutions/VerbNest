@@ -9,6 +9,7 @@ import '../widgets/name_dialog.dart';
 import '../../l10n/l10n.dart';
 import '../theme.dart';
 import '../layout_class.dart';
+import '../widgets/ui/scroll_edge_fade.dart';
 import '../widgets/ui/toast.dart';
 
 /// Environments and globals with their variables (FR-VAR-002..004).
@@ -110,9 +111,12 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
       child: Row(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(children: _chips(envs, env)),
+            // Fades at the edge that has more environments to scroll to.
+            child: ScrollEdgeFade(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: _chips(envs, env)),
+              ),
             ),
           ),
           IconButton(

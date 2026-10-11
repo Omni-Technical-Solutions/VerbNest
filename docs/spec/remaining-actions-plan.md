@@ -211,7 +211,7 @@ and record the results at its bottom.
 
 ## C. Engineering (Agent)
 
-### C1. Close the test-matrix gaps (patch)
+### C1. Close the test-matrix gaps (patch) - done (0.58.1)
 
 Not covered by the device matrix yet: the import dialog, the environments
 editor with the keyboard up, settings with the keyboard up, the examples dialog
@@ -222,13 +222,13 @@ and workspaces dialog at 280 to 320 pt.
   stacked rows).
 - Done when: the matrix includes them and passes with empty known-failure maps.
 
-### C2. Variables quick-look as a detail sheet (patch)
+### C2. Variables quick-look as a detail sheet (patch) - done (0.58.1)
 
 - Move `_QuickLook` in `env_selector.dart` onto `showDetail()` so it is a
   bottom sheet on phones like timings and TLS.
 - Done when: a test shows the sheet on a phone and the dialog on desktop.
 
-### C3. Replace the iOS launch image placeholder (patch)
+### C3. Replace the iOS launch image placeholder (patch) - done (0.58.1)
 
 - Flutter warns "launch image is set to the default placeholder". Add a branded
   launch screen (logo on the surface colour, light and dark) and check that the

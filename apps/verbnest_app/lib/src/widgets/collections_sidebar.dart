@@ -578,6 +578,8 @@ class _ImportDialogState extends State<_ImportDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      // Scrolls when the window is short or the keyboard is up.
+      scrollable: true,
       title: Text(context.l10n.sbImport),
       content: SizedBox(
         width: 520,
