@@ -1,23 +1,38 @@
 # UX & Responsive Layout
 
 ## 1. Principles
-1. **Adaptive, not shrunk.** Three layout classes drive structure, not just scaling.
+1. **Adaptive, not shrunk.** Width and height classes drive structure, not just scaling.
 2. **The request is the unit of work.** Everything (env, auth, scripts, response) is one tap/click from the request.
 3. **Always show what will be sent.** Unresolved variables, active environment and TLS-off state are always visible.
 4. **Thumb-reachable on phones** (send button, env switcher bottom area), **keyboard-first on desktop**.
-5. Material 3 base with platform touches: native menu bar on macOS, Cupertino-style back gestures and sheets on iOS, title-bar integration on Windows/Linux via `window_manager`.
+5. Material 3 base (seed #EB6A1A, vibrant scheme; opt-in Material You colours on Android) with bundled Inter and JetBrains Mono fonts and platform touches: native menu bar on macOS, Cupertino-style back gestures and sheets on iOS, title-bar integration on Windows/Linux via `window_manager`.
 
 ## 2. Layout classes
 
-Breakpoints follow Material 3 window size classes.
+Width and height both decide the layout (`LayoutClass`, `HeightClass`).
 
-| Class | Width | Typical devices | Structure |
+| Width class | Width | Typical devices | Structure |
 |---|---|---|---|
 | Compact | < 600 dp | Phones (portrait) | Single pane, stack navigation, bottom navigation bar |
-| Medium | 600–1199 dp | Foldables, tablets portrait, small desktop windows | Navigation rail + two panes (list + request); response in a bottom sheet or tab |
-| Expanded | ≥ 1200 dp | Tablets landscape, desktop | Rail + resizable sidebar + tabbed request editor + response pane (side-by-side or stacked, user toggle) |
+| Medium | 600–839 dp | Foldables, tablets portrait, small windows | Navigation rail, list pane; request opens over it |
+| Expanded | 840–1199 dp | Tablets landscape, desktop windows | Rail + sidebar + tabbed editor; status bar |
+| Large | 1200–1599 dp | Desktop | Permanent navigation drawer (labelled) instead of the rail |
+| Extra large | ≥ 1600 dp | Large monitors | As large, with wider panes |
 
-### 2.1 Expanded (desktop, large tablet)
+| Height class | Height | Effect |
+|---|---|---|
+| Compact | < 480 dp | Landscape phones: uses the medium layout, no status bar, request and response side by side, toolbar folded into the URL row |
+| Medium | 480–899 dp | Default |
+| Expanded | ≥ 900 dp | Default; more room for stacked panes |
+
+Rules that apply at every size:
+- **Scroll and fold chrome, do not squeeze panes.** The URL bar is pinned; the toolbar folds away on scroll and when the keyboard is up; a pane never gets less than about 240 dp (the page scrolls instead). See ADR-016.
+- Tab rows that scroll sideways fade at the edge that hides content; key/value rows stack under 360 dp.
+- Forms and tab bodies use `ScrollIfShort`, so large text, a short window or the keyboard scroll them instead of overflowing.
+- Detail views (timings, TLS, variables in effect) open as a draggable bottom sheet on compact widths and a dialog with a Close button elsewhere; dialogs scroll when the window is short.
+- The status bar shows from 840 dp wide, and not in short windows.
+
+### 2.1 Expanded and larger (desktop, large tablet)
 ```
 ┌────┬──────────────┬─────────────────────────────────────────────────────┐
 │ R  │ Sidebar      │ [tab] [tab*] [tab] [+]                 env: [dev ▼] │
@@ -40,7 +55,7 @@ Breakpoints follow Material 3 window size classes.
 - Context menus on right-click; drag and drop across tree and into tabs; drop files onto body/import.
 
 ### 2.2 Medium (tablet portrait, foldable)
-- Navigation rail + list pane (collections/history) + request pane.
+- Navigation rail + list pane (collections/history); the request opens over the list.
 - Response appears in a **resizable bottom sheet** over the request editor with three snap points (peek: status line; half; full).
 - Tabs collapse into a dropdown "Open requests (4)".
 

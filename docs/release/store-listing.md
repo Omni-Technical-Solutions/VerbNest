@@ -9,7 +9,8 @@ Shared text for every store. Edit here, then copy into each console.
 - **Long description:** `distribution/fastlane/metadata/android/en-US/full_description.txt`
 - **Support / source URL:** to be set by the owner
 - **Privacy policy:** `docs/release/privacy-policy.md` (host it at a public URL)
-- **Screenshots:** not yet captured. Needed: phone (1080x1920), 7" and 10" tablet, iPhone 6.7" and iPad 13", macOS 1280x800, Windows 1366x768.
+- **Screenshots:** captured in `docs/release/screenshots/` (10 each unless noted): `iphone` 1206x2622 and `iphone-landscape` 2622x1206 (6.3" Dynamic Island), `ipad` 2064x2752 (13"), `android-phone` 1080x2424 and `android-phone-landscape` 2424x1080, `android-tablet` 2560x1600, `macos` 2880x1800 (18). Regenerate with `scripts/screenshots_devices.sh` and `scripts/screenshots_macos.sh`. Not captured: Windows 1366x768.
+- **Feature graphic (Play):** 1024x500 PNG.
 - **Age rating:** everyone; no user-generated content shared by the app, no ads.
 
 ## Review notes (App Store and Play)

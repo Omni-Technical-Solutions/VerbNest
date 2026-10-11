@@ -13,9 +13,9 @@ What is ready in the repository and what only the account owner can do. Nothing 
 - Listing text, review notes, privacy policy draft: `docs/release/`.
 
 ## Done on this machine (not yet uploaded anywhere)
-- Android upload key created at `~/.postit-signing/upload-keystore.jks` (alias `upload`); passwords are in the gitignored `apps/verbnest_app/android/key.properties`. **Back both up now.** If the key is lost, Play can only reset it through support. `flutter build appbundle --release` produced a signed `com.omni.verbnest` bundle (version 0.25.0, code 4).
+- Android upload key created at `~/.verbnest-signing/upload-keystore.jks` (alias `upload`); passwords are in the gitignored `apps/verbnest_app/android/key.properties`. **Back both up now.** If the key is lost, Play can only reset it through support. `flutter build appbundle --release` produced a signed `com.omni.verbnest` bundle (rebuild per release; the version and build number come from `VERSION` and `BUILD_NUMBER`).
 - iOS release build compiles with `--no-codesign`; the macOS DMG builds, is signed with the Apple Distribution certificate (Omni Technical Solutions Pty Ltd, team NYY6MADXHV, hardened runtime + timestamp + entitlements) and its bundle id is `com.omni.verbnest`.
-- Entitlements: macOS Release now also allows a local server (`network.server`), needed for the OAuth 2.0 browser redirect. `ITSAppUsesNonExemptEncryption` is false (only standard HTTPS/TLS), so App Store Connect will not ask the export question.
+- Entitlements: macOS Release (sandbox, network.client, network.server, user-selected files) also allows a local server (`network.server`), needed for the OAuth 2.0 browser redirect. `ITSAppUsesNonExemptEncryption` is false (only standard HTTPS/TLS), so App Store Connect will not ask the export question.
 
 ## Play Store, in order
 1. Create a Play Console developer account (one-time fee; new personal accounts must run a closed test with 12 testers for 14 days before production).
@@ -30,19 +30,19 @@ What is ready in the repository and what only the account owner can do. Nothing 
 ## Needs the owner
 1. Google Play: developer account, `keytool -genkey` upload key, `flutter build appbundle --release`, Play App Signing, data safety form (no data collected), content rating.
 2. F-Droid: merge request to `fdroiddata` with a build recipe for the tag; the app has no proprietary dependencies, but check `fjs` (Rust) builds from source in their build server.
-3. App Store (iOS and macOS): Apple Developer Program, distribution certificates and profiles, `flutter build ipa`, App Store Connect listing, screenshots, review notes from `store-listing.md`. Sandbox entitlements for outgoing network and user-selected files need review.
+3. App Store (iOS and macOS): Apple Developer Program, distribution certificates and profiles, `flutter build ipa`, App Store Connect listing, screenshots, review notes from `store-listing.md`. The `network.server` entitlement is explained in the review notes in `store-listing.md`.
 4. Microsoft Store / winget: publisher account, MSIX packaging (`msix` package or Inno Setup), signing certificate, winget manifests with the real installer URL and SHA-256.
 5. Flathub: pull request to `flathub/flathub`; replace the placeholder source URL and commit; a Linux machine to build and test the Flatpak.
 6. Screenshots, public support URL, hosted privacy policy.
 7. Windows and Linux builds have only been compiled in CI, never run by hand.
 
 ## Screenshots
-- `scripts/screenshots_macos.sh` writes 18 PNGs (2880x1800) to `docs/release/screenshots/macos`. Listing copy: `docs/release/app-store-post.md`.
+- `scripts/screenshots_macos.sh` writes 18 PNGs (2880x1800); `scripts/screenshots_devices.sh` writes the iPhone, iPad and Android sets (portrait and landscape) to `docs/release/screenshots/macos`. Listing copy: `docs/release/app-store-post.md`.
 
 ## Mac App Store package
 - With Xcode signed in: `xcodebuild archive` then `-exportArchive -allowProvisioningUpdates` using an `app-store-connect` export plist (team NYY6MADXHV, automatic signing) produces a signed `VerbNest.pkg`. Upload it with Transporter.
 
-## Store packages (how v0.46.0 build 16 was made)
+## Store packages (how a build is made; the last set built was 0.53.0+17)
 Use one build number for all three: `n=$(scripts/next_build.sh)`, then pass `--build-name=<VERSION> --build-number=$n` to each build from `apps/verbnest_app`.
 - **Android (Play):** `PATH=/usr/local/opt/rustup/bin:$PATH flutter build appbundle --release ...`. With `rustup` on PATH the `fjs` plugin compiles Rust from source; without it the plugin tries precompiled binaries, which do not cover Android, and the build fails with "Requested Rust target is not included in the signed build recipe". Output: `build/app/outputs/bundle/release/app-release.aab`, signed with the upload key from `key.properties` (arm64-v8a, armeabi-v7a, x86_64). About 10 minutes.
 - **iOS (App Store):** `flutter build ipa --release ...` (automatic signing, team NYY6MADXHV). Output: `build/ios/ipa/VerbNest.ipa`. Flutter warns that the launch image is the default placeholder.
