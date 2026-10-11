@@ -1,5 +1,4 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:verbnest_app/src/state/locale_state.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,38 +103,20 @@ void main() {
     expect(find.byKey(const Key('favourite')), findsOneWidget);
   });
 
-  testWidgets('a saved language the app does not ship falls back to English', (
-    tester,
-  ) async {
-    // Arabic was removed in v0.58.0; a workspace that chose it still opens.
-    final s = WorkspaceSession.memory();
-    addTearDown(s.close);
-    s.repo.settings = {...s.repo.settings, 'language': 'ar'};
-    final container = ProviderContainer(
-      overrides: [sessionProvider.overrideWithValue(s)],
-    );
-    addTearDown(container.dispose);
-    expect(container.read(localeProvider), isNull);
-    // The saved value is left alone; only the shipped languages are honoured.
-    expect(s.repo.settings['language'], 'ar');
-    container.read(localeProvider.notifier).set(const Locale('en'));
-    expect(container.read(localeProvider), const Locale('en'));
-  });
-
-  testWidgets('the app runs in English whatever the device language', (
-    tester,
-  ) async {
-    tester.platformDispatcher.localesTestValue = const [Locale('ar')];
-    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-    await pumpApp(tester, const Size(1100, 900));
-    await tester.pumpAndSettle();
-    expect(find.text('Settings'), findsWidgets);
-    expect(
-      Directionality.of(tester.element(find.byType(NavigationRail))),
-      TextDirection.ltr,
-    );
-    expect(tester.takeException(), isNull);
-  });
+  for (final code in ['ar', 'fr', 'ja']) {
+    testWidgets('the app runs in English on a $code device', (tester) async {
+      tester.platformDispatcher.localesTestValue = [Locale(code)];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      await pumpApp(tester, const Size(1100, 900));
+      await tester.pumpAndSettle();
+      expect(find.text('Settings'), findsWidgets);
+      final ctx = tester.element(find.byType(NavigationRail));
+      expect(Directionality.of(ctx), TextDirection.ltr);
+      // The framework's own labels follow the app, not the device.
+      expect(MaterialLocalizations.of(ctx).backButtonTooltip, 'Back');
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('favourites: star in the editor, mark in the tree, filter', (
     tester,

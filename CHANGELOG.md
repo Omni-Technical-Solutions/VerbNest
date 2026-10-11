@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.59.1
+
+- Change: the app is always English. The code that switched languages is removed, and the app pins its locale to English, so a device set to any language gets English strings and English system labels (Back, Cut, Paste) instead of a mix. A `language` value saved in an older workspace is ignored and left alone.
+- Tests: the app builds in English, left to right, with English framework labels on Arabic, French and Japanese devices.
+
 ## 0.59.0
 
 - Feature: wrap long lines. A Wrap button in the response toolbar breaks long lines of the Pretty and Raw views onto several rows instead of scrolling sideways. Folding, search highlights and copy-path still work. A body over 2000 lines, or with a line over 20000 characters, ignores it and keeps the fast fixed rows. On phones under 360 dp wide the button sits next to the search field, which opens from the search button.

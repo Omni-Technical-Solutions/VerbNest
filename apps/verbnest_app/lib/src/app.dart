@@ -7,7 +7,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'adaptive_scaffold.dart';
-import 'state/locale_state.dart';
 import 'state/prefs.dart';
 import 'state/theme_state.dart';
 import 'theme.dart';
@@ -28,7 +27,9 @@ class VerbnestApp extends ConsumerWidget {
         ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      locale: ref.watch(localeProvider),
+      // English only, whatever the device language: the app's strings and the
+      // Material widgets' labels (Back, Cut, Paste) must not come out mixed.
+      locale: const Locale('en'),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(
         Brightness.light,
