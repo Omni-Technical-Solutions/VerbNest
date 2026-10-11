@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Phones and tablets only: a touch screen is required, and the app declares
+         no TV (leanback), watch, car or XR support. Chromebooks are excluded in
+         the Play Console device catalog (docs/release/checklist.md). -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="true"/>
     <application
         android:enableOnBackInvokedCallback="true"
         android:label="VerbNest"

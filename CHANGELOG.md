@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.59.3
+
+- Change: on Android and iOS only phones and tablets are supported. iOS builds target iPhone and iPad only; the "iPhone and iPad app on Mac" and "on Apple Vision" destinations and Mac Catalyst are switched off (macOS has its own native app). Android requires a touch screen and declares no TV, watch, car or XR support.
+- Docs: ADR-018 "Phones and tablets only on Android and iOS"; store listing and checklist list the device settings for the consoles.
+
 ## 0.59.2
 
 - Change: English is declared as the only language on every platform. Android bundles only English resources (`androidResources.localeFilters`); iOS and macOS list English in `CFBundleLocalizations`. Windows and Linux carry no language resources.

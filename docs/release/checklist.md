@@ -36,6 +36,9 @@ What is ready in the repository and what only the account owner can do. Nothing 
 6. Screenshots, public support URL, hosted privacy policy.
 7. Windows and Linux builds have only been compiled in CI, never run by hand.
 
+## Devices
+- Android and iOS: phones and tablets only (ADR-018). iOS: `TARGETED_DEVICE_FAMILY = 1,2`, Mac Catalyst, "designed for iPhone/iPad on Mac" and on Vision are off. Android: `uses-feature touchscreen` required, no leanback/watch/automotive/XR. Owner, in Play Console: no extra form factors, exclude Chromebooks in the device catalog. Owner, in App Store Connect: untick the Mac and Vision availability of the iPhone/iPad app.
+
 ## Languages
 - English only on every platform (ADR-017). Android: `androidResources.localeFilters`; iOS and macOS: `CFBundleLocalizations`; Windows and Linux carry no language resources. In App Store Connect and Play Console keep English as the only localisation.
 
