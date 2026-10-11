@@ -163,6 +163,52 @@ and workspaces dialog at 280 to 320 pt.
   page scroll" (decided in the mobile plan).
 - Done when: `ux.md` matches what a person sees.
 
+### C7. Remove Arabic language support (minor)
+
+The app ships English and Arabic. This item removes Arabic, leaving English as
+the only language. It is a user-facing removal, so it is a minor release with a
+CHANGELOG "Removed" entry.
+
+What changes:
+
+- **Translations.** Delete `lib/l10n/app_ar.arb` and the generated
+  `app_localizations_ar.dart`, then run `flutter gen-l10n` so
+  `supportedLocales` is English only. Drop the Arabic-parity rule from
+  `test/l10n_guard_test.dart` (it checks every key exists in both files).
+- **Settings.** Remove the Language control from `settings_page.dart`: with one
+  language it has nothing to choose. Keep `localeProvider`, but make it ignore a
+  saved language the app no longer ships, so a workspace that had `ar` selected
+  opens in English and nothing breaks. No data migration is needed.
+- **Tests.** Remove the Arabic-locale tests in `step22_test.dart` (translated
+  labels and right-to-left layout, language setting switches the UI), replace
+  them with one test that a saved `ar` falls back to English, and remove the
+  right-to-left drawer test in `adaptive_layout_test.dart` that sets the `ar`
+  locale. Remove the Arabic golden (`layout-compact-ar.png`) and its case in
+  `layout_goldens_test.dart`.
+- **Screenshot harness.** Remove the Arabic font registration (Geeza Pro) and the
+  `language: 'ar'` path from `tool/screenshots_test.dart`, and the "Arabic
+  screenshot omitted" note in `docs/release/checklist.md`.
+- **Store copy and docs.** App Store description: change "English and Arabic with
+  full right-to-left layout" (`docs/release/app-store-post.md`) to English only,
+  and re-check the Play description and `store-listing.md`. Search `README.md`,
+  `docs/spec/requirements.md`, `ux.md` and `feature-inventory.md` for
+  internationalisation and right-to-left claims and correct them.
+- **Keep.** Directional layout code (`EdgeInsetsDirectional`, `PositionedDirectional`,
+  `AlignmentDirectional`) and the widget-level right-to-left tests that wrap a
+  widget in `Directionality` (`rtl_code_test.dart`, the edge fade in
+  `scroll_cues_test.dart`). They cost nothing, keep the layout correct if a
+  right-to-left language is added later, and do not depend on Arabic.
+- **History stays.** Earlier CHANGELOG entries and ADRs that mention Arabic are
+  history and are not rewritten.
+
+Done when: no Arabic string, font or locale remains in the app or its tests,
+`flutter gen-l10n` and the analyzer are clean, all tests pass, and the store
+text says English only.
+
+Risk: a person who chose Arabic loses it. Say so plainly in the release notes.
+If the Play Console or App Store listing was ever localised to Arabic, remove
+that listing language there too (Owner, part of A4).
+
 ## D. Older open items (re-verify first)
 
 These come from earlier notes in `.claude/context.md` and
@@ -188,6 +234,7 @@ Proposed handling: spend one session on a short audit that turns each into
 | 3 | C3 launch image | Agent | S | none |
 | 4 | C6 spec update | Agent | S | none |
 | 5 | A6 release documents | Agent | S | none |
+| 5b | C7 remove Arabic | Agent | M | none; do it before the docs (4, 5) are finalised |
 | 6 | B1 to B6 device checks | Owner | M | a build to test |
 | 7 | A1 rebuild packages (after any fixes from 6) | Agent | M | 1 to 3, 6 |
 | 8 | A3 notarise | Owner then Agent | S | certificate |
@@ -197,7 +244,8 @@ Proposed handling: spend one session on a short audit that turns each into
 | 12 | C4, C5 optional features | Agent | M | decisions |
 | 13 | D audit | Agent | S | none |
 
-Items 1 to 5 can start now and ship as 0.57.1 (one patch) and a chore. Device
+Items 1 to 5 can start now and ship as 0.57.1 (one patch) and a chore; C7 is a
+minor release (0.58.0) because it removes a user-facing language. Device
 checks should happen on a build that contains them, so rebuild the packages
 (item 7) once after the fixes, not before.
 
@@ -209,6 +257,8 @@ checks should happen on a build that contains them, so rebuild the packages
 - Whether a GitHub release should be created for every minor version or only the
   latest (A2).
 - Who runs the device checks and when (B).
+- C7: confirm that Arabic is removed completely (my reading of the request) and
+  that the right-to-left-safe layout code stays.
 
 ## Not in scope
 
