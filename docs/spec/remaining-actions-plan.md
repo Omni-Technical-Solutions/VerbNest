@@ -173,8 +173,6 @@ the code before starting. None is urgent.
   profiling; the sidebar tree rebuild cost is untested at thousands of nodes.
 - Networking: HTTP/2 beyond what is present, PAC and NTLM proxies (not
   supported), mock server using saved examples.
-- Language: native review of the Arabic strings (written by the agent, never
-  reviewed by a speaker).
 - Verification debt: real browser launch for OAuth with a real identity
   provider; the network tests on iOS and Android; real corporate proxies.
 
