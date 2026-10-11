@@ -14,4 +14,4 @@ Keep inner panes (code view, tables) as their own scrollers, and make the chrome
 - forms use `ScrollIfShort`.
 
 ## Consequences
-One scroll owner at a time, so a vertical code view does not fight a page scroll. Layout is checked by the device matrix (sizes x keyboard x large text), so a new size is one line of test data. Soft wrap in the code view and swiping between Request and Response were left out (fixed row height; the segmented switch stays).
+One scroll owner at a time, so a vertical code view does not fight a page scroll. Layout is checked by the device matrix (sizes x keyboard x large text), so a new size is one line of test data. Soft wrap and the pane swipe were left out at first and added in 0.59.0: wrap re-lays rows out freely only for bodies within 2000 lines and 20000 characters per line (otherwise rows stay fixed height); the swipe is limited to the pane switch.

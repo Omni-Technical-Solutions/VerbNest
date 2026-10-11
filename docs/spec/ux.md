@@ -30,6 +30,7 @@ Rules that apply at every size:
 - Tab rows that scroll sideways fade at the edge that hides content; key/value rows stack under 360 dp.
 - Forms and tab bodies use `ScrollIfShort`, so large text, a short window or the keyboard scroll them instead of overflowing.
 - Detail views (timings, TLS, variables in effect) open as a draggable bottom sheet on compact widths and a dialog with a Close button elsewhere; dialogs scroll when the window is short.
+- Long response lines can wrap (Wrap button; bodies up to 2000 lines). On a phone, a swipe on the Request/Response switch changes pane.
 - The status bar shows from 840 dp wide, and not in short windows.
 
 ### 2.1 Expanded and larger (desktop, large tablet)

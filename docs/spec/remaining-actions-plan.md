@@ -235,7 +235,7 @@ and workspaces dialog at 280 to 320 pt.
   App Store validation no longer warns.
 - Done when: `flutter build ipa` prints no launch image warning.
 
-### C4. Code view soft wrap (minor, needs a decision)
+### C4. Code view soft wrap - done (0.59.0)
 
 - The code view uses a fixed row height for virtualised rows, so wrapping needs
   a different approach. Proposed: a wrap toggle that renders wrapped lines for
@@ -245,7 +245,7 @@ and workspaces dialog at 280 to 320 pt.
   folding and search still work, and a large response stays fast.
 - Risk: search highlights and fold arrows assume one row per line.
 
-### C5. Swipe between Request and Response (minor, needs a decision)
+### C5. Swipe between Request and Response - done (0.59.0)
 
 - Optional: a `PageView` behind the existing segmented switch, with the swipe
   restricted to the switch's edge zones so it does not fight horizontal scrolls

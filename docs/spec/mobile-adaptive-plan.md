@@ -164,9 +164,9 @@ Fixes finding 7.
 - Done when: no tab, table or code line is clipped without a visible cue, in
   the golden set at 280, 320 and 360 pt.
 - Delivered: 4a (`ScrollEdgeFade`), 4b (stacked key/value rows under 360 dp), the
-  scrollbar half of 4c, 4e for timings and TLS. Not done: soft wrap in the code
-  view (fixed row height), 4d (swipe between panes: the segmented switch stays,
-  as decided), assertions rows (they already wrap), and the variables
+  scrollbar half of 4c, 4e for timings and TLS. Soft wrap in the code
+  view and the swipe between panes (4d, limited to the switch) were added later
+  in 0.59.0. Not done: assertions rows (they already wrap), and the variables
   quick-look, which stays a dialog.
 - Risk: a `PageView` swipe conflicts with horizontal scrolling inside the pane;
   restrict the swipe to the edge zones or the switch.

@@ -16,12 +16,29 @@ class CodeView extends StatefulWidget {
     this.json = false,
     this.query = '',
     this.fontSize = 13,
+    this.wrap = false,
   });
 
   final String text;
   final bool json;
   final String query;
   final double fontSize;
+
+  /// Break long lines onto several rows instead of scrolling sideways. Only
+  /// applies to a body within [wrapMaxLines] lines and [wrapMaxLineLength]
+  /// characters per line; a larger one keeps the fixed-height rows (and the
+  /// horizontal scroll) so it stays fast.
+  final bool wrap;
+
+  static const wrapMaxLines = 2000;
+  static const wrapMaxLineLength = 20000;
+
+  /// Whether [text] is small enough to wrap.
+  static bool canWrap(String text) {
+    final lines = splitLines(text);
+    return lines.length <= wrapMaxLines &&
+        lines.every((l) => l.length <= wrapMaxLineLength);
+  }
 
   /// Row height for the default font size.
   static const rowHeight = 18.0;
@@ -67,7 +84,14 @@ class _CodeViewState extends State<CodeView> {
       if (l.length > m) m = l.length;
     }
     _maxLen = m;
+    _canWrap =
+        _lines.length <= CodeView.wrapMaxLines &&
+        m <= CodeView.wrapMaxLineLength;
   }
+
+  late bool _canWrap;
+
+  bool get _wrapped => widget.wrap && _canWrap;
 
   void _copyPath(int line) {
     final path = jsonPathForLine(_lines, line);
@@ -168,14 +192,15 @@ class _CodeViewState extends State<CodeView> {
   ) {
     return LayoutBuilder(
       builder: (context, c) {
-        final width = contentWidth + gutter > c.maxWidth
+        final wrapped = _wrapped;
+        final width = !wrapped && contentWidth + gutter > c.maxWidth
             ? contentWidth + gutter
             : c.maxWidth;
         // A visible bar when lines run past the edge, so wide content reads as
         // scrollable and not as cut off.
         return Scrollbar(
           controller: _hScroll,
-          thumbVisibility: width > c.maxWidth,
+          thumbVisibility: !wrapped && width > c.maxWidth,
           notificationPredicate: (n) => n.metrics.axis == Axis.horizontal,
           child: SingleChildScrollView(
             controller: _hScroll,
@@ -185,7 +210,9 @@ class _CodeViewState extends State<CodeView> {
               child: SelectionArea(
                 child: ListView.builder(
                   key: const Key('response-body'),
-                  itemExtent: rowHeight,
+                  // Wrapped rows grow with their text; the others are fixed so a
+                  // huge body scrolls without measuring every row.
+                  itemExtent: wrapped ? null : rowHeight,
                   itemCount: visible.length,
                   itemBuilder: (context, row) {
                     final i = visible[row];
@@ -197,9 +224,13 @@ class _CodeViewState extends State<CodeView> {
                         if (_hoverRow == i) setState(() => _hoverRow = null);
                       },
                       child: Row(
+                        crossAxisAlignment: wrapped
+                            ? CrossAxisAlignment.start
+                            : CrossAxisAlignment.center,
                         children: [
                           SizedBox(
                             width: gutter,
+                            height: wrapped ? rowHeight : null,
                             child: Row(
                               children: [
                                 SizedBox(
@@ -262,9 +293,11 @@ class _CodeViewState extends State<CodeView> {
                                 base,
                                 scheme,
                               ),
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.clip,
+                              maxLines: wrapped ? null : 1,
+                              softWrap: wrapped,
+                              overflow: wrapped
+                                  ? TextOverflow.visible
+                                  : TextOverflow.clip,
                             ),
                           ),
                         ],

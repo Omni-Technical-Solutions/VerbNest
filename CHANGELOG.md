@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.59.0
+
+- Feature: wrap long lines. A Wrap button in the response toolbar breaks long lines of the Pretty and Raw views onto several rows instead of scrolling sideways. Folding, search highlights and copy-path still work. A body over 2000 lines, or with a line over 20000 characters, ignores it and keeps the fast fixed rows. On phones under 360 dp wide the button sits next to the search field, which opens from the search button.
+- Feature: swipe between Request and Response. On a phone, swiping left or right on the Request/Response switch moves between the panes (reversed in a right-to-left layout); the switch itself still works as before. The swipe is limited to the switch so it does not compete with scrolling inside the panes.
+- Tests: `code_wrap_test.dart` (wrap on and off, folding and search while wrapped, size caps), a swipe test in `phone_fit_test.dart`; compact and phone goldens regenerated for the new toolbar button.
+
 ## 0.58.1
 
 - Fix: the iOS launch screen shows the VerbNest icon on a warm off-white background instead of a 1x1 placeholder image (the App Store build warned about the default launch image).

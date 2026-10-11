@@ -2122,6 +2122,12 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get rvSearch;
 
+  /// No description provided for @rvWrap.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrap long lines'**
+  String get rvWrap;
+
   /// No description provided for @rvCopyBody.
   ///
   /// In en, this message translates to:

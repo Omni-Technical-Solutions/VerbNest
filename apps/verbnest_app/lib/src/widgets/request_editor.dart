@@ -578,25 +578,40 @@ class _PanesState extends ConsumerState<_Panes> {
       children: [
         // The slot always exists so the panes below keep their state.
         _hasResult
-            ? Padding(
-                padding: const EdgeInsets.fromLTRB(Space.md, 0, Space.md, 0),
-                child: SegmentedButton<bool>(
-                  key: const Key('pane-switch'),
-                  showSelectedIcon: false,
-                  expandedInsets: EdgeInsets.zero,
-                  segments: [
-                    ButtonSegment(
-                      value: false,
-                      label: Text(context.l10n.histTabRequest),
-                    ),
-                    ButtonSegment(
-                      value: true,
-                      label: Text(context.l10n.histTabResponse),
-                    ),
-                  ],
-                  selected: {showResponse},
-                  onSelectionChanged: (s) =>
-                      setState(() => _showResponse = s.first),
+            // A swipe on the switch moves between the panes. It is limited to
+            // the switch so it never competes with the horizontal scrolling
+            // inside the panes.
+            ? GestureDetector(
+                key: const Key('pane-swipe'),
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragEnd: (d) {
+                  final v = d.primaryVelocity ?? 0;
+                  if (v.abs() < 200) return;
+                  // Swiping against the reading direction goes forward.
+                  final rtl = Directionality.of(context) == TextDirection.rtl;
+                  final forward = rtl ? v > 0 : v < 0;
+                  setState(() => _showResponse = forward);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(Space.md, 0, Space.md, 0),
+                  child: SegmentedButton<bool>(
+                    key: const Key('pane-switch'),
+                    showSelectedIcon: false,
+                    expandedInsets: EdgeInsets.zero,
+                    segments: [
+                      ButtonSegment(
+                        value: false,
+                        label: Text(context.l10n.histTabRequest),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        label: Text(context.l10n.histTabResponse),
+                      ),
+                    ],
+                    selected: {showResponse},
+                    onSelectionChanged: (s) =>
+                        setState(() => _showResponse = s.first),
+                  ),
                 ),
               )
             : const SizedBox.shrink(),

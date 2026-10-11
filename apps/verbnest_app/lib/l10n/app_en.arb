@@ -698,6 +698,7 @@
   "rvHex": "Hex",
   "rvPreview": "Preview",
   "rvSearch": "Search",
+  "rvWrap": "Wrap long lines",
   "rvCopyBody": "Copy body",
   "rvBodyCopied": "Body copied",
   "rvFilterJson": "Filter with JSONPath, e.g. $.items[*].id",

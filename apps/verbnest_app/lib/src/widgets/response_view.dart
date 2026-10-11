@@ -108,6 +108,7 @@ class _ResponseViewState extends State<ResponseView> {
   bool _pretty = true;
   bool _preview = false;
   bool _hex = false;
+  bool _wrap = false;
 
   /// Phone only: the search and filter fields open from toolbar buttons so
   /// the toolbar is one row.
@@ -660,6 +661,13 @@ class _ResponseViewState extends State<ResponseView> {
         showToast(context, context.l10n.rvBodyCopied);
       },
     );
+    final wrap = IconButton(
+      key: const Key('wrap-body'),
+      tooltip: context.l10n.rvWrap,
+      isSelected: _wrap,
+      icon: const Icon(Icons.wrap_text, size: 18),
+      onPressed: () => setState(() => _wrap = !_wrap),
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: LayoutBuilder(
@@ -687,10 +695,24 @@ class _ResponseViewState extends State<ResponseView> {
                           onPressed: () =>
                               setState(() => _showFilter = !_showFilter),
                         ),
+                      // Under 360 dp there is no room for another icon in this
+                      // row; the button sits beside the search field instead.
+                      if (c.maxWidth >= 360 &&
+                          !_hex &&
+                          preview == _Preview.none)
+                        wrap,
                       copy,
                     ],
                   ),
-                  if (_showSearch || _query.isNotEmpty) search,
+                  if (_showSearch || _query.isNotEmpty)
+                    c.maxWidth < 360 && !_hex && preview == _Preview.none
+                        ? Row(
+                            children: [
+                              Expanded(child: search),
+                              wrap,
+                            ],
+                          )
+                        : search,
                 ],
               )
             : Row(
@@ -698,6 +720,7 @@ class _ResponseViewState extends State<ResponseView> {
                   modes,
                   const SizedBox(width: 8),
                   Expanded(child: search),
+                  if (!_hex && preview == _Preview.none) wrap,
                   copy,
                 ],
               ),
@@ -741,6 +764,7 @@ class _ResponseViewState extends State<ResponseView> {
               (r.header('content-type')?.toLowerCase().contains('json') ??
                   false),
           query: _query,
+          wrap: _wrap,
         ),
       };
 

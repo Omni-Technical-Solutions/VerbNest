@@ -1136,6 +1136,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rvSearch => 'Search';
 
   @override
+  String get rvWrap => 'Wrap long lines';
+
+  @override
   String get rvCopyBody => 'Copy body';
 
   @override

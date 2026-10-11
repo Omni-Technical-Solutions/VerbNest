@@ -126,6 +126,32 @@ void main() {
     expect(find.byKey(const Key('auth-type')), findsOneWidget);
   });
 
+  testWidgets('a swipe on the pane switch moves between the panes', (t) async {
+    await _pump(t, 402, body: (id) => RequestEditor(requestId: id));
+    await t.tap(find.byKey(const Key('send')));
+    await t.pump(const Duration(milliseconds: 400));
+    SegmentedButton<bool> sw() =>
+        t.widget(find.byKey(const Key('pane-switch')));
+    // A send shows the response.
+    expect(sw().selected, {true});
+
+    // Swiping right goes back to the request, swiping left forward again.
+    await t.fling(
+      find.byKey(const Key('pane-switch')),
+      const Offset(200, 0),
+      800,
+    );
+    await t.pump(const Duration(milliseconds: 300));
+    expect(sw().selected, {false});
+    await t.fling(
+      find.byKey(const Key('pane-switch')),
+      const Offset(-200, 0),
+      800,
+    );
+    await t.pump(const Duration(milliseconds: 300));
+    expect(sw().selected, {true});
+  });
+
   for (final w in _widths) {
     testWidgets('request editor fits a ${w.toInt()} pt phone', (t) async {
       await _pump(t, w, body: (id) => RequestEditor(requestId: id));
