@@ -54,12 +54,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeTab => 'Close tab';
 
   @override
-  String get language => 'Language';
-
-  @override
-  String get systemDefault => 'System default';
-
-  @override
   String get themeSystem => 'System';
 
   @override
@@ -615,12 +609,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get scriptHelp =>
       'pm.variables, pm.environment, pm.collectionVariables, pm.globals, pm.request, pm.response, pm.test, pm.expect and console are available. Scripts stop after 5 s; pm.sendRequest is not supported yet.';
-
-  @override
-  String get langEnglish => 'English';
-
-  @override
-  String get langArabic => 'العربية';
 
   @override
   String get exFavRemove => 'Remove from favourites';

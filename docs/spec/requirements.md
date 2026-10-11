@@ -159,7 +159,7 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.verbnest`); 
 **FR-APP-002 (P0)** Keyboard shortcuts (desktop and hardware keyboards on tablets): send (Ctrl/Cmd+Enter), new request (Ctrl/Cmd+N), save (Ctrl/Cmd+S), close tab, switch tab, search (Ctrl/Cmd+K), toggle sidebar.
 **FR-APP-003 (P1)** Command palette.
 **FR-APP-004 (P0)** Settings: default timeout, TLS verify default, history retention, editor options, (P1) proxy, certificates, language.
-**FR-APP-005 (P1)** Localisation-ready strings (ARB), English shipped; RTL layout support.
+**FR-APP-005 (P1)** Localisation-ready strings (ARB). English is the only shipped language (Arabic was removed in v0.58.0); layout uses directional APIs so a right-to-left language can be added later.
 **FR-APP-006 (P0)** Crash-safe: unsaved drafts autosaved every 2 s and restored after a crash.
 
 ---

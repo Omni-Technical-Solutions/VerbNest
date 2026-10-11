@@ -262,16 +262,5 @@ void main() {
       expect(find.text('Verify TLS certificates'), findsOneWidget);
       expect(find.byKey(const Key('sidebar-filter')), findsNothing);
     });
-
-    testWidgets('the drawer is on the right in right-to-left', (t) async {
-      t.platformDispatcher.localesTestValue = const [Locale('ar')];
-      addTearDown(t.platformDispatcher.clearLocalesTestValue);
-      await _pumpApp(t, const Size(1440, 900));
-      await t.pumpAndSettle();
-      expect(
-        t.getTopRight(find.byKey(const Key('nav-drawer'))).dx,
-        closeTo(1440, 1),
-      );
-    });
   });
 }

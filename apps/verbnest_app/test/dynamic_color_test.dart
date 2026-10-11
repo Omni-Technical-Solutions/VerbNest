@@ -77,6 +77,8 @@ void main() {
         const Offset(0, -300),
       );
       expect(find.byKey(const Key('dynamic-color')), findsOneWidget);
+      await t.ensureVisible(find.byKey(const Key('dynamic-color')));
+      await t.pump(const Duration(milliseconds: 200));
       await t.tap(find.byKey(const Key('dynamic-color')));
       await t.pump(const Duration(milliseconds: 400));
       expect(c.read(prefsProvider).dynamicColor, isTrue);

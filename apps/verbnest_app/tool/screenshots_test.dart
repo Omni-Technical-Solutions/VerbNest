@@ -191,13 +191,11 @@ Future<void> _loadFonts() async {
       ByteData.sublistView(await File(path).readAsBytes());
 
   // The app's own fonts, bundled in assets/fonts (the test runs from the app
-  // folder). Inter has no Arabic, so Geeza Pro joins its family for the glyphs
-  // it lacks.
+  // folder).
   final inter = FontLoader('Inter');
   for (final f in const ['Regular', 'Medium', 'SemiBold', 'Bold']) {
     inter.addFont(bytes('assets/fonts/Inter-$f.ttf'));
   }
-  inter.addFont(bytes('/System/Library/Fonts/GeezaPro.ttc'));
   await inter.load();
   final jetbrains = FontLoader('JetBrains Mono');
   for (final f in const ['Regular', 'Bold']) {
@@ -207,10 +205,6 @@ Future<void> _loadFonts() async {
   final icons = FontLoader('MaterialIcons')
     ..addFont(bytes('$fonts/MaterialIcons-Regular.otf'));
   await icons.load();
-  // Arabic: macOS ships Geeza Pro; the fallback needs a name to find it.
-  final arabic = FontLoader('GeezaPro')
-    ..addFont(bytes('/System/Library/Fonts/GeezaPro.ttc'));
-  await arabic.load();
 }
 
 class _Ids {
@@ -448,7 +442,6 @@ class _App {
 Future<_App> _launch(
   WidgetTester tester, {
   bool dark = false,
-  String? language,
   String name = 'Pet Store',
 }) async {
   tester.view.physicalSize = Size(
@@ -474,7 +467,6 @@ Future<_App> _launch(
   session.repo.settings = {
     ...session.repo.settings,
     'themeMode': dark ? 'dark' : 'light',
-    'language': ?language,
   };
   await tester.pumpWidget(
     RepaintBoundary(

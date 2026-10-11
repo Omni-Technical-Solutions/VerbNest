@@ -33,7 +33,7 @@ abstract final class Motion {
 }
 
 /// Family of the UI text. Bundled (`assets/fonts`), so it is the same on every
-/// platform; scripts it lacks, such as Arabic, fall back to the system font.
+/// platform; a script it lacks falls back to the system font.
 const kUiFamily = 'Inter';
 
 /// Font family for code, headers and URLs. Bundled.

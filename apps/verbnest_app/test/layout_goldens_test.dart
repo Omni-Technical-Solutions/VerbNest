@@ -14,7 +14,7 @@ import 'package:verbnest_http/verbnest_http.dart';
 import 'support/golden_setup.dart';
 
 /// The main workspace screen at a phone, tablet and desktop width, in both
-/// themes, plus Arabic (right to left) on the phone. Regenerate with
+/// themes. Regenerate with
 /// `flutter test --update-goldens test/layout_goldens_test.dart` and look at
 /// the images before committing them.
 class _Engine extends HttpEngine {
@@ -64,7 +64,6 @@ Future<void> _shot(
   WidgetTester t,
   _Case c, {
   required bool dark,
-  String? language,
   required String file,
 }) async {
   t.view.physicalSize = c.size;
@@ -99,11 +98,7 @@ Future<void> _shot(
     ),
   );
   s.repo.defaultEnvironmentId = 'env-dev';
-  s.repo.settings = {
-    ...s.repo.settings,
-    'themeMode': dark ? 'dark' : 'light',
-    'language': ?language,
-  };
+  s.repo.settings = {...s.repo.settings, 'themeMode': dark ? 'dark' : 'light'};
   final container = ProviderContainer(
     overrides: [
       sessionProvider.overrideWithValue(s),
@@ -152,14 +147,4 @@ void main() {
       });
     }
   }
-
-  testWidgets('workspace, compact, Arabic right to left', (t) async {
-    await _shot(
-      t,
-      _cases.first,
-      dark: false,
-      language: 'ar',
-      file: 'layout-compact-ar',
-    );
-  });
 }

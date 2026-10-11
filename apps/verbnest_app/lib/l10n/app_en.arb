@@ -21,8 +21,6 @@
     }
   },
   "closeTab": "Close tab",
-  "language": "Language",
-  "systemDefault": "System default",
   "themeSystem": "System",
   "themeLight": "Light",
   "themeDark": "Dark",
@@ -392,8 +390,6 @@
   "scriptPost": "Post-response",
   "scriptPostSet": "Post-response •",
   "scriptHelp": "pm.variables, pm.environment, pm.collectionVariables, pm.globals, pm.request, pm.response, pm.test, pm.expect and console are available. Scripts stop after 5 s; pm.sendRequest is not supported yet.",
-  "langEnglish": "English",
-  "langArabic": "العربية",
   "exFavRemove": "Remove from favourites",
   "exFavAdd": "Add to favourites",
   "exTitle": "Examples",

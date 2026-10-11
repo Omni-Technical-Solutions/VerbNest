@@ -104,39 +104,37 @@ void main() {
     expect(find.byKey(const Key('favourite')), findsOneWidget);
   });
 
-  testWidgets('Arabic locale: translated labels and right-to-left layout', (
+  testWidgets('a saved language the app does not ship falls back to English', (
+    tester,
+  ) async {
+    // Arabic was removed in v0.58.0; a workspace that chose it still opens.
+    final s = WorkspaceSession.memory();
+    addTearDown(s.close);
+    s.repo.settings = {...s.repo.settings, 'language': 'ar'};
+    final container = ProviderContainer(
+      overrides: [sessionProvider.overrideWithValue(s)],
+    );
+    addTearDown(container.dispose);
+    expect(container.read(localeProvider), isNull);
+    // The saved value is left alone; only the shipped languages are honoured.
+    expect(s.repo.settings['language'], 'ar');
+    container.read(localeProvider.notifier).set(const Locale('en'));
+    expect(container.read(localeProvider), const Locale('en'));
+  });
+
+  testWidgets('the app runs in English whatever the device language', (
     tester,
   ) async {
     tester.platformDispatcher.localesTestValue = const [Locale('ar')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await pumpApp(tester, const Size(1100, 900));
     await tester.pumpAndSettle();
-    expect(find.text('المجموعات'), findsWidgets);
-    expect(find.text('الإعدادات'), findsWidgets);
-    final dir = Directionality.of(tester.element(find.byType(NavigationRail)));
-    expect(dir, TextDirection.rtl);
-    // The rail sits on the right edge in right-to-left.
-    final rail = tester.getTopRight(find.byType(NavigationRail));
-    expect(rail.dx, closeTo(1100, 1));
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('language setting switches the UI and is remembered', (
-    tester,
-  ) async {
-    final s = await pumpApp(tester, const Size(1100, 900));
-    await tester.pumpAndSettle();
-    final container = ProviderScope.containerOf(
-      tester.element(find.byType(NavigationRail)),
-    );
-    container.read(localeProvider.notifier).set(const Locale('ar'));
-    await tester.pumpAndSettle();
-    expect(find.text('الإعدادات'), findsWidgets);
-    expect(s.repo.settings['language'], 'ar');
-    container.read(localeProvider.notifier).set(null);
-    await tester.pumpAndSettle();
     expect(find.text('Settings'), findsWidgets);
-    expect(s.repo.settings.containsKey('language'), isFalse);
+    expect(
+      Directionality.of(tester.element(find.byType(NavigationRail))),
+      TextDirection.ltr,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('favourites: star in the editor, mark in the tree, filter', (

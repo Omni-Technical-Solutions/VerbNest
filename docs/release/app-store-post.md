@@ -39,7 +39,7 @@ BUILT FOR REAL NETWORKS
 Proxy support, custom CA certificates, client certificates and a cookie jar. Certificate checks are on by default.
 
 MADE FOR EVERYONE
-Light and dark themes, an accent colour, keyboard shortcuts on iPad and Mac, and English and Arabic with full right-to-left layout.
+Light and dark themes, an accent colour, keyboard shortcuts on iPad and Mac, and support for larger text sizes.
 
 PRIVATE BY DESIGN
 VerbNest sends only the requests you write, to the addresses you enter. Secrets are masked in history and reports, and are only sent to hosts you approve.

@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.58.0
+
+- Removed: Arabic. VerbNest is now English only. The Arabic translations, the Language setting and the right-to-left language tests are gone. A workspace that had Arabic selected opens in English; its saved setting is left alone and nothing else changes. Strings stay in ARB files and the layout keeps using directional APIs, so a language (including a right-to-left one) can be added again later.
+- Docs: the App Store review notes now explain the `network.server` entitlement (the OAuth redirect receiver and the optional mock server, both loopback only), give reviewer steps to see each feature, and list the macOS release entitlements. The App Store description no longer mentions Arabic.
+- Tests: the l10n guard now checks that English is the only shipped language; a test checks that a saved unshipped language falls back to English.
+
 ## 0.57.0
 
 - Fix: the Scripts tab's Pre-request / Post-response switch no longer runs off a phone screen (the segments share the width and wrap), and its help text scrolls instead of overflowing.

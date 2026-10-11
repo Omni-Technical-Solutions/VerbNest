@@ -16,7 +16,7 @@ bump where the type calls for it, CHANGELOG entry, context update and tests
 These two come before everything else. The App Store question is open now, and
 removing Arabic ships in the build that answers it.
 
-### F1. App Store: the `network.server` entitlement warning
+### F1. App Store: the `network.server` entitlement warning - steps 2 and 3 done (v0.58.0); 1 and 4 are the Owner's
 
 The App Store's automated analysis says the Mac build has the
 `com.apple.security.network.server` entitlement but no matching functionality.
@@ -64,7 +64,7 @@ you (see the list at the end), not a default.
 Done when: the notes with reviewer steps are in the repository, the Owner has
 replied, and the resubmitted build is in review without the warning.
 
-### F2. Remove Arabic language support (minor, 0.58.0)
+### F2. Remove Arabic language support (minor, 0.58.0) - done
 
 Decided: the app drops Arabic and ships in English only. It is a user-facing
 removal, so it is a minor release with a CHANGELOG "Removed" entry.

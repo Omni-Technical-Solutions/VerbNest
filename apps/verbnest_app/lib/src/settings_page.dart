@@ -2,7 +2,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
-import 'state/locale_state.dart';
 import 'state/prefs.dart';
 import 'state/session.dart';
 import 'state/settings_state.dart';
@@ -96,24 +95,6 @@ class SettingsPage extends ConsumerWidget {
           selected: {ref.watch(themeModeProvider)},
           onSelectionChanged: (s) =>
               ref.read(themeModeProvider.notifier).set(s.first),
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: DropdownMenu<String>(
-          key: const Key('language'),
-          initialSelection: ref.watch(localeProvider)?.languageCode ?? '',
-          expandedInsets: EdgeInsets.zero,
-          requestFocusOnTap: false,
-          label: Text(context.l10n.language),
-          dropdownMenuEntries: [
-            DropdownMenuEntry(value: '', label: context.l10n.systemDefault),
-            DropdownMenuEntry(value: 'en', label: context.l10n.langEnglish),
-            DropdownMenuEntry(value: 'ar', label: context.l10n.langArabic),
-          ],
-          onSelected: (v) => ref
-              .read(localeProvider.notifier)
-              .set(v == null || v.isEmpty ? null : Locale(v)),
         ),
       ),
     ];
