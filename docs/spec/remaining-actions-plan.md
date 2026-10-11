@@ -11,6 +11,104 @@ be done by the agent. Each Agent phase is one release: its own commit, version
 bump where the type calls for it, CHANGELOG entry, context update and tests
 (`.claude/commands/phase-commit.md`).
 
+## Start here: two items first
+
+These two come before everything else. The App Store question is open now, and
+removing Arabic ships in the build that answers it.
+
+### F1. App Store: the `network.server` entitlement warning
+
+The App Store's automated analysis says the Mac build has the
+`com.apple.security.network.server` entitlement but no matching functionality.
+It is a real requirement, so the answer is to keep it and explain it (the
+alternative is below).
+
+Why it is needed: the app opens a listening socket in two places, both bound to
+`127.0.0.1` only and only when the user starts them. Without the entitlement the
+App Sandbox blocks both.
+
+- the OAuth 2.0 redirect receiver, `packages/verbnest_http/lib/src/oauth2_browser.dart`
+  (`HttpServer.bind(loopbackIPv4, 0)`; it stops when the redirect arrives);
+- the optional local mock server in the collection runner,
+  `packages/verbnest_runner/lib/src/mock_server.dart`.
+
+Steps:
+
+1. **Respond (Owner, now).** In the Resolution Center or App Review notes for
+   the build under review, paste the explanation saved in
+   `docs/release/store-listing.md` (review notes, written in commit `a8a49ec`).
+2. **Make it easy to verify (Agent, chore).** Add reviewer steps to the same
+   review notes so a reviewer can see both features, using the real labels:
+   for OAuth, open a request, Auth tab, choose OAuth 2.0 with the
+   "Authorization code (browser)" grant, fill in the URLs and send; the app
+   opens the system browser and waits for the redirect on
+   `http://127.0.0.1:<port>/callback`. For the mock server, first save a
+   response as an example ("Examples", then "Save current response"), then open
+   the collection menu, "Run…", then "Mock server" in the app bar and "Start",
+   and open the address it shows. Check the wording against the app before
+   saving it.
+3. **Keep the entitlements minimal (Agent).** Confirm `Release.entitlements`
+   lists only what the app uses (sandbox, `network.client`, `network.server`,
+   `files.user-selected.read-write`) and that `DebugProfile.entitlements` adds
+   nothing unexplained.
+4. **Resubmit with the next build (Owner, after F2 and A1).** The build with
+   Arabic removed (0.58.0) is the one to submit, with the same review notes.
+   If Apple answers the existing build first, reply in the same thread.
+
+Fallback, only if Apple rejects the explanation: drop the entitlement from the
+Mac App Store build and switch off the two features there (OAuth browser
+sign-in and the mock server), behind a compile-time flag so the DMG and other
+platforms keep them. That removes real functionality, so it is a decision for
+you (see the list at the end), not a default.
+
+Done when: the notes with reviewer steps are in the repository, the Owner has
+replied, and the resubmitted build is in review without the warning.
+
+### F2. Remove Arabic language support (minor, 0.58.0)
+
+Decided: the app drops Arabic and ships in English only. It is a user-facing
+removal, so it is a minor release with a CHANGELOG "Removed" entry.
+
+What changes:
+
+- **Translations.** Delete `lib/l10n/app_ar.arb` and the generated
+  `app_localizations_ar.dart`, then run `flutter gen-l10n` so
+  `supportedLocales` is English only. Drop the Arabic-parity rule from
+  `test/l10n_guard_test.dart` (it checks every key exists in both files).
+- **Settings.** Remove the Language control from `settings_page.dart`: with one
+  language it has nothing to choose. Keep `localeProvider`, but make it ignore a
+  saved language the app no longer ships, so a workspace that had `ar` selected
+  opens in English and nothing breaks. No data migration is needed.
+- **Tests.** Remove the Arabic-locale tests in `step22_test.dart` (translated
+  labels and right-to-left layout, language setting switches the UI), replace
+  them with one test that a saved `ar` falls back to English, and remove the
+  right-to-left drawer test in `adaptive_layout_test.dart` that sets the `ar`
+  locale. Remove the Arabic golden (`layout-compact-ar.png`) and its case in
+  `layout_goldens_test.dart`.
+- **Screenshot harness.** Remove the Arabic font registration (Geeza Pro) and the
+  `language: 'ar'` path from `tool/screenshots_test.dart`, and the "Arabic
+  screenshot omitted" note in `docs/release/checklist.md`.
+- **Store copy and docs.** App Store description: change "English and Arabic with
+  full right-to-left layout" (`docs/release/app-store-post.md`) to English only,
+  and re-check the Play description and `store-listing.md`. Search `README.md`,
+  `docs/spec/requirements.md`, `ux.md` and `feature-inventory.md` for
+  internationalisation and right-to-left claims and correct them.
+- **Keep.** Directional layout code (`EdgeInsetsDirectional`, `PositionedDirectional`,
+  `AlignmentDirectional`) and the widget-level right-to-left tests that wrap a
+  widget in `Directionality` (`rtl_code_test.dart`, the edge fade in
+  `scroll_cues_test.dart`). They cost nothing, keep the layout correct if a
+  right-to-left language is added later, and do not depend on Arabic.
+- **History stays.** Earlier CHANGELOG entries and ADRs that mention Arabic are
+  history and are not rewritten.
+
+Done when: no Arabic string, font or locale remains in the app or its tests,
+`flutter gen-l10n` and the analyzer are clean, all tests pass, and the store
+text says English only.
+
+Risk: a person who chose Arabic loses it. Say so plainly in the release notes.
+If the Play Console or App Store listing was ever localised to Arabic, remove
+that listing language there too (Owner, part of A4).
+
 ## Where things stand
 
 | Area | State |
@@ -22,6 +120,8 @@ bump where the type calls for it, CHANGELOG entry, context update and tests
 | GitHub release | v0.46.0 only; v0.47.0 to v0.57.0 have tags but no release |
 | Store listing text, keywords, screenshots, feature graphic | Ready (screenshots for 7 sets) |
 | Real-device checks | **None run** |
+| App Store review (Mac) | **Open**: `network.server` entitlement warning (F1) |
+| Arabic language support | Shipped today; **to be removed** (F2) |
 
 ## A. Release and publishing
 
@@ -68,7 +168,8 @@ Why: the packages on disk predate the whole mobile plan.
   `ipad` 13", `macos`), promotional text, description and keywords from
   `docs/release/app-store-post.md`, privacy answers ("Data Not Collected"),
   review notes from `docs/release/store-listing.md`.
-- Mac App Store: the PKG through Transporter, with the `macos` screenshots.
+- Mac App Store: the PKG through Transporter, with the `macos` screenshots (this
+  is the F1 resubmission).
 - Done when: each store shows a build in review.
 
 ### A5. Hosting and legal (Owner)
@@ -163,52 +264,6 @@ and workspaces dialog at 280 to 320 pt.
   page scroll" (decided in the mobile plan).
 - Done when: `ux.md` matches what a person sees.
 
-### C7. Remove Arabic language support (minor)
-
-The app ships English and Arabic. This item removes Arabic, leaving English as
-the only language. It is a user-facing removal, so it is a minor release with a
-CHANGELOG "Removed" entry.
-
-What changes:
-
-- **Translations.** Delete `lib/l10n/app_ar.arb` and the generated
-  `app_localizations_ar.dart`, then run `flutter gen-l10n` so
-  `supportedLocales` is English only. Drop the Arabic-parity rule from
-  `test/l10n_guard_test.dart` (it checks every key exists in both files).
-- **Settings.** Remove the Language control from `settings_page.dart`: with one
-  language it has nothing to choose. Keep `localeProvider`, but make it ignore a
-  saved language the app no longer ships, so a workspace that had `ar` selected
-  opens in English and nothing breaks. No data migration is needed.
-- **Tests.** Remove the Arabic-locale tests in `step22_test.dart` (translated
-  labels and right-to-left layout, language setting switches the UI), replace
-  them with one test that a saved `ar` falls back to English, and remove the
-  right-to-left drawer test in `adaptive_layout_test.dart` that sets the `ar`
-  locale. Remove the Arabic golden (`layout-compact-ar.png`) and its case in
-  `layout_goldens_test.dart`.
-- **Screenshot harness.** Remove the Arabic font registration (Geeza Pro) and the
-  `language: 'ar'` path from `tool/screenshots_test.dart`, and the "Arabic
-  screenshot omitted" note in `docs/release/checklist.md`.
-- **Store copy and docs.** App Store description: change "English and Arabic with
-  full right-to-left layout" (`docs/release/app-store-post.md`) to English only,
-  and re-check the Play description and `store-listing.md`. Search `README.md`,
-  `docs/spec/requirements.md`, `ux.md` and `feature-inventory.md` for
-  internationalisation and right-to-left claims and correct them.
-- **Keep.** Directional layout code (`EdgeInsetsDirectional`, `PositionedDirectional`,
-  `AlignmentDirectional`) and the widget-level right-to-left tests that wrap a
-  widget in `Directionality` (`rtl_code_test.dart`, the edge fade in
-  `scroll_cues_test.dart`). They cost nothing, keep the layout correct if a
-  right-to-left language is added later, and do not depend on Arabic.
-- **History stays.** Earlier CHANGELOG entries and ADRs that mention Arabic are
-  history and are not rewritten.
-
-Done when: no Arabic string, font or locale remains in the app or its tests,
-`flutter gen-l10n` and the analyzer are clean, all tests pass, and the store
-text says English only.
-
-Risk: a person who chose Arabic loses it. Say so plainly in the release notes.
-If the Play Console or App Store listing was ever localised to Arabic, remove
-that listing language there too (Owner, part of A4).
-
 ## D. Older open items (re-verify first)
 
 These come from earlier notes in `.claude/context.md` and
@@ -229,25 +284,27 @@ Proposed handling: spend one session on a short audit that turns each into
 
 | # | Item | Who | Size | Depends on |
 | --- | --- | --- | --- | --- |
-| 1 | C1 matrix gaps | Agent | S | none |
-| 2 | C2 quick-look sheet | Agent | S | none |
-| 3 | C3 launch image | Agent | S | none |
-| 4 | C6 spec update | Agent | S | none |
-| 5 | A6 release documents | Agent | S | none |
-| 5b | C7 remove Arabic | Agent | M | none; do it before the docs (4, 5) are finalised |
-| 6 | B1 to B6 device checks | Owner | M | a build to test |
-| 7 | A1 rebuild packages (after any fixes from 6) | Agent | M | 1 to 3, 6 |
-| 8 | A3 notarise | Owner then Agent | S | certificate |
-| 9 | A2 GitHub release | Agent | S | 7, 8 |
-| 10 | A5 hosting and legal | Owner | S | none |
-| 11 | A4 store uploads | Owner | M | 7, 10 |
-| 12 | C4, C5 optional features | Agent | M | decisions |
-| 13 | D audit | Agent | S | none |
+| 1 | F1.1 reply to App Review with the explanation | Owner | S | none (do it now) |
+| 2 | F2 remove Arabic (0.58.0) | Agent | M | none |
+| 3 | F1.2, F1.3 reviewer steps and entitlement check | Agent | S | none; can ride with item 2 |
+| 4 | C1 matrix gaps | Agent | S | none |
+| 5 | C2 quick-look sheet | Agent | S | none |
+| 6 | C3 launch image | Agent | S | none |
+| 7 | C6 spec update | Agent | S | 2 (so it states English only) |
+| 8 | A6 release documents | Agent | S | 2 |
+| 9 | B1 to B6 device checks | Owner | M | a build to test |
+| 10 | A1 rebuild packages (after any fixes from 9) | Agent | M | 2, 4 to 6, 9 |
+| 11 | F1.4 resubmit the Mac build | Owner | S | 10 |
+| 12 | A3 notarise | Owner then Agent | S | certificate |
+| 13 | A2 GitHub release | Agent | S | 10, 12 |
+| 14 | A5 hosting and legal | Owner | S | none |
+| 15 | A4 store uploads (iOS and Play; Mac is item 11) | Owner | M | 10, 14 |
+| 16 | C4, C5 optional features | Agent | M | decisions |
+| 17 | D audit | Agent | S | none |
 
-Items 1 to 5 can start now and ship as 0.57.1 (one patch) and a chore; C7 is a
-minor release (0.58.0) because it removes a user-facing language. Device
-checks should happen on a build that contains them, so rebuild the packages
-(item 7) once after the fixes, not before.
+Items 2 and 3 ship together as 0.58.0 (a minor release, because a language is
+removed). Items 4 to 6 follow as 0.58.1. Device checks should happen on a build
+that contains all of these, so rebuild the packages (item 10) once, not before.
 
 ## Decisions needed from the owner
 
@@ -257,8 +314,10 @@ checks should happen on a build that contains them, so rebuild the packages
 - Whether a GitHub release should be created for every minor version or only the
   latest (A2).
 - Who runs the device checks and when (B).
-- C7: confirm that Arabic is removed completely (my reading of the request) and
-  that the right-to-left-safe layout code stays.
+- F1 fallback: if Apple rejects the explanation, whether to drop the entitlement
+  from the Mac App Store build and lose OAuth browser sign-in and the mock
+  server there, or to keep arguing the case.
+- F2: whether the right-to-left-safe layout code stays (recommended: yes).
 
 ## Not in scope
 
