@@ -1,0 +1,218 @@
+# Remaining actions plan
+
+Status at v0.57.0 (branch and tags pushed; DMG 0.57.0+18 built; store packages
+in `~/Downloads` are still 0.53.0+17). This plan lists everything still open,
+who can do it, and in what order. CI is out of scope: the GitHub Actions
+failures are a hosting matter and are left alone.
+
+Items marked **Agent** can be done in a session like this one. Items marked
+**Owner** need your accounts, certificates, devices or a decision, and cannot
+be done by the agent. Each Agent phase is one release: its own commit, version
+bump where the type calls for it, CHANGELOG entry, context update and tests
+(`.claude/commands/phase-commit.md`).
+
+## Where things stand
+
+| Area | State |
+| --- | --- |
+| UI modernisation (Material 3) | Done, v0.46.1 to v0.53.0 |
+| Mobile adaptive UI | Done, v0.53.1 to v0.57.0 |
+| macOS DMG | 0.57.0+18, universal, signed, **not notarised** |
+| Store packages (AAB, IPA, PKG) | **0.53.0+17**, built and signed, **not uploaded** |
+| GitHub release | v0.46.0 only; v0.47.0 to v0.57.0 have tags but no release |
+| Store listing text, keywords, screenshots, feature graphic | Ready (screenshots for 7 sets) |
+| Real-device checks | **None run** |
+
+## A. Release and publishing
+
+### A1. Rebuild the store packages for 0.57.0 (Agent, chore)
+
+Why: the packages on disk predate the whole mobile plan.
+
+- Reserve one build number, build the AAB (with `rustup` on `PATH`), the IPA and
+  the Mac App Store PKG, and the DMG with `SKIP_BUILD=1`, all with the same
+  number, following `docs/release/checklist.md`.
+- Verify each: AAB package name and upload-key fingerprint, IPA bundle id and
+  version, PKG signing certificate and universal binary.
+- Done when: four artefacts in `~/Downloads` named `...0.57.0+<n>...`, and the
+  build number committed as `chore(release)`.
+- Risk: the Android Rust build takes about 10 minutes; Xcode export needs the
+  signed-in Apple account.
+
+### A2. GitHub releases (Agent, chore)
+
+- Create release v0.57.0 with the universal DMG, and short notes that summarise
+  v0.47.0 to v0.57.0 from `CHANGELOG.md` (the older tags stay as plain tags).
+- Say plainly in the notes that the DMG is signed but not notarised.
+- Done when: the release page shows one DMG and the notes.
+- Needs your go-ahead to publish (it is public).
+
+### A3. Notarise the DMG (Owner, then Agent)
+
+- Owner: create a **Developer ID Application** certificate (only Apple
+  Distribution and Developer ID Installer are installed now) and a notary
+  keychain profile (`xcrun notarytool store-credentials`).
+- Agent: run `scripts/notarize_macos.sh`, which has never been run end to end,
+  fix what breaks, and replace the DMG in the GitHub release.
+- Done when: `spctl -a -vv` accepts the app on a clean Mac without
+  right-click, Open.
+
+### A4. Upload to the stores (Owner)
+
+- Google Play Console: AAB, feature graphic
+  (`distribution/fastlane/metadata/android/en-US/images/featureGraphic.png`),
+  screenshots (`android-phone`, `android-tablet`, optional landscape set),
+  listing text, data safety form (no data collected), content rating, privacy
+  policy URL, support URL.
+- App Store Connect: IPA through Transporter, screenshots (`iphone` 6.3",
+  `ipad` 13", `macos`), promotional text, description and keywords from
+  `docs/release/app-store-post.md`, privacy answers ("Data Not Collected"),
+  review notes from `docs/release/store-listing.md`.
+- Mac App Store: the PKG through Transporter, with the `macos` screenshots.
+- Done when: each store shows a build in review.
+
+### A5. Hosting and legal (Owner)
+
+- Host `docs/release/privacy-policy.md` at a public URL and set a support URL
+  (both are still blank in `store-listing.md`).
+- Run the trademark search for "VerbNest" (classes 9 and 42), open question 8.
+- Done when: both URLs are in the store forms and the search result is recorded
+  in `open-questions.md`.
+
+### A6. Refresh the release documents (Agent, chore)
+
+- `docs/release/store-listing.md` still says screenshots are "not yet
+  captured" and lists old sizes; `docs/release/checklist.md` still describes
+  versions 0.25.0 and 0.46.0 in places. Bring both up to date, and re-read
+  `app-store-post.md` against what shipped (the drawer, status bar, tabs,
+  Material You on Android, landscape).
+- Done when: no document names a version or state that is no longer true.
+
+## B. Checks that need real devices (Owner)
+
+The agent can prepare but not run these. Use `docs/release/device-checklist.md`
+and record the results at its bottom.
+
+- B1. Run the checklist on one small phone, one large phone, one tablet and a
+  foldable if available, in portrait and landscape.
+- B2. VoiceOver and TalkBack: send a request without looking.
+- B3. Android 14 and up: predictive back, transparent navigation bar, Material
+  You colours (Android 12 and up) with "Use system colours" on.
+- B4. iOS: swipe-back, haptics on Send and Copy, the Dynamic Island and home bar
+  clearance, Dynamic Type at the largest setting.
+- B5. macOS: confirm the native menu bar (VerbNest, File, Edit, Request, View,
+  Window) in a running window. The agent's attempt was blocked by an
+  Accessibility prompt; either grant it once or check by eye.
+- B6. Windows and Linux: never run by hand (only compiled in CI before). Build
+  and open the app on each, send a request, open the menus.
+- Done when: the checklist has one filled result block per run. Any problem
+  found comes back as an Agent fix (a patch release).
+
+## C. Engineering (Agent)
+
+### C1. Close the test-matrix gaps (patch)
+
+Not covered by the device matrix yet: the import dialog, the environments
+editor with the keyboard up, settings with the keyboard up, the examples dialog
+and workspaces dialog at 280 to 320 pt.
+
+- Add them to `test/device_matrix_screens_test.dart`, run, and fix what
+  overflows with the existing patterns (`ScrollIfShort`, `AdaptiveDialog`,
+  stacked rows).
+- Done when: the matrix includes them and passes with empty known-failure maps.
+
+### C2. Variables quick-look as a detail sheet (patch)
+
+- Move `_QuickLook` in `env_selector.dart` onto `showDetail()` so it is a
+  bottom sheet on phones like timings and TLS.
+- Done when: a test shows the sheet on a phone and the dialog on desktop.
+
+### C3. Replace the iOS launch image placeholder (patch)
+
+- Flutter warns "launch image is set to the default placeholder". Add a branded
+  launch screen (logo on the surface colour, light and dark) and check that the
+  App Store validation no longer warns.
+- Done when: `flutter build ipa` prints no launch image warning.
+
+### C4. Code view soft wrap (minor, needs a decision)
+
+- The code view uses a fixed row height for virtualised rows, so wrapping needs
+  a different approach. Proposed: a wrap toggle that renders wrapped lines for
+  responses up to a size cap (for example 2000 lines) and keeps the horizontal
+  scroll above it, measuring line height with `TextPainter`.
+- Done when: toggling wrap on a long JSON line shows it across several lines,
+  folding and search still work, and a large response stays fast.
+- Risk: search highlights and fold arrows assume one row per line.
+
+### C5. Swipe between Request and Response (minor, needs a decision)
+
+- Optional: a `PageView` behind the existing segmented switch, with the swipe
+  restricted to the switch's edge zones so it does not fight horizontal scrolls
+  in the panes. Skip if you prefer the switch alone.
+- Done when: a swipe moves between the panes and the tab selection survives.
+
+### C6. Bring the specification up to date (chore)
+
+- `docs/spec/ux.md` still describes breakpoints of 600 and 1200, a rail with no
+  drawer and no status bar. Update it to the shipped behaviour: the five width
+  classes, the three height classes, the permanent drawer from 1200 dp, the
+  status bar, preview and pinned tabs, the pinned URL bar and folding toolbar,
+  and the adaptive dialogs and sheets.
+- Update `README.md`, `feature-inventory.md` and `roadmap.md` where they list
+  UI capability, and add a short ADR for "scroll and fold chrome rather than one
+  page scroll" (decided in the mobile plan).
+- Done when: `ux.md` matches what a person sees.
+
+## D. Older open items (re-verify first)
+
+These come from earlier notes in `.claude/context.md` and
+`remaining-work-plan.md`. Some may have been finished since; check each against
+the code before starting. None is urgent.
+
+- Quality: no importer fuzzing or size limits in the UI; no large-workspace
+  profiling; the sidebar tree rebuild cost is untested at thousands of nodes.
+- Networking: HTTP/2 beyond what is present, PAC and NTLM proxies (not
+  supported), mock server using saved examples.
+- Language: native review of the Arabic strings (written by the agent, never
+  reviewed by a speaker).
+- Verification debt: real browser launch for OAuth with a real identity
+  provider; the network tests on iOS and Android; real corporate proxies.
+
+Proposed handling: spend one session on a short audit that turns each into
+"done", "open" or "drop", then plan the open ones.
+
+## Order
+
+| # | Item | Who | Size | Depends on |
+| --- | --- | --- | --- | --- |
+| 1 | C1 matrix gaps | Agent | S | none |
+| 2 | C2 quick-look sheet | Agent | S | none |
+| 3 | C3 launch image | Agent | S | none |
+| 4 | C6 spec update | Agent | S | none |
+| 5 | A6 release documents | Agent | S | none |
+| 6 | B1 to B6 device checks | Owner | M | a build to test |
+| 7 | A1 rebuild packages (after any fixes from 6) | Agent | M | 1 to 3, 6 |
+| 8 | A3 notarise | Owner then Agent | S | certificate |
+| 9 | A2 GitHub release | Agent | S | 7, 8 |
+| 10 | A5 hosting and legal | Owner | S | none |
+| 11 | A4 store uploads | Owner | M | 7, 10 |
+| 12 | C4, C5 optional features | Agent | M | decisions |
+| 13 | D audit | Agent | S | none |
+
+Items 1 to 5 can start now and ship as 0.57.1 (one patch) and a chore. Device
+checks should happen on a build that contains them, so rebuild the packages
+(item 7) once after the fixes, not before.
+
+## Decisions needed from the owner
+
+- Soft wrap in the code view (C4): build it with the size cap, or leave long
+  lines scrolling sideways with the visible scrollbar.
+- Swipe between Request and Response (C5): add it, or keep the switch only.
+- Whether a GitHub release should be created for every minor version or only the
+  latest (A2).
+- Who runs the device checks and when (B).
+
+## Not in scope
+
+CI and GitHub Actions, web, a hosted sync service, telemetry, and new product
+features beyond the list above.
