@@ -24,6 +24,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // English only: drop the other languages' strings that libraries bring.
+    androidResources {
+        localeFilters += listOf("en")
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.omni.verbnest"

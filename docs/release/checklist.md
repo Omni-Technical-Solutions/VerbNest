@@ -36,6 +36,9 @@ What is ready in the repository and what only the account owner can do. Nothing 
 6. Screenshots, public support URL, hosted privacy policy.
 7. Windows and Linux builds have only been compiled in CI, never run by hand.
 
+## Languages
+- English only on every platform (ADR-017). Android: `androidResources.localeFilters`; iOS and macOS: `CFBundleLocalizations`; Windows and Linux carry no language resources. In App Store Connect and Play Console keep English as the only localisation.
+
 ## Screenshots
 - `scripts/screenshots_macos.sh` writes 18 PNGs (2880x1800); `scripts/screenshots_devices.sh` writes the iPhone, iPad and Android sets (portrait and landscape) to `docs/release/screenshots/macos`. Listing copy: `docs/release/app-store-post.md`.
 

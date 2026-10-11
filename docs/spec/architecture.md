@@ -134,7 +134,7 @@ Decision: ADR-007 (supersedes ADR-003).
 | YAML | `yaml`, `yaml_edit` | Snapshot export/import only |
 | CSV | `csv` | Runner data files |
 | Fake data | in-house `$random*` set (avoid heavy deps) | |
-| i18n | `flutter_localizations`, `intl`, ARB | |
+| Strings | `flutter_localizations`, `intl`, ARB; English only, locale pinned to `en` (ADR-017) | |
 | Logging | `logging` | |
 | Lints | `very_good_analysis` or `flutter_lints` + custom | |
 

@@ -40,7 +40,7 @@ Goal: parity with Postman's core testing workflow.
 - Auth: OAuth2 auth code/PKCE/implicit + token manager, Digest, JWT, AWS SigV4; client certs; custom CA.
 - Cookies manager, proxy settings, HTTP/2, timing breakdown & TLS info.
 - Import OpenAPI/Swagger, HAR, Postman data dump; code generation (all listed languages).
-- Saved examples; favourites; command palette; localisation framework.
+- Saved examples; favourites; command palette; strings in ARB (English only, ADR-017).
 - YAML snapshot export/import (FR-WS-006) and per-request revision history (FR-WS-008).
 - Store releases: Google Play, F-Droid, App Store (iOS + macOS), Microsoft Store/winget, Flathub.
 

@@ -6,6 +6,7 @@ Shared text for every store. Edit here, then copy into each console.
 - **Short description (80):** Local-first API client: send HTTP requests, keep everything on your device.
 - **Category:** Developer Tools (Play, App Store, Microsoft Store, Flathub: Development)
 - **Keywords (App Store, 100 max):** see `docs/release/app-store-post.md`. Drop `postman`: third-party names risk rejection.
+- **Languages:** English only. App Store Connect: English (U.S.) as the only localisation. Play Console: English only. Android bundles only English resources (`localeFilters`); iOS and macOS declare `CFBundleLocalizations` = en.
 - **Long description:** `distribution/fastlane/metadata/android/en-US/full_description.txt`
 - **Support / source URL:** to be set by the owner
 - **Privacy policy:** `docs/release/privacy-policy.md` (host it at a public URL)

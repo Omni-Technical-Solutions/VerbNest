@@ -45,7 +45,7 @@ Exit: all FR-*-P0 complete, Postman corpus round-trips (needs a 20-collection co
 | 19 Auth P1 | Authorization code, PKCE, implicit via system browser; refresh and token manager; Digest, JWT, AWS SigV4 | L |
 | 20 Network features | Cookie jar and manager, proxy (HTTP/HTTPS/SOCKS5), client certificates and custom CA, HTTP/2, timing breakdown and TLS info | L |
 | 21 Import/export P1 | OpenAPI/Swagger, HAR, Postman data dump; code generation | L |
-| 22 Polish | Saved examples, favourites, command palette, ARB localisation and RTL, YAML snapshot export/import | M |
+| 22 Polish | Saved examples, favourites, command palette, ARB strings (English only, ADR-017) and directional layout, YAML snapshot export/import | M |
 | 23 Store releases | Play, F-Droid, App Store, Microsoft Store/winget, Flathub; notarisation | L |
 
 ## Later phases

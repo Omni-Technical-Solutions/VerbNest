@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.59.2
+
+- Change: English is declared as the only language on every platform. Android bundles only English resources (`androidResources.localeFilters`); iOS and macOS list English in `CFBundleLocalizations`. Windows and Linux carry no language resources.
+- Docs: ADR-017 "English only"; requirements (FR-APP-004/005), feature inventory, roadmap, implementation plan and architecture no longer list localisation as a goal; the store listing and checklist say English only in each store.
+
 ## 0.59.1
 
 - Change: the app is always English. The code that switched languages is removed, and the app pins its locale to English, so a device set to any language gets English strings and English system labels (Back, Cut, Paste) instead of a mix. A `language` value saved in an older workspace is ignored and left alone.

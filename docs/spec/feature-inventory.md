@@ -170,7 +170,7 @@ OAuth 2.0 browser flows: desktop uses a loopback redirect server; mobile uses `f
 | Keyboard shortcuts & command palette | Yes | P0 shortcuts, P1 palette |
 | Proxy settings (system, custom HTTP/SOCKS, bypass list) | Yes | P1 |
 | CA certificates (custom trust store) | Yes | P1 |
-| Localisation | Yes | P1 (en first, ARB files) |
+| Localisation | No (English only by decision, ADR-017) | Strings kept in ARB for a later language |
 | Auto-update | Store-managed | P1 | App stores on mobile/macOS; Sparkle-like updater or store packages on desktop. |
 | Plugins / extensions | Later | P2 | Script-based plugins (auth providers, importers) loaded from workspace. |
 
