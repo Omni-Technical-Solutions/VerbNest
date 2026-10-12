@@ -95,10 +95,11 @@ void main() {
     final offenders = <String>[];
     for (final f in Directory('lib/src').listSync(recursive: true)) {
       if (f is! File || !f.path.endsWith('.dart')) continue;
-      if (allowed.contains(f.path)) continue;
+      final path = f.path.replaceAll(r'\', '/'); // Windows separators
+      if (allowed.contains(path)) continue;
       final lines = f.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
-        if (literal.hasMatch(lines[i])) offenders.add('${f.path}:${i + 1}');
+        if (literal.hasMatch(lines[i])) offenders.add('$path:${i + 1}');
       }
     }
     expect(offenders, isEmpty);
