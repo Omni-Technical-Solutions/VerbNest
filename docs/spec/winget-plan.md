@@ -2,133 +2,50 @@
 
 Goal: `winget install Omni.VerbNest` installs the current Windows build, and each later release reaches winget with one command.
 
-Current state (2026-10-13):
+Status (2026-10-13): submitted, waiting for winget validation and moderator review in [microsoft/winget-pkgs#451601](https://github.com/microsoft/winget-pkgs/pull/451601).
 
-- Installer: `VerbNest-0.59.3+24-windows-x64-setup.exe` (Inno Setup 6, x64, 20 MB), built by `scripts/package_windows.sh` from `distribution/windows/verbnest.iss`. Not code-signed. Installed and uninstalled by hand: never.
-- Hosted on GitHub release v0.59.3 of `bulhanb/verbnest`, which is a **private** repo.
-- Nothing named `Omni.*` or VerbNest exists in winget yet (checked with `winget search`), so the identifier is free.
-- `distribution/winget/README.md` still names the identifier `com.omni.verbnest`. Winget uses `Publisher.Package`, so it becomes `Omni.VerbNest`.
+## Decisions (owner, 2026-10-13)
 
-## Blockers
+| # | Question | Decision |
+| --- | --- | --- |
+| B1 | Where to host installers (winget downloads anonymously; the source repo is private) | Public installer-only repo [`bulhanb/verbnest-releases`](https://github.com/bulhanb/verbnest-releases) |
+| B2 | Licence | Boost Software License 1.0 (`BSL-1.0`), confirmed as Boost, not Business Source. Text: `distribution/LICENSE_1_0.txt`, shown and installed by the installer, `LICENSE` in the releases repo |
+| B3 | Publisher name | Omni Technical Solutions Pty Ltd: installer `AppPublisher`, exe `CompanyName`, manifest `Publisher` |
+| — | Account for the winget PR | `bulhanb` (fork `bulhanb/winget-pkgs`, created by `wingetcreate`) |
 
-| # | Blocker | Why it matters | Recommendation |
-| --- | --- | --- | --- |
-| B1 | Installer URL is in a private repo | Winget clients and the validation pipeline download `InstallerUrl` without signing in; private release assets return 404. | Create a public, installer-only repo `bulhanb/verbnest-releases` and upload the Windows installers there. The source stays private. Alternatives: make `verbnest` public, or host on a VerbNest website. |
-| B2 | Licence field | `License` is required in the locale manifest. The repo has no LICENSE file. | `License: Proprietary`. Add `LicenseUrl` once the terms are hosted publicly (optional for the first submission). |
-| B3 | Publisher name | Winget matches installed apps by Apps & Features data. The installer writes `Publisher=Omni`. The Apple certificate uses "Omni Technical Solutions Pty Ltd". | Decide before the first submission and use the same value in the `.iss` and the manifest. Recommended: legal name in both. Only the installer changes, so `SKIP_BUILD=1 scripts/package_windows.sh` repackages build 24 without a new build number (the exe's own `CompanyName` in `Runner.rc` stays `Omni` until the next build unless changed too). Keeping `Omni` also works. |
-
-Not a blocker: code signing. Winget accepts unsigned installers, but users get a SmartScreen prompt, and new unsigned binaries are flagged by Defender more often in validation. Plan to add signing later (Azure Trusted Signing or an OV certificate) and sign both `verbnest_app.exe` and the setup in `package_windows.sh`.
+Code signing is still not done. Winget accepts unsigned installers; signing (Azure Trusted Signing or an OV certificate) stays a later step.
 
 ## Steps
 
-Owner = needs your accounts or a decision; Agent = Claude can do it.
+### 1. Prepare the installer ✅
 
-### 1. Decisions (Owner)
+- ✅ `AppPublisher`, `AppCopyright`, publisher/support URLs and `LicenseFile` in `distribution/windows/verbnest.iss`; `CompanyName` and `LegalCopyright` in `apps/verbnest_app/windows/runner/Runner.rc`. Rebuilt as `0.59.3+25`.
+- ✅ Install test on the development machine (not a clean sandbox: Windows Sandbox and local manifest installs need admin). Silent per-user install over the existing build 24 (an upgrade): exit 0, one Apps & Features entry `VerbNest` / `0.59.3` / `Omni Technical Solutions Pty Ltd`, Start menu shortcut, `LICENSE_1_0.txt` installed, exe version info shows the new company and copyright, app launches with its window. Reinstall: exit 0, still one entry. Silent uninstall: exit 0, entry, exe and Start menu folder removed. Build 25 reinstalled afterwards.
+- Not tested: machine scope (`/ALLUSERS`, needs elevation); a clean machine.
 
-- ⏳ Public host for installers (B1). Recommended: `bulhanb/verbnest-releases`.
-- ⏳ Publisher name (B3).
-- ⏳ Licence wording and whether a terms URL exists (B2).
-- ⏳ Which GitHub account opens the winget PR. The fork of `microsoft/winget-pkgs` and the PR are public and show the account name.
+### 2. Host the installer publicly ✅
 
-### 2. Prepare the installer (Agent)
+- ✅ Repo `bulhanb/verbnest-releases` with README and LICENSE.
+- ✅ Release [`v0.59.3`](https://github.com/bulhanb/verbnest-releases/releases/tag/v0.59.3) with `VerbNest-0.59.3+25-windows-x64-setup.exe`, SHA-256 `514D2D2788149CCC3BC5313660E044774A4613EB247336AD26830931310C2F21`. An anonymous download returns the same hash. Never replace this asset.
 
-- ⏳ If the publisher changes: set `AppPublisher` in `distribution/windows/verbnest.iss` (and `CompanyName` in `Runner.rc` for the next build), repackage with `SKIP_BUILD=1 scripts/package_windows.sh`.
-- ⏳ Test the installer in Windows Sandbox (clean machine): silent per-user install (`/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER`), silent machine install (`/ALLUSERS`, elevated), app starts, Start menu entry, reinstalling over an existing install keeps the workspace, silent uninstall removes the app and the Apps & Features entry. Record results in `docs/release/device-checklist.md`.
-- ⏳ Check the Apps & Features entry: `DisplayName=VerbNest`, `DisplayVersion=0.59.3`, `Publisher` as decided, product code `{4831FE71-9D3A-4C42-B468-657CE7AA76F2}_is1`.
+### 3. Manifests ✅
 
-### 3. Host the installer publicly (Owner creates repo, Agent uploads)
+- ✅ `distribution/winget/manifests/o/Omni/VerbNest/0.59.3/` (version, installer, defaultLocale; schema 1.10.0). Inno installer, user scope (`/CURRENTUSER`) and machine scope (`/ALLUSERS`, `elevatesSelf`), product code `{4831FE71-9D3A-4C42-B468-657CE7AA76F2}_is1`, minimum Windows 10. Description taken from the approved App Store copy.
+- ✅ `winget validate` passes.
+- Not done: `winget install --manifest` (needs the admin setting `LocalManifestFiles`). Winget's validation pipeline runs the equivalent.
 
-- ⏳ Create the public repo (README only: what VerbNest is, link to download).
-- ⏳ Create release `v0.59.3` there and upload the installer. The asset URL becomes `https://github.com/bulhanb/verbnest-releases/releases/download/v0.59.3/VerbNest-0.59.3+<build>-windows-x64-setup.exe`. Assets must never be replaced after submission: winget pins the SHA-256.
+### 4. Submit ⏳
 
-### 4. Write and validate the manifests (Agent)
+- ✅ `wingetcreate submit` opened [#451601](https://github.com/microsoft/winget-pkgs/pull/451601).
+- ⏳ Sign the Microsoft CLA if the bot asks on the PR (owner, once per account).
+- ⏳ Watch the PR: automated validation (install in a VM, Defender scan, URL checks), then moderator review. Answer labels such as `Needs-Author-Feedback`. The package is installable once the PR merges.
 
-- ⏳ Install `wingetcreate` (`winget install Microsoft.WingetCreate`).
-- ⏳ `wingetcreate new <public installer URL>` to fill in the SHA-256 and installer type, then edit to match the drafts below. Keep a copy in `distribution/winget/manifests/o/Omni/VerbNest/0.59.3/` (same layout as `winget-pkgs`).
-- ⏳ `winget validate distribution/winget/manifests/o/Omni/VerbNest/0.59.3`.
-- ⏳ In Windows Sandbox: `winget settings --enable LocalManifestFiles`, then `winget install --manifest <dir>`, `winget list Omni.VerbNest` (shows the package as installed, which proves the Apps & Features match), `winget uninstall Omni.VerbNest`.
-- ⏳ Update `distribution/winget/README.md` (identifier, how to update).
+### 5. Later releases ✅ (documented)
 
-### 5. Submit (Owner approves, Agent runs)
-
-- ⏳ `wingetcreate submit --token <GitHub token> <manifest dir>`. It forks `microsoft/winget-pkgs` and opens the PR.
-- ⏳ Sign the Microsoft CLA when the bot asks on the PR (once per account).
-- ⏳ Watch the PR: automated validation (installs in a VM, Defender scan, URL checks), then moderator review. Answer labels such as `Needs-Author-Feedback`. Expect a few days. The package is installable once the PR merges.
-
-### 6. Later releases (Agent)
-
-- ⏳ After each Windows build: upload to the public repo, then `wingetcreate update Omni.VerbNest --version <version> --urls <url> --submit --token <token>`.
-- ⏳ Add this to the release workflow: roadmap rule 7 and phase-commit step 8 mention the upload and the `wingetcreate update` call. Optionally a `scripts/publish_winget.sh` that does both.
-- Winget versions are the app version (`0.59.3`); the build number appears only in the file name. A new winget version needs a new app version, so a chore build with the same version cannot be resubmitted.
-
-## Draft manifests (schema 1.10.0; use what `wingetcreate` generates if newer)
-
-`Omni.VerbNest.yaml`
-
-```yaml
-PackageIdentifier: Omni.VerbNest
-PackageVersion: 0.59.3
-DefaultLocale: en-US
-ManifestType: version
-ManifestVersion: 1.10.0
-```
-
-`Omni.VerbNest.installer.yaml`
-
-```yaml
-PackageIdentifier: Omni.VerbNest
-PackageVersion: 0.59.3
-InstallerType: inno
-UpgradeBehavior: install
-ProductCode: '{4831FE71-9D3A-4C42-B468-657CE7AA76F2}_is1'
-AppsAndFeaturesEntries:
-  - DisplayName: VerbNest
-    Publisher: Omni            # or the legal name (B3)
-    DisplayVersion: 0.59.3
-    ProductCode: '{4831FE71-9D3A-4C42-B468-657CE7AA76F2}_is1'
-Installers:
-  - Architecture: x64
-    Scope: user
-    InstallerUrl: https://github.com/bulhanb/verbnest-releases/releases/download/v0.59.3/VerbNest-0.59.3+24-windows-x64-setup.exe
-    InstallerSha256: <from wingetcreate>
-    InstallerSwitches:
-      Custom: /CURRENTUSER
-  - Architecture: x64
-    Scope: machine
-    InstallerUrl: https://github.com/bulhanb/verbnest-releases/releases/download/v0.59.3/VerbNest-0.59.3+24-windows-x64-setup.exe
-    InstallerSha256: <from wingetcreate>
-    InstallerSwitches:
-      Custom: /ALLUSERS
-ManifestType: installer
-ManifestVersion: 1.10.0
-```
-
-`Omni.VerbNest.locale.en-US.yaml`
-
-```yaml
-PackageIdentifier: Omni.VerbNest
-PackageVersion: 0.59.3
-PackageLocale: en-US
-Publisher: Omni                # or the legal name (B3)
-PackageName: VerbNest
-Moniker: verbnest
-License: Proprietary
-ShortDescription: 'Local-first API client: send HTTP requests, keep everything on your device.'
-Tags:
-  - api-client
-  - http
-  - rest
-  - graphql
-  - websocket
-ReleaseNotesUrl: https://github.com/bulhanb/verbnest-releases/releases/tag/v0.59.3
-ManifestType: defaultLocale
-ManifestVersion: 1.10.0
-```
-
-`PublisherUrl`, `PrivacyUrl` (the privacy policy from `docs/release/privacy-policy.md`), `LicenseUrl` and a longer `Description` (from `docs/release/store-listing.md`) are added once there are public URLs.
+- ✅ `distribution/winget/README.md` has the update steps (`wingetcreate update ... --submit`); roadmap rule 7 points to it.
+- Winget versions are app versions. A rebuild with the same version cannot be resubmitted.
 
 ## Risks
 
-- Defender or SmartScreen flags the unsigned build during validation. Mitigation: signing (see above); otherwise reply on the PR and resubmit.
-- The Inno installer offers a scope dialog (`PrivilegesRequiredOverridesAllowed=dialog`). In silent mode `/CURRENTUSER` and `/ALLUSERS` choose the scope; step 2 confirms this before submission.
-- The Windows app has had only a launch check. Step 2's sandbox test is the first real install, upgrade and uninstall check.
+- Defender or SmartScreen flags the unsigned build during validation. Mitigation: reply on the PR; add signing.
+- Machine scope is untested; if validation fails on it, drop the machine installer entry and resubmit.

@@ -16,8 +16,11 @@ AppName=VerbNest
 AppVersion={#AppVersion}
 AppVerName=VerbNest {#AppVersion}
 VersionInfoVersion={#AppVersion}.{#BuildNumber}
-AppPublisher=Omni
-AppCopyright=Copyright (C) 2026 Omni. All rights reserved.
+AppPublisher=Omni Technical Solutions Pty Ltd
+AppPublisherURL=https://github.com/bulhanb/verbnest-releases
+AppSupportURL=https://github.com/bulhanb/verbnest-releases/issues
+AppCopyright=Copyright (C) 2026 Omni Technical Solutions Pty Ltd
+LicenseFile=..\LICENSE_1_0.txt
 DefaultDirName={autopf}\VerbNest
 DefaultGroupName=VerbNest
 DisableProgramGroupPage=yes
@@ -40,6 +43,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\LICENSE_1_0.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\VerbNest"; Filename: "{app}\verbnest_app.exe"
