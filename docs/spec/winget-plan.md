@@ -13,7 +13,7 @@ Status (2026-10-13): submitted, waiting for winget validation and moderator revi
 | B3 | Publisher name | Omni Technical Solutions Pty Ltd: installer `AppPublisher`, exe `CompanyName`, manifest `Publisher` |
 | — | Account for the winget PR | `bulhanb` (fork `bulhanb/winget-pkgs`, created by `wingetcreate`) |
 
-Code signing is still not done. Winget accepts unsigned installers; signing (Azure Trusted Signing or an OV certificate) stays a later step.
+Code signing (owner, 2026-10-13): Azure Artifact Signing (formerly Trusted Signing). `scripts/package_windows.sh` supports it and the build machine has the tools; it signs once the owner has the Azure account, identity validation and certificate profile (`docs/release/windows-signing.md`). The submitted 0.59.3 build 25 is unsigned.
 
 ## Steps
 

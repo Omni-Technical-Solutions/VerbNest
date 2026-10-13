@@ -2,6 +2,7 @@
 ; Built by scripts/package_windows.sh, which passes the defines below:
 ;   -DAppVersion=<version> -DBuildNumber=<n> -DSourceDir=<Release dir>
 ;   -DOutputDir=<dir> -DOutputName=<file name without .exe>
+;   -DSign=1 with -Ssigntool=<command> when signing is configured
 ; Per-user install by default (no admin prompt); the user can pick
 ; all-users in the wizard.
 
@@ -37,6 +38,10 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 CloseApplications=yes
+#ifdef Sign
+SignTool=signtool
+SignedUninstaller=yes
+#endif
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
