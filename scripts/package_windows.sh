@@ -37,6 +37,20 @@ if [ -z "${ISCC:-}" ]; then
 fi
 [ -n "${ISCC:-}" ] || { echo "Inno Setup compiler (ISCC.exe) not found; set ISCC" >&2; exit 1; }
 
+# The app and its plugins link the Visual C++ runtime (msvcp140,
+# vcruntime140, vcruntime140_1), which Flutter does not bundle and clean
+# Windows installs lack. The installer ships them next to the exe
+# (app-local), taken from the newest Visual Studio redist; VC_CRT_DIR
+# overrides.
+if [ -z "${VC_CRT_DIR:-}" ]; then
+  VC_CRT_DIR="$(ls -d "/c/Program Files"*"/Microsoft Visual Studio/"*/*/VC/Redist/MSVC/*/x64/Microsoft.VC14*.CRT 2>/dev/null \
+    | awk -F/ '{ print $(NF-2) "\t" $0 }' | sort -V | tail -n 1 | cut -f2)"
+fi
+for dll in msvcp140.dll vcruntime140.dll vcruntime140_1.dll; do
+  [ -f "${VC_CRT_DIR:-}/$dll" ] || { echo "Visual C++ runtime $dll not found; set VC_CRT_DIR" >&2; exit 1; }
+done
+echo "Bundling Visual C++ runtime from $VC_CRT_DIR"
+
 # Signing set-up. sign_args are the signtool arguments after `sign`, as
 # Windows strings; Git Bash must not rewrite their `/x` switches as paths.
 export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
@@ -99,6 +113,7 @@ mkdir -p "$out"
 "$ISCC" -Q "${iscc_sign[@]}" \
   "-DAppVersion=${version}" "-DBuildNumber=${build}" \
   "-DSourceDir=$(cygpath -w "$PWD/$release")" \
+  "-DCrtDir=$(cygpath -w "$VC_CRT_DIR")" \
   "-DOutputDir=$(cygpath -w "$out")" "-DOutputName=${name}" \
   "$(cygpath -w distribution/windows/verbnest.iss)"
 

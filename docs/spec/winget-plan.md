@@ -2,7 +2,7 @@
 
 Goal: `winget install Omni.VerbNest` installs the current Windows build, and each later release reaches winget with one command.
 
-Status (2026-10-13): submitted, waiting for winget validation and moderator review in [microsoft/winget-pkgs#451601](https://github.com/microsoft/winget-pkgs/pull/451601).
+Status (2026-10-14): submitted as [microsoft/winget-pkgs#451601](https://github.com/microsoft/winget-pkgs/pull/451601). The first validation failed with `Validation-Executable-Error`: build 25 lacked the Visual C++ runtime DLLs, so the app could not start on a clean PC. The PR now points at build 26 (`VerbNest-0.59.3+26-windows-x64-setup.exe`, SHA-256 `725C0958C43A44EA008A46463D140A579231CFDEE2712F1577DE31DF5A0A4240`), which bundles them; validation re-runs. Still `Needs-CLA`: the owner must reply on the PR with `@microsoft-github-policy-service agree company="Omni Technical Solutions Pty Ltd"`.
 
 ## Decisions (owner, 2026-10-13)
 

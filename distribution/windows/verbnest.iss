@@ -2,6 +2,7 @@
 ; Built by scripts/package_windows.sh, which passes the defines below:
 ;   -DAppVersion=<version> -DBuildNumber=<n> -DSourceDir=<Release dir>
 ;   -DOutputDir=<dir> -DOutputName=<file name without .exe>
+;   -DCrtDir=<Visual C++ x64 CRT redist dir>  (app-local runtime DLLs)
 ;   -DSign=1 with -Ssigntool=<command> when signing is configured
 ; Per-user install by default (no admin prompt); the user can pick
 ; all-users in the wizard.
@@ -49,6 +50,11 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\LICENSE_1_0.txt"; DestDir: "{app}"; Flags: ignoreversion
+; Visual C++ runtime, app-local: without it the app does not start on PCs
+; that lack the VC++ redistributable. Already signed by Microsoft.
+Source: "{#CrtDir}\msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#CrtDir}\vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#CrtDir}\vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\VerbNest"; Filename: "{app}\verbnest_app.exe"
