@@ -20,6 +20,7 @@
 #                     current user's certificate store (OV/EV cert, token).
 # Neither set: the installer is built unsigned, with a warning.
 # REQUIRE_SIGNING=1 fails instead of building unsigned.
+# SIGN_VERIFY=0 skips the trust check at the end (self-signed certificates).
 # SIGNTOOL and SIGN_DLIB override the tool locations.
 set -euo pipefail
 
@@ -101,8 +102,10 @@ mkdir -p "$out"
   "-DOutputDir=$(cygpath -w "$out")" "-DOutputName=${name}" \
   "$(cygpath -w distribution/windows/verbnest.iss)"
 
-if [ ${#sign_args[@]} -gt 0 ]; then
+if [ ${#sign_args[@]} -gt 0 ] && [ "${SIGN_VERIFY:-1}" != "0" ]; then
   "$SIGNTOOL" verify /pa "$(cygpath -w "$out/$name.exe")" >/dev/null
   echo "Signed and verified"
+elif [ ${#sign_args[@]} -gt 0 ]; then
+  echo "Signed (trust not verified)"
 fi
 echo "$out/$name.exe"
