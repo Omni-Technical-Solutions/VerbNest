@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
@@ -52,10 +54,20 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
 
   String get requestId => widget.requestId;
 
+  static bool get _touchPlatform => switch (defaultTargetPlatform) {
+    TargetPlatform.android ||
+    TargetPlatform.iOS ||
+    TargetPlatform.fuchsia => true,
+    _ => false,
+  };
+
   bool _onScroll(ScrollNotification n) {
     // Only the panes' own vertical scrolling counts, not the page's, and only
     // while a finger is dragging.
     if (n.depth == 0 || n.metrics.axis != Axis.vertical) return false;
+    // Touch only. On a desktop (a narrow window, a trackpad) the content must
+    // not resize under the pointer while it scrolls.
+    if (!_touchPlatform) return false;
     if (n is! ScrollUpdateNotification || n.dragDetails == null) return false;
     final delta = n.scrollDelta ?? 0;
     final bool? hide = n.metrics.pixels <= 8

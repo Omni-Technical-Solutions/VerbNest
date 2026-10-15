@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.59.4
+
+- Fix: scrolling a response on a Mac no longer flickers. Rows that slid under a still mouse pointer used to swap their line number for the "copy JSON path" icon and rebuild the whole list; hover now follows pointer movement only, is ignored while the list is scrolling, and repaints a single row.
+- Fix: no bounce at the ends of a list. The whole app uses clamping scroll physics with no stretch or glow, so a scroll to the end of a long response stops instead of springing back (the desktop scrollbars stay).
+- Fix: on a desktop (including a narrow Mac window) the toolbar no longer folds away while the response scrolls, so the pane is never resized under the pointer. Touch devices keep the fold, and the keyboard and short-window folds are unchanged.
+- Tests: `code_scroll_calm_test.dart` (wheel scrolling under a still pointer, clamping physics, app-wide scroll behaviour) and a desktop no-fold test in `editor_chrome_test.dart`.
+
 ## 0.59.3
 
 - Change: on Android and iOS only phones and tablets are supported. iOS builds target iPhone and iPad only; the "iPhone and iPad app on Mac" and "on Apple Vision" destinations and Mac Catalyst are switched off (macOS has its own native app). Android requires a touch screen and declares no TV, watch, car or XR support.

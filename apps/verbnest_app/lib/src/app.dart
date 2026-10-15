@@ -31,6 +31,7 @@ class VerbnestApp extends ConsumerWidget {
       // Material widgets' labels (Back, Cut, Paste) must not come out mixed.
       locale: const Locale('en'),
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const _CalmScrollBehavior(),
       theme: buildTheme(
         Brightness.light,
         seed: seed,
@@ -84,4 +85,21 @@ class VerbnestApp extends ConsumerWidget {
     }
     return app(null, null);
   }
+}
+
+/// Scrolling only moves content: no rubber-band bounce (macOS, iOS) and no
+/// stretch or glow (Android) at the ends. Keeps the desktop scrollbars.
+class _CalmScrollBehavior extends MaterialScrollBehavior {
+  const _CalmScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const ClampingScrollPhysics();
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
 }

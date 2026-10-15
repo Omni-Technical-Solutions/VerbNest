@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:verbnest_app/src/state/editor_state.dart';
@@ -88,6 +90,29 @@ void main() {
       expect(find.byKey(const Key('toolbar-more')), findsOneWidget);
       await t.pump(EditorNotifier.saveDelay);
     });
+  });
+
+  testWidgets('on a desktop the toolbar does not fold while scrolling', (
+    t,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    try {
+      // A narrow Mac window counts as compact, like a phone.
+      await _sent(t, _phone, items: 60);
+      expect(find.byKey(const Key('favourite')), findsOneWidget);
+      final before = t.getSize(find.byKey(const Key('favourite'))).height;
+      final top = t.getTopLeft(find.byType(CodeView)).dy;
+      await t.drag(find.byType(CodeView), const Offset(0, -300));
+      await _settle(t);
+      await t.drag(find.byType(CodeView), const Offset(0, 300));
+      await _settle(t);
+      // Same toolbar, same pane position.
+      expect(t.getSize(find.byKey(const Key('favourite'))).height, before);
+      expect(t.getTopLeft(find.byType(CodeView)).dy, top);
+      await t.pump(EditorNotifier.saveDelay);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   group('narrow screens (under 360 dp)', () {

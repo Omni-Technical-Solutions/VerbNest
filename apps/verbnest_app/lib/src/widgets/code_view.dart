@@ -52,7 +52,12 @@ class _CodeViewState extends State<CodeView> {
   late Map<int, int> _folds;
   final Set<int> _collapsed = {};
   late int _maxLen;
-  int? _hoverRow;
+
+  /// The row under the pointer. A notifier, so hovering repaints one gutter and
+  /// never rebuilds the list, and it is only set by pointer movement, not by
+  /// rows passing under a pointer that is still (wheel and trackpad scrolling).
+  final _hover = ValueNotifier<int?>(null);
+  bool _scrolling = false;
   final _hScroll = ScrollController();
 
   @override
@@ -63,6 +68,7 @@ class _CodeViewState extends State<CodeView> {
 
   @override
   void dispose() {
+    _hover.dispose();
     _hScroll.dispose();
     super.dispose();
   }
@@ -208,102 +214,117 @@ class _CodeViewState extends State<CodeView> {
             child: SizedBox(
               width: width,
               child: SelectionArea(
-                child: ListView.builder(
-                  key: const Key('response-body'),
-                  // Wrapped rows grow with their text; the others are fixed so a
-                  // huge body scrolls without measuring every row.
-                  itemExtent: wrapped ? null : rowHeight,
-                  itemCount: visible.length,
-                  itemBuilder: (context, row) {
-                    final i = visible[row];
-                    final foldable = _folds.containsKey(i);
-                    final folded = _collapsed.contains(i);
-                    return MouseRegion(
-                      onEnter: (_) => setState(() => _hoverRow = i),
-                      onExit: (_) {
-                        if (_hoverRow == i) setState(() => _hoverRow = null);
-                      },
-                      child: Row(
-                        crossAxisAlignment: wrapped
-                            ? CrossAxisAlignment.start
-                            : CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: gutter,
-                            height: wrapped ? rowHeight : null,
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 18,
-                                  child: foldable
-                                      ? InkWell(
-                                          key: ValueKey('fold-$i'),
-                                          onTap: () => setState(
-                                            () => folded
-                                                ? _collapsed.remove(i)
-                                                : _collapsed.add(i),
-                                          ),
-                                          child: Icon(
-                                            folded
-                                                ? Icons.chevron_right
-                                                : Icons.expand_more,
-                                            size: 16,
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                Expanded(
-                                  child: SelectionContainer.disabled(
-                                    child: widget.json && _hoverRow == i
-                                        ? Align(
-                                            alignment:
-                                                AlignmentDirectional.centerEnd,
-                                            child: InkWell(
-                                              key: ValueKey('copy-path-$i'),
-                                              onTap: () => _copyPath(i),
-                                              child: Tooltip(
-                                                message:
-                                                    context.l10n.codeCopyPath,
-                                                child: Icon(
-                                                  Icons.copy,
-                                                  size: 12,
-                                                  color: scheme.primary,
-                                                ),
-                                              ),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _onScroll,
+                  child: ListView.builder(
+                    key: const Key('response-body'),
+                    // No rubber-band at the ends: the content only moves with
+                    // the scroll, nothing springs back.
+                    physics: const ClampingScrollPhysics(),
+                    // Wrapped rows grow with their text; the others are fixed so a
+                    // huge body scrolls without measuring every row.
+                    itemExtent: wrapped ? null : rowHeight,
+                    itemCount: visible.length,
+                    itemBuilder: (context, row) {
+                      final i = visible[row];
+                      final foldable = _folds.containsKey(i);
+                      final folded = _collapsed.contains(i);
+                      return MouseRegion(
+                        // Movement, not entering: a row that scrolls under a
+                        // still pointer is not hovered.
+                        onHover: (_) {
+                          if (!_scrolling) _hover.value = i;
+                        },
+                        onExit: (_) {
+                          if (_hover.value == i) _hover.value = null;
+                        },
+                        child: Row(
+                          crossAxisAlignment: wrapped
+                              ? CrossAxisAlignment.start
+                              : CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: gutter,
+                              height: wrapped ? rowHeight : null,
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 18,
+                                    child: foldable
+                                        ? InkWell(
+                                            key: ValueKey('fold-$i'),
+                                            onTap: () => setState(
+                                              () => folded
+                                                  ? _collapsed.remove(i)
+                                                  : _collapsed.add(i),
+                                            ),
+                                            child: Icon(
+                                              folded
+                                                  ? Icons.chevron_right
+                                                  : Icons.expand_more,
+                                              size: 16,
                                             ),
                                           )
-                                        : Text(
-                                            '${i + 1}',
-                                            textAlign: TextAlign.right,
-                                            style: base.copyWith(
-                                              color: scheme.outline,
-                                              fontSize: 11,
-                                            ),
-                                          ),
+                                        : null,
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: Text.rich(
-                              _span(
-                                folded ? '${_lines[i]} …' : _lines[i],
-                                base,
-                                scheme,
+                                  Expanded(
+                                    child: SelectionContainer.disabled(
+                                      child: ValueListenableBuilder<int?>(
+                                        valueListenable: _hover,
+                                        builder: (context, hovered, _) =>
+                                            widget.json && hovered == i
+                                            ? Align(
+                                                alignment: AlignmentDirectional
+                                                    .centerEnd,
+                                                child: InkWell(
+                                                  key: ValueKey('copy-path-$i'),
+                                                  onTap: () => _copyPath(i),
+                                                  child: Tooltip(
+                                                    message: context
+                                                        .l10n
+                                                        .codeCopyPath,
+                                                    child: Icon(
+                                                      Icons.copy,
+                                                      size: 12,
+                                                      color: scheme.primary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            : Text(
+                                                '${i + 1}',
+                                                textAlign: TextAlign.right,
+                                                style: base.copyWith(
+                                                  color: scheme.outline,
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
                               ),
-                              maxLines: wrapped ? null : 1,
-                              softWrap: wrapped,
-                              overflow: wrapped
-                                  ? TextOverflow.visible
-                                  : TextOverflow.clip,
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                            Expanded(
+                              child: Text.rich(
+                                _span(
+                                  folded ? '${_lines[i]} …' : _lines[i],
+                                  base,
+                                  scheme,
+                                ),
+                                maxLines: wrapped ? null : 1,
+                                softWrap: wrapped,
+                                overflow: wrapped
+                                    ? TextOverflow.visible
+                                    : TextOverflow.clip,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -311,5 +332,18 @@ class _CodeViewState extends State<CodeView> {
         );
       },
     );
+  }
+
+  /// No row is hovered while the list moves: rows slide under a pointer that
+  /// has not moved, and swapping their line number for an icon would flicker.
+  bool _onScroll(ScrollNotification n) {
+    if (n.metrics.axis != Axis.vertical) return false;
+    if (n is ScrollStartNotification || n is ScrollUpdateNotification) {
+      _scrolling = true;
+      if (_hover.value != null) _hover.value = null;
+    } else if (n is ScrollEndNotification) {
+      _scrolling = false;
+    }
+    return false;
   }
 }
