@@ -8,8 +8,10 @@
 # build number from BUILD_NUMBER).
 #
 # Needs flutter, a Rust toolchain (the fjs plugin compiles Rust), cmake, ninja,
-# clang, libgtk-3-dev, libsecret-1-dev and dpkg-deb. Built on Ubuntu 24.04, so
-# the package needs glibc >= 2.39 (Ubuntu 24.04+, Debian 13+).
+# clang, libgtk-3-dev, libsecret-1-dev and dpkg-deb. The package requires the
+# highest glibc symbol version found in the bundle, so build on the oldest
+# distribution you want to support. Release builds use Ubuntu 22.04 (glibc
+# 2.35) in a rootless chroot; see docs/release/linux-build.md.
 #
 # Layout: the Flutter bundle lives in /opt/verbnest, /usr/bin/verbnest links to
 # it, plus a desktop entry and icon. The bundle is self-contained apart from
@@ -27,6 +29,12 @@ name="$(tr -d '[:space:]' < VERSION)"
 number="$(tr -d '[:space:]' < BUILD_NUMBER)"
 bundle="apps/verbnest_app/build/linux/x64/release/bundle"
 [[ -x "$bundle/verbnest_app" ]] || { echo "No bundle at $bundle" >&2; exit 1; }
+
+# Highest glibc version the bundle needs (becomes the libc6 dependency).
+glibc="$(for f in "$bundle/verbnest_app" "$bundle"/lib/*.so; do
+    objdump -T "$f" 2>/dev/null || true
+  done | grep -o 'GLIBC_[0-9.]*' | sed 's/GLIBC_//' | sort -uV | tail -1)"
+[[ -n "$glibc" ]] || glibc=2.35
 
 stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
@@ -62,7 +70,7 @@ Priority: optional
 Architecture: amd64
 Maintainer: Omni Technical Solutions <info@omnits.pro>
 Installed-Size: ${size}
-Depends: libc6 (>= 2.39), libstdc++6, libgtk-3-0t64 | libgtk-3-0, libsecret-1-0
+Depends: libc6 (>= ${glibc}), libstdc++6, libgtk-3-0t64 | libgtk-3-0, libsecret-1-0
 Description: Local-first API client
  VerbNest is a local-first API client for building, sending and testing
  HTTP requests. Workspaces and history stay on your machine.
