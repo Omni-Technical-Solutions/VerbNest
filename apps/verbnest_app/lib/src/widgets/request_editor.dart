@@ -52,6 +52,10 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
   /// Set while content is scrolled down and the toolbar is folded away.
   bool _hiddenByScroll = false;
 
+  /// What the last drag asked for. The fold is applied when the scroll ends,
+  /// so the pane is never resized under a finger.
+  bool? _pendingHide;
+
   String get requestId => widget.requestId;
 
   static bool get _touchPlatform => switch (defaultTargetPlatform) {
@@ -68,14 +72,19 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
     // Touch only. On a desktop (a narrow window, a trackpad) the content must
     // not resize under the pointer while it scrolls.
     if (!_touchPlatform) return false;
+    if (n is ScrollEndNotification) {
+      final hide = _pendingHide;
+      _pendingHide = null;
+      if (hide != null && hide != _hiddenByScroll) {
+        setState(() => _hiddenByScroll = hide);
+      }
+      return false;
+    }
     if (n is! ScrollUpdateNotification || n.dragDetails == null) return false;
     final delta = n.scrollDelta ?? 0;
-    final bool? hide = n.metrics.pixels <= 8
+    _pendingHide = n.metrics.pixels <= 8
         ? false // back at the top
-        : (delta > 2 ? true : (delta < -2 ? false : null));
-    if (hide != null && hide != _hiddenByScroll) {
-      setState(() => _hiddenByScroll = hide);
-    }
+        : (delta > 2 ? true : (delta < -2 ? false : _pendingHide));
     return false;
   }
 

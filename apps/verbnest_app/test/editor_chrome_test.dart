@@ -92,6 +92,28 @@ void main() {
     });
   });
 
+  testWidgets(
+    'on touch the toolbar folds when the scroll ends, not during it',
+    (t) async {
+      await _sent(t, _se, items: 60);
+      expect(find.byKey(const Key('toolbar-more')), findsOneWidget);
+      final top = t.getTopLeft(find.byType(CodeView)).dy;
+      final g = await t.startGesture(t.getCenter(find.byType(CodeView)));
+      for (var i = 0; i < 6; i++) {
+        await g.moveBy(const Offset(0, -50));
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      await _settle(t);
+      // Finger still down: nothing around the content has moved.
+      expect(find.byKey(const Key('toolbar-more')), findsOneWidget);
+      expect(t.getTopLeft(find.byType(CodeView)).dy, top);
+      await g.up();
+      await t.pumpAndSettle(const Duration(milliseconds: 100));
+      expect(find.byKey(const Key('toolbar-more')), findsNothing);
+      await t.pump(EditorNotifier.saveDelay);
+    },
+  );
+
   testWidgets('on a desktop the toolbar does not fold while scrolling', (
     t,
   ) async {

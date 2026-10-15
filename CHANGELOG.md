@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.59.5
+
+- Fix: on a phone or tablet the toolbar now folds away (or returns) when a scroll ends, not while the finger is dragging, so the response is never resized under the finger. The extra room the fold gives is unchanged.
+- Tests: a touch test checks that nothing around the response moves during the drag and the toolbar folds on release.
+
 ## 0.59.4
 
 - Fix: scrolling a response on a Mac no longer flickers. Rows that slid under a still mouse pointer used to swap their line number for the "copy JSON path" icon and rebuild the whole list; hover now follows pointer movement only, is ignored while the list is scrolling, and repaints a single row.

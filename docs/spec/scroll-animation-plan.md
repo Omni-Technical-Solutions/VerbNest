@@ -1,6 +1,6 @@
 # Plan: no animation while scrolling a response
 
-Status: S0, S2 and S3 done in 0.59.4 (measured by tests: the copy-path icon appeared during wheel scrolling and the physics were not clamping); S1 done for desktop only (no scroll fold on desktop platforms), touch keeps the fold; fold-at-rest on touch is still open. Report: "there seems to be animation
+Status: S0, S2 and S3 done in 0.59.4 (measured by tests: the copy-path icon appeared during wheel scrolling and the physics were not clamping); S1 done for desktop only (no scroll fold on desktop platforms), touch folds when the scroll ends (0.59.5), not during the drag. Report: "there seems to be animation
 when scrolling through request results". Scrolling the response should only
 move the content; nothing around it should move, resize, fade or flicker.
 
