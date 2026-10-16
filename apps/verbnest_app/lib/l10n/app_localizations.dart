@@ -2128,6 +2128,96 @@ abstract class AppLocalizations {
   /// **'Wrap long lines'**
   String get rvWrap;
 
+  /// No description provided for @tableSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{rows, plural, =1{1 row} other{{rows} rows}}, {columns, plural, =1{1 column} other{{columns} columns}}'**
+  String tableSummary(int rows, int columns);
+
+  /// No description provided for @tableColumns.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 column} other{{count} columns}}'**
+  String tableColumns(int count);
+
+  /// No description provided for @tableFiltered.
+  ///
+  /// In en, this message translates to:
+  /// **'{shown} of {total} rows'**
+  String tableFiltered(int shown, int total);
+
+  /// No description provided for @tableCapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the first {max} rows'**
+  String tableCapped(int max);
+
+  /// No description provided for @tableColumnsDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more columns not shown'**
+  String tableColumnsDropped(int count);
+
+  /// No description provided for @tableNull.
+  ///
+  /// In en, this message translates to:
+  /// **'null'**
+  String get tableNull;
+
+  /// No description provided for @tableSortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by {name}'**
+  String tableSortBy(String name);
+
+  /// No description provided for @tableResizeColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resize {name}'**
+  String tableResizeColumn(String name);
+
+  /// No description provided for @tableTypeText.
+  ///
+  /// In en, this message translates to:
+  /// **'text'**
+  String get tableTypeText;
+
+  /// No description provided for @tableTypeNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'number'**
+  String get tableTypeNumber;
+
+  /// No description provided for @tableTypeBoolean.
+  ///
+  /// In en, this message translates to:
+  /// **'boolean'**
+  String get tableTypeBoolean;
+
+  /// No description provided for @tableTypeDate.
+  ///
+  /// In en, this message translates to:
+  /// **'date'**
+  String get tableTypeDate;
+
+  /// No description provided for @tableTypeJson.
+  ///
+  /// In en, this message translates to:
+  /// **'json'**
+  String get tableTypeJson;
+
+  /// No description provided for @tableTypeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'empty'**
+  String get tableTypeEmpty;
+
+  /// No description provided for @tableRowNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Row'**
+  String get tableRowNumber;
+
   /// No description provided for @rvCopyBody.
   ///
   /// In en, this message translates to:

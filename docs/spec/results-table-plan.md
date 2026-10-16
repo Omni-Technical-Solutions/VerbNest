@@ -1,6 +1,6 @@
 # Plan: view results as a table (like pgAdmin's results grid)
 
-Status: T0 and T1 done (0.60.0). Decisions taken as recommended: custom grid, nested as JSON preview with a flatten option, read-only, 10,000-row cap, opt-in Table segment.
+Status: T0 and T1 done (0.60.0), T2 done (0.61.0). Decisions taken as recommended: custom grid, nested as JSON preview with a flatten option, read-only, 10,000-row cap, opt-in Table segment.
 
 Goal: any response that is a list of records (most JSON APIs, some XML, CSV)
 can be read as a grid of rows and columns, the way pgAdmin shows a query

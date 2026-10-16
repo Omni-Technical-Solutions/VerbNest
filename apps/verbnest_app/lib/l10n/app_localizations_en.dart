@@ -1139,6 +1139,83 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rvWrap => 'Wrap long lines';
 
   @override
+  String tableSummary(int rows, int columns) {
+    String _temp0 = intl.Intl.pluralLogic(
+      rows,
+      locale: localeName,
+      other: '$rows rows',
+      one: '1 row',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      columns,
+      locale: localeName,
+      other: '$columns columns',
+      one: '1 column',
+    );
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String tableColumns(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count columns',
+      one: '1 column',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tableFiltered(int shown, int total) {
+    return '$shown of $total rows';
+  }
+
+  @override
+  String tableCapped(int max) {
+    return 'Showing the first $max rows';
+  }
+
+  @override
+  String tableColumnsDropped(int count) {
+    return '$count more columns not shown';
+  }
+
+  @override
+  String get tableNull => 'null';
+
+  @override
+  String tableSortBy(String name) {
+    return 'Sort by $name';
+  }
+
+  @override
+  String tableResizeColumn(String name) {
+    return 'Resize $name';
+  }
+
+  @override
+  String get tableTypeText => 'text';
+
+  @override
+  String get tableTypeNumber => 'number';
+
+  @override
+  String get tableTypeBoolean => 'boolean';
+
+  @override
+  String get tableTypeDate => 'date';
+
+  @override
+  String get tableTypeJson => 'json';
+
+  @override
+  String get tableTypeEmpty => 'empty';
+
+  @override
+  String get tableRowNumber => 'Row';
+
+  @override
   String get rvCopyBody => 'Copy body';
 
   @override

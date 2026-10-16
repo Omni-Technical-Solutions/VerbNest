@@ -699,6 +699,76 @@
   "rvPreview": "Preview",
   "rvSearch": "Search",
   "rvWrap": "Wrap long lines",
+  "tableSummary": "{rows, plural, =1{1 row} other{{rows} rows}}, {columns, plural, =1{1 column} other{{columns} columns}}",
+  "@tableSummary": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      }
+    }
+  },
+  "tableColumns": "{count, plural, =1{1 column} other{{count} columns}}",
+  "@tableColumns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tableFiltered": "{shown} of {total} rows",
+  "@tableFiltered": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "tableCapped": "Showing the first {max} rows",
+  "@tableCapped": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "tableColumnsDropped": "{count} more columns not shown",
+  "@tableColumnsDropped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tableNull": "null",
+  "tableSortBy": "Sort by {name}",
+  "@tableSortBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tableResizeColumn": "Resize {name}",
+  "@tableResizeColumn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tableTypeText": "text",
+  "tableTypeNumber": "number",
+  "tableTypeBoolean": "boolean",
+  "tableTypeDate": "date",
+  "tableTypeJson": "json",
+  "tableTypeEmpty": "empty",
+  "tableRowNumber": "Row",
   "rvCopyBody": "Copy body",
   "rvBodyCopied": "Body copied",
   "rvFilterJson": "Filter with JSONPath, e.g. $.items[*].id",

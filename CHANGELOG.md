@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.61.0
+
+- UI: the results grid (not yet reachable from the response screen; it is connected in the next release). A read-only table of rows and columns in the manner of a database client's results grid: the header and a row-number column stay in view while the rest scrolls, columns resize by dragging the header's edge (double-tap fits the content), a header tap sorts (ascending, descending, off; numbers as numbers, dates as dates), `null` is muted, numbers are right-aligned, nested values show as a one-line JSON preview, and a footer counts rows and columns (and says "x of y rows" when filtered and when more than 10,000 rows are capped).
+- Rows are built lazily, so 100,000 rows scroll without building them all; touch devices get 48 dp rows and text size grows the row height instead of cutting values.
+- Tests: 15 widget tests (pinned header and row numbers, sort, resize, filter, cap, laziness, large text at 2x and 3.1x on a 320 pt phone) and light and dark goldens.
+
 ## 0.60.0
 
 - Core: results table model (no screen yet; the grid follows in the next releases). `verbnest_core` can read a response body as rows and columns: a JSON array of objects, an object holding arrays (the largest list of records, or a chosen JSONPath), an array of arrays (optionally with the first row as header), a single object as Key/Value, an array of values, XML with repeated elements, and CSV/TSV. Ragged rows are padded, columns get a type (number, boolean, date, text, JSON), nested values can be flattened into dotted columns, and bodies are capped at 200 columns.
