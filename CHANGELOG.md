@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.64.3
+
+- Fix (macOS): text in the response body and the results table was garbled and soft on some Macs, with letters and digits drawn as speckled blocks that changed from frame to frame (which also read as flicker). Seen in a screen recording on a MacBook Pro with Intel UHD 630 and AMD Radeon Pro 5500M graphics. The engine's Impeller renderer always draws text through a distance-field glyph atlas, and that atlas corrupts on this hardware. The macOS app now renders with Skia (Metal): `FLTEnableImpeller` is false in `macos/Runner/Info.plist`. iOS and Android are unchanged.
+- Tests: `macos_renderer_test.dart` guards the Info.plist key; `integration_test/body_view_frames_test.dart` also handles a pane narrow enough to keep Table in the body menu.
+
 ## 0.64.2
 
 - Fix: changing the body view (Pretty, Raw, Hex, Table) is one swap. Choosing Table used to move the whole response a frame later (the request pane was hidden on the next frame); now both happen in the same frame, and only when the panes are stacked.

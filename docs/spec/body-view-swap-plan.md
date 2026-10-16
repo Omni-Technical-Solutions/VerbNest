@@ -33,3 +33,13 @@ the body view (Pretty, Raw, Hex, Table) animates.
 - `integration_test/body_view_frames_test.dart` (run with `-d macos`): on the real
   renderer, the image of the first frame after each mode tap equals the image
   300 ms later.
+
+## Follow-up 0.64.3: the blur was the renderer
+A screen recording of the installed 0.64.2 on the owner's MacBook Pro (Intel UHD 630
++ AMD Radeon Pro 5500M) showed glyphs in the Pretty view and the table drawn as
+speckled blocks ("10178" with a broken 0 and 7, "SL2" with a broken 2) that changed
+between frames while nothing else moved. That is glyph atlas corruption in Impeller,
+which on macOS is on by default and always draws text as signed distance fields
+(`FlutterDartProject.enableSDFs` returns YES). The macOS app now sets
+`FLTEnableImpeller` to false, so the engine logs "Using the Skia rendering backend
+(Metal)". Guarded by `test/macos_renderer_test.dart`.

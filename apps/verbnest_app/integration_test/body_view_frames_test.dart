@@ -66,14 +66,24 @@ void main() {
     await t.tap(find.byKey(Key('node-$id')));
     await t.pumpAndSettle();
     await t.tap(find.byKey(const Key('send')).first);
+    for (var i = 0; i < 50; i++) {
+      await t.pump(const Duration(milliseconds: 100));
+      if (find.byKey(const Key('body-view')).evaluate().isNotEmpty) break;
+    }
     await t.pumpAndSettle();
     for (final mode in ['Table', 'Raw', 'Hex', 'Pretty', 'Table', 'Raw']) {
-      await t.tap(
-        find.descendant(
-          of: find.byKey(const Key('body-view')),
-          matching: find.text(mode),
-        ),
+      final segment = find.descendant(
+        of: find.byKey(const Key('body-view')),
+        matching: find.text(mode),
       );
+      if (segment.evaluate().isEmpty) {
+        // A narrow pane has the table in the body menu.
+        await t.tap(find.byKey(const Key('body-more')));
+        await t.pumpAndSettle();
+        await t.tap(find.byKey(const Key('menu-table')));
+      } else {
+        await t.tap(segment);
+      }
       final first = await _frame(t);
       await t.pump(const Duration(milliseconds: 300));
       final settled = await _frame(t);

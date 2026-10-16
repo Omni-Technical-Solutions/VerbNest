@@ -2,6 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Skia (Metal) instead of Impeller: Impeller's distance-field text
+	     corrupts and blurs glyphs on dual-GPU Intel Macs (Intel UHD + AMD
+	     Radeon), seen in the response body and the results table (0.64.2). -->
+	<key>FLTEnableImpeller</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleLocalizations</key>
