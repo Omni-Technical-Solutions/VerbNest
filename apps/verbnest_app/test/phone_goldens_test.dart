@@ -19,6 +19,7 @@ void main() {
   final shown = [
     phoneProfiles.firstWhere((p) => p.name == 'se-320x568'),
     phoneProfiles.firstWhere((p) => p.name == 'se-320x568').withKeyboard(),
+    phoneProfiles.firstWhere((p) => p.name == 'android-360x640'),
     phoneProfiles.firstWhere((p) => p.name == 'iphone-402x874'),
     phoneProfiles.firstWhere((p) => p.name == 'landscape-667x375'),
     phoneProfiles.firstWhere((p) => p.name == 'landscape-874x402'),

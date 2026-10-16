@@ -321,17 +321,8 @@ ResultTable? tableFromJson(
       label,
     );
   }
-  if (data is! List) {
-    return data == null
-        ? null
-        : _build(
-            ['Value'],
-            [
-              [data],
-            ],
-            label,
-          );
-  }
+  // A bare number, string or boolean is not a table.
+  if (data is! List) return null;
   if (data.isEmpty) return null;
 
   final items = data.where((e) => e != null).toList();

@@ -699,6 +699,10 @@
   "rvPreview": "Preview",
   "rvSearch": "Search",
   "rvWrap": "Wrap long lines",
+  "rvTable": "Table",
+  "tableRowsFrom": "Rows from",
+  "tableFlatten": "Flatten nested keys",
+  "tableFirstRowHeader": "First row is the header",
   "tableSummary": "{rows, plural, =1{1 row} other{{rows} rows}}, {columns, plural, =1{1 column} other{{columns} columns}}",
   "@tableSummary": {
     "placeholders": {

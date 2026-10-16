@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.62.0
+
+- Feature: view a response as a table. A **Table** view appears next to Pretty, Raw and Hex when the body is a list of records: a JSON array of objects, an object holding such an array (a "Rows from" menu picks the array when there are several), an array of arrays (with "First row is the header"), a single object (Key and Value columns), an array of values, XML with repeated elements, or CSV/TSV. Pretty stays the first view. The search box above the body filters the rows, and the JSONPath filter chooses which rows become the table, like a query. "Flatten nested keys" turns nested objects into dotted columns. Bodies over 5 MB are not offered a table yet.
+- UI: on a phone the body toolbar is the mode switch, search, filter and one menu (Table, Wrap long lines, Copy body). This also fixes the mode labels (Pretty, Raw, Hex) wrapping onto two lines on phones between 360 and about 430 pt wide since 0.59.0 added the Wrap button.
+- Fix: a bare JSON value (a string, number or true/false) is not offered as a table.
+- Tests: 15 tests for the table in the response view (segment only for tabular bodies, filter, source menu, flatten, header row, CSV and XML, Hex and back, the phone menu), a 360 pt phone golden, and the response goldens regenerated.
+
 ## 0.61.0
 
 - UI: the results grid (not yet reachable from the response screen; it is connected in the next release). A read-only table of rows and columns in the manner of a database client's results grid: the header and a row-number column stay in view while the rest scrolls, columns resize by dragging the header's edge (double-tap fits the content), a header tap sorts (ascending, descending, off; numbers as numbers, dates as dates), `null` is muted, numbers are right-aligned, nested values show as a one-line JSON preview, and a footer counts rows and columns (and says "x of y rows" when filtered and when more than 10,000 rows are capped).

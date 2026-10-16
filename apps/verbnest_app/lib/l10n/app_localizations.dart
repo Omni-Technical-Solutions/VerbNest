@@ -2128,6 +2128,30 @@ abstract class AppLocalizations {
   /// **'Wrap long lines'**
   String get rvWrap;
 
+  /// No description provided for @rvTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Table'**
+  String get rvTable;
+
+  /// No description provided for @tableRowsFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows from'**
+  String get tableRowsFrom;
+
+  /// No description provided for @tableFlatten.
+  ///
+  /// In en, this message translates to:
+  /// **'Flatten nested keys'**
+  String get tableFlatten;
+
+  /// No description provided for @tableFirstRowHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'First row is the header'**
+  String get tableFirstRowHeader;
+
   /// No description provided for @tableSummary.
   ///
   /// In en, this message translates to:

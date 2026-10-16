@@ -1139,6 +1139,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rvWrap => 'Wrap long lines';
 
   @override
+  String get rvTable => 'Table';
+
+  @override
+  String get tableRowsFrom => 'Rows from';
+
+  @override
+  String get tableFlatten => 'Flatten nested keys';
+
+  @override
+  String get tableFirstRowHeader => 'First row is the header';
+
+  @override
   String tableSummary(int rows, int columns) {
     String _temp0 = intl.Intl.pluralLogic(
       rows,

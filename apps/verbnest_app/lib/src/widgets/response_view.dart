@@ -3,13 +3,24 @@ import 'dart:convert';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:verbnest_core/verbnest_core.dart'
-    show BodyKind, bodyKindOf, filterBody, hexDump;
+    show
+        BodyKind,
+        ColumnType,
+        ResultTable,
+        TableSource,
+        bodyKindOf,
+        filterBody,
+        findTableSources,
+        hexDump,
+        tableFromBody,
+        tableFromJson;
 import 'package:verbnest_http/verbnest_http.dart';
 
 import '../state/cookies.dart';
 import '../state/editor_state.dart';
 import '../theme.dart';
 import 'code_view.dart';
+import 'result_table_view.dart';
 import 'html_preview.dart';
 import 'pdf_preview.dart';
 import 'ui/adaptive_dialog.dart';
@@ -109,6 +120,12 @@ class _ResponseViewState extends State<ResponseView> {
   bool _preview = false;
   bool _hex = false;
   bool _wrap = false;
+
+  /// Table view of the body (FR-RES-008) and its options.
+  bool _table = false;
+  String? _tableSource;
+  bool _flatten = false;
+  bool _headerRow = false;
 
   /// Phone only: the search and filter fields open from toolbar buttons so
   /// the toolbar is one row.
@@ -503,6 +520,63 @@ class _ResponseViewState extends State<ResponseView> {
     ],
   );
 
+  _TableInfo? _tableInfoCache;
+  String? _tableInfoKey;
+
+  /// The body read as a table, or none. Parsing a large body is slow, so the
+  /// result is kept until the text or an option changes (typing in the search
+  /// box rebuilds this). Bodies over [_tableMaxBytes] are not offered.
+  static const _tableMaxBytes = 5 * 1024 * 1024;
+
+  _TableInfo _tableInfo(HttpResponseRecord r, String text, BodyKind kind) {
+    final filtered = text != r.bodyText && kind == BodyKind.json;
+    final ct = filtered ? 'application/json' : r.header('content-type');
+    final key =
+        '${text.hashCode}|${text.length}|$ct|$_tableSource|$_flatten|$_headerRow';
+    if (_tableInfoKey == key && _tableInfoCache != null) {
+      return _tableInfoCache!;
+    }
+    _tableInfoKey = key;
+    return _tableInfoCache = _buildTableInfo(r, text, ct);
+  }
+
+  _TableInfo _buildTableInfo(HttpResponseRecord r, String text, String? ct) {
+    if (r.body.length > _tableMaxBytes || text.isEmpty) {
+      return const _TableInfo(null, [], false);
+    }
+    final type = (ct ?? '').toLowerCase();
+    if (!type.contains('json')) {
+      return _TableInfo(tableFromBody(text, ct), const [], false);
+    }
+    final Object? root;
+    try {
+      root = jsonDecode(text);
+    } on FormatException {
+      return const _TableInfo(null, [], false);
+    }
+    final sources = root is Map ? findTableSources(root) : <TableSource>[];
+    final source = sources.any((e) => e.path == _tableSource)
+        ? _tableSource
+        : null;
+    final matrix =
+        root is List &&
+        root.isNotEmpty &&
+        root.every((e) => e == null || e is List) &&
+        root.any((e) => e is List);
+    ResultTable? table;
+    try {
+      table = tableFromJson(
+        root,
+        source: source,
+        flatten: _flatten,
+        firstRowHeader: _headerRow,
+      );
+    } on FormatException {
+      table = null;
+    }
+    return _TableInfo(table, sources, matrix);
+  }
+
   HttpResponseRecord? _textFor;
   bool? _textPretty;
   String _text = '';
@@ -554,6 +628,10 @@ class _ResponseViewState extends State<ResponseView> {
         : filtering
         ? _applyFilter(r, kind)
         : _bodyText(r);
+    // Whether the body can be a table does not depend on the view chosen, so
+    // the Table segment stays available from Hex or Preview.
+    final info = _tableInfo(r, filtering ? text : r.bodyText, kind);
+    final showTable = _table && info.table != null;
     return LayoutBuilder(
       builder: (context, c) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -566,7 +644,14 @@ class _ResponseViewState extends State<ResponseView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _bodyToolbar(r, text, preview, canFilter: filterable),
+                  _bodyToolbar(
+                    r,
+                    text,
+                    preview,
+                    canFilter: filterable,
+                    canTable: info.table != null,
+                    showTable: showTable,
+                  ),
                   // On a phone the filter opens from the toolbar, and stays
                   // open while it is doing something.
                   if (filterable &&
@@ -576,7 +661,7 @@ class _ResponseViewState extends State<ResponseView> {
               ),
             ),
           ),
-          Expanded(child: _bodyContent(r, text, preview)),
+          Expanded(child: _bodyContent(r, text, preview, info, showTable)),
         ],
       ),
     );
@@ -596,10 +681,14 @@ class _ResponseViewState extends State<ResponseView> {
     String text,
     _Preview preview, {
     required bool canFilter,
+    required bool canTable,
+    required bool showTable,
   }) {
     final canPreview =
         isImageResponse(r) || isHtmlResponse(r) || isPdfResponse(r);
-    final modes = SegmentedButton<String>(
+    // Built for the width this toolbar has: a phone's row has no room for a
+    // fourth segment, so there the table is a menu item.
+    Widget modesFor(bool phone) => SegmentedButton<String>(
       key: const Key('body-view'),
       showSelectedIcon: false,
       // Tighter on a very narrow phone so "Pretty" does not wrap.
@@ -616,28 +705,33 @@ class _ResponseViewState extends State<ResponseView> {
             )
           : null,
       // On a phone the modes share the full line instead of scrolling.
-      expandedInsets:
-          MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint
-          ? EdgeInsets.zero
-          : null,
+      expandedInsets: phone ? EdgeInsets.zero : null,
+      emptySelectionAllowed: true,
       segments: [
         ButtonSegment(value: 'pretty', label: Text(context.l10n.rvPretty)),
         ButtonSegment(value: 'raw', label: Text(context.l10n.rvRaw)),
         ButtonSegment(value: 'hex', label: Text(context.l10n.rvHex)),
         if (canPreview)
           ButtonSegment(value: 'preview', label: Text(context.l10n.rvPreview)),
+        if (canTable && !phone)
+          ButtonSegment(value: 'table', label: Text(context.l10n.rvTable)),
       ],
       selected: {
-        preview != _Preview.none
-            ? 'preview'
-            : _hex
-            ? 'hex'
-            : (_pretty ? 'pretty' : 'raw'),
+        if (preview != _Preview.none)
+          'preview'
+        else if (_hex)
+          'hex'
+        else if (showTable)
+          ...(phone ? <String>[] : ['table'])
+        else
+          _pretty ? 'pretty' : 'raw',
       },
       onSelectionChanged: (s) => setState(() {
+        if (s.isEmpty) return;
         _preview = s.first == 'preview';
         _hex = s.first == 'hex';
-        if (!_preview && !_hex) _pretty = s.first == 'pretty';
+        _table = s.first == 'table';
+        if (!_preview && !_hex && !_table) _pretty = s.first == 'pretty';
       }),
     );
     final search = TextField(
@@ -650,17 +744,28 @@ class _ResponseViewState extends State<ResponseView> {
       ),
       onChanged: (v) => setState(() => _query = v),
     );
+    Future<void> copyBody() async {
+      lightHaptic(context);
+      await Clipboard.setData(ClipboardData(text: text));
+      if (!mounted) return;
+      showToast(context, context.l10n.rvBodyCopied);
+    }
+
     final copy = IconButton(
       key: const Key('copy-body'),
       tooltip: context.l10n.rvCopyBody,
       icon: const Icon(Icons.copy, size: 18),
-      onPressed: () async {
-        lightHaptic(context);
-        await Clipboard.setData(ClipboardData(text: text));
-        if (!mounted) return;
-        showToast(context, context.l10n.rvBodyCopied);
-      },
+      onPressed: copyBody,
     );
+    void toggleTable() => setState(() {
+      _table = !showTable;
+      if (_table) {
+        _hex = false;
+        _preview = false;
+      }
+    });
+    // Wrapping applies to text; the table has its own cell cutting.
+    final showWrap = !_hex && preview == _Preview.none && !showTable;
     final wrap = IconButton(
       key: const Key('wrap-body'),
       tooltip: context.l10n.rvWrap,
@@ -668,16 +773,52 @@ class _ResponseViewState extends State<ResponseView> {
       icon: const Icon(Icons.wrap_text, size: 18),
       onPressed: () => setState(() => _wrap = !_wrap),
     );
+    // A phone's row has room for the modes, search and filter and one more
+    // button: the rest of the actions live in its menu.
+    final more = PopupMenuButton<String>(
+      key: const Key('body-more'),
+      tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+      onSelected: (v) {
+        switch (v) {
+          case 'table':
+            toggleTable();
+          case 'wrap':
+            setState(() => _wrap = !_wrap);
+          case 'copy':
+            copyBody();
+        }
+      },
+      itemBuilder: (context) => [
+        if (canTable)
+          CheckedPopupMenuItem(
+            key: const Key('menu-table'),
+            value: 'table',
+            checked: showTable,
+            child: Text(context.l10n.rvTable),
+          ),
+        if (showWrap)
+          CheckedPopupMenuItem(
+            key: const Key('menu-wrap'),
+            value: 'wrap',
+            checked: _wrap,
+            child: Text(context.l10n.rvWrap),
+          ),
+        PopupMenuItem(
+          key: const Key('menu-copy'),
+          value: 'copy',
+          child: Text(context.l10n.rvCopyBody),
+        ),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: LayoutBuilder(
         builder: (context, c) => c.maxWidth < LayoutClass.mediumBreakpoint
-            // A phone has no room for the modes, search and copy side by side.
             ? Column(
                 children: [
                   Row(
                     children: [
-                      Expanded(child: modes),
+                      Expanded(child: modesFor(true)),
                       IconButton(
                         key: const Key('response-search-toggle'),
                         tooltip: context.l10n.rvSearch,
@@ -695,32 +836,18 @@ class _ResponseViewState extends State<ResponseView> {
                           onPressed: () =>
                               setState(() => _showFilter = !_showFilter),
                         ),
-                      // Under 360 dp there is no room for another icon in this
-                      // row; the button sits beside the search field instead.
-                      if (c.maxWidth >= 360 &&
-                          !_hex &&
-                          preview == _Preview.none)
-                        wrap,
-                      copy,
+                      more,
                     ],
                   ),
-                  if (_showSearch || _query.isNotEmpty)
-                    c.maxWidth < 360 && !_hex && preview == _Preview.none
-                        ? Row(
-                            children: [
-                              Expanded(child: search),
-                              wrap,
-                            ],
-                          )
-                        : search,
+                  if (_showSearch || _query.isNotEmpty) search,
                 ],
               )
             : Row(
                 children: [
-                  modes,
+                  modesFor(false),
                   const SizedBox(width: 8),
                   Expanded(child: search),
-                  if (!_hex && preview == _Preview.none) wrap,
+                  if (showWrap) wrap,
                   copy,
                 ],
               ),
@@ -744,7 +871,80 @@ class _ResponseViewState extends State<ResponseView> {
     ),
   );
 
-  Widget _bodyContent(HttpResponseRecord r, String text, _Preview preview) =>
+  Widget _bodyContent(
+    HttpResponseRecord r,
+    String text,
+    _Preview preview,
+    _TableInfo info,
+    bool showTable,
+  ) {
+    if (showTable) return _tableBody(info);
+    return _textContent(r, text, preview);
+  }
+
+  /// The grid, with a bar for the choices that shape it: which array the rows
+  /// come from, flattening nested keys, and a header row. The search box above
+  /// filters the rows.
+  Widget _tableBody(_TableInfo info) {
+    final table = info.table!;
+    final l10n = context.l10n;
+    final hasNested =
+        _flatten || table.columns.any((c) => c.type == ColumnType.json);
+    final sources = info.sources;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (sources.length > 1 || hasNested || info.matrix)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (sources.length > 1) ...[
+                  Text(l10n.tableRowsFrom),
+                  DropdownButton<String>(
+                    key: const Key('table-source'),
+                    isDense: true,
+                    value: sources.any((e) => e.path == _tableSource)
+                        ? _tableSource
+                        : table.label,
+                    items: [
+                      for (final s in sources)
+                        DropdownMenuItem(
+                          value: s.path,
+                          child: Text('${s.path} (${s.count})'),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _tableSource = v),
+                  ),
+                ],
+                if (hasNested)
+                  FilterChip(
+                    key: const Key('table-flatten'),
+                    label: Text(l10n.tableFlatten),
+                    selected: _flatten,
+                    onSelected: (v) => setState(() => _flatten = v),
+                  ),
+                if (info.matrix)
+                  FilterChip(
+                    key: const Key('table-header-row'),
+                    label: Text(l10n.tableFirstRowHeader),
+                    selected: _headerRow,
+                    onSelected: (v) => setState(() => _headerRow = v),
+                  ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: ResultTableView(table: table, filter: _query),
+        ),
+      ],
+    );
+  }
+
+  Widget _textContent(HttpResponseRecord r, String text, _Preview preview) =>
       switch (preview) {
         _Preview.pdf => PdfPreview(bytes: r.body),
         _Preview.html => HtmlPreview(html: r.bodyText, size: r.body.length),
@@ -793,4 +993,14 @@ class _ResponseViewState extends State<ResponseView> {
     padding: const EdgeInsets.all(8),
     child: SelectableText(text, key: key, style: monoStyle(fontSize: 13)),
   );
+}
+
+/// A body read as a table, with the arrays it could be read from and whether it
+/// is an array of arrays (which can take its first row as the header).
+class _TableInfo {
+  const _TableInfo(this.table, this.sources, this.matrix);
+
+  final ResultTable? table;
+  final List<TableSource> sources;
+  final bool matrix;
 }

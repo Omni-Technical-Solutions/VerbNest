@@ -117,6 +117,8 @@ void main() {
     test('empty and scalar bodies are not tables', () {
       expect(tableFromJson(<Object?>[]), isNull);
       expect(tableFromJson(null), isNull);
+      expect(tableFromJson('just text'), isNull);
+      expect(tableFromJson(42), isNull);
       expect(
         tableFromJson(jsonDecode('{"items":[]}'), source: r'$.nope'),
         isNull,
