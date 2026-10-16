@@ -232,6 +232,7 @@ class _CodeViewState extends State<CodeView> {
         return StillScrollbar(
           controller: _hScroll,
           thumbVisibility: !wrapped && width > c.maxWidth,
+          axis: Axis.horizontal,
           notificationPredicate: (n) => n.metrics.axis == Axis.horizontal,
           child: SingleChildScrollView(
             controller: _hScroll,

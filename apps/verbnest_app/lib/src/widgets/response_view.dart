@@ -121,8 +121,8 @@ class ResponseView extends StatefulWidget {
   final bool maximized;
   final VoidCallback? onToggleMaximize;
 
-  /// Called when a view needs more room than a pane usually has (the table), so
-  /// the editor can give it the whole height.
+  /// Called, in the same frame, when a view needs more room than a pane
+  /// usually has (the table), so the editor can give it the whole height.
   final VoidCallback? onWantsRoom;
 
   /// Saves or shares the response body; the button shows only when set.

@@ -98,6 +98,9 @@ class _ResultTableViewState extends State<ResultTableView> {
   double _offset(ScrollController c) =>
       c.hasClients && c.positions.length == 1 ? c.offset : 0;
 
+  /// [w] in whole pixels, so cell edges and text sit on pixel boundaries.
+  static double _whole(double w) => w.roundToDouble();
+
   @override
   void initState() {
     super.initState();
@@ -639,7 +642,7 @@ class _ResultTableViewState extends State<ResultTableView> {
       // out in a cell, and an exact fit would show an ellipsis.
       w = math.max(w, measure(cut, style) + 24 + 8);
     }
-    return w.clamp(ResultTableView._fitMin, ResultTableView._fitMax);
+    return _whole(w.clamp(ResultTableView._fitMin, ResultTableView._fitMax));
   }
 
   String _shownText(Object? v) {
@@ -663,8 +666,14 @@ class _ResultTableViewState extends State<ResultTableView> {
     final widths = _widths!;
 
     final scale = MediaQuery.textScalerOf(context).scale(13) / 13;
-    final rowHeight = math.max(_touch ? 48.0 : 32.0, 13 * scale * 1.9);
-    final headerHeight = math.max(_touch ? 56.0 : 44.0, 13 * scale * 2.9);
+    // Whole pixels throughout, so rows, rules and text never land between
+    // pixels (which draws them soft).
+    final rowHeight = math
+        .max(_touch ? 48.0 : 32.0, 13 * scale * 1.9)
+        .roundToDouble();
+    final headerHeight = math
+        .max(_touch ? 56.0 : 44.0, 13 * scale * 2.9)
+        .roundToDouble();
     _rowHeight = rowHeight;
     final contentWidth =
         ResultTableView._rowNumberWidth +
@@ -735,6 +744,7 @@ class _ResultTableViewState extends State<ResultTableView> {
                 return StillScrollbar(
                   controller: _h,
                   thumbVisibility: contentWidth > c.maxWidth,
+                  axis: Axis.horizontal,
                   notificationPredicate: (n) =>
                       n.metrics.axis == Axis.horizontal,
                   child: SingleChildScrollView(
@@ -926,10 +936,12 @@ class _ResultTableViewState extends State<ResultTableView> {
                             key: ValueKey('table-resize-$c'),
                             behavior: HitTestBehavior.opaque,
                             onHorizontalDragUpdate: (d) => setState(() {
-                              widths[c] = (widths[c] + d.delta.dx).clamp(
-                                ResultTableView.minColumnWidth,
-                                ResultTableView.maxColumnWidth,
-                              );
+                              widths[c] = (widths[c] + d.delta.dx)
+                                  .clamp(
+                                    ResultTableView.minColumnWidth,
+                                    ResultTableView.maxColumnWidth,
+                                  )
+                                  .roundToDouble();
                             }),
                             onDoubleTap: () => setState(
                               () => widths[c] = _fit(

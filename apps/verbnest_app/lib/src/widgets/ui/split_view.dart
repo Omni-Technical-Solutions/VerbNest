@@ -33,7 +33,10 @@ class SplitView extends StatelessWidget {
       builder: (context, c) {
         final total = (vertical ? c.maxHeight : c.maxWidth) - _handle;
         if (total <= 0) return const SizedBox.shrink();
-        final firstSize = total * ratio;
+        // On a device pixel, so the panes, and the text in them, are not
+        // drawn between pixels.
+        final dpr = MediaQuery.devicePixelRatioOf(context);
+        final firstSize = (total * ratio * dpr).roundToDouble() / dpr;
         final scheme = Theme.of(context).colorScheme;
         final divider = MouseRegion(
           cursor: vertical

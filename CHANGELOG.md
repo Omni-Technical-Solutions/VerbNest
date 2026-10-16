@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.64.2
+
+- Fix: changing the body view (Pretty, Raw, Hex, Table) is one swap. Choosing Table used to move the whole response a frame later (the request pane was hidden on the next frame); now both happen in the same frame, and only when the panes are stacked.
+- Fix: the always-shown horizontal scrollbar of the body and the table is drawn in the same frame as the content (it used to pop in a frame late).
+- Fix: the table and the split panes sit on whole pixels (column widths, row heights, pane size), so rules and text are not drawn between pixels.
+- Tests: `table_room_test.dart` (first frame equals the settled layout; whole-pixel grid), `integration_test/body_view_frames_test.dart` (real renderer, image comparison). Plan: `docs/spec/body-view-swap-plan.md`.
+
 ## 0.64.1
 
 - Fix: the results table could not be seen in a stacked layout (the response pane left about 95 px for rows). Choosing Table now gives the response the whole editor; a button in the response status row switches the request pane back. The JSONPath filter row is hidden while the table shows, and opens from a filter button in the toolbar. Request and response sit side by side from 820 px wide (was 1100).

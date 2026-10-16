@@ -531,6 +531,10 @@ class _PanesState extends ConsumerState<_Panes> {
   /// Wide layouts: the response has the whole editor (the table asks for it).
   bool _maximized = false;
 
+  /// Whether the last layout stacked the panes (only then does the table ask
+  /// for the whole editor; side by side it already has the height).
+  bool _stacked = false;
+
   @override
   void didUpdateWidget(_Panes old) {
     super.didUpdateWidget(old);
@@ -566,6 +570,7 @@ class _PanesState extends ConsumerState<_Panes> {
             c.maxWidth >= LayoutClass.mediumBreakpoint &&
             (short ||
                 (layout.horizontal ?? c.maxWidth >= _Panes.sideBySideWidth));
+        _stacked = !sideBySide;
         return Stack(
           children: [
             SplitView(
@@ -671,10 +676,11 @@ class _PanesState extends ConsumerState<_Panes> {
       onToggleMaximize: maximizable
           ? () => setState(() => _maximized = !_maximized)
           : null,
-      onWantsRoom: maximizable && !_maximized
-          ? () => WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) setState(() => _maximized = true);
-            })
+      // Synchronous, so the table and the room for it arrive in one frame.
+      onWantsRoom: maximizable
+          ? () {
+              if (_stacked && !_maximized) setState(() => _maximized = true);
+            }
           : null,
       share: port.savesBySharing,
       onSaveCsv: (csv) async {
