@@ -32,6 +32,7 @@ Priority key: **P0** MVP · **P1** v1 · **P2** later · **—** out of scope.
 | Postman feature | VerbNest | Priority | Notes |
 |---|---|---|---|
 | Status, time, size | Yes | P0 | Size split into headers/body; compressed vs. decompressed. |
+| Response table view (sort, search, select, copy as TSV/CSV/JSON/Markdown, save as CSV) | Yes | P1 | Rows from JSON arrays, an object holding an array, arrays of arrays, XML repeats and CSV/TSV; read-only; large bodies read in an isolate; up to 10,000 rows shown (ADR-019). |
 | Pretty / Raw / Preview views | Yes | P0 | Pretty with syntax highlighting & folding for JSON/XML/HTML. Preview: HTML via webview (P1), images, PDF (P1). |
 | Response headers & cookies tabs | Yes | P0 | |
 | Timing breakdown (DNS, TCP, TLS, TTFB, download) | Yes | P1 | Full breakdown on desktop via custom socket layer; mobile best-effort (see architecture). |

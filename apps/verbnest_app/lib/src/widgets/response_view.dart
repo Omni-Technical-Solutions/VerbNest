@@ -778,6 +778,9 @@ class _ResponseViewState extends State<ResponseView> {
     final more = PopupMenuButton<String>(
       key: const Key('body-more'),
       tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+      // The mode switch has no Table segment on a phone, so the menu button
+      // shows that the table is on.
+      icon: Icon(showTable ? Icons.table_chart : Icons.more_vert),
       onSelected: (v) {
         switch (v) {
           case 'table':

@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.63.3
+
+- UI: the results table no longer spends a row on a bar of its own. The Copy and export menu moved to the end of the footer, and the "Rows from", "Flatten nested keys" and "First row is the header" choices appear above the grid only when there are any, so the rows get the room (important in the lower half of a desktop window).
+- UI: on a narrow pane (a phone, or the response beside the request) the body menu button shows a table icon while the table view is on, because the mode switch has no Table segment there.
+- Docs: ADR-019 (results table), the Results table section of ux.md, the feature inventory, the App Store and Play descriptions (a table view you can sort, search, copy and save as CSV) and a new Mac screenshot, `19-results-table`.
+
 ## 0.63.2
 
 - Performance: a large response no longer stalls the screen for the table. A body over 256 KB is read for the table in another isolate, and only when the Table view is chosen (a spinner shows meanwhile; a body that turns out not to be a table says so). Smaller bodies are still read at once. The Table view is not offered for bodies over 5 MB.

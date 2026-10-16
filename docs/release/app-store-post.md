@@ -6,7 +6,7 @@
 ## Promotional text (139/170)
 Send requests, write tests and keep every collection on your own device. No account, no cloud, no tracking. Built for iPhone, iPad and Mac.
 
-## Description (2328/4000)
+## Description (2406/4000)
 Plain text: the App Store does not render Markdown. Capitalised lines are section headings.
 
 VerbNest is an API client that keeps your work on your own device. Your collections, environments and history live in a local workspace. There is no account to create, nothing is uploaded, and there is no analytics or advertising.
@@ -27,7 +27,7 @@ RUN WHOLE COLLECTIONS
 The runner executes a folder or a full collection against the environment you pick and shows the result of every request.
 
 SEE EXACTLY WHAT HAPPENED
-Pretty and raw response views, folding JSON with JSONPath filtering, headers, cookies, the exact request that was sent, timings, a history of past calls and a network console.
+Pretty and raw response views, folding JSON with JSONPath filtering, a table view that turns a list of results into a grid you can sort, search, copy and save as CSV, headers, cookies, the exact request that was sent, timings, a history of past calls and a network console.
 
 GENERATE CODE
 Turn any request into cURL and other snippets. Secrets are masked unless you choose to include them.
@@ -74,5 +74,6 @@ Regenerate with `scripts/screenshots_macos.sh`. These are headless renders of th
 | 16-environments | Environments |
 | 17-settings | Settings |
 | 18-dark-theme | Dark theme |
+| 19-results-table | A list response as a sortable table |
 
 Apple accepts 1280x800, 1440x900, 2560x1600 and 2880x1800 for Mac. Upload 3 to 10.

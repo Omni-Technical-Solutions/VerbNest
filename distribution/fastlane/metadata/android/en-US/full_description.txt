@@ -1,6 +1,6 @@
 VerbNest is an API client that keeps your work on your own device.
 
-Build requests with variables, environments and collections. Send them with Basic, Bearer, API key, Digest, JWT, AWS Signature V4 or OAuth 2.0 (client credentials, password, authorization code with PKCE, implicit). Check responses with pretty-printed bodies, headers, cookies, timings and TLS details. Write pre-request and post-response scripts, assertions and run whole collections with data files.
+Build requests with variables, environments and collections. Send them with Basic, Bearer, API key, Digest, JWT, AWS Signature V4 or OAuth 2.0 (client credentials, password, authorization code with PKCE, implicit). Check responses with pretty-printed bodies, headers, cookies, timings and TLS details, or view a list of results as a table you can sort, search, copy and save as CSV. Write pre-request and post-response scripts, assertions and run whole collections with data files.
 
 Import cURL, Postman, OpenAPI/Swagger and HAR. Export Postman collections and run reports (JSON, JUnit, HTML). Use a proxy (HTTP or SOCKS5), your own CA and client certificates.
 

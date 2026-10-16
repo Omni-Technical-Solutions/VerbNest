@@ -7,6 +7,7 @@ Shared text for every store. Edit here, then copy into each console.
 - **Category:** Developer Tools (Play, App Store, Microsoft Store, Flathub: Development)
 - **Keywords (App Store, 100 max):** see `docs/release/app-store-post.md`. Drop `postman`: third-party names risk rejection.
 - **Devices:** Android and iOS: phones and tablets only. In the Play Console under Release > Setup > Advanced settings > Form factors, do not add Wear OS, Android TV, Automotive or XR; in Device catalog, exclude Chromebooks (ChromeOS). In App Store Connect, tick iPhone and iPad only, untick "Make this app available on Mac/Apple Vision (iPhone and iPad apps)".
+- **Feature to show:** the results table (screenshot `19-results-table` in `docs/release/screenshots/macos`; capture the same screen for the phone sets from the Table menu item if a listing slot is free).
 - **Languages:** English only. App Store Connect: English (U.S.) as the only localisation. Play Console: English only. Android bundles only English resources (`localeFilters`); iOS and macOS declare `CFBundleLocalizations` = en.
 - **Long description:** `distribution/fastlane/metadata/android/en-US/full_description.txt`
 - **Support / source URL:** to be set by the owner

@@ -95,11 +95,14 @@ Rules that apply at every size:
 8. **OAuth 2.0 (P1):** Auth tab → configure → "Get new token" → system browser → callback → token stored → "Use token".
 
 ### 3.1 Results table
-- A **Table** segment sits in the response body switch (Pretty, Raw, Hex, Preview, Table) and appears only when the body can be read as rows and columns. It is opt-in: Pretty stays the first view.
-- The filter box feeds the table: `$.items[*]` in the filter chooses the rows, like a query. When the body holds several arrays a "Rows from" menu names them.
-- Grid: pinned header (name and type) and row-number column, resizable columns (double-click fits), sort by header click (ascending, descending, off), `null` muted, numbers right-aligned, long values cut with an ellipsis, a footer ("250 rows, 8 columns", selection count, cap note).
-- Select a cell, row (row number), column (header) or range; Cmd/Ctrl+C copies tab-separated; Copy as CSV, JSON, Markdown; Save as CSV. Tap, double-click or Enter opens the full value in a detail sheet (phone) or dialog (desktop).
-- Read-only. Nested objects and arrays show as a one-line JSON preview; "Flatten nested keys" turns them into dotted columns.
+- **Where.** A **Table** view of the response body, next to Pretty, Raw and Hex. It is opt-in (Pretty stays first) and is offered only when the body can be read as rows and columns. In a pane under 600 dp wide (a phone, or a response beside the request) the mode switch keeps its three segments, and Table is an item in the body menu (three dots; the button shows a table icon while the table is on) together with Wrap long lines and Copy body.
+- **Which bodies.** JSON arrays of objects; an object holding arrays (the largest list of records, with a "Rows from" menu when there are several); arrays of arrays (with "First row is the header"); a single object (Key and Value); arrays of values; XML with repeated elements; CSV and TSV. Not offered for other bodies, a bare JSON value, or a body over 5 MB. A body over 256 KB is read in another isolate, only when Table is chosen (a spinner shows; a body that turns out not to be a table says so).
+- **Query and filter.** The JSONPath filter above the body chooses the rows, like a query; the search box filters the rows by any cell. "Flatten nested keys" turns nested objects into dotted columns.
+- **Grid.** Pinned header (name and type) and row-number column; columns resize by dragging the header edge (double-tap fits); a header tap sorts (ascending, descending, off); `null` is muted, numbers are right-aligned, nested values show as a one-line JSON preview; the footer counts rows and columns, the selection, a cap note (10,000 rows, 200 columns, 4,000 characters per cell) and holds the Copy and export menu.
+- **Selecting and copying.** Click a cell; Shift-click or drag to extend; click a row number for a row; the `#` corner for everything; arrows, Page Up/Down, Home, End move (Shift extends, Esc clears, Cmd/Ctrl+A all). Cmd/Ctrl+C copies tab-separated text. The menu (footer, or right-click) copies with headers or as CSV, JSON or Markdown, saves CSV, and a header menu selects or fits a column and clears the sort.
+- **Values in full.** Double-click or Enter on a desktop, a tap on a touch screen: a dialog (desktop) or bottom sheet (phone) with the value, nested values as indented JSON, and a Copy button.
+- **Touch and access.** 48 dp rows and a 56 dp header on touch devices, 32 and 44 dp on a desktop; large text grows the rows; short panes scroll instead of overflowing. Cells read "column, row n of total: value", report their selected state and activate to show the value; headers read their name, type and sort state.
+- Read-only: no editing of cells.
 
 ## 4. Component inventory
 - `UrlField` with variable token rendering and autocomplete overlay.

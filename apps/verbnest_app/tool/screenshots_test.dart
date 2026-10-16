@@ -516,6 +516,23 @@ void main() {
     await a.send();
     await a.snap('01-request-and-response');
 
+    // The same list response as a table (sorted by species).
+    await a.shot('19-results-table', () async {
+      // The response beside the request, so the grid has the height. A pane
+      // that narrow has the table in its menu.
+      await a.tapKey('split-orientation');
+      await a.tapKey('body-more');
+      await a.tapKey('menu-table');
+      await t.tap(find.byKey(const ValueKey('table-sort-2')));
+      await a.settle();
+    });
+    // Back to the stacked layout and the pretty view for the screens that
+    // follow.
+    await a.tapKey('body-more');
+    await a.tapKey('menu-table');
+    await a.tapKey('split-orientation');
+    await a.settle();
+
     await a.shot('02-create-pet-body', () async {
       await a.open(a.ids.create);
       await a.tapText('Body');

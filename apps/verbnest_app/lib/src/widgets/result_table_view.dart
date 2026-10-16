@@ -780,25 +780,17 @@ class _ResultTableViewState extends State<ResultTableView> {
     ),
   );
 
-  /// The bar above the grid: the owner's choices and the copy and export menu.
-  Widget _bar(BuildContext context) {
-    final l10n = context.l10n;
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Row(
-        children: [
-          Expanded(child: widget.leading ?? const SizedBox.shrink()),
-          PopupMenuButton<String>(
-            key: const Key('table-actions'),
-            tooltip: l10n.tableActions,
-            icon: const Icon(Icons.more_vert),
-            onSelected: _onMenu,
-            itemBuilder: (context) => _menuEntries(),
+  /// The owner's choices (rows from, flatten, header row), above the grid; no
+  /// bar at all when there are none, so the rows get the room.
+  Widget _bar(BuildContext context) => widget.leading == null
+      ? const SizedBox.shrink()
+      : Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: widget.leading,
           ),
-        ],
-      ),
-    );
-  }
+        );
 
   Widget _header(
     BuildContext context,
@@ -1146,16 +1138,38 @@ class _ResultTableViewState extends State<ResultTableView> {
       if (t.columnsDropped > 0) l10n.tableColumnsDropped(t.columnsDropped),
       if (_selectedCount > 1) l10n.tableSelected(_selectedCount),
     ];
+    // The copy and export menu sits at the end of the footer: a bar of its
+    // own above the grid would cost every table a row.
+    final size = _touch ? 48.0 : 32.0;
     return Container(
       key: const Key('table-footer'),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.only(left: 12),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
-      child: Text(
-        parts.join(' · '),
-        style: Theme.of(context).textTheme.bodySmall
-            ?.copyWith(color: scheme.onSurfaceVariant),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              parts.join(' · '),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ),
+          SizedBox(
+            width: size,
+            height: size,
+            child: PopupMenuButton<String>(
+              key: const Key('table-actions'),
+              tooltip: l10n.tableActions,
+              icon: const Icon(Icons.more_vert),
+              iconSize: 20,
+              padding: EdgeInsets.zero,
+              onSelected: _onMenu,
+              itemBuilder: (context) => _menuEntries(),
+            ),
+          ),
+        ],
       ),
     );
   }

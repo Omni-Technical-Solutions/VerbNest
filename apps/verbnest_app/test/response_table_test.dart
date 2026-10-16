@@ -280,6 +280,18 @@ void main() {
     );
     await openTable(t);
     expect(find.byType(ResultTableView), findsOneWidget);
+    // The menu button says the table is on.
+    expect(
+      t
+          .widget<Icon>(
+            find.descendant(
+              of: find.byKey(const Key('body-more')),
+              matching: find.byType(Icon),
+            ),
+          )
+          .icon,
+      Icons.table_chart,
+    );
     await t.tap(find.byKey(const Key('body-more')));
     await t.pumpAndSettle();
     // Wrap does not apply to the grid; table is ticked.

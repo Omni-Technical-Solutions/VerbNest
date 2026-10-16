@@ -85,6 +85,11 @@ Future<void> chord(
 }
 
 Future<void> openMenu(WidgetTester t) async {
+  // The "Copied" toast sits over the footer for a few seconds; its timer
+  // starts when it has slid in, so it takes two steps to clear.
+  await t.pump(const Duration(seconds: 5));
+  await t.pump(const Duration(seconds: 5));
+  await t.pump(const Duration(seconds: 1));
   await t.tap(find.byKey(const Key('table-actions')));
   await t.pumpAndSettle();
 }
