@@ -2308,6 +2308,12 @@ abstract class AppLocalizations {
   /// **'This response can\'t be shown as a table'**
   String get tableNotTabular;
 
+  /// No description provided for @tableWholeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole body ({count})'**
+  String tableWholeBody(int count);
+
   /// No description provided for @tableNull.
   ///
   /// In en, this message translates to:

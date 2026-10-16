@@ -34,21 +34,19 @@ class TableSource {
 /// nested JSON. The grid shows at most [maxGridRows] rows, [maxColumns] columns
 /// and [maxCellChars] characters per cell; copy and export use all the rows.
 class ResultTable {
-  ResultTable(
-    this.columns,
-    this.rows, {
-    this.columnsDropped = 0,
-    this.label = '',
-  });
+  ResultTable(this.columns, this.rows, {this.label = ''});
 
   final List<TableColumn> columns;
   final List<List<Object?>> rows;
 
-  /// Columns left out because the body had more than [maxColumns].
-  final int columnsDropped;
-
   /// Where the rows came from, for example `$.items`.
   final String label;
+
+  /// Columns the grid does not draw because there are more than
+  /// [maxColumns]. They are still in the data: search, copy and export have
+  /// every column.
+  int get columnsDropped =>
+      columns.length > maxColumns ? columns.length - maxColumns : 0;
 
   static const maxGridRows = 10000;
   static const maxColumns = 200;
@@ -235,11 +233,8 @@ String cellFull(Object? v) => v is Map || v is List
     ? const JsonEncoder.withIndent('  ').convert(v)
     : cellText(v);
 
-String _numText(num v) {
-  if (v is int) return '$v';
-  if (v == v.truncateToDouble() && v.abs() < 1e15) return '${v.toInt()}';
-  return '$v';
-}
+/// A number as it was written: 10.0 stays 10.0, not 10.
+String _numText(num v) => '$v';
 
 final _isoDate = RegExp(
   r'^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$',
@@ -270,26 +265,21 @@ ColumnType _typeOf(Iterable<Object?> values) {
 }
 
 ResultTable _build(List<String> names, List<List<Object?>> rows, String label) {
-  final keep = names.length > ResultTable.maxColumns
-      ? ResultTable.maxColumns
-      : names.length;
   final cols = [
-    for (var c = 0; c < keep; c++)
+    for (var c = 0; c < names.length; c++)
       TableColumn(
         names[c],
         _typeOf(rows.map((r) => c < r.length ? r[c] : null)),
       ),
   ];
-  final cut = [
+  // Ragged rows are padded; nothing is cut.
+  final padded = [
     for (final r in rows)
-      [for (var c = 0; c < keep; c++) c < r.length ? r[c] : null],
+      r.length == names.length
+          ? r
+          : [for (var c = 0; c < names.length; c++) c < r.length ? r[c] : null],
   ];
-  return ResultTable(
-    cols,
-    cut,
-    columnsDropped: names.length - keep,
-    label: label,
-  );
+  return ResultTable(cols, padded, label: label);
 }
 
 // ---------------------------------------------------------------- JSON
@@ -345,7 +335,12 @@ ResultTable? tableFromJson(
 }) {
   Object? data = root;
   var label = r'$';
-  if (source != null && source.trim().isNotEmpty && source.trim() != r'$') {
+  if (source != null && source.trim() == r'$') {
+    // The whole body: for an object, every field (so values beside the rows
+    // are not left out), with lists and nested objects as values.
+    data = root;
+    label = r'$';
+  } else if (source != null && source.trim().isNotEmpty) {
     final hits = jsonPath(root, source);
     if (hits.isEmpty) return null;
     data = hits.length == 1 ? hits.single : hits;
@@ -427,7 +422,13 @@ ResultTable _fromObjects(List<Map> objects, bool flatten, String label) {
           put('$key.${e.key}', e.value, depth + 1);
         }
       } else {
-        rec[key] = v;
+        // A literal key that collides with a flattened one gets a suffix
+        // rather than overwriting it.
+        var k = key;
+        for (var n = 2; rec.containsKey(k); n++) {
+          k = '$key ($n)';
+        }
+        rec[k] = v;
       }
     }
 
@@ -451,35 +452,62 @@ ResultTable _fromObjects(List<Map> objects, bool flatten, String label) {
 // ----------------------------------------------------------------- XML
 
 /// Reads XML as a table: the repeated child elements (the most common name
-/// under the root) are rows, their attributes (named `@name`) and child
-/// elements the columns. Without repeats, the root's children become a Key /
-/// Value table. Returns null when the text is not XML.
-ResultTable? tableFromXml(String text) {
-  final XmlDocument doc;
+/// under the root, or the one named by [source], a path like `/r/item`) are
+/// rows, their attributes (named `@name`), child elements and loose text the
+/// columns. With [source] `$`, or when nothing repeats, the whole document is a
+/// Key / Value table: the root's attributes and every child element, so
+/// nothing beside the rows is left out. Returns null when the text is not XML.
+ResultTable? tableFromXml(String text, {String? source}) {
+  final doc = _parseXml(text);
+  return doc == null ? null : _xmlTable(doc.rootElement, source);
+}
+
+XmlDocument? _parseXml(String text) {
   try {
-    doc = XmlDocument.parse(text);
+    return XmlDocument.parse(text);
   } on XmlException {
     return null;
   }
-  final root = doc.rootElement;
-  final children = root.childElements.toList();
-  if (children.isEmpty) return null;
+}
 
+/// The repeated elements under the root (as paths), then the whole document.
+List<TableSource> _xmlSources(XmlElement root) {
   final counts = <String, int>{};
-  for (final c in children) {
+  for (final c in root.childElements) {
     counts[c.name.local] = (counts[c.name.local] ?? 0) + 1;
   }
   final repeated = counts.entries.where((e) => e.value > 1).toList();
-  if (repeated.isEmpty) {
-    return _build(
-      ['Key', 'Value'],
-      [
-        for (final c in children) [c.name.local, _xmlValue(c)],
-      ],
-      '/${root.name.local}',
-    );
-  }
-  final name = repeated.reduce((a, b) => b.value > a.value ? b : a).key;
+  if (repeated.isEmpty) return const [];
+  return [
+    for (final e in repeated)
+      TableSource('/${root.name.local}/${e.key}', e.value),
+    TableSource(r'$', root.attributes.length + root.childElements.length),
+  ];
+}
+
+ResultTable? _xmlTable(XmlElement root, String? source) {
+  final children = root.childElements.toList();
+  final attrs = root.attributes.toList();
+  if (children.isEmpty && attrs.isEmpty) return null;
+  final sources = _xmlSources(root);
+  ResultTable whole() => _build(
+    ['Key', 'Value'],
+    [
+      for (final a in attrs) ['@${a.name.local}', a.value],
+      for (final c in children) [c.name.local, _xmlValue(c)],
+    ],
+    '/${root.name.local}',
+  );
+
+  if (source != null && source.trim() == r'$') return whole();
+  if (sources.isEmpty) return whole();
+  // The named group, or the most common one.
+  final groups = sources.where((s) => s.path != r'$').toList();
+  final pick = groups.firstWhere(
+    (s) => s.path == source,
+    orElse: () => groups.reduce((a, b) => b.count > a.count ? b : a),
+  );
+  final name = pick.path.substring(pick.path.lastIndexOf('/') + 1);
   final records = children.where((c) => c.name.local == name).toList();
   final names = <String>[];
   final index = <String, int>{};
@@ -492,8 +520,11 @@ ResultTable? tableFromXml(String text) {
     for (final c in r.childElements) {
       m[c.name.local] = _xmlValue(c);
     }
-    if (r.childElements.isEmpty && r.innerText.trim().isNotEmpty) {
-      m['text'] = r.innerText.trim();
+    final loose = _directText(r);
+    if (loose.isNotEmpty) {
+      // Text beside child elements keeps its own column; a leaf's text is
+      // just its text.
+      m[r.childElements.isEmpty ? 'text' : '#text'] = loose;
     }
     for (final k in m.keys) {
       if (!index.containsKey(k)) {
@@ -505,7 +536,21 @@ ResultTable? tableFromXml(String text) {
   }
   return _build(names, [
     for (final m in maps) [for (final n in names) m[n]],
-  ], '/${root.name.local}/$name');
+  ], pick.path);
+}
+
+/// The text written directly inside [e], not that of its child elements.
+String _directText(XmlElement e) {
+  final parts = <String>[];
+  for (final n in e.nodes) {
+    final t = n is XmlText
+        ? n.value
+        : n is XmlCDATA
+        ? n.value
+        : '';
+    if (t.trim().isNotEmpty) parts.add(t.trim());
+  }
+  return parts.join(' ');
 }
 
 Object? _xmlValue(XmlElement e) {
@@ -513,9 +558,11 @@ Object? _xmlValue(XmlElement e) {
     final t = e.innerText.trim();
     return t.isEmpty ? null : t;
   }
+  final loose = _directText(e);
   return {
     for (final a in e.attributes) '@${a.name.local}': a.value,
     for (final c in e.childElements) c.name.local: _xmlValue(c),
+    if (loose.isNotEmpty) '#text': loose,
   };
 }
 
@@ -696,6 +743,13 @@ TableReading readTable(
 }) {
   if (text.isEmpty) return TableReading.none;
   final type = (contentType ?? '').toLowerCase();
+  if (type.contains('xml') && !type.contains('json')) {
+    final doc = _parseXml(text);
+    if (doc == null) return TableReading.none;
+    final sources = _xmlSources(doc.rootElement);
+    final chosen = sources.any((e) => e.path == source) ? source : null;
+    return TableReading(_xmlTable(doc.rootElement, chosen), sources, false);
+  }
   if (!type.contains('json')) {
     return TableReading(tableFromBody(text, contentType), const [], false);
   }
@@ -705,7 +759,11 @@ TableReading readTable(
   } on FormatException {
     return TableReading.none;
   }
-  final sources = root is Map ? findTableSources(root) : <TableSource>[];
+  // For an object the whole body is also a source, so fields beside the rows
+  // (page, total, links) can be seen too.
+  final sources = root is Map
+      ? [TableSource(r'$', root.length), ...findTableSources(root)]
+      : <TableSource>[];
   final chosen = sources.any((e) => e.path == source) ? source : null;
   final matrix =
       root is List &&

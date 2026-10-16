@@ -10,7 +10,7 @@ People wanted to read a list response the way a database client shows a query re
 - **The model is in `verbnest_core`** (`ResultTable`, `tableFromJson/Xml/Csv`, `readTable`, writers), pure Dart and tested on fixtures, so the CLI can use it later.
 - **Read-only and opt-in.** Pretty stays the first view; the Table view is offered only for bodies that parse as a table. Cells are not editable.
 - **Nested values** show as a one-line JSON preview with an optional "Flatten nested keys" (three levels).
-- **Limits.** 10,000 rows, 200 columns and 4,000 characters per cell in the grid; copy and export use all parsed rows; bodies over 5 MB are not offered a table.
+- **Limits are display limits.** 10,000 rows, 200 columns and 4,000 characters per cell are what the grid draws; the table keeps every row and column, and search, copy and export use all of it (0.63.5 closed a gap where columns past 200 were cut from the data). The whole body is always a source, so fields beside the rows are reachable. Bodies over 5 MB are not offered a table.
 - **Large bodies are read in an isolate** (above 256 KB) and only when the table is chosen. Sorting and searching are made cheap in the core (precomputed keys, a per-row search index) instead of moving them to an isolate, which would copy the whole table.
 - **Selection is ours.** Text selection across a virtualised grid is not the platform's, so cell selection, keyboard movement and copy are implemented in the widget. A double click is detected by hand because a double-tap recogniser delays every click and leaves a timer running.
 - **A phone's mode switch keeps three segments**; Table lives in the body menu there (a fourth segment squeezed the labels onto two lines).

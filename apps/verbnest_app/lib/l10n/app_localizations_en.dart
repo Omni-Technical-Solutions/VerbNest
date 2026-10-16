@@ -1279,6 +1279,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tableNotTabular => 'This response can\'t be shown as a table';
 
   @override
+  String tableWholeBody(int count) {
+    return 'Whole body ($count)';
+  }
+
+  @override
   String get tableNull => 'null';
 
   @override

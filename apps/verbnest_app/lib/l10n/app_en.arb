@@ -817,6 +817,14 @@
   "tableSortedDescending": "sorted descending",
   "tableLoading": "Reading the table…",
   "tableNotTabular": "This response can't be shown as a table",
+  "tableWholeBody": "Whole body ({count})",
+  "@tableWholeBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tableNull": "null",
   "tableSortBy": "Sort by {name}",
   "@tableSortBy": {

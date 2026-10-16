@@ -931,7 +931,11 @@ class _ResponseViewState extends State<ResponseView> {
                     for (final s in sources)
                       DropdownMenuItem(
                         value: s.path,
-                        child: Text('${s.path} (${s.count})'),
+                        child: Text(
+                          s.path == r'$'
+                              ? l10n.tableWholeBody(s.count)
+                              : '${s.path} (${s.count})',
+                        ),
                       ),
                   ],
                   onChanged: (v) => setState(() => _tableSource = v),

@@ -2,6 +2,18 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.63.5
+
+Checked that everything in a body reaches the table, and closed the gaps:
+- Fix: fields beside the rows were not shown. For `{"page":1,"total":42,"items":[…]}` the grid showed `items` only. The "Rows from" menu now also offers **Whole body**, a Key/Value table of every field (lists and nested objects as values), so `page`, `total` and `links` can be read in the table.
+- Fix: XML siblings and root attributes were dropped (a `<meta>` next to repeated `<item>`s, attributes on the root). The menu now offers each repeated element and **Whole body**. Text written beside child elements now has its own `#text` column instead of being lost.
+- Fix: columns past 200 were removed from the data, so they were missing from search, copy and export. The grid still draws 200 (the footer says "N more columns not shown"), but every column is in the data: copying a row, Select all and Save as CSV include all of them.
+- Fix: Select all and copying a whole column stopped at the 10,000 rows the grid draws. They now take every row (the footer's "cells selected" count shows what the copy will take).
+- Fix: a number keeps its decimal point (`10.0` showed as `10`).
+- Fix: flatten could overwrite a column when a literal key such as `a.b` collided with a flattened one; the second one now gets a suffix.
+- Still limited, on purpose: the grid draws 10,000 rows and 4,000 characters per cell (the full value is in the cell view and in every copy), a body over 5 MB is not offered a table (Pretty and Raw still show it), and a JSON object with a repeated key keeps its last value (the JSON parser does, in every view).
+- Tests: "nothing in the body is left out" (core: typed round trip of every key and value, the whole body, XML, CSV, 230 columns, flatten collisions, number text) and 6 screen tests (select all past 10,000 rows, whole column, 230 columns copy and CSV, Whole body menu, XML whole document, decimals).
+
 ## 0.63.4
 
 - Fix: less movement when changing the response view and when sending. Measured by counting the animations running after each action: changing between Pretty, Raw, Hex and Table started about five (the colour fade on every segment of the view switch) and sending started three more for about 300 ms. Now:

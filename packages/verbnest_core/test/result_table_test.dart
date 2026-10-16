@@ -125,11 +125,11 @@ void main() {
       );
     });
 
-    test('more than 200 columns are cut and counted', () {
+    test('more than 200 columns stay in the data and are counted', () {
       final t = tableFromJson([
         {for (var i = 0; i < 230; i++) 'c$i': i},
       ])!;
-      expect(t.columnCount, ResultTable.maxColumns);
+      expect(t.columnCount, 230);
       expect(t.columnsDropped, 30);
     });
 
@@ -330,7 +330,7 @@ void main() {
   group('cell text', () {
     test('plain, preview and full forms', () {
       expect(cellText(null), '');
-      expect(cellText(4.0), '4');
+      expect(cellText(4.0), '4.0');
       expect(cellText(2.5), '2.5');
       expect(cellText(true), 'true');
       expect(cellText({'a': 1}), '{"a":1}');
@@ -358,7 +358,7 @@ void main() {
     test('adds the candidate arrays and the matrix flag', () {
       final r = readTable(fixture('wrapped.json'), 'application/json');
       expect(r.table!.label, r'$.items');
-      expect(r.sources.map((s) => s.path), [r'$.items', r'$.links']);
+      expect(r.sources.map((s) => s.path), [r'$', r'$.items', r'$.links']);
       expect(r.matrix, isFalse);
       final m = readTable(fixture('matrix.json'), 'application/json');
       expect(m.matrix, isTrue);
@@ -445,6 +445,137 @@ void main() {
         t.toCsv([0], [0, 1, 2]),
         'a,b,c\r\nx\ty,"q""uote","line\r\nbreak"\r\n',
       );
+    });
+  });
+
+  group('nothing in the body is left out', () {
+    /// Every scalar string/number/bool in [v], as text, in any order.
+    void leaves(Object? v, List<String> out) {
+      if (v is Map) {
+        v.forEach((k, x) {
+          out.add('$k');
+          leaves(x, out);
+        });
+      } else if (v is List) {
+        for (final x in v) {
+          leaves(x, out);
+        }
+      } else if (v != null) {
+        out.add('$v');
+      }
+    }
+
+    test('an array of objects keeps every key and value, typed', () {
+      final rows = [
+        {
+          'id': 1,
+          'price': 10.0,
+          'name': 'Ünï \u{1F600}',
+          'tags': ['a', 'b'],
+          'o': null,
+        },
+        {
+          'id': 2,
+          'price': 2.50,
+          'extra': {
+            'deep': [
+              1,
+              2,
+              {'x': true},
+            ],
+          },
+        },
+        {'id': 3, 'name': 'third', 'extra': 'text'},
+      ];
+      final t = tableFromJson(rows)!;
+      final all = List<int>.generate(t.rowCount, (i) => i);
+      final cols = List<int>.generate(t.columnCount, (i) => i);
+      final back = jsonDecode(t.toJson(all, cols)) as List;
+      for (var i = 0; i < rows.length; i++) {
+        final out = back[i] as Map;
+        rows[i].forEach((k, v) => expect(out[k], v, reason: 'row $i key $k'));
+        // Keys the row did not have are null, nothing else.
+        for (final e in out.entries) {
+          if (!rows[i].containsKey(e.key)) expect(e.value, isNull);
+        }
+      }
+    });
+
+    test('a float keeps its decimal point', () {
+      expect(cellText(10.0), '10.0');
+      expect(cellText(2.5), '2.5');
+      expect(cellText(10), '10');
+      expect(cellText(1e21), '1e+21');
+    });
+
+    test('the whole body is a source: fields beside the rows are shown', () {
+      final root = jsonDecode(fixture('wrapped.json'));
+      final r = readTable(fixture('wrapped.json'), 'application/json');
+      expect(r.sources.first.path, r'$');
+      final t = readTable(
+        fixture('wrapped.json'),
+        'application/json',
+        source: r'$',
+      ).table!;
+      expect(t.rows.map((r) => r[0]), ['page', 'total', 'items', 'links']);
+      expect(t.rows[0][1], 1);
+      // Everything in the body appears in some cell.
+      final inBody = <String>[];
+      leaves(root, inBody);
+      final inCells = <String>[];
+      for (final row in t.rows) {
+        for (final c in row) {
+          leaves(c, inCells);
+        }
+      }
+      for (final x in inBody) {
+        if (['page', 'total', 'items', 'links'].contains(x)) continue;
+        expect(inCells, contains(x));
+      }
+    });
+
+    test('more than 200 columns are all in the data; the grid shows 200', () {
+      final t = tableFromJson([
+        {for (var i = 0; i < 230; i++) 'c$i': i},
+      ])!;
+      expect(t.columnCount, 230);
+      expect(t.columnsDropped, 30);
+      expect(t.toCsv([0], [229]), 'c229\r\n229\r\n');
+    });
+
+    test('flatten never overwrites a column', () {
+      final t = tableFromJson([
+        {
+          'a.b': 'literal',
+          'a': {'b': 'flattened'},
+        },
+      ], flatten: true)!;
+      final all = t.rows.single.map((v) => '$v').toList();
+      expect(all, containsAll(['literal', 'flattened']));
+      expect(t.columns.map((c) => c.name).toSet().length, 2);
+    });
+
+    test('XML keeps siblings, root attributes and mixed text', () {
+      const xml =
+          '<r v="1"><meta>m</meta><item id="1">t<sub>s</sub></item><item id="2"/></r>';
+      final r = readTable(xml, 'application/xml');
+      expect(r.sources.map((s) => s.path), ['/r/item', r'$']);
+      final rows = r.table!;
+      expect(rows.columns.map((c) => c.name), ['@id', 'sub', '#text']);
+      expect(rows.rows[0], ['1', 's', 't']);
+      final whole = readTable(xml, 'application/xml', source: r'$').table!;
+      final cells = [for (final row in whole.rows) ...row.map(cellText)];
+      expect(cells.join(' '), contains('m'));
+      expect(whole.rows.map((r) => r[0]), containsAll(['@v', 'meta', 'item']));
+    });
+
+    test('CSV keeps every cell, including a short row and empty cells', () {
+      final t = tableFromCsv('a,b,c\n1,,3\n4\n"x,y",z,')!;
+      expect(t.rows, [
+        ['1', '', '3'],
+        ['4', null, null],
+        ['x,y', 'z', ''],
+      ]);
     });
   });
 }

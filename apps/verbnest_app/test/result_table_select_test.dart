@@ -373,3 +373,6 @@ void main() {
     expect((other.decoration as BoxDecoration).color, isNull);
   });
 }
+
+Future<void> pumpForComplete(WidgetTester t, ResultTable table) =>
+    pump(t, table);

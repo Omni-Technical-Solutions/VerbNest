@@ -87,6 +87,9 @@ class _ResultTableViewState extends State<ResultTableView> {
 
   int get _shown => math.min(_order.length, ResultTable.maxGridRows);
 
+  /// Columns drawn. The rest are still in the table for search, copy and export.
+  int get _cols => math.min(widget.table.columnCount, ResultTable.maxColumns);
+
   /// A controller's offset, or 0 when it has no view (or, for an instant while
   /// the grid is rebuilt, more than one).
   double _offset(ScrollController c) =>
@@ -177,7 +180,7 @@ class _ResultTableViewState extends State<ResultTableView> {
     if (_fr == null || _shown == 0) return null;
     var r0 = math.min(_ar!, _fr!), r1 = math.max(_ar!, _fr!);
     var c0 = math.min(_ac!, _fc!), c1 = math.max(_ac!, _fc!);
-    final cols = widget.table.columnCount;
+    final cols = _cols;
     if (_wholeRows) {
       c0 = 0;
       c1 = cols - 1;
@@ -202,9 +205,14 @@ class _ResultTableViewState extends State<ResultTableView> {
   bool _isFocus(int r, int c) =>
       _fr == r && _fc == c && !_wholeRows && !_wholeCols;
 
+  /// Cells selected. A whole row or column covers the rows and columns that
+  /// are not drawn too, as copying it will.
   int get _selectedCount {
     final g = _range;
-    return g == null ? 0 : (g.r1 - g.r0 + 1) * (g.c1 - g.c0 + 1);
+    if (g == null) return 0;
+    final rows = _wholeCols ? _order.length : g.r1 - g.r0 + 1;
+    final cols = _wholeRows ? widget.table.columnCount : g.c1 - g.c0 + 1;
+    return rows * cols;
   }
 
   void _selectCell(int r, int c, {bool extend = false}) {
@@ -351,7 +359,7 @@ class _ResultTableViewState extends State<ResultTableView> {
       return KeyEventResult.handled;
     }
     final page = math.max(1, (_viewHeight / _rowHeight).floor() - 2);
-    final cols = widget.table.columnCount;
+    final cols = _cols;
     var dr = 0, dc = 0;
     if (key == LogicalKeyboardKey.arrowDown) dr = 1;
     if (key == LogicalKeyboardKey.arrowUp) dr = -1;
@@ -404,10 +412,12 @@ class _ResultTableViewState extends State<ResultTableView> {
   void _copy(_Format format, {bool header = false}) {
     final t = widget.table;
     final g = _range;
-    final rows = g == null
+    // A whole column takes every row, a whole row every column (also those the
+    // grid does not draw); a range takes just its cells.
+    final rows = g == null || _wholeCols
         ? _order
         : [for (var r = g.r0; r <= g.r1; r++) _order[r]];
-    final cols = g == null
+    final cols = g == null || _wholeRows
         ? List<int>.generate(t.columnCount, (i) => i)
         : [for (var c = g.c0; c <= g.c1; c++) c];
     if (rows.isEmpty) return;
@@ -617,7 +627,7 @@ class _ResultTableViewState extends State<ResultTableView> {
         20;
     // Fewer rows are sampled when there are many columns, so a wide result
     // does not make the first build slow.
-    final sample = math.min(t.rowCount, math.max(20, 4000 ~/ t.columnCount));
+    final sample = math.min(t.rowCount, math.max(20, 4000 ~/ _cols));
     for (var r = 0; r < sample; r++) {
       final text = _shownText(t.rows[r][col]);
       final cut = text.length > 80 ? text.substring(0, 80) : text;
@@ -636,7 +646,7 @@ class _ResultTableViewState extends State<ResultTableView> {
   }
 
   List<double> _initialWidths(BuildContext context, TextStyle style) => [
-    for (var c = 0; c < widget.table.columnCount; c++) _fit(context, c, style),
+    for (var c = 0; c < _cols; c++) _fit(context, c, style),
   ];
 
   // --------------------------------------------------------------- build
@@ -814,7 +824,7 @@ class _ResultTableViewState extends State<ResultTableView> {
           Row(
             children: [
               const SizedBox(width: ResultTableView._rowNumberWidth),
-              for (var c = 0; c < t.columnCount; c++)
+              for (var c = 0; c < _cols; c++)
                 SizedBox(
                   key: ValueKey('table-header-$c'),
                   width: widths[c],
@@ -1005,7 +1015,7 @@ class _ResultTableViewState extends State<ResultTableView> {
           Row(
             children: [
               const SizedBox(width: ResultTableView._rowNumberWidth),
-              for (var c = 0; c < t.columnCount; c++)
+              for (var c = 0; c < _cols; c++)
                 _cell(
                   context,
                   position,
