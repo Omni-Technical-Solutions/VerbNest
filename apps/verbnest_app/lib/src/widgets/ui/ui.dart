@@ -171,34 +171,28 @@ class InlineBanner extends StatelessWidget {
         Icons.info_outline,
       ),
     };
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Motion.of(context, Motion.base),
-      curve: Motion.curve,
-      // Fade only: sliding the height would move the buttons under a tap
-      // that lands in the first frames.
-      builder: (context, t, child) => Opacity(opacity: t, child: child),
-      child: Container(
-        color: bg,
-        padding: const EdgeInsets.symmetric(
-          horizontal: Space.md,
-          vertical: Space.sm,
-        ),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(color: fg),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: fg),
-              const SizedBox(width: Space.sm),
-              Expanded(child: child),
-              if (onDismiss != null)
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(Icons.close, size: 16, color: fg),
-                  onPressed: onDismiss,
-                ),
-            ],
-          ),
+    // A banner appears at once: it shows up when a request is sent, and a
+    // fade then is one more thing moving.
+    return Container(
+      color: bg,
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.md,
+        vertical: Space.sm,
+      ),
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: fg),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: fg),
+            const SizedBox(width: Space.sm),
+            Expanded(child: child),
+            if (onDismiss != null)
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: Icon(Icons.close, size: 16, color: fg),
+                onPressed: onDismiss,
+              ),
+          ],
         ),
       ),
     );
@@ -274,66 +268,37 @@ class CountBadge extends StatelessWidget {
   }
 }
 
-/// Pulsing grey bars shown in place of content that is still loading.
-class Skeleton extends StatefulWidget {
+/// Still grey bars shown in place of content that is still loading. They do
+/// not pulse: a repeating animation on every request is motion nobody asked
+/// for, and the progress line above the response already says it is working.
+class Skeleton extends StatelessWidget {
   const Skeleton({super.key, this.lines = 6});
 
   final int lines;
-
-  @override
-  State<Skeleton> createState() => _SkeletonState();
-}
-
-class _SkeletonState extends State<Skeleton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // A repeating animation never settles, so stay still under reduced motion.
-    if (MediaQuery.maybeDisableAnimationsOf(context) == true) {
-      _c.stop();
-    } else if (!_c.isAnimating) {
-      _c.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.onSurface;
     return Padding(
       padding: const EdgeInsets.all(Space.lg),
-      child: AnimatedBuilder(
-        animation: _c,
-        builder: (context, _) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var i = 0; i < widget.lines; i++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: Space.md),
-                child: FractionallySizedBox(
-                  widthFactor: 0.4 + (i * 37 % 55) / 100,
-                  child: Container(
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.05 + 0.06 * _c.value),
-                      borderRadius: BorderRadius.circular(Radii.sm),
-                    ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < lines; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Space.md),
+              child: FractionallySizedBox(
+                widthFactor: 0.4 + (i * 37 % 55) / 100,
+                child: Container(
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(Radii.sm),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

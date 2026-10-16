@@ -144,21 +144,19 @@ class _ResponseViewState extends State<ResponseView> {
   @override
   Widget build(BuildContext context) {
     final state = widget.state;
-    final body = AnimatedSwitcher(
-      duration: Motion.of(context, Motion.base),
-      switchInCurve: Motion.curve,
-      child: KeyedSubtree(
-        key: ValueKey(
-          state.sending
-              ? 'sending'
-              : state.error != null
-              ? 'error'
-              : state.response == null
-              ? 'empty'
-              : 'response',
-        ),
-        child: _content(context, state),
+    // Sending, the error and the response replace each other at once; a
+    // cross-fade on every send is motion the content does not need.
+    final body = KeyedSubtree(
+      key: ValueKey(
+        state.sending
+            ? 'sending'
+            : state.error != null
+            ? 'error'
+            : state.response == null
+            ? 'empty'
+            : 'response',
       ),
+      child: _content(context, state),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -694,6 +692,8 @@ class _ResponseViewState extends State<ResponseView> {
       // Tighter on a very narrow phone so "Pretty" does not wrap.
       style: MediaQuery.sizeOf(context).width < 360
           ? ButtonStyle(
+              // Changing the view is a switch, not a transition.
+              animationDuration: Duration.zero,
               padding: const WidgetStatePropertyAll(
                 EdgeInsets.symmetric(horizontal: 4),
               ),
@@ -703,7 +703,7 @@ class _ResponseViewState extends State<ResponseView> {
               ),
               visualDensity: VisualDensity.compact,
             )
-          : null,
+          : const ButtonStyle(animationDuration: Duration.zero),
       // On a phone the modes share the full line instead of scrolling.
       expandedInsets: phone ? EdgeInsets.zero : null,
       emptySelectionAllowed: true,

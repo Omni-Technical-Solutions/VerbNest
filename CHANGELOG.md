@@ -2,6 +2,16 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.63.4
+
+- Fix: less movement when changing the response view and when sending. Measured by counting the animations running after each action: changing between Pretty, Raw, Hex and Table started about five (the colour fade on every segment of the view switch) and sending started three more for about 300 ms. Now:
+  - the Pretty / Raw / Hex / Table switch changes at once (only the press ripple on the button you tapped remains);
+  - Send and Cancel swap at once instead of fading and scaling, both when you send and again when the response arrives;
+  - the response area no longer cross-fades between sending, error and response;
+  - the grey placeholder shown while a request is in flight is still instead of pulsing (the thin progress line at the top still runs, as the sign that it is working);
+  - a warning banner appears at once instead of fading in.
+- Tests: `no_motion_test.dart` counts running animations while a request is in flight (only the progress line), when the response arrives and when the view changes (at most the ripple, then none), and checks that the banner and the Send/Cancel swap do not animate.
+
 ## 0.63.3
 
 - UI: the results table no longer spends a row on a bar of its own. The Copy and export menu moved to the end of the footer, and the "Rows from", "Flatten nested keys" and "First row is the header" choices appear above the grid only when there are any, so the rows get the room (important in the lower half of a desktop window).

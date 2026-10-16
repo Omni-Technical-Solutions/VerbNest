@@ -1,6 +1,6 @@
 name: verbnest_core
 description: Pure Dart models, variable resolution and dynamic variables for VerbNest.
-version: 0.63.3
+version: 0.63.4
 publish_to: none
 resolution: workspace
 

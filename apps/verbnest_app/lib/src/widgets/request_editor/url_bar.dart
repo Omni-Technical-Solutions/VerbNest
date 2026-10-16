@@ -73,15 +73,9 @@ class UrlBar extends StatelessWidget {
           SizedBox(width: gap),
           if (!compact && trailing == null)
             LiveMenu(item: item, notifier: notifier),
-          AnimatedSwitcher(
-            duration: Motion.of(context, Motion.fast),
-            transitionBuilder: (child, anim) => FadeTransition(
-              opacity: anim,
-              child: ScaleTransition(
-                scale: Tween(begin: 0.92, end: 1.0).animate(anim),
-                child: child,
-              ),
-            ),
+          // Send and Cancel swap at once: a fade between them on every send
+          // (and again when the response arrives) reads as flicker.
+          KeyedSubtree(
             child: compact
                 ? (state.sending
                       ? IconButton.filledTonal(
