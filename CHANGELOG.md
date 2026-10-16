@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.60.0
+
+- Core: results table model (no screen yet; the grid follows in the next releases). `verbnest_core` can read a response body as rows and columns: a JSON array of objects, an object holding arrays (the largest list of records, or a chosen JSONPath), an array of arrays (optionally with the first row as header), a single object as Key/Value, an array of values, XML with repeated elements, and CSV/TSV. Ragged rows are padded, columns get a type (number, boolean, date, text, JSON), nested values can be flattened into dotted columns, and bodies are capped at 200 columns.
+- Core: sorting (numbers as numbers, dates as dates, text without regard to case, nulls last, stable), row search, and copy/export as tab-separated text, CSV, JSON and Markdown.
+- Docs: requirements FR-RES-008 and FR-RES-009; the Results table section in ux.md.
+- Tests: 36 new core tests on fixtures for every shape, plus a 100,000-row timing test.
+
 ## 0.59.5
 
 - Fix: on a phone or tablet the toolbar now folds away (or returns) when a scroll ends, not while the finger is dragging, so the response is never resized under the finger. The extra room the fold gives is unchanged.
