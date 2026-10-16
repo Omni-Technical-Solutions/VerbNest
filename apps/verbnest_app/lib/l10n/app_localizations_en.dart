@@ -1252,6 +1252,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String tableCellLabel(String column, int row, int total, String value) {
+    return '$column, row $row of $total: $value';
+  }
+
+  @override
+  String tableHeaderLabel(String name, String type) {
+    return '$name, $type';
+  }
+
+  @override
+  String tableRowLabel(int row) {
+    return 'Row $row';
+  }
+
+  @override
+  String get tableSortedAscending => 'sorted ascending';
+
+  @override
+  String get tableSortedDescending => 'sorted descending';
+
+  @override
   String get tableNull => 'null';
 
   @override

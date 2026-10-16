@@ -87,6 +87,11 @@ class _ResultTableViewState extends State<ResultTableView> {
 
   int get _shown => math.min(_order.length, ResultTable.maxGridRows);
 
+  /// A controller's offset, or 0 when it has no view (or, for an instant while
+  /// the grid is rebuilt, more than one).
+  double _offset(ScrollController c) =>
+      c.hasClients && c.positions.length == 1 ? c.offset : 0;
+
   @override
   void initState() {
     super.initState();
@@ -252,9 +257,9 @@ class _ResultTableViewState extends State<ResultTableView> {
   /// The row and column under a pointer inside the body; a column of -1 is the
   /// row-number column.
   ({int row, int col})? _cellAt(Offset p) {
-    final r = ((p.dy + (_v.hasClients ? _v.offset : 0)) / _rowHeight).floor();
+    final r = ((p.dy + (_offset(_v))) / _rowHeight).floor();
     if (r < 0 || r >= _shown) return null;
-    final hx = _h.hasClients ? _h.offset : 0.0;
+    final hx = _offset(_h);
     if (p.dx - hx < ResultTableView._rowNumberWidth) return (row: r, col: -1);
     var x = p.dx - ResultTableView._rowNumberWidth;
     final widths = _widths;
@@ -657,48 +662,89 @@ class _ResultTableViewState extends State<ResultTableView> {
       child: Focus(
         focusNode: _focus,
         onKeyEvent: _onKey,
-        child: Column(
-          key: const Key('result-table'),
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _bar(context),
-            Expanded(
-              child: Scrollbar(
-                controller: _v,
-                notificationPredicate: (n) => n.metrics.axis == Axis.vertical,
-                child: LayoutBuilder(
-                  builder: (context, c) {
-                    _viewHeight = math.max(0, c.maxHeight - headerHeight);
-                    _viewWidth = c.maxWidth;
-                    return Scrollbar(
-                      controller: _h,
-                      thumbVisibility: contentWidth > c.maxWidth,
-                      notificationPredicate: (n) =>
-                          n.metrics.axis == Axis.horizontal,
-                      child: SingleChildScrollView(
-                        controller: _h,
-                        scrollDirection: Axis.horizontal,
-                        child: SizedBox(
-                          width: math.max(contentWidth, c.maxWidth),
-                          child: Column(
-                            children: [
-                              _header(context, widths, headerHeight, scheme),
-                              Expanded(
-                                child: _body(widths, rowHeight, style, scheme),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+        // A short pane (a landscape phone, large text) scrolls instead of
+        // overflowing: the bar, the header and the footer need about this much.
+        // The scroll view is always there (it simply does not scroll when the
+        // grid fits), so the table is never rebuilt as the pane crosses the
+        // limit, and sort and selection survive the keyboard coming and going.
+        child: LayoutBuilder(
+          builder: (context, outer) {
+            final textScale = MediaQuery.textScalerOf(context).scale(1);
+            final needed =
+                200 * (textScale <= 1 ? 1.0 : textScale * math.sqrt(textScale));
+            final fixed = outer.hasBoundedHeight
+                ? math.max(outer.maxHeight, needed)
+                : needed;
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: SizedBox(
+                height: fixed,
+                child: _grid(
+                  context,
+                  widths,
+                  rowHeight,
+                  headerHeight,
+                  contentWidth,
+                  style,
+                  scheme,
                 ),
               ),
-            ),
-            _footer(context, scheme),
-          ],
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Widget _grid(
+    BuildContext context,
+    List<double> widths,
+    double rowHeight,
+    double headerHeight,
+    double contentWidth,
+    TextStyle style,
+    ColorScheme scheme,
+  ) {
+    return Column(
+      key: const Key('result-table'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _bar(context),
+        Expanded(
+          child: Scrollbar(
+            controller: _v,
+            notificationPredicate: (n) => n.metrics.axis == Axis.vertical,
+            child: LayoutBuilder(
+              builder: (context, c) {
+                _viewHeight = math.max(0, c.maxHeight - headerHeight);
+                _viewWidth = c.maxWidth;
+                return Scrollbar(
+                  controller: _h,
+                  thumbVisibility: contentWidth > c.maxWidth,
+                  notificationPredicate: (n) =>
+                      n.metrics.axis == Axis.horizontal,
+                  child: SingleChildScrollView(
+                    controller: _h,
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: math.max(contentWidth, c.maxWidth),
+                      child: Column(
+                        children: [
+                          _header(context, widths, headerHeight, scheme),
+                          Expanded(
+                            child: _body(widths, rowHeight, style, scheme),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        _footer(context, scheme),
+      ],
     );
   }
 
@@ -714,6 +760,9 @@ class _ResultTableViewState extends State<ResultTableView> {
     onPointerCancel: _pointerUp,
     child: GestureDetector(
       behavior: HitTestBehavior.translucent,
+      // The cells carry their own semantics; one big unlabeled tap target over
+      // the whole grid would confuse a screen reader.
+      excludeFromSemantics: true,
       onTapDown: _touchTap,
       onSecondaryTapDown: (d) => _bodyMenu(d.localPosition, d.globalPosition),
       onLongPressStart: (d) {
@@ -782,61 +831,76 @@ class _ResultTableViewState extends State<ResultTableView> {
                       Positioned.fill(
                         child: Tooltip(
                           message: l10n.tableSortBy(t.columns[c].name),
-                          child: GestureDetector(
-                            onSecondaryTapDown: (d) =>
-                                _menuAt(d.globalPosition, column: c),
-                            onLongPressStart: (d) =>
-                                _menuAt(d.globalPosition, column: c),
-                            child: InkWell(
-                              key: ValueKey('table-sort-$c'),
-                              onTap: () => _sortBy(c),
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  12,
-                                  4,
-                                  12,
-                                  4,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            t.columns[c].name,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: bold,
-                                          ),
-                                          Text(
-                                            _typeName(
-                                              context,
-                                              t.columns[c].type,
+                          child: Semantics(
+                            button: true,
+                            label: l10n.tableHeaderLabel(
+                              t.columns[c].name,
+                              _typeName(context, t.columns[c].type),
+                            ),
+                            value: _sortCol != c
+                                ? null
+                                : (_ascending
+                                      ? l10n.tableSortedAscending
+                                      : l10n.tableSortedDescending),
+                            onTap: () => _sortBy(c),
+                            excludeSemantics: true,
+                            child: GestureDetector(
+                              excludeFromSemantics: true,
+                              onSecondaryTapDown: (d) =>
+                                  _menuAt(d.globalPosition, column: c),
+                              onLongPressStart: (d) =>
+                                  _menuAt(d.globalPosition, column: c),
+                              child: InkWell(
+                                key: ValueKey('table-sort-$c'),
+                                onTap: () => _sortBy(c),
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    12,
+                                    4,
+                                    12,
+                                    4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              t.columns[c].name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: bold,
                                             ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: small,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (_sortCol == c)
-                                      Icon(
-                                        _ascending
-                                            ? Icons.arrow_upward
-                                            : Icons.arrow_downward,
-                                        key: Key(
-                                          _ascending
-                                              ? 'table-sort-asc-$c'
-                                              : 'table-sort-desc-$c',
+                                            Text(
+                                              _typeName(
+                                                context,
+                                                t.columns[c].type,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: small,
+                                            ),
+                                          ],
                                         ),
-                                        size: 16,
                                       ),
-                                  ],
+                                      if (_sortCol == c)
+                                        Icon(
+                                          _ascending
+                                              ? Icons.arrow_upward
+                                              : Icons.arrow_downward,
+                                          key: Key(
+                                            _ascending
+                                                ? 'table-sort-asc-$c'
+                                                : 'table-sort-desc-$c',
+                                          ),
+                                          size: 16,
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -849,8 +913,9 @@ class _ResultTableViewState extends State<ResultTableView> {
                         bottom: 0,
                         right: 0,
                         width: 12,
-                        child: Semantics(
-                          label: l10n.tableResizeColumn(t.columns[c].name),
+                        // Out of the accessibility tree: it is a 12 dp drag handle,
+                        // and "Fit column" is in the header menu.
+                        child: ExcludeSemantics(
                           child: GestureDetector(
                             key: ValueKey('table-resize-$c'),
                             behavior: HitTestBehavior.opaque,
@@ -912,7 +977,7 @@ class _ResultTableViewState extends State<ResultTableView> {
   Widget _pinned(double height, Widget child) => AnimatedBuilder(
     animation: _h,
     builder: (context, child) => Positioned(
-      left: _h.hasClients ? _h.offset : 0,
+      left: _offset(_h),
       top: 0,
       width: ResultTableView._rowNumberWidth,
       height: height,
@@ -938,12 +1003,11 @@ class _ResultTableViewState extends State<ResultTableView> {
     );
     final g = _range;
     final rowSelected = g != null && position >= g.r0 && position <= g.r1;
-    return Container(
+    // The row's rule is drawn by each cell, so a cell is the full row height
+    // (a 1 dp border on the row would leave its tap target 47 dp).
+    return SizedBox(
       key: ValueKey('table-row-$position'),
       height: height,
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
-      ),
       child: Stack(
         children: [
           Row(
@@ -964,20 +1028,31 @@ class _ResultTableViewState extends State<ResultTableView> {
           ),
           _pinned(
             height,
-            Container(
-              color: rowSelected
-                  ? scheme.secondaryContainer
-                  : scheme.surfaceContainerLow,
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 10),
-              child: Text(
-                '${index + 1}',
-                style: style.copyWith(
+            Semantics(
+              label: context.l10n.tableRowLabel(index + 1),
+              selected: rowSelected,
+              onTap: () => _selectRow(position),
+              excludeSemantics: true,
+              child: Container(
+                decoration: BoxDecoration(
                   color: rowSelected
-                      ? scheme.onSecondaryContainer
-                      : scheme.outline,
-                  fontSize: 11,
-                  fontFeatures: kTabularFigures,
+                      ? scheme.secondaryContainer
+                      : scheme.surfaceContainerLow,
+                  border: Border(
+                    bottom: BorderSide(color: scheme.outlineVariant),
+                  ),
+                ),
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 10),
+                child: Text(
+                  '${index + 1}',
+                  style: style.copyWith(
+                    color: rowSelected
+                        ? scheme.onSecondaryContainer
+                        : scheme.outline,
+                    fontSize: 11,
+                    fontFeatures: kTabularFigures,
+                  ),
                 ),
               ),
             ),
@@ -1021,19 +1096,39 @@ class _ResultTableViewState extends State<ResultTableView> {
                   )
                 : style,
           );
-    return Container(
-      key: ValueKey('table-cell-$row-$col'),
-      width: width,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      alignment: numeric ? Alignment.centerRight : Alignment.centerLeft,
-      decoration: BoxDecoration(
-        color: selected ? scheme.secondaryContainer : null,
-        border: Border(right: BorderSide(color: scheme.outlineVariant)),
+    final l10n = context.l10n;
+    final spoken = value == null ? l10n.tableNull : cellText(value);
+    return Semantics(
+      label: l10n.tableCellLabel(
+        widget.table.columns[col].name,
+        row + 1,
+        _matches,
+        spoken.length > 200 ? spoken.substring(0, 200) : spoken,
       ),
-      foregroundDecoration: _isFocus(row, col)
-          ? BoxDecoration(border: Border.all(color: scheme.primary, width: 2))
-          : null,
-      child: text,
+      selected: selected,
+      // A screen reader activates a cell to see its value in full.
+      onTap: () {
+        _selectCell(row, col);
+        _showValue(row, col);
+      },
+      excludeSemantics: true,
+      child: Container(
+        key: ValueKey('table-cell-$row-$col'),
+        width: width,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        alignment: numeric ? Alignment.centerRight : Alignment.centerLeft,
+        decoration: BoxDecoration(
+          color: selected ? scheme.secondaryContainer : null,
+          border: Border(
+            right: BorderSide(color: scheme.outlineVariant),
+            bottom: BorderSide(color: scheme.outlineVariant),
+          ),
+        ),
+        foregroundDecoration: _isFocus(row, col)
+            ? BoxDecoration(border: Border.all(color: scheme.primary, width: 2))
+            : null,
+        child: text,
+      ),
     );
   }
 

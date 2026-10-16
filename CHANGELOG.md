@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.63.1
+
+- Accessibility: the results table speaks. Each cell reads its column, row, total and value ("name, row 1 of 3: Rex"; a null reads "null"), reports whether it is selected, and activates to show the full value; row numbers select the row; headers read their name and type and say "sorted ascending" or "sorted descending". The 12 dp resize handle is hidden from screen readers ("Fit column" is in the header menu), and the grid body no longer exposes one large unlabeled tap target. The table meets the text-contrast, labeled-target and 48 dp target guidelines on Android and iOS, light and dark.
+- Fix: in a short pane (a landscape phone, large text) the table scrolls instead of overflowing. The scroll view is always present, so sort, selection and column widths are not lost when the keyboard comes and goes.
+- Fix: a cell's tap target is the full row height (the row's rule moved onto the cells).
+- Tests: table accessibility tests (labels, sort state, selected state, activation, guidelines) and a device matrix for the table at every size, with and without the keyboard, and at 200% and 310% text.
+
 ## 0.63.0
 
 - Feature: select and copy from the results table. Click a cell to select it, Shift-click or drag with a mouse to select a range, click a row number to select a row, the corner `#` to select everything, and use the arrow keys, Page Up/Down, Home and End to move (Shift extends, Esc clears, Cmd/Ctrl+A selects all). Cmd/Ctrl+C copies the selection as tab-separated text (a line break inside a cell becomes a space, so a row stays one line).

@@ -2266,6 +2266,36 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 cell selected} other{{count} cells selected}}'**
   String tableSelected(int count);
 
+  /// No description provided for @tableCellLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{column}, row {row} of {total}: {value}'**
+  String tableCellLabel(String column, int row, int total, String value);
+
+  /// No description provided for @tableHeaderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {type}'**
+  String tableHeaderLabel(String name, String type);
+
+  /// No description provided for @tableRowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Row {row}'**
+  String tableRowLabel(int row);
+
+  /// No description provided for @tableSortedAscending.
+  ///
+  /// In en, this message translates to:
+  /// **'sorted ascending'**
+  String get tableSortedAscending;
+
+  /// No description provided for @tableSortedDescending.
+  ///
+  /// In en, this message translates to:
+  /// **'sorted descending'**
+  String get tableSortedDescending;
+
   /// No description provided for @tableNull.
   ///
   /// In en, this message translates to:

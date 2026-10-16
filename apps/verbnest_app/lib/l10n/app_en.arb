@@ -777,6 +777,44 @@
       }
     }
   },
+  "tableCellLabel": "{column}, row {row} of {total}: {value}",
+  "@tableCellLabel": {
+    "placeholders": {
+      "column": {
+        "type": "String"
+      },
+      "row": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "tableHeaderLabel": "{name}, {type}",
+  "@tableHeaderLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "tableRowLabel": "Row {row}",
+  "@tableRowLabel": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      }
+    }
+  },
+  "tableSortedAscending": "sorted ascending",
+  "tableSortedDescending": "sorted descending",
   "tableNull": "null",
   "tableSortBy": "Sort by {name}",
   "@tableSortBy": {
