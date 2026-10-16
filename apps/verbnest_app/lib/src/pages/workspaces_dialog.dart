@@ -11,6 +11,7 @@ import '../widgets/ui/adaptive_dialog.dart';
 import '../widgets/name_dialog.dart';
 import '../workspace_host.dart';
 import '../../l10n/l10n.dart';
+import '../widgets/ui/still_tooltip.dart';
 
 /// Switch, create, import and export workspaces (FR-WS-002..007).
 Future<void> showWorkspaces(BuildContext context, WidgetRef ref) {
@@ -90,7 +91,7 @@ class _WorkspacesDialog extends ConsumerWidget {
       leading: const Icon(Icons.check_circle_outline),
       title: Text(session.repo.name),
       subtitle: Text(session.db.path ?? context.l10n.wsInMemory),
-      trailing: IconButton(
+      trailing: StillIconButton(
         key: const Key('ws-rename'),
         tooltip: context.l10n.wsRename,
         icon: const Icon(Icons.edit, size: 18),

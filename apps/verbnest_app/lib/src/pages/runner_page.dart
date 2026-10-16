@@ -17,6 +17,7 @@ import '../../l10n/l10n.dart';
 import '../layout_class.dart';
 import '../widgets/ui/toast.dart';
 import '../widgets/ui/ui.dart';
+import '../widgets/ui/still_tooltip.dart';
 
 /// Runs the requests of a collection or folder in order (FR-RUN-001) and
 /// shows the results as they arrive (FR-RUN-002).
@@ -278,7 +279,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
           ),
         ),
         if (_dataName != null)
-          IconButton(
+          StillIconButton(
             tooltip: context.l10n.runRemoveData,
             icon: const Icon(Icons.close, size: 18),
             onPressed: () => setState(() {

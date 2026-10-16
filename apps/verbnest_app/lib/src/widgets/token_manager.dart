@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/editor_state.dart';
 import '../../l10n/l10n.dart';
+import 'ui/still_tooltip.dart';
 
 String _when(BuildContext context, DateTime? t) {
   final l = context.l10n;
@@ -57,7 +58,7 @@ class _TokenManagerState extends ConsumerState<_TokenManager> {
                         '\n${t.auth.tokenUrl.isEmpty ? t.auth.authUrl : t.auth.tokenUrl}',
                       ),
                       isThreeLine: true,
-                      trailing: IconButton(
+                      trailing: StillIconButton(
                         tooltip: context.l10n.delete,
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () => setState(() => cache.remove(t.key)),

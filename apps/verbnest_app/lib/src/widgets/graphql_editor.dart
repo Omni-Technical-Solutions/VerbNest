@@ -14,6 +14,7 @@ import 'synced_field.dart';
 import '../../l10n/l10n.dart';
 import 'ui/toast.dart';
 import '../theme.dart';
+import 'ui/still_tooltip.dart';
 
 /// Query and variables editors for a GraphQL body, with schema loading,
 /// completion and an explorer (FR-GQL-001/002).
@@ -179,7 +180,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
 
   Widget _buildPersistedChip(BuildContext context) {
     final body = widget.body;
-    return Tooltip(
+    return StillTooltip(
       message: context.l10n.gqlPersistedHint,
       child: StillChip(
         showCheckmark: true,
@@ -330,7 +331,7 @@ class _GraphqlExplorerState extends State<GraphqlExplorer> {
               child: Row(
                 children: [
                   if (_trail.isNotEmpty)
-                    IconButton(
+                    StillIconButton(
                       key: const Key('gql-back'),
                       icon: const Icon(Icons.arrow_back),
                       onPressed: () => setState(_trail.removeLast),
@@ -341,7 +342,7 @@ class _GraphqlExplorerState extends State<GraphqlExplorer> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                  IconButton(
+                  StillIconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
                   ),

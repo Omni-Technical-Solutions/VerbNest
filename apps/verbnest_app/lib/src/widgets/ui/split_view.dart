@@ -11,6 +11,7 @@ class SplitView extends StatelessWidget {
     required this.onRatioChanged,
     required this.first,
     required this.second,
+    this.collapseFirst = false,
   });
 
   final Axis axis;
@@ -18,6 +19,10 @@ class SplitView extends StatelessWidget {
   final ValueChanged<double> onRatioChanged;
   final Widget first;
   final Widget second;
+
+  /// Hide the first pane and give the second all the room. The first stays
+  /// mounted (offstage), so its state, such as the selected tab, is kept.
+  final bool collapseFirst;
 
   static const _handle = 10.0;
 
@@ -57,12 +62,17 @@ class SplitView extends StatelessWidget {
           ),
         );
         final children = [
-          SizedBox(
-            width: vertical ? null : firstSize,
-            height: vertical ? firstSize : null,
-            child: first,
+          // Collapsed, the first pane stays in the tree (same place and type),
+          // so neither it nor the second pane loses its state.
+          Offstage(
+            offstage: collapseFirst,
+            child: SizedBox(
+              width: vertical ? null : firstSize,
+              height: vertical ? firstSize : null,
+              child: first,
+            ),
           ),
-          divider,
+          if (collapseFirst) const SizedBox.shrink() else divider,
           Expanded(child: second),
         ];
         return vertical ? Column(children: children) : Row(children: children);

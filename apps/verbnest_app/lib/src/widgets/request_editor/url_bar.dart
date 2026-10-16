@@ -17,6 +17,7 @@ import '../name_dialog.dart';
 import '../realtime_dialog.dart';
 import '../synced_field.dart';
 import '../ui/ui.dart';
+import '../ui/still_tooltip.dart';
 
 const _customMethod = '\u0000custom';
 
@@ -81,20 +82,30 @@ class UrlBar extends StatelessWidget {
           KeyedSubtree(
             child: compact
                 ? (state.sending
-                      ? IconButton.filledTonal(
-                          key: const Key('cancel'),
-                          tooltip: context.l10n.reCancel,
-                          onPressed: notifier.cancel,
-                          icon: const Icon(Icons.stop),
+                      ? StillTooltip(
+                          message: context.l10n.reCancel,
+                          child: IconButton.filledTonal(
+                            key: const Key('cancel'),
+                            onPressed: notifier.cancel,
+                            icon: Semantics(
+                              label: context.l10n.reCancel,
+                              child: const Icon(Icons.stop),
+                            ),
+                          ),
                         )
-                      : IconButton.filled(
-                          key: const Key('send'),
-                          tooltip: context.l10n.reSend,
-                          onPressed: () {
-                            lightHaptic(context);
-                            notifier.send();
-                          },
-                          icon: const Icon(Icons.send),
+                      : StillTooltip(
+                          message: context.l10n.reSend,
+                          child: IconButton.filled(
+                            key: const Key('send'),
+                            onPressed: () {
+                              lightHaptic(context);
+                              notifier.send();
+                            },
+                            icon: Semantics(
+                              label: context.l10n.reSend,
+                              child: const Icon(Icons.send),
+                            ),
+                          ),
                         ))
                 : state.sending
                 ? FilledButton.tonal(

@@ -36,6 +36,7 @@ import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
 import '../layout_class.dart';
 import 'ui/toast.dart';
+import 'ui/still_tooltip.dart';
 
 String formatBytes(int n) {
   if (n < 1024) return '$n B';
@@ -108,9 +109,21 @@ class ResponseView extends StatefulWidget {
     this.onSaveCsv,
     this.share = false,
     this.codeFontSize = 13,
+    this.maximized = false,
+    this.onToggleMaximize,
+    this.onWantsRoom,
   });
 
   final EditorState state;
+
+  /// The response has the whole editor (the request pane is hidden); with
+  /// [onToggleMaximize] set, a button in the status row switches it.
+  final bool maximized;
+  final VoidCallback? onToggleMaximize;
+
+  /// Called when a view needs more room than a pane usually has (the table), so
+  /// the editor can give it the whole height.
+  final VoidCallback? onWantsRoom;
 
   /// Saves or shares the response body; the button shows only when set.
   final VoidCallback? onSave;
@@ -254,7 +267,7 @@ class _ResponseViewState extends State<ResponseView> {
             '${r.status} ${r.reason}',
             key: const Key('response-status'),
           ),
-          Tooltip(
+          StillTooltip(
             message: context.l10n.rvTiming,
             child: InkWell(
               key: const Key('response-timing'),
@@ -306,6 +319,18 @@ class _ResponseViewState extends State<ResponseView> {
               ),
             ),
           if (widget.onSave != null) _saveButton(context),
+          if (widget.onToggleMaximize != null)
+            StillIconButton(
+              key: const Key('maximize-response'),
+              tooltip: widget.maximized
+                  ? context.l10n.reRestorePanes
+                  : context.l10n.reMaximizeResponse,
+              icon: Icon(
+                widget.maximized ? Icons.close_fullscreen : Icons.open_in_full,
+                size: 18,
+              ),
+              onPressed: widget.onToggleMaximize,
+            ),
         ],
       ),
     );
@@ -319,7 +344,7 @@ class _ResponseViewState extends State<ResponseView> {
     );
     // A phone's status line is one row: the button is icon only there.
     if (MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint) {
-      return IconButton(
+      return StillIconButton(
         key: const Key('response-save'),
         tooltip: label,
         icon: icon,
@@ -516,7 +541,7 @@ class _ResponseViewState extends State<ResponseView> {
             '${r.headers[i].$1}: ${r.headers[i].$2}',
             style: monoStyle(fontSize: 13),
           ),
-          trailing: IconButton(
+          trailing: StillIconButton(
             key: ValueKey('copy-header-$i'),
             tooltip: context.l10n.rvCopyValue,
             icon: const Icon(Icons.copy, size: 16),
@@ -662,8 +687,11 @@ class _ResponseViewState extends State<ResponseView> {
                   ),
                   // On a phone the filter opens from the toolbar, and stays
                   // open while it is doing something.
+                  // The table needs the height, so there it opens the same way.
                   if (filterable &&
-                      (!phone || _showFilter || _filter.isNotEmpty))
+                      ((!phone && !showTable) ||
+                          _showFilter ||
+                          _filter.isNotEmpty))
                     _filterField(kind, filtering),
                 ],
               ),
@@ -742,6 +770,7 @@ class _ResponseViewState extends State<ResponseView> {
         _hex = s.first == 'hex';
         _table = s.first == 'table';
         if (!_preview && !_hex && !_table) _pretty = s.first == 'pretty';
+        if (_table) widget.onWantsRoom?.call();
       }),
     );
     final search = TextField(
@@ -761,7 +790,7 @@ class _ResponseViewState extends State<ResponseView> {
       showToast(context, context.l10n.rvBodyCopied);
     }
 
-    final copy = IconButton(
+    final copy = StillIconButton(
       key: const Key('copy-body'),
       tooltip: context.l10n.rvCopyBody,
       icon: const Icon(Icons.copy, size: 18),
@@ -772,11 +801,12 @@ class _ResponseViewState extends State<ResponseView> {
       if (_table) {
         _hex = false;
         _preview = false;
+        widget.onWantsRoom?.call();
       }
     });
     // Wrapping applies to text; the table has its own cell cutting.
     final showWrap = !_hex && preview == _Preview.none && !showTable;
-    final wrap = IconButton(
+    final wrap = StillIconButton(
       key: const Key('wrap-body'),
       tooltip: context.l10n.rvWrap,
       isSelected: _wrap,
@@ -827,13 +857,20 @@ class _ResponseViewState extends State<ResponseView> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: LayoutBuilder(
-        builder: (context, c) => c.maxWidth < LayoutClass.mediumBreakpoint
+        // Large text needs the room a phone row saves.
+        builder: (context, c) =>
+            c.maxWidth <
+                LayoutClass.mediumBreakpoint *
+                    (MediaQuery.textScalerOf(context).scale(14) / 14).clamp(
+                      1.0,
+                      4.0,
+                    )
             ? Column(
                 children: [
                   Row(
                     children: [
                       Expanded(child: modesFor(true)),
-                      IconButton(
+                      StillIconButton(
                         key: const Key('response-search-toggle'),
                         tooltip: context.l10n.rvSearch,
                         isSelected: _showSearch || _query.isNotEmpty,
@@ -842,7 +879,7 @@ class _ResponseViewState extends State<ResponseView> {
                             setState(() => _showSearch = !_showSearch),
                       ),
                       if (canFilter)
-                        IconButton(
+                        StillIconButton(
                           key: const Key('response-filter-toggle'),
                           tooltip: context.l10n.rvFilter,
                           isSelected: _showFilter || _filter.isNotEmpty,
@@ -862,6 +899,15 @@ class _ResponseViewState extends State<ResponseView> {
                   const SizedBox(width: 8),
                   Expanded(child: search),
                   if (showWrap) wrap,
+                  if (canFilter && showTable)
+                    StillIconButton(
+                      key: const Key('response-filter-toggle'),
+                      tooltip: context.l10n.rvFilter,
+                      isSelected: _showFilter || _filter.isNotEmpty,
+                      icon: const Icon(Icons.filter_alt_outlined),
+                      onPressed: () =>
+                          setState(() => _showFilter = !_showFilter),
+                    ),
                   copy,
                 ],
               ),

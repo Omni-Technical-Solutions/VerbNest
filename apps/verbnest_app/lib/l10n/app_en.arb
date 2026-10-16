@@ -825,6 +825,8 @@
       }
     }
   },
+  "reMaximizeResponse": "Give the response the whole editor",
+  "reRestorePanes": "Show the request and the response",
   "tableNull": "null",
   "tableSortBy": "Sort by {name}",
   "@tableSortBy": {

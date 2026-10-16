@@ -13,6 +13,7 @@ import '../../l10n/l10n.dart';
 import '../layout_class.dart';
 import 'ui/adaptive_dialog.dart';
 import '../theme.dart';
+import 'ui/still_tooltip.dart';
 
 /// Star toggle for a request (FR-COL-004).
 class FavouriteButton extends ConsumerStatefulWidget {
@@ -29,7 +30,7 @@ class _FavouriteButtonState extends ConsumerState<FavouriteButton> {
   Widget build(BuildContext context) {
     final repo = ref.read(repositoryProvider);
     final fav = repo.isFavourite(widget.requestId);
-    return IconButton(
+    return StillIconButton(
       key: const Key('favourite'),
       tooltip: fav ? context.l10n.exFavRemove : context.l10n.exFavAdd,
       icon: Icon(fav ? Icons.star : Icons.star_border),
@@ -166,7 +167,7 @@ class _ExamplesDialogState extends ConsumerState<ExamplesDialog> {
                 ),
               ),
             ),
-            IconButton(
+            StillIconButton(
               key: const Key('delete-example'),
               tooltip: context.l10n.exDelete,
               icon: const Icon(Icons.delete_outline),

@@ -8,6 +8,7 @@ import '../state/var_text.dart';
 import 'synced_field.dart';
 import '../../l10n/l10n.dart';
 import '../theme.dart';
+import 'ui/still_tooltip.dart';
 
 /// Editable key/value table used for params, headers and form bodies.
 class KeyValueEditor extends StatefulWidget {
@@ -175,7 +176,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
     onChanged: (v) => _set(i, rows[i].copyWith(key: v)),
   );
 
-  Widget _removeButton(int i) => IconButton(
+  Widget _removeButton(int i) => StillIconButton(
     tooltip: context.l10n.remove,
     icon: const Icon(Icons.close, size: 18),
     onPressed: () => onChanged([...rows]..removeAt(i)),
@@ -226,7 +227,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
 
   Widget _typeToggle(int i) {
     final isFile = rows[i].type == KeyValueType.file;
-    return IconButton(
+    return StillIconButton(
       key: ValueKey('$idPrefix-type-$i'),
       tooltip: isFile
           ? context.l10n.kvSwitchToText

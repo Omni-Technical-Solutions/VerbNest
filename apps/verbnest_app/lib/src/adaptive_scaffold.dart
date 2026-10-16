@@ -28,6 +28,7 @@ import 'widgets/status_bar.dart';
 import 'widgets/ui/still_nav.dart';
 import 'widgets/ui/toast.dart';
 import 'widgets/ui/ui.dart';
+import 'widgets/ui/still_tooltip.dart';
 
 /// The product name; it is not translated.
 const kAppName = 'VerbNest';
@@ -642,7 +643,7 @@ class _TabChipState extends State<_TabChip> {
                 ),
                 Opacity(
                   opacity: selected || _hover ? 1 : 0.4,
-                  child: IconButton(
+                  child: StillIconButton(
                     tooltip: context.l10n.closeTab,
                     icon: const Icon(Icons.close, size: 14),
                     onPressed: widget.onClose,

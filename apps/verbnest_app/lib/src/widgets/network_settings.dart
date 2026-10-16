@@ -12,6 +12,7 @@ import 'cookie_manager.dart';
 import 'synced_field.dart';
 import '../../l10n/l10n.dart';
 import 'ui/toast.dart';
+import 'ui/still_tooltip.dart';
 
 /// Proxy, certificates and cookies (FR-HTTP-011..013), shown in Settings.
 class NetworkSettingsSection extends ConsumerWidget {
@@ -137,7 +138,7 @@ class NetworkSettingsSection extends ConsumerWidget {
         leading: const Icon(Icons.verified_user_outlined),
         title: Text(c.cas[i].name),
         subtitle: Text(context.l10n.nsCaHint),
-        trailing: IconButton(
+        trailing: StillIconButton(
           tooltip: context.l10n.nsRemove,
           icon: const Icon(Icons.delete_outline),
           onPressed: () => n.removeCa(i),
@@ -150,7 +151,7 @@ class NetworkSettingsSection extends ConsumerWidget {
         leading: const Icon(Icons.badge_outlined),
         title: Text(cert.name),
         subtitle: Text(context.l10n.nsClientCertFor(cert.pattern)),
-        trailing: IconButton(
+        trailing: StillIconButton(
           tooltip: context.l10n.nsRemove,
           icon: const Icon(Icons.delete_outline),
           onPressed: () => n.removeClientCert(cert.id),

@@ -15,6 +15,7 @@ import '../state/tree_state.dart';
 import '../state/variables.dart';
 import '../theme.dart';
 import 'cookie_manager.dart';
+import 'ui/still_tooltip.dart';
 
 /// Thin bar along the bottom of a desktop-size window: workspace, environment
 /// in use, whether the open request is saved, and the network state that
@@ -55,7 +56,7 @@ class StatusBar extends ConsumerWidget {
       VoidCallback? onTap,
     }) {
       final c = color ?? scheme.onSurfaceVariant;
-      return Tooltip(
+      return StillTooltip(
         message: tooltip ?? label,
         child: InkWell(
           key: key,

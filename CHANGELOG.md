@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.64.1
+
+- Fix: the results table could not be seen in a stacked layout (the response pane left about 95 px for rows). Choosing Table now gives the response the whole editor; a button in the response status row switches the request pane back. The JSONPath filter row is hidden while the table shows, and opens from a filter button in the toolbar. Request and response sit side by side from 820 px wide (was 1100).
+- Change: tooltips no longer fade (`StillTooltip`, `StillIconButton`). Only the accent/theme surface cross-fade and the system touch selection handle still move (ADR-020).
+- Fix: on large text the response toolbar switches to its compact form sooner, so nothing overflows.
+- Tests: `table_room_test.dart` (1280x800, 1440x900, 1000x700); phone landscape goldens refreshed.
+
 ## 0.64.0
 
 - Change: no animation anywhere. Changing the response view (Pretty, Raw, Hex, Table), sending a request, changing tab, navigating, opening a menu, dropdown, dialog or sheet, toggling a switch or checkbox, expanding a section, scrolling to the end of a list, and moving the mouse over a button all now swap at once instead of sliding, fading, growing or pulsing. See ADR-020.

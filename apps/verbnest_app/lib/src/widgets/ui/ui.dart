@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../theme.dart';
+import 'still_tooltip.dart';
 
 /// Short coloured HTTP method label.
 class MethodBadge extends StatelessWidget {
@@ -187,7 +188,7 @@ class InlineBanner extends StatelessWidget {
             const SizedBox(width: Space.sm),
             Expanded(child: child),
             if (onDismiss != null)
-              IconButton(
+              StillIconButton(
                 visualDensity: VisualDensity.compact,
                 icon: Icon(Icons.close, size: 16, color: fg),
                 onPressed: onDismiss,

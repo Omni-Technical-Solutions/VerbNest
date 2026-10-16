@@ -2314,6 +2314,18 @@ abstract class AppLocalizations {
   /// **'Whole body ({count})'**
   String tableWholeBody(int count);
 
+  /// No description provided for @reMaximizeResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the response the whole editor'**
+  String get reMaximizeResponse;
+
+  /// No description provided for @reRestorePanes.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the request and the response'**
+  String get reRestorePanes;
+
   /// No description provided for @tableNull.
   ///
   /// In en, this message translates to:

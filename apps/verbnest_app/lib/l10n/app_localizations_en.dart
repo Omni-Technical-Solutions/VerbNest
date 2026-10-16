@@ -1284,6 +1284,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get reMaximizeResponse => 'Give the response the whole editor';
+
+  @override
+  String get reRestorePanes => 'Show the request and the response';
+
+  @override
   String get tableNull => 'null';
 
   @override

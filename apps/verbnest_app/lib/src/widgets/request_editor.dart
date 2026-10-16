@@ -36,6 +36,7 @@ import 'ui/split_view.dart';
 import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
 import 'ui/toast.dart';
+import 'ui/still_tooltip.dart';
 
 export 'request_editor/url_bar.dart' show httpMethods;
 
@@ -290,7 +291,7 @@ class _Toolbar extends ConsumerWidget {
           children: [
             FavouriteButton(requestId: requestId),
             if (compact)
-              IconButton(
+              StillIconButton(
                 key: const Key('examples'),
                 tooltip: context.l10n.reExamples,
                 icon: const Icon(Icons.bookmarks_outlined),
@@ -517,7 +518,7 @@ class _Panes extends ConsumerStatefulWidget {
   final bool compact;
 
   /// Editor width from which the response sits beside the request by default.
-  static const sideBySideWidth = 1100.0;
+  static const sideBySideWidth = 820.0;
 
   @override
   ConsumerState<_Panes> createState() => _PanesState();
@@ -526,6 +527,9 @@ class _Panes extends ConsumerStatefulWidget {
 class _PanesState extends ConsumerState<_Panes> {
   /// Compact only: which pane is showing.
   bool _showResponse = false;
+
+  /// Wide layouts: the response has the whole editor (the table asks for it).
+  bool _maximized = false;
 
   @override
   void didUpdateWidget(_Panes old) {
@@ -548,7 +552,7 @@ class _PanesState extends ConsumerState<_Panes> {
       item: _state.item,
       notifier: widget.notifier,
     );
-    final response = _response(context, ref);
+    final response = _response(context, ref, maximizable: !widget.compact);
     if (widget.compact) return _compactPanes(context, request, response);
 
     return LayoutBuilder(
@@ -572,12 +576,13 @@ class _PanesState extends ConsumerState<_Panes> {
                   .update(layout.copyWith(ratio: r)),
               first: request,
               second: response,
+              collapseFirst: _maximized && _hasResult,
             ),
-            if (!short)
+            if (!short && !(_maximized && _hasResult))
               PositionedDirectional(
                 end: 4,
                 top: 4,
-                child: IconButton(
+                child: StillIconButton(
                   key: const Key('split-orientation'),
                   visualDensity: VisualDensity.compact,
                   tooltip: sideBySide
@@ -652,12 +657,25 @@ class _PanesState extends ConsumerState<_Panes> {
     );
   }
 
-  Widget _response(BuildContext context, WidgetRef ref) {
+  Widget _response(
+    BuildContext context,
+    WidgetRef ref, {
+    bool maximizable = false,
+  }) {
     final port = ref.read(filePortProvider);
     final r = _state.response;
     return ResponseView(
       state: _state,
       codeFontSize: ref.watch(prefsProvider).editorFontSize,
+      maximized: _maximized,
+      onToggleMaximize: maximizable
+          ? () => setState(() => _maximized = !_maximized)
+          : null,
+      onWantsRoom: maximizable && !_maximized
+          ? () => WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _maximized = true);
+            })
+          : null,
       share: port.savesBySharing,
       onSaveCsv: (csv) async {
         final ok = await port.save(

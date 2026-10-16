@@ -299,6 +299,8 @@ void oauthTests() {
     expect(tester.takeException(), isNull);
     expect(find.byKey(const Key('auth-type')), findsOneWidget);
 
+    // Side by side from 820 px, the tab row scrolls.
+    await tester.ensureVisible(find.text('Assertions'));
     await tester.tap(find.text('Assertions'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

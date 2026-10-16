@@ -6,6 +6,7 @@ import 'ui/still_dropdown.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 
 import '../../l10n/l10n.dart';
+import 'ui/still_tooltip.dart';
 
 String _targetLabel(BuildContext context, AssertionTarget t) {
   final l = context.l10n;
@@ -82,7 +83,7 @@ class AssertionsEditor extends StatelessWidget {
           if (a.target != AssertionTarget.schema) _opMenu(i, a, ops),
           if (a.op.needsValue || a.target == AssertionTarget.schema)
             _valueField(i, a),
-          IconButton(
+          StillIconButton(
             key: Key('assert-delete-$i'),
             tooltip: context.l10n.remove,
             icon: const Icon(Icons.close, size: 18),

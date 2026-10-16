@@ -4,6 +4,7 @@ import 'package:verbnest_core/verbnest_core.dart';
 
 import '../state/network_state.dart';
 import '../../l10n/l10n.dart';
+import 'ui/still_tooltip.dart';
 
 /// Lists the saved cookies by domain; remove one, a domain or all of them.
 class CookieManagerDialog extends ConsumerWidget {
@@ -64,7 +65,7 @@ class _CookieList extends StatelessWidget {
     return ListTile(
       dense: true,
       title: Text(d, style: const TextStyle(fontWeight: FontWeight.w600)),
-      trailing: IconButton(
+      trailing: StillIconButton(
         key: Key('clear-domain-$d'),
         tooltip: context.l10n.cookiesDeleteDomain(d),
         icon: const Icon(Icons.delete_sweep_outlined),
@@ -90,7 +91,7 @@ class _CookieList extends StatelessWidget {
               : context.l10n.cookieExpires('${c.expires!.toLocal()}'),
         ].join(' · '),
       ),
-      trailing: IconButton(
+      trailing: StillIconButton(
         tooltip: context.l10n.delete,
         icon: const Icon(Icons.close),
         onPressed: () => notifier.remove(c),

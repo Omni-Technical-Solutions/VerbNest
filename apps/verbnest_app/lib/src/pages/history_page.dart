@@ -20,6 +20,7 @@ import '../widgets/name_dialog.dart';
 import '../widgets/response_view.dart';
 import '../../l10n/l10n.dart';
 import '../widgets/ui/ui.dart';
+import '../widgets/ui/still_tooltip.dart';
 
 /// Sent requests, newest first, with search (FR-HIS-001/002).
 class HistoryPage extends ConsumerStatefulWidget {
@@ -81,7 +82,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               onChanged: (v) => setState(() => _query = v.trim()),
             ),
           ),
-          IconButton(
+          StillIconButton(
             key: const Key('console-open'),
             tooltip: context.l10n.histConsole,
             icon: const Icon(Icons.terminal),
@@ -89,7 +90,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               context,
             ).push(StillPageRoute<void>(builder: (_) => const ConsolePage())),
           ),
-          IconButton(
+          StillIconButton(
             key: const Key('history-clear'),
             tooltip: context.l10n.histClear,
             icon: const Icon(Icons.delete_sweep_outlined),

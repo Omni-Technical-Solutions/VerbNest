@@ -8,6 +8,7 @@ import '../state/code_view.dart';
 import '../../l10n/l10n.dart';
 import '../theme.dart';
 import 'ui/toast.dart';
+import 'ui/still_tooltip.dart';
 
 /// Read-only, virtualised text view with line numbers, optional JSON colours
 /// and folding, and search highlighting. Rows are fixed height so a body of
@@ -303,7 +304,7 @@ class _CodeViewState extends State<CodeView> {
                                                 child: InkWell(
                                                   key: ValueKey('copy-path-$i'),
                                                   onTap: () => _copyPath(i),
-                                                  child: Tooltip(
+                                                  child: StillTooltip(
                                                     message: context
                                                         .l10n
                                                         .codeCopyPath,

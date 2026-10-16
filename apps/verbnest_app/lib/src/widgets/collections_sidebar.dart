@@ -23,6 +23,7 @@ import 'ui/ui.dart';
 import 'name_dialog.dart';
 import '../../l10n/l10n.dart';
 import 'ui/toast.dart';
+import 'ui/still_tooltip.dart';
 
 enum _Action {
   newRequest,
@@ -113,7 +114,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
               onChanged: (v) => setState(() => _filter = v),
             ),
           ),
-          IconButton(
+          StillIconButton(
             key: const Key('favourites-filter'),
             tooltip: _favOnly ? context.l10n.sbShowAll : context.l10n.sbShowFav,
             icon: Icon(_favOnly ? Icons.star : Icons.star_border),
@@ -155,7 +156,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
                 ),
             ],
           ),
-          IconButton(
+          StillIconButton(
             key: const Key('new-collection'),
             tooltip: context.l10n.sbNewCollection,
             icon: const Icon(Icons.create_new_folder_outlined),

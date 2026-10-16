@@ -9,6 +9,7 @@ import '../state/session.dart';
 import 'ui/adaptive_dialog.dart';
 import '../state/variables.dart';
 import '../../l10n/l10n.dart';
+import 'ui/still_tooltip.dart';
 
 /// Environment dropdown plus a quick-look of the variables in effect
 /// (FR-VAR-004).
@@ -45,7 +46,7 @@ class EnvSelector extends ConsumerWidget {
             ],
             onSelected: ref.read(activeEnvProvider.notifier).select,
           ),
-          IconButton(
+          StillIconButton(
             key: const Key('quick-look'),
             tooltip: context.l10n.variablesInEffect,
             icon: const Icon(Icons.visibility_outlined),

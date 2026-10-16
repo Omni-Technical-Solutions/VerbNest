@@ -18,9 +18,12 @@ How, in layers:
 
 ## What still moves, and why
 - A change of accent or of light/dark: Material surfaces (`Scaffold`, cards) cross-fade their colour over 200 ms and Flutter has no switch for it.
-- Tooltips fade in (150 ms); `IconButton` builds Material's `Tooltip`, which has no switch. Replacing them means replacing every icon button's tooltip.
 - A touch tap in a text field shows the selection handle, which the system fades in; the on-screen keyboard and the platform back gesture are the operating system's; a flick scrolls with inertia (physics, not an animation of the UI).
 - The tap highlight is invisible but still runs a short timer.
 
 ## Consequences
 Hover, press and focus-ring tints are gone (keyboard focus keeps a tint); text fields show focus with the caret, not a thicker outline; the response is unchanged in content. A setting to bring motion back was not built; `Motion` keeps its Material 3 tokens so one could be.
+
+
+## Update 0.64.1
+Tooltips no longer fade: `StillTooltip` (a `RawTooltip` with no animation) and `StillIconButton` (label as a `Semantics` label on the icon) replace `Tooltip` and `IconButton(tooltip:)`. Still moving: the accent/theme surface cross-fade and the system's touch selection handle.

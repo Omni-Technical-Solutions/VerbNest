@@ -7,6 +7,7 @@ import 'package:verbnest_http/verbnest_http.dart';
 
 import '../../l10n/l10n.dart';
 import '../theme.dart';
+import 'ui/still_tooltip.dart';
 
 /// Live message log for a WebSocket or SSE connection.
 class RealtimeDialog extends StatefulWidget {
@@ -214,7 +215,7 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
           onChanged: (v) => setState(() => _hex = v ?? false),
         ),
         Text(context.l10n.rtHex),
-        IconButton(
+        StillIconButton(
           key: const Key('rt-send'),
           tooltip: context.l10n.rtSendTooltip,
           onPressed: _open ? _send : null,

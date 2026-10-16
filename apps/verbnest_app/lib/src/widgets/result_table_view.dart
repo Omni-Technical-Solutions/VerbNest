@@ -13,6 +13,7 @@ import '../../l10n/l10n.dart';
 import '../theme.dart';
 import 'ui/adaptive_dialog.dart';
 import 'ui/toast.dart';
+import 'ui/still_tooltip.dart';
 
 /// A read-only grid of a [ResultTable], in the manner of a database client's
 /// results grid (FR-RES-008, FR-RES-009): the header and the row numbers stay
@@ -834,7 +835,7 @@ class _ResultTableViewState extends State<ResultTableView> {
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        child: Tooltip(
+                        child: StillTooltip(
                           message: l10n.tableSortBy(t.columns[c].name),
                           child: Semantics(
                             button: true,

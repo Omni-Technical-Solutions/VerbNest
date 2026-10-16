@@ -119,6 +119,10 @@ void main() {
     );
     await openTable(t);
     expect(find.text('3 rows, 2 columns'), findsOneWidget);
+    // The filter row opens from the toolbar while the table has the room.
+    expect(find.byKey(const Key('response-filter')), findsNothing);
+    await t.tap(find.byKey(const Key('response-filter-toggle')));
+    await t.pump();
     await t.enterText(find.byKey(const Key('response-filter')), r'$.items[0]');
     await t.pump();
     // One object: a Key / Value table.

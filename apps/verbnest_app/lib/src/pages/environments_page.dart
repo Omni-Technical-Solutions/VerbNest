@@ -14,6 +14,7 @@ import '../theme.dart';
 import '../layout_class.dart';
 import '../widgets/ui/scroll_edge_fade.dart';
 import '../widgets/ui/toast.dart';
+import '../widgets/ui/still_tooltip.dart';
 
 /// Environments and globals with their variables (FR-VAR-002..004).
 class EnvironmentsPage extends ConsumerStatefulWidget {
@@ -122,19 +123,19 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
               ),
             ),
           ),
-          IconButton(
+          StillIconButton(
             key: const Key('env-add'),
             tooltip: context.l10n.envNew,
             icon: const Icon(Icons.add),
             onPressed: _add,
           ),
           if (env != null) ...[
-            IconButton(
+            StillIconButton(
               tooltip: context.l10n.rename,
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => _rename(env),
             ),
-            IconButton(
+            StillIconButton(
               tooltip: context.l10n.delete,
               icon: const Icon(Icons.delete_outline),
               onPressed: () => _delete(env),
@@ -278,14 +279,15 @@ class _VariablesEditorState extends State<VariablesEditor> {
     onChanged: (x) => _set(i, _copy(v, key: x)),
   );
 
-  Widget _secretButton(BuildContext context, int i, Variable v) => IconButton(
-    key: ValueKey('var-secret-$i'),
-    tooltip: v.secret ? context.l10n.envSecret : context.l10n.envMarkSecret,
-    icon: Icon(v.secret ? Icons.lock : Icons.lock_open, size: 18),
-    onPressed: () => _set(i, _copy(v, secret: !v.secret)),
-  );
+  Widget _secretButton(BuildContext context, int i, Variable v) =>
+      StillIconButton(
+        key: ValueKey('var-secret-$i'),
+        tooltip: v.secret ? context.l10n.envSecret : context.l10n.envMarkSecret,
+        icon: Icon(v.secret ? Icons.lock : Icons.lock_open, size: 18),
+        onPressed: () => _set(i, _copy(v, secret: !v.secret)),
+      );
 
-  Widget _removeButton(BuildContext context, int i) => IconButton(
+  Widget _removeButton(BuildContext context, int i) => StillIconButton(
     tooltip: context.l10n.remove,
     icon: const Icon(Icons.close, size: 18),
     onPressed: () => _update([..._vars]..removeAt(i)),
@@ -373,7 +375,7 @@ class _VariablesEditorState extends State<VariablesEditor> {
 
   Widget _revealButton(BuildContext context, int i) {
     final shown = _revealed.contains(i);
-    return IconButton(
+    return StillIconButton(
       key: ValueKey('var-reveal-$i'),
       tooltip: shown ? context.l10n.envHide : context.l10n.envShow,
       icon: Icon(shown ? Icons.visibility_off : Icons.visibility, size: 18),
