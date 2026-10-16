@@ -1,0 +1,3 @@
+[{"id":1,"name":"Rex","species":"dog","age":4,"vaccinated":true,"owner":null},
+ {"id":2,"name":"Tom","species":"cat","age":2.5,"vaccinated":false,"owner":"Ann"},
+ {"id":3,"name":"Ziggy, the \"great\"","species":"bird","vaccinated":true,"owner":"Bo"}]

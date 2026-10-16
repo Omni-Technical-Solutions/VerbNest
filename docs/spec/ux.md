@@ -94,6 +94,13 @@ Rules that apply at every size:
 7. **WebSocket session (P1):** connect → split view: composer (bottom) + message log (top) with filters; on phones, log full screen with composer pinned above keyboard.
 8. **OAuth 2.0 (P1):** Auth tab → configure → "Get new token" → system browser → callback → token stored → "Use token".
 
+### 3.1 Results table
+- A **Table** segment sits in the response body switch (Pretty, Raw, Hex, Preview, Table) and appears only when the body can be read as rows and columns. It is opt-in: Pretty stays the first view.
+- The filter box feeds the table: `$.items[*]` in the filter chooses the rows, like a query. When the body holds several arrays a "Rows from" menu names them.
+- Grid: pinned header (name and type) and row-number column, resizable columns (double-click fits), sort by header click (ascending, descending, off), `null` muted, numbers right-aligned, long values cut with an ellipsis, a footer ("250 rows, 8 columns", selection count, cap note).
+- Select a cell, row (row number), column (header) or range; Cmd/Ctrl+C copies tab-separated; Copy as CSV, JSON, Markdown; Save as CSV. Tap, double-click or Enter opens the full value in a detail sheet (phone) or dialog (desktop).
+- Read-only. Nested objects and arrays show as a one-line JSON preview; "Flatten nested keys" turns them into dotted columns.
+
 ## 4. Component inventory
 - `UrlField` with variable token rendering and autocomplete overlay.
 - `KeyValueEditor` (table on desktop/tablet, card list on compact).

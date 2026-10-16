@@ -65,6 +65,8 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.verbnest`); 
 **FR-RES-004 (P0)** Search within body; (P1) JSONPath / XPath filter.
 **FR-RES-005 (P0)** Save body to file; copy to clipboard; share (mobile).
 **FR-RES-006 (P0)** Bodies > 10 MB stream to a temp file; preview shows first 1 MB with "open full".
+**FR-RES-008 (P1)** Table view: a list of records in the body (JSON array of objects, an object holding one such array, array of arrays, a single object as Key/Value, XML repeated elements, CSV/TSV) can be read as a grid. Pinned header and row numbers, resizable columns, sort by header, null shown distinctly, long and nested values cut with a way to see them in full, footer with row and column counts. Read-only. Opt-in (the Table segment); the JSONPath/XPath filter feeds the grid.
+**FR-RES-009 (P1)** Table selection and copy: select a cell, row, column or range; copy as tab-separated text, CSV, JSON or Markdown; save as CSV. The grid shows at most 10,000 rows, 200 columns and 4,000 characters per cell (copy and export use all the parsed data).
 **FR-RES-007 (P1)** Timing breakdown (DNS, connect, TLS, TTFB, download) and connection info (remote IP, protocol, TLS version, cipher, certificate chain).
 
 ## 5. Variables & environments (FR-VAR)
