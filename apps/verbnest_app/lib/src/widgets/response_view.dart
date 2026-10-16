@@ -7,13 +7,16 @@ import 'package:verbnest_core/verbnest_core.dart'
         BodyKind,
         ColumnType,
         ResultTable,
+        TableReading,
         TableSource,
         bodyKindOf,
         filterBody,
-        findTableSources,
         hexDump,
-        tableFromBody,
-        tableFromJson;
+        looksTabular,
+        readTable,
+        readTableAsync,
+        tableIsolateThreshold,
+        tableMaxBytes;
 import 'package:verbnest_http/verbnest_http.dart';
 
 import '../state/cookies.dart';
@@ -527,58 +530,51 @@ class _ResponseViewState extends State<ResponseView> {
   _TableInfo? _tableInfoCache;
   String? _tableInfoKey;
 
-  /// The body read as a table, or none. Parsing a large body is slow, so the
-  /// result is kept until the text or an option changes (typing in the search
-  /// box rebuilds this). Bodies over [_tableMaxBytes] are not offered.
-  static const _tableMaxBytes = 5 * 1024 * 1024;
-
+  /// The body read as a table, or none. A small body is read at once (typing in
+  /// the search box rebuilds this, so the result is kept until the text or an
+  /// option changes). A large one is not read until the Table view is chosen,
+  /// and then in another isolate, so the screen does not stall; until then the
+  /// segment is offered on a cheap guess. Bodies over [tableMaxBytes] are not
+  /// offered a table.
   _TableInfo _tableInfo(HttpResponseRecord r, String text, BodyKind kind) {
     final filtered = text != r.bodyText && kind == BodyKind.json;
     final ct = filtered ? 'application/json' : r.header('content-type');
+    final large = text.length > tableIsolateThreshold;
     final key =
-        '${text.hashCode}|${text.length}|$ct|$_tableSource|$_flatten|$_headerRow';
+        '${text.hashCode}|${text.length}|$ct|$_tableSource|$_flatten|$_headerRow|${large && _table}';
     if (_tableInfoKey == key && _tableInfoCache != null) {
       return _tableInfoCache!;
     }
     _tableInfoKey = key;
-    return _tableInfoCache = _buildTableInfo(r, text, ct);
-  }
-
-  _TableInfo _buildTableInfo(HttpResponseRecord r, String text, String? ct) {
-    if (r.body.length > _tableMaxBytes || text.isEmpty) {
-      return const _TableInfo(null, [], false);
+    if (r.body.length > tableMaxBytes || text.isEmpty) {
+      return _tableInfoCache = const _TableInfo();
     }
-    final type = (ct ?? '').toLowerCase();
-    if (!type.contains('json')) {
-      return _TableInfo(tableFromBody(text, ct), const [], false);
-    }
-    final Object? root;
-    try {
-      root = jsonDecode(text);
-    } on FormatException {
-      return const _TableInfo(null, [], false);
-    }
-    final sources = root is Map ? findTableSources(root) : <TableSource>[];
-    final source = sources.any((e) => e.path == _tableSource)
-        ? _tableSource
-        : null;
-    final matrix =
-        root is List &&
-        root.isNotEmpty &&
-        root.every((e) => e == null || e is List) &&
-        root.any((e) => e is List);
-    ResultTable? table;
-    try {
-      table = tableFromJson(
-        root,
-        source: source,
-        flatten: _flatten,
-        firstRowHeader: _headerRow,
+    if (!large) {
+      return _tableInfoCache = _TableInfo.from(
+        readTable(
+          text,
+          ct,
+          source: _tableSource,
+          flatten: _flatten,
+          firstRowHeader: _headerRow,
+        ),
+        asked: false,
       );
-    } on FormatException {
-      table = null;
     }
-    return _TableInfo(table, sources, matrix);
+    if (!looksTabular(ct, text)) return _tableInfoCache = const _TableInfo();
+    if (!_table) return _tableInfoCache = const _TableInfo(guess: true);
+    readTableAsync(
+      text,
+      ct,
+      source: _tableSource,
+      flatten: _flatten,
+      firstRowHeader: _headerRow,
+    ).then((reading) {
+      // The body or an option may have changed while it was being read.
+      if (!mounted || _tableInfoKey != key) return;
+      setState(() => _tableInfoCache = _TableInfo.from(reading, asked: true));
+    });
+    return _tableInfoCache = const _TableInfo(loading: true);
   }
 
   HttpResponseRecord? _textFor;
@@ -635,7 +631,7 @@ class _ResponseViewState extends State<ResponseView> {
     // Whether the body can be a table does not depend on the view chosen, so
     // the Table segment stays available from Hex or Preview.
     final info = _tableInfo(r, filtering ? text : r.bodyText, kind);
-    final showTable = _table && info.table != null;
+    final showTable = _table && info.canTable;
     return LayoutBuilder(
       builder: (context, c) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -653,7 +649,7 @@ class _ResponseViewState extends State<ResponseView> {
                     text,
                     preview,
                     canFilter: filterable,
-                    canTable: info.table != null,
+                    canTable: info.canTable,
                     showTable: showTable,
                   ),
                   // On a phone the filter opens from the toolbar, and stays
@@ -890,7 +886,25 @@ class _ResponseViewState extends State<ResponseView> {
   /// come from, flattening nested keys, and a header row. The search box above
   /// filters the rows.
   Widget _tableBody(_TableInfo info) {
-    final table = info.table!;
+    final table = info.table;
+    if (table == null) {
+      // Being read in another isolate, or not a table after all.
+      return Center(
+        child: info.loading
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(key: Key('table-loading')),
+                  const SizedBox(height: 12),
+                  Text(context.l10n.tableLoading),
+                ],
+              )
+            : Text(
+                context.l10n.tableNotTabular,
+                key: const Key('table-not-tabular'),
+              ),
+      );
+    }
     final l10n = context.l10n;
     final hasNested =
         _flatten || table.columns.any((c) => c.type == ColumnType.json);
@@ -997,11 +1011,34 @@ class _ResponseViewState extends State<ResponseView> {
 }
 
 /// A body read as a table, with the arrays it could be read from and whether it
-/// is an array of arrays (which can take its first row as the header).
+/// is an array of arrays (which can take its first row as the header). A large
+/// body is [guess]ed tabular, then [loading] while it is read in another
+/// isolate; a body that turns out not to be a table is [failed].
 class _TableInfo {
-  const _TableInfo(this.table, this.sources, this.matrix);
+  const _TableInfo({
+    this.table,
+    this.sources = const [],
+    this.matrix = false,
+    this.loading = false,
+    this.guess = false,
+    this.failed = false,
+  });
+
+  /// [asked] is true when the person chose the Table view of a large body: a
+  /// failed read is then reported. A small body that is not a table simply has
+  /// no Table view.
+  factory _TableInfo.from(TableReading r, {required bool asked}) =>
+      r.table == null
+      ? (asked ? const _TableInfo(failed: true) : const _TableInfo())
+      : _TableInfo(table: r.table, sources: r.sources, matrix: r.matrix);
 
   final ResultTable? table;
   final List<TableSource> sources;
   final bool matrix;
+  final bool loading;
+  final bool guess;
+  final bool failed;
+
+  /// Whether the Table view is on offer.
+  bool get canTable => table != null || loading || guess || failed;
 }

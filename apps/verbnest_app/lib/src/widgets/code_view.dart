@@ -106,6 +106,12 @@ class _CodeViewState extends State<CodeView> {
     showToast(context, context.l10n.codePathCopied(path));
   }
 
+  /// Lines longer than this are not syntax coloured.
+  static const _maxColouredLine = 5000;
+
+  /// Search matches marked on one line.
+  static const _maxMarksPerLine = 500;
+
   TextSpan _span(String line, TextStyle base, ColorScheme scheme) {
     final q = widget.query.toLowerCase();
     final marks = <(int, int)>[];
@@ -117,9 +123,17 @@ class _CodeViewState extends State<CodeView> {
         i = lower.indexOf(q, i + q.length)
       ) {
         marks.add((i, i + q.length));
+        // A giant line gets only its first matches marked: each one costs a
+        // text span, and thousands of spans make the line slow to lay out.
+        if (marks.length >= _maxMarksPerLine) break;
       }
     }
-    final tokens = widget.json ? tokenizeJsonLine(line) : const <CodeToken>[];
+    // A line of tens of thousands of characters (minified or invalid JSON) is
+    // drawn plain: colouring it would build one span per token, and the text
+    // layout of that is slower than the rest of the app put together.
+    final tokens = widget.json && line.length <= _maxColouredLine
+        ? tokenizeJsonLine(line)
+        : const <CodeToken>[];
     if (marks.isEmpty && tokens.isEmpty) {
       return TextSpan(text: line, style: base);
     }
@@ -138,16 +152,23 @@ class _CodeViewState extends State<CodeView> {
     }
     final points = cuts.toList()..sort();
     final spans = <InlineSpan>[];
+    // Tokens and matches are in order and the cuts ascend, so one pass over
+    // each finds the token and match under a segment (a scan of all of them
+    // per segment is quadratic in the line length).
+    var ti = 0, mi = 0;
     for (var i = 0; i < points.length - 1; i++) {
       final a = points[i], b = points[i + 1];
       var style = base;
-      for (final t in tokens) {
-        if (t.start <= a && b <= t.end) {
-          style = base.copyWith(color: _color(t.kind, scheme));
-          break;
-        }
+      while (ti < tokens.length && tokens[ti].end <= a) {
+        ti++;
       }
-      if (marks.any((m) => m.$1 <= a && b <= m.$2)) {
+      if (ti < tokens.length && tokens[ti].start <= a && b <= tokens[ti].end) {
+        style = base.copyWith(color: _color(tokens[ti].kind, scheme));
+      }
+      while (mi < marks.length && marks[mi].$2 <= a) {
+        mi++;
+      }
+      if (mi < marks.length && marks[mi].$1 <= a && b <= marks[mi].$2) {
         style = style.copyWith(
           backgroundColor: AppColors.of(context).searchMark,
           color: AppColors.of(context).onSearchMark,

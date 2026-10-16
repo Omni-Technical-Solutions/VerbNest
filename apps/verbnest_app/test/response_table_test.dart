@@ -295,4 +295,89 @@ void main() {
     expect(copied, contains('"name": "Rex"'));
     expect(t.takeException(), isNull);
   });
+
+  group('large bodies', () {
+    String rows(int n) =>
+        '[${List.generate(n, (i) => '{"id":$i,"name":"row number $i"}').join(',')}]';
+
+    testWidgets('are read in an isolate only when the table is chosen', (
+      t,
+    ) async {
+      final big = rows(12000);
+      expect(big.length, greaterThan(tableIsolateThreshold));
+      await show(t, big, 'application/json');
+      // Offered on a cheap guess, with nothing parsed or shown yet.
+      expect(find.byType(ResultTableView), findsNothing);
+      expect(find.byKey(const Key('table-loading')), findsNothing);
+      await openTable(t);
+      expect(find.byKey(const Key('table-loading')), findsOneWidget);
+      expect(find.text('Reading the table…'), findsOneWidget);
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 1500)),
+      );
+      await t.pump();
+      expect(find.byType(ResultTableView), findsOneWidget);
+      expect(find.byKey(const Key('table-loading')), findsNothing);
+      expect(find.textContaining('12000 rows, 2 columns'), findsOneWidget);
+    });
+
+    testWidgets('that are not tables after all say so', (t) async {
+      // Starts like a list but is not valid JSON.
+      final broken = '${rows(12000)} oops';
+      await show(t, broken, 'application/json');
+      await openTable(t);
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 1500)),
+      );
+      await t.pump();
+      expect(find.byKey(const Key('table-not-tabular')), findsOneWidget);
+      expect(find.byType(ResultTableView), findsNothing);
+    });
+
+    testWidgets('that cannot be tables are not offered one', (t) async {
+      // A big JSON string is not a list or an object.
+      await show(t, '"${'x' * 300000}"', 'application/json');
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('body-view')),
+          matching: find.text('Table'),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('over 5 MB are not offered a table', (t) async {
+      // CSV is shown as it is, so a big body is cheap to put on screen.
+      final huge = '${'a' * 1000}\n' * 5400;
+      expect(huge.length, greaterThan(tableMaxBytes));
+      await show(t, huge, 'text/csv');
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('body-view')),
+          matching: find.text('Table'),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the segment stays while Hex is chosen and back again', (
+      t,
+    ) async {
+      await show(t, rows(12000), 'application/json');
+      await t.tap(
+        find.descendant(
+          of: find.byKey(const Key('body-view')),
+          matching: find.text('Hex'),
+        ),
+      );
+      await t.pump();
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('body-view')),
+          matching: find.text('Table'),
+        ),
+        findsOneWidget,
+      );
+    });
+  });
 }

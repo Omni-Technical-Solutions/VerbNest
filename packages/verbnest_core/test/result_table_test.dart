@@ -353,4 +353,98 @@ void main() {
     expect(t.rowCount, 100000);
     expect(sw.elapsedMilliseconds, lessThan(5000));
   });
+
+  group('readTable', () {
+    test('adds the candidate arrays and the matrix flag', () {
+      final r = readTable(fixture('wrapped.json'), 'application/json');
+      expect(r.table!.label, r'$.items');
+      expect(r.sources.map((s) => s.path), [r'$.items', r'$.links']);
+      expect(r.matrix, isFalse);
+      final m = readTable(fixture('matrix.json'), 'application/json');
+      expect(m.matrix, isTrue);
+      expect(readTable('[]', 'application/json').table, isNull);
+      expect(readTable('', 'application/json').table, isNull);
+      expect(readTable('{bad', 'application/json').table, isNull);
+    });
+
+    test('a source that is not in the body is ignored', () {
+      final r = readTable(
+        fixture('wrapped.json'),
+        'application/json',
+        source: r'$.nope',
+      );
+      expect(r.table!.label, r'$.items');
+    });
+
+    test('XML and CSV go through the same call', () {
+      expect(readTable(fixture('list.xml'), 'text/xml').table!.rowCount, 2);
+      expect(readTable(fixture('pets.csv'), 'text/csv').table!.rowCount, 3);
+    });
+
+    test('looksTabular is a cheap guess from type and first character', () {
+      expect(looksTabular('application/json', '  [1]'), isTrue);
+      expect(looksTabular('application/json', '\n{"a":1}'), isTrue);
+      expect(looksTabular('application/json', '"text"'), isFalse);
+      expect(looksTabular('application/json', ''), isFalse);
+      expect(looksTabular('text/csv', 'a,b'), isTrue);
+      expect(looksTabular('application/xml', '<a/>'), isTrue);
+      expect(looksTabular('text/html', '[1]'), isFalse);
+    });
+
+    test(
+      'a large body is read in another isolate with the same result',
+      () async {
+        final big = jsonEncode([
+          for (var i = 0; i < 12000; i++) {'id': i, 'name': 'row number $i'},
+        ]);
+        expect(big.length, greaterThan(tableIsolateThreshold));
+        final viaIsolate = await readTableAsync(big, 'application/json');
+        final direct = readTable(big, 'application/json');
+        expect(viaIsolate.table!.rowCount, 12000);
+        expect(viaIsolate.table!.columns.map((c) => c.name), ['id', 'name']);
+        expect(viaIsolate.table!.rows.last, direct.table!.rows.last);
+        // A small body does not need one.
+        final small = await readTableAsync('[{"a":1}]', 'application/json');
+        expect(small.table!.rowCount, 1);
+      },
+    );
+  });
+
+  group('speed-ups keep the results', () {
+    test('sort on mixed kinds, dates and booleans', () {
+      final t = tableFromJson([
+        {'b': true, 'm': 3, 'd': '2026-01-02'},
+        {'b': false, 'm': 'x', 'd': '2026-01-01'},
+        {'b': true, 'm': 1, 'd': 'bad'},
+        {'b': null, 'm': null, 'd': null},
+      ])!;
+      expect(t.sortOrder(0, ascending: true), [1, 0, 2, 3]);
+      expect(t.sortOrder(0, ascending: false), [0, 2, 1, 3]);
+      // Mixed numbers and text sort as text without errors, nulls last.
+      expect(t.sortOrder(1, ascending: true).last, 3);
+      expect(t.sortOrder(2, ascending: true).last, 3);
+    });
+
+    test('the row search index is reused and cells do not run together', () {
+      final t = tableFromJson([
+        {'a': 'ab', 'b': 'cd'},
+        {'a': 'abc', 'b': 'd'},
+      ])!;
+      expect(t.matchingRows('bc'), [1]);
+      expect(t.matchingRows('BC'), [1]);
+      expect(t.matchingRows('abcd'), isEmpty);
+      expect(t.matchingRows('cd'), [0]);
+    });
+
+    test('writers agree on awkward cells', () {
+      final t = tableFromJson([
+        {'a': 'x\ty', 'b': 'q"uote', 'c': 'line\r\nbreak'},
+      ])!;
+      expect(t.toTsv([0], [0, 1, 2]), 'x y\tq"uote\tline break');
+      expect(
+        t.toCsv([0], [0, 1, 2]),
+        'a,b,c\r\nx\ty,"q""uote","line\r\nbreak"\r\n',
+      );
+    });
+  });
 }

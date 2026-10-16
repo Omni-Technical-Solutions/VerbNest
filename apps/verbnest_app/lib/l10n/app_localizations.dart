@@ -2296,6 +2296,18 @@ abstract class AppLocalizations {
   /// **'sorted descending'**
   String get tableSortedDescending;
 
+  /// No description provided for @tableLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the table…'**
+  String get tableLoading;
+
+  /// No description provided for @tableNotTabular.
+  ///
+  /// In en, this message translates to:
+  /// **'This response can\'t be shown as a table'**
+  String get tableNotTabular;
+
   /// No description provided for @tableNull.
   ///
   /// In en, this message translates to:

@@ -72,4 +72,59 @@ void main() {
     final h = t.getSize(find.byType(Text).last).height;
     expect(h, lessThan(30));
   });
+
+  testWidgets('a huge single line (invalid or minified JSON) renders quickly', (
+    t,
+  ) async {
+    // 12,000 objects on one line, with a search hit in every one: this took
+    // minutes when each segment scanned every token.
+    final line =
+        '[${List.generate(12000, (i) => '{"id":$i,"name":"row $i"}').join(',')}] oops';
+    final sw = Stopwatch()..start();
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CodeView(text: line, json: true, query: 'row'),
+        ),
+      ),
+    );
+    sw.stop();
+    expect(sw.elapsedMilliseconds, lessThan(5000));
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('short lines are still coloured and search marks still show', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: CodeView(
+            text: '{"a": "needle", "b": 1}',
+            json: true,
+            query: 'needle',
+          ),
+        ),
+      ),
+    );
+    final text = t
+        .widget<RichText>(
+          find.byWidgetPredicate(
+            (w) => w is RichText && w.text.toPlainText().contains('needle'),
+          ),
+        )
+        .text;
+    final spans = <TextSpan>[];
+    void walk(InlineSpan s) {
+      if (s is TextSpan) {
+        spans.add(s);
+        s.children?.forEach(walk);
+      }
+    }
+
+    walk(text);
+    // More than one colour, and a highlighted match.
+    expect(spans.map((s) => s.style?.color).toSet().length, greaterThan(2));
+    expect(spans.any((s) => s.style?.backgroundColor != null), isTrue);
+  });
 }

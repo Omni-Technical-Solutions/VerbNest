@@ -815,6 +815,8 @@
   },
   "tableSortedAscending": "sorted ascending",
   "tableSortedDescending": "sorted descending",
+  "tableLoading": "Reading the table…",
+  "tableNotTabular": "This response can't be shown as a table",
   "tableNull": "null",
   "tableSortBy": "Sort by {name}",
   "@tableSortBy": {

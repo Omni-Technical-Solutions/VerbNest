@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.63.2
+
+- Performance: a large response no longer stalls the screen for the table. A body over 256 KB is read for the table in another isolate, and only when the Table view is chosen (a spinner shows meanwhile; a body that turns out not to be a table says so). Smaller bodies are still read at once. The Table view is not offered for bodies over 5 MB.
+- Performance: sorting, searching and copying are faster. On 100,000 rows sorting a text column takes about 80 ms (was 200), a search keystroke about 25 ms (was 110) and Copy as CSV about 230 ms (was 780).
+- Fix: a very long single line (invalid or minified JSON of a few hundred KB) no longer freezes the code view. Syntax colouring scanned every token for every text segment, which grew with the square of the line; it is now a single pass, lines over 5,000 characters are drawn plain, and at most 500 search matches are marked on one line. A body like that took minutes to show; it now takes a fraction of a second.
+- Tests: reading in an isolate (core and screen), the large-body cases (offered on a guess, loading, not a table, over 5 MB, Hex and back), unchanged results from the faster sort, search and writers, and the huge-line regression.
+
 ## 0.63.1
 
 - Accessibility: the results table speaks. Each cell reads its column, row, total and value ("name, row 1 of 3: Rex"; a null reads "null"), reports whether it is selected, and activates to show the full value; row numbers select the row; headers read their name and type and say "sorted ascending" or "sorted descending". The 12 dp resize handle is hidden from screen readers ("Fit column" is in the header menu), and the grid body no longer exposes one large unlabeled tap target. The table meets the text-contrast, labeled-target and 48 dp target guidelines on Android and iOS, light and dark.

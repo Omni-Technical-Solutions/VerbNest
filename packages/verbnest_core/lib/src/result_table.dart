@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 
 import 'package:xml/xml.dart';
 
@@ -58,35 +59,51 @@ class ResultTable {
 
   /// Row indexes in the order of column [col]; stable, nulls last in either
   /// direction. Numbers sort as numbers, dates as dates, text without regard to
-  /// case.
+  /// case. The sort keys are worked out once, not on every comparison, which
+  /// keeps 100,000 rows fast.
   List<int> sortOrder(int col, {required bool ascending}) {
     final type = columns[col].type;
-    final order = List<int>.generate(rows.length, (i) => i);
-    int compare(int a, int b) {
-      final x = rows[a][col], y = rows[b][col];
-      if (x == null || y == null) {
-        // Nulls stay last whichever way the sort runs.
-        return x == null ? (y == null ? 0 : 1) : -1;
-      }
-      final c = _compareValues(x, y, type);
-      return ascending ? c : -c;
+    final n = rows.length;
+    final keys = List<Object?>.filled(n, null);
+    for (var i = 0; i < n; i++) {
+      final v = rows[i][col];
+      if (v == null) continue;
+      keys[i] = switch (type) {
+        ColumnType.number when v is num => v,
+        ColumnType.date => _date(v) ?? cellText(v).toLowerCase(),
+        ColumnType.boolean when v is bool => v ? 1 : 0,
+        _ => cellText(v).toLowerCase(),
+      };
     }
-
+    final order = List<int>.generate(n, (i) => i);
     // List.sort is not stable, so ties fall back to the original order.
     order.sort((a, b) {
-      final c = compare(a, b);
+      final x = keys[a], y = keys[b];
+      if (x == null || y == null) {
+        // Nulls stay last whichever way the sort runs.
+        return x == null ? (y == null ? a.compareTo(b) : 1) : -1;
+      }
+      var c = _compareKeys(x, y);
+      if (!ascending) c = -c;
       return c != 0 ? c : a.compareTo(b);
     });
     return order;
   }
 
+  List<String>? _rowText;
+
   /// Indexes of the rows where any cell contains [query] (case-insensitive).
+  /// The lower-cased text of each row is built once, on the first search, so
+  /// each later keystroke is one `contains` per row.
   List<int> matchingRows(String query) {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return List<int>.generate(rows.length, (i) => i);
+    final text = _rowText ??= [
+      for (final r in rows) r.map(cellText).join('\u0001').toLowerCase(),
+    ];
     return [
-      for (var i = 0; i < rows.length; i++)
-        if (rows[i].any((c) => cellText(c).toLowerCase().contains(q))) i,
+      for (var i = 0; i < text.length; i++)
+        if (text[i].contains(q)) i,
     ];
   }
 
@@ -97,30 +114,66 @@ class ResultTable {
     List<int> colIndexes, {
     bool header = false,
   }) {
-    String cell(Object? v) =>
-        cellText(v)
-            .replaceAll('\t', ' ')
-            .replaceAll('\r\n', ' ')
-            .replaceAll('\n', ' ')
-            .replaceAll('\r', ' ');
-    final lines = <String>[
-      if (header) colIndexes.map((c) => cell(columns[c].name)).join('\t'),
-      for (final r in rowIndexes)
-        colIndexes.map((c) => cell(rows[r][c])).join('\t'),
-    ];
-    return lines.join('\n');
+    final b = StringBuffer();
+    void cell(Object? v) {
+      final t = cellText(v);
+      b.write(t.contains(_tsvBreak) ? t.replaceAll(_tsvBreak, ' ') : t);
+    }
+
+    void line(Object? Function(int) at) {
+      var first = true;
+      for (final c in colIndexes) {
+        if (!first) b.write('\t');
+        first = false;
+        cell(at(c));
+      }
+    }
+
+    var any = false;
+    if (header) {
+      line((c) => columns[c].name);
+      any = true;
+    }
+    for (final r in rowIndexes) {
+      if (any) b.write('\n');
+      any = true;
+      line((c) => rows[r][c]);
+    }
+    return b.toString();
   }
 
   /// RFC 4180 CSV: quotes where a value has a comma, quote or line break.
   String toCsv(List<int> rowIndexes, List<int> colIndexes) {
-    String q(String s) =>
-        s.contains(RegExp(r'[",\r\n]')) ? '"${s.replaceAll('"', '""')}"' : s;
-    final lines = <String>[
-      colIndexes.map((c) => q(columns[c].name)).join(','),
-      for (final r in rowIndexes)
-        colIndexes.map((c) => q(cellText(rows[r][c]))).join(','),
-    ];
-    return '${lines.join('\r\n')}\r\n';
+    final b = StringBuffer();
+    void cell(String s) {
+      if (_csvSpecial.hasMatch(s)) {
+        b
+          ..write('"')
+          ..write(s.replaceAll('"', '""'))
+          ..write('"');
+      } else {
+        b.write(s);
+      }
+    }
+
+    var first = true;
+    for (final c in colIndexes) {
+      if (!first) b.write(',');
+      first = false;
+      cell(columns[c].name);
+    }
+    b.write('\r\n');
+    for (final r in rowIndexes) {
+      first = true;
+      final row = rows[r];
+      for (final c in colIndexes) {
+        if (!first) b.write(',');
+        first = false;
+        cell(cellText(row[c]));
+      }
+      b.write('\r\n');
+    }
+    return b.toString();
   }
 
   /// The selected rows as a JSON array of objects, keeping each value's type.
@@ -142,6 +195,16 @@ class ResultTable {
     ];
     return lines.join('\n');
   }
+}
+
+final _tsvBreak = RegExp(r'[\t\r\n]+');
+final _csvSpecial = RegExp(r'[",\r\n]');
+
+int _compareKeys(Object x, Object y) {
+  if (x is num && y is num) return x.compareTo(y);
+  if (x is DateTime && y is DateTime) return x.compareTo(y);
+  // Mixed kinds in one column: compare as text.
+  return '$x'.compareTo('$y');
 }
 
 /// A value as plain text (copy, export, search): null is empty, nested values
@@ -184,21 +247,6 @@ final _isoDate = RegExp(
 
 DateTime? _date(Object? v) =>
     v is String && _isoDate.hasMatch(v) ? DateTime.tryParse(v) : null;
-
-int _compareValues(Object x, Object y, ColumnType type) {
-  switch (type) {
-    case ColumnType.number:
-      if (x is num && y is num) return x.compareTo(y);
-    case ColumnType.date:
-      final a = _date(x), b = _date(y);
-      if (a != null && b != null) return a.compareTo(b);
-    case ColumnType.boolean:
-      if (x is bool && y is bool) return (x ? 1 : 0).compareTo(y ? 1 : 0);
-    case ColumnType.text || ColumnType.json || ColumnType.empty:
-      break;
-  }
-  return cellText(x).toLowerCase().compareTo(cellText(y).toLowerCase());
-}
 
 ColumnType _typeOf(Iterable<Object?> values) {
   var seen = 0;
@@ -595,4 +643,105 @@ ResultTable? tableFromBody(
     case BodyKind.other:
       return null;
   }
+}
+
+// ------------------------------------------------------------- reading
+
+/// A body read as a table: the table (or null when it is not tabular), the
+/// arrays it could have been read from, and whether it is an array of arrays
+/// (which can take its first row as the header).
+class TableReading {
+  const TableReading(this.table, this.sources, this.matrix);
+
+  static const none = TableReading(null, <TableSource>[], false);
+
+  final ResultTable? table;
+  final List<TableSource> sources;
+  final bool matrix;
+}
+
+/// Bodies over this many characters are read in another isolate, so the screen
+/// does not stall while a large response is parsed.
+const tableIsolateThreshold = 256 * 1024;
+
+/// The largest body offered as a table.
+const tableMaxBytes = 5 * 1024 * 1024;
+
+/// A cheap guess, before any parsing, of whether [text] can be a table: CSV and
+/// TSV and XML by content type, JSON when it starts with `[` or `{`.
+bool looksTabular(String? contentType, String text) {
+  final type = (contentType ?? '').toLowerCase();
+  if (type.contains('csv') || type.contains('tab-separated')) return true;
+  if (type.contains('xml')) return true;
+  if (!type.contains('json')) return false;
+  for (var i = 0; i < text.length && i < 64; i++) {
+    final c = text.codeUnitAt(i);
+    if (c == 0x20 || c == 0x0A || c == 0x0D || c == 0x09 || c == 0xFEFF) {
+      continue;
+    }
+    return c == 0x5B || c == 0x7B;
+  }
+  return false;
+}
+
+/// Reads [text] as a table, with the extra facts the response view needs
+/// (the candidate arrays and whether it is a matrix). [source], [flatten] and
+/// [firstRowHeader] apply to JSON.
+TableReading readTable(
+  String text,
+  String? contentType, {
+  String? source,
+  bool flatten = false,
+  bool firstRowHeader = false,
+}) {
+  if (text.isEmpty) return TableReading.none;
+  final type = (contentType ?? '').toLowerCase();
+  if (!type.contains('json')) {
+    return TableReading(tableFromBody(text, contentType), const [], false);
+  }
+  final Object? root;
+  try {
+    root = jsonDecode(text);
+  } on FormatException {
+    return TableReading.none;
+  }
+  final sources = root is Map ? findTableSources(root) : <TableSource>[];
+  final chosen = sources.any((e) => e.path == source) ? source : null;
+  final matrix =
+      root is List &&
+      root.isNotEmpty &&
+      root.every((e) => e == null || e is List) &&
+      root.any((e) => e is List);
+  ResultTable? table;
+  try {
+    table = tableFromJson(
+      root,
+      source: chosen,
+      flatten: flatten,
+      firstRowHeader: firstRowHeader,
+    );
+  } on FormatException {
+    table = null;
+  }
+  return TableReading(table, sources, matrix);
+}
+
+/// [readTable], in another isolate when [text] is over
+/// [tableIsolateThreshold] characters.
+Future<TableReading> readTableAsync(
+  String text,
+  String? contentType, {
+  String? source,
+  bool flatten = false,
+  bool firstRowHeader = false,
+}) {
+  TableReading read() => readTable(
+    text,
+    contentType,
+    source: source,
+    flatten: flatten,
+    firstRowHeader: firstRowHeader,
+  );
+  if (text.length <= tableIsolateThreshold) return Future.value(read());
+  return Isolate.run(read);
 }

@@ -1273,6 +1273,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tableSortedDescending => 'sorted descending';
 
   @override
+  String get tableLoading => 'Reading the table…';
+
+  @override
+  String get tableNotTabular => 'This response can\'t be shown as a table';
+
+  @override
   String get tableNull => 'null';
 
   @override
