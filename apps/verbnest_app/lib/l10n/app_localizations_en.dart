@@ -1194,6 +1194,64 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tableActions => 'Copy and export';
+
+  @override
+  String get tableCopy => 'Copy';
+
+  @override
+  String get tableCopyWithHeaders => 'Copy with headers';
+
+  @override
+  String get tableCopyAsCsv => 'Copy as CSV';
+
+  @override
+  String get tableCopyAsJson => 'Copy as JSON';
+
+  @override
+  String get tableCopyAsMarkdown => 'Copy as Markdown';
+
+  @override
+  String get tableSaveCsv => 'Save as CSV';
+
+  @override
+  String get tableViewValue => 'View full value';
+
+  @override
+  String get tableSelectColumn => 'Select column';
+
+  @override
+  String get tableSelectAll => 'Select all';
+
+  @override
+  String get tableClearSort => 'Clear sort';
+
+  @override
+  String get tableFitColumn => 'Fit column';
+
+  @override
+  String tableCopied(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Copied $count cells',
+      one: 'Copied 1 cell',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tableSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cells selected',
+      one: '1 cell selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get tableNull => 'null';
 
   @override

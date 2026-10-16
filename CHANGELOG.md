@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.63.0
+
+- Feature: select and copy from the results table. Click a cell to select it, Shift-click or drag with a mouse to select a range, click a row number to select a row, the corner `#` to select everything, and use the arrow keys, Page Up/Down, Home and End to move (Shift extends, Esc clears, Cmd/Ctrl+A selects all). Cmd/Ctrl+C copies the selection as tab-separated text (a line break inside a cell becomes a space, so a row stays one line).
+- Feature: a Copy and export menu (the three dots above the grid, or right-click): Copy, Copy with headers, Copy as CSV, Copy as JSON (values keep their types), Copy as Markdown, Select all, View full value and **Save as CSV** (every row shown, in the sorted and filtered order; a share sheet on phones). With no selection the copy items take every row shown. Right-click or long-press a header for Select column, Fit column and Clear sort.
+- Feature: see a value in full. Double-click a cell or press Enter on a desktop, tap on a touch screen: nested values show as indented JSON, long text in full, with a Copy button.
+- The "Rows from", "Flatten nested keys" and "First row is the header" choices now sit in the grid's bar beside the menu.
+- Tests: 15 selection and copy tests (click, Shift, drag, row and corner, keyboard, Cmd+C/A, CSV/JSON/Markdown, Save as CSV, double click, Enter, touch tap, header menu) and a selection golden.
+
 ## 0.62.0
 
 - Feature: view a response as a table. A **Table** view appears next to Pretty, Raw and Hex when the body is a list of records: a JSON array of objects, an object holding such an array (a "Rows from" menu picks the array when there are several), an array of arrays (with "First row is the header"), a single object (Key and Value columns), an array of values, XML with repeated elements, or CSV/TSV. Pretty stays the first view. The search box above the body filters the rows, and the JSONPath filter chooses which rows become the table, like a query. "Flatten nested keys" turns nested objects into dotted columns. Bodies over 5 MB are not offered a table yet.

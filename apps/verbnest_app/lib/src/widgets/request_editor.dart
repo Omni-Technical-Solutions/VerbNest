@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:material_ui/material_ui.dart';
@@ -654,6 +657,16 @@ class _PanesState extends ConsumerState<_Panes> {
       state: _state,
       codeFontSize: ref.watch(prefsProvider).editorFontSize,
       share: port.savesBySharing,
+      onSaveCsv: (csv) async {
+        final ok = await port.save(
+          'results.csv',
+          Uint8List.fromList(utf8.encode(csv)),
+          mime: 'text/csv',
+        );
+        if (ok && context.mounted) {
+          showToast(context, context.l10n.reResponseSaved);
+        }
+      },
       onSave: r == null
           ? null
           : () async {

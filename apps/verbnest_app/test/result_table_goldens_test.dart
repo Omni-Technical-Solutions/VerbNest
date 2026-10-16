@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:verbnest_app/l10n/app_localizations.dart';
@@ -75,4 +76,34 @@ void main() {
       );
     });
   }
+
+  testWidgets('results table with a selection', (t) async {
+    t.view.physicalSize = const Size(900, 320);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildTheme(Brightness.light, seed: AppAccents.seed(0)),
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          ...GlobalMaterialLocalizations.delegates,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: ResultTableView(table: table)),
+      ),
+    );
+    await t.pump();
+    final g = await t.createGesture(kind: PointerDeviceKind.mouse);
+    await g.addPointer(location: const Offset(5, 5));
+    addTearDown(g.removePointer);
+    await g.down(t.getCenter(find.byKey(const ValueKey('table-cell-0-1'))));
+    await g.moveTo(t.getCenter(find.byKey(const ValueKey('table-cell-1-3'))));
+    await g.up();
+    await t.pump();
+    await expectLater(
+      find.byType(WidgetsApp),
+      matchesGoldenFile('goldens/result-table-selection.png'),
+    );
+  });
 }

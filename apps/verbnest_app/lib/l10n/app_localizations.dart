@@ -2182,6 +2182,90 @@ abstract class AppLocalizations {
   /// **'{count} more columns not shown'**
   String tableColumnsDropped(int count);
 
+  /// No description provided for @tableActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy and export'**
+  String get tableActions;
+
+  /// No description provided for @tableCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get tableCopy;
+
+  /// No description provided for @tableCopyWithHeaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy with headers'**
+  String get tableCopyWithHeaders;
+
+  /// No description provided for @tableCopyAsCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as CSV'**
+  String get tableCopyAsCsv;
+
+  /// No description provided for @tableCopyAsJson.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as JSON'**
+  String get tableCopyAsJson;
+
+  /// No description provided for @tableCopyAsMarkdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as Markdown'**
+  String get tableCopyAsMarkdown;
+
+  /// No description provided for @tableSaveCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as CSV'**
+  String get tableSaveCsv;
+
+  /// No description provided for @tableViewValue.
+  ///
+  /// In en, this message translates to:
+  /// **'View full value'**
+  String get tableViewValue;
+
+  /// No description provided for @tableSelectColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Select column'**
+  String get tableSelectColumn;
+
+  /// No description provided for @tableSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get tableSelectAll;
+
+  /// No description provided for @tableClearSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear sort'**
+  String get tableClearSort;
+
+  /// No description provided for @tableFitColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit column'**
+  String get tableFitColumn;
+
+  /// No description provided for @tableCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Copied 1 cell} other{Copied {count} cells}}'**
+  String tableCopied(int count);
+
+  /// No description provided for @tableSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 cell selected} other{{count} cells selected}}'**
+  String tableSelected(int count);
+
   /// No description provided for @tableNull.
   ///
   /// In en, this message translates to:

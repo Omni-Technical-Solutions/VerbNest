@@ -749,6 +749,34 @@
       }
     }
   },
+  "tableActions": "Copy and export",
+  "tableCopy": "Copy",
+  "tableCopyWithHeaders": "Copy with headers",
+  "tableCopyAsCsv": "Copy as CSV",
+  "tableCopyAsJson": "Copy as JSON",
+  "tableCopyAsMarkdown": "Copy as Markdown",
+  "tableSaveCsv": "Save as CSV",
+  "tableViewValue": "View full value",
+  "tableSelectColumn": "Select column",
+  "tableSelectAll": "Select all",
+  "tableClearSort": "Clear sort",
+  "tableFitColumn": "Fit column",
+  "tableCopied": "{count, plural, =1{Copied 1 cell} other{Copied {count} cells}}",
+  "@tableCopied": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tableSelected": "{count, plural, =1{1 cell selected} other{{count} cells selected}}",
+  "@tableSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tableNull": "null",
   "tableSortBy": "Sort by {name}",
   "@tableSortBy": {

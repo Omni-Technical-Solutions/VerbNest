@@ -98,6 +98,7 @@ class ResponseView extends StatefulWidget {
     super.key,
     required this.state,
     this.onSave,
+    this.onSaveCsv,
     this.share = false,
     this.codeFontSize = 13,
   });
@@ -106,6 +107,9 @@ class ResponseView extends StatefulWidget {
 
   /// Saves or shares the response body; the button shows only when set.
   final VoidCallback? onSave;
+
+  /// Saves or shares the table as CSV; the grid's menu item shows only when set.
+  final Future<void> Function(String csv)? onSaveCsv;
   final bool share;
   final double codeFontSize;
 
@@ -891,56 +895,53 @@ class _ResponseViewState extends State<ResponseView> {
     final hasNested =
         _flatten || table.columns.any((c) => c.type == ColumnType.json);
     final sources = info.sources;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (sources.length > 1 || hasNested || info.matrix)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                if (sources.length > 1) ...[
-                  Text(l10n.tableRowsFrom),
-                  DropdownButton<String>(
-                    key: const Key('table-source'),
-                    isDense: true,
-                    value: sources.any((e) => e.path == _tableSource)
-                        ? _tableSource
-                        : table.label,
-                    items: [
-                      for (final s in sources)
-                        DropdownMenuItem(
-                          value: s.path,
-                          child: Text('${s.path} (${s.count})'),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() => _tableSource = v),
-                  ),
-                ],
-                if (hasNested)
-                  FilterChip(
-                    key: const Key('table-flatten'),
-                    label: Text(l10n.tableFlatten),
-                    selected: _flatten,
-                    onSelected: (v) => setState(() => _flatten = v),
-                  ),
-                if (info.matrix)
-                  FilterChip(
-                    key: const Key('table-header-row'),
-                    label: Text(l10n.tableFirstRowHeader),
-                    selected: _headerRow,
-                    onSelected: (v) => setState(() => _headerRow = v),
-                  ),
+    // The grid shows these choices in its own bar, beside the copy menu.
+    final options = sources.length > 1 || hasNested || info.matrix
+        ? Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (sources.length > 1) ...[
+                Text(l10n.tableRowsFrom),
+                DropdownButton<String>(
+                  key: const Key('table-source'),
+                  isDense: true,
+                  value: sources.any((e) => e.path == _tableSource)
+                      ? _tableSource
+                      : table.label,
+                  items: [
+                    for (final s in sources)
+                      DropdownMenuItem(
+                        value: s.path,
+                        child: Text('${s.path} (${s.count})'),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _tableSource = v),
+                ),
               ],
-            ),
-          ),
-        Expanded(
-          child: ResultTableView(table: table, filter: _query),
-        ),
-      ],
+              if (hasNested)
+                FilterChip(
+                  key: const Key('table-flatten'),
+                  label: Text(l10n.tableFlatten),
+                  selected: _flatten,
+                  onSelected: (v) => setState(() => _flatten = v),
+                ),
+              if (info.matrix)
+                FilterChip(
+                  key: const Key('table-header-row'),
+                  label: Text(l10n.tableFirstRowHeader),
+                  selected: _headerRow,
+                  onSelected: (v) => setState(() => _headerRow = v),
+                ),
+            ],
+          )
+        : null;
+    return ResultTableView(
+      table: table,
+      filter: _query,
+      leading: options,
+      onSaveCsv: widget.onSaveCsv,
     );
   }
 
