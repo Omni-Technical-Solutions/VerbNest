@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'ui/still_controls.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:verbnest_http/verbnest_http.dart';
 
@@ -206,7 +208,7 @@ class _RealtimeDialogState extends State<RealtimeDialog> {
             onSubmitted: (_) => _send(),
           ),
         ),
-        Checkbox(
+        StillCheckbox(
           key: const Key('rt-hex'),
           value: _hex,
           onChanged: (v) => setState(() => _hex = v ?? false),

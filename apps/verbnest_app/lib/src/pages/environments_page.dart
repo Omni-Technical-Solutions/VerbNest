@@ -1,4 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
+import '../widgets/ui/still_controls.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
@@ -144,7 +147,7 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
 
   List<Widget> _chips(List<Environment> envs, Environment? env) {
     return [
-      ChoiceChip(
+      StillChip(
         key: const Key('env-globals'),
         label: Text(context.l10n.envGlobals),
         selected: env == null,
@@ -153,7 +156,7 @@ class _EnvironmentsPageState extends ConsumerState<EnvironmentsPage> {
       for (final e in envs)
         Padding(
           padding: const EdgeInsetsDirectional.only(start: 8),
-          child: ChoiceChip(
+          child: StillChip(
             key: Key('env-${e.id}'),
             label: Text(e.name),
             selected: e.id == env?.id,
@@ -296,7 +299,7 @@ class _VariablesEditorState extends State<VariablesEditor> {
         children: [
           Row(
             children: [
-              Checkbox(
+              StillCheckbox(
                 value: v.enabled,
                 onChanged: (x) => _set(i, _copy(v, enabled: x)),
               ),
@@ -331,7 +334,7 @@ class _VariablesEditorState extends State<VariablesEditor> {
     return Row(
       key: ValueKey('var-row-$i'),
       children: [
-        Checkbox(
+        StillCheckbox(
           value: v.enabled,
           onChanged: (x) => _set(i, _copy(v, enabled: x)),
         ),

@@ -1,4 +1,7 @@
 import 'dart:convert';
+
+import '../widgets/ui/still_controls.dart';
+
 import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart' hide DataRow;
@@ -131,6 +134,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
           TextButton(
             key: const Key('mock-server'),
             onPressed: () => showDialog<void>(
+              animationStyle: AnimationStyle.noAnimation,
               context: context,
               builder: (_) => UncontrolledProviderScope(
                 container: ProviderScope.containerOf(context),
@@ -207,7 +211,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
       }),
       children: [
         for (final p in _picks)
-          CheckboxListTile(
+          StillCheckboxListTile(
             key: ValueKey(p.id),
             dense: true,
             value: p.on,
@@ -256,7 +260,8 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
                 _delayMs = (int.tryParse(v) ?? 0).clamp(0, 600000),
           ),
         ),
-        FilterChip(
+        StillChip(
+          showCheckmark: true,
           key: const Key('run-stop-on-failure'),
           label: Text(context.l10n.runStopOnFailure),
           selected: _stopOnFailure,
@@ -317,7 +322,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
               CircularProgressIndicator(
                 strokeWidth: 3,
                 // Iterations advance in steps; between them the ring spins.
-                value: run.total == 0 ? null : run.iteration / run.total,
+                value: run.total == 0 ? 0.0 : run.iteration / run.total,
               ),
               Text(
                 run.total == 0
@@ -361,6 +366,7 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
   Widget _entryTile(BuildContext context, RunnerState run, RunEntry e) {
     final scheme = Theme.of(context).colorScheme;
     return ExpansionTile(
+      expansionAnimationStyle: AnimationStyle.noAnimation,
       leading: Icon(
         e.skipped
             ? Icons.skip_next

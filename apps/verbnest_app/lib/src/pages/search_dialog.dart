@@ -12,6 +12,7 @@ Future<SearchHit?> runSearch(BuildContext context, WidgetRef ref) async {
   final session = ref.read(sessionProvider);
   session.searchIndex.rebuild();
   final hit = await showDialog<SearchHit>(
+    animationStyle: AnimationStyle.noAnimation,
     context: context,
     builder: (_) => _SearchDialog(index: session.searchIndex),
   );

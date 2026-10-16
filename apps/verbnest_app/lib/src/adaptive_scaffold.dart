@@ -1,4 +1,7 @@
 import 'package:flutter/gestures.dart' show kTertiaryButton;
+
+import 'widgets/ui/still_route.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +25,7 @@ import 'theme.dart';
 import 'widgets/collections_sidebar.dart';
 import 'widgets/request_editor.dart';
 import 'widgets/status_bar.dart';
+import 'widgets/ui/still_nav.dart';
 import 'widgets/ui/toast.dart';
 import 'widgets/ui/ui.dart';
 
@@ -176,6 +180,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
       (l.cmdShortcuts, _combo('/')),
     ];
     showDialog<void>(
+      animationStyle: AnimationStyle.noAnimation,
       context: context,
       builder: (ctx) => AlertDialog(
         key: const Key('shortcuts-dialog'),
@@ -337,17 +342,10 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
       key: const Key('layout-compact'),
       appBar: AppBar(title: Text(_selected.label(context))),
       body: _content(),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: StillNavigationBar(
         selectedIndex: _selected.index,
         onDestinationSelected: _select,
-        destinations: [
-          for (final d in _Destination.values)
-            NavigationDestination(
-              icon: Icon(d.icon),
-              selectedIcon: Icon(d.selectedIcon),
-              label: d.label(context),
-            ),
-        ],
+        destinations: _still(),
       ),
     );
   }
@@ -369,18 +367,10 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
                       child: ConstrainedBox(
                         constraints: BoxConstraints(minHeight: c.maxHeight),
                         child: IntrinsicHeight(
-                          child: NavigationRail(
+                          child: StillNavigationRail(
                             selectedIndex: _selected.index,
                             onDestinationSelected: _select,
-                            labelType: NavigationRailLabelType.all,
-                            destinations: [
-                              for (final d in _Destination.values)
-                                NavigationRailDestination(
-                                  icon: Icon(d.icon),
-                                  selectedIcon: Icon(d.selectedIcon),
-                                  label: Text(d.label(context)),
-                                ),
-                            ],
+                            destinations: _still(),
                           ),
                         ),
                       ),
@@ -388,27 +378,14 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
                   ),
                 const VerticalDivider(width: 1),
                 if (sidebar && _selected == _Destination.collections)
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(end: _sidebarVisible ? 1 : 0),
-                    duration: Motion.of(context, Motion.base),
-                    curve: Motion.curve,
-                    // Fully collapsed means unmounted, as before the animation.
-                    builder: (context, t, child) => t == 0
-                        ? const SizedBox.shrink()
-                        : ClipRect(
-                            child: Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              widthFactor: t,
-                              child: child,
-                            ),
-                          ),
-                    child: Row(
+                  // Hidden means unmounted; the sidebar opens and closes at once.
+                  if (_sidebarVisible)
+                    Row(
                       children: [
                         SizedBox(width: _sidebarWidth, child: _sidebar()),
                         _sidebarHandle(),
                       ],
                     ),
-                  ),
                 Expanded(child: _content()),
               ],
             ),
@@ -423,51 +400,49 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   /// Material 3 permanent navigation drawer for large windows: the same four
   /// destinations as the rail, with labels beside the icons and the app name.
   Widget _navDrawer() {
-    final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       key: const Key('nav-drawer'),
       width: 240,
-      child: NavigationDrawer(
+      child: StillNavigationDrawer(
         selectedIndex: _selected.index,
         onDestinationSelected: _select,
-        elevation: 0,
-        backgroundColor: scheme.surfaceContainerLow,
-        tilePadding: const EdgeInsets.symmetric(horizontal: Space.sm),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Space.xl,
-              Space.lg,
-              Space.lg,
-              Space.md,
-            ),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(Radii.sm),
-                  child: Image.asset(
-                    'assets/logo.png',
-                    width: 28,
-                    height: 28,
-                    errorBuilder: (_, _, _) =>
-                        const SizedBox(width: 28, height: 28),
-                  ),
-                ),
-                const SizedBox(width: Space.md),
-                Text(kAppName, style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
+        destinations: _still(),
+        header: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.xl,
+            Space.lg,
+            Space.lg,
+            Space.md,
           ),
-          for (final d in _Destination.values)
-            NavigationDrawerDestination(
-              icon: Icon(d.icon),
-              selectedIcon: Icon(d.selectedIcon),
-              label: Text(d.label(context)),
-            ),
-        ],
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(Radii.sm),
+                child: Image.asset(
+                  'assets/logo.png',
+                  width: 28,
+                  height: 28,
+                  errorBuilder: (_, _, _) =>
+                      const SizedBox(width: 28, height: 28),
+                ),
+              ),
+              const SizedBox(width: Space.md),
+              Text(kAppName, style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  List<StillDestination> _still() => [
+    for (final d in _Destination.values)
+      StillDestination(
+        icon: d.icon,
+        selectedIcon: d.selectedIcon,
+        label: d.label(context),
+      ),
+  ];
 
   // A Material, not a ColoredBox: list rows paint their ink on the nearest
   // Material and a ColoredBox would hide it.
@@ -557,7 +532,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
 
   void _openFullScreen(String id) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      StillPageRoute<void>(
         builder: (_) => Scaffold(
           appBar: AppBar(
             title: Text(ref.read(repositoryProvider).node(id).name),
@@ -574,14 +549,8 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   };
 
   Widget _content() {
-    return AnimatedSwitcher(
-      duration: Motion.of(context, Motion.base),
-      switchInCurve: Motion.curve,
-      child: KeyedSubtree(
-        key: ValueKey('$_selected-$_expanded'),
-        child: _page(),
-      ),
-    );
+    // Pages swap at once.
+    return KeyedSubtree(key: ValueKey('$_selected-$_expanded'), child: _page());
   }
 
   Widget _page() {

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:verbnest_app/src/widgets/ui/still_scrollbar.dart';
 import 'package:verbnest_app/src/state/editor_state.dart';
 import 'package:verbnest_app/src/widgets/code_view.dart';
 import 'package:verbnest_app/src/widgets/ui/scroll_edge_fade.dart';
@@ -123,7 +124,7 @@ void main() {
         ),
       );
       await t.pump();
-      final bar = t.widget<Scrollbar>(find.byType(Scrollbar).first);
+      final bar = t.widget<StillScrollbar>(find.byType(StillScrollbar).first);
       expect(bar.thumbVisibility, isTrue);
     });
 
@@ -134,7 +135,7 @@ void main() {
         ),
       );
       await t.pump();
-      final bar = t.widget<Scrollbar>(find.byType(Scrollbar).first);
+      final bar = t.widget<StillScrollbar>(find.byType(StillScrollbar).first);
       expect(bar.thumbVisibility, isFalse);
     });
   });

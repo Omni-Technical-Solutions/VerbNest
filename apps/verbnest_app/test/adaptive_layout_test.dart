@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:verbnest_app/src/widgets/ui/still_nav.dart';
 import 'package:verbnest_app/l10n/app_localizations.dart';
 import 'package:verbnest_app/src/app.dart';
 import 'package:verbnest_app/src/state/prefs.dart';
@@ -219,8 +220,8 @@ void main() {
     testWidgets('large windows have a permanent drawer, not a rail', (t) async {
       await _pumpApp(t, const Size(1200, 800));
       expect(find.byKey(const Key('nav-drawer')), findsOneWidget);
-      expect(find.byType(NavigationDrawer), findsOneWidget);
-      expect(find.byType(NavigationRail), findsNothing);
+      expect(find.byType(StillNavigationDrawer), findsOneWidget);
+      expect(find.byType(StillNavigationRail), findsNothing);
       expect(find.text('VerbNest'), findsOneWidget);
       for (final label in [
         'Collections',
@@ -230,7 +231,7 @@ void main() {
       ]) {
         expect(
           find.descendant(
-            of: find.byType(NavigationDrawer),
+            of: find.byType(StillNavigationDrawer),
             matching: find.text(label),
           ),
           findsOneWidget,
@@ -243,8 +244,8 @@ void main() {
 
     testWidgets('expanded windows keep the rail', (t) async {
       await _pumpApp(t, const Size(1199, 800));
-      expect(find.byType(NavigationRail), findsOneWidget);
-      expect(find.byType(NavigationDrawer), findsNothing);
+      expect(find.byType(StillNavigationRail), findsOneWidget);
+      expect(find.byType(StillNavigationDrawer), findsNothing);
       expect(find.byKey(const Key('layout-expanded')), findsOneWidget);
     });
 
@@ -254,7 +255,7 @@ void main() {
       await _pumpApp(t, const Size(1440, 900));
       await t.tap(
         find.descendant(
-          of: find.byType(NavigationDrawer),
+          of: find.byType(StillNavigationDrawer),
           matching: find.text('Settings'),
         ),
       );

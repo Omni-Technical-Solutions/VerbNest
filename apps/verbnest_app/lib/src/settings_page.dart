@@ -1,4 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
+import 'widgets/ui/still_controls.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
@@ -33,7 +36,7 @@ class SettingsPage extends ConsumerWidget {
             ]),
             _card([
               _section(context, context.l10n.historySection),
-              SwitchListTile(
+              StillSwitchListTile(
                 key: const Key('scripts-trusted'),
                 title: Text(context.l10n.trustScripts),
                 subtitle: Text(context.l10n.trustScriptsHint),
@@ -118,20 +121,20 @@ class SettingsPage extends ConsumerWidget {
           },
         ),
       ),
-      SwitchListTile(
+      StillSwitchListTile(
         key: const Key('default-verify-tls'),
         title: Text(context.l10n.verifyTls),
         subtitle: Text(context.l10n.verifyTlsHint),
         value: s.verifyTls,
         onChanged: (v) => notifier.update(verifyTls: v),
       ),
-      SwitchListTile(
+      StillSwitchListTile(
         key: const Key('warn-unresolved'),
         title: Text(context.l10n.warnUnresolved),
         value: ref.watch(warnUnresolvedProvider),
         onChanged: ref.read(warnUnresolvedProvider.notifier).set,
       ),
-      SwitchListTile(
+      StillSwitchListTile(
         title: Text(context.l10n.followRedirects),
         value: s.followRedirects,
         onChanged: (v) => notifier.update(followRedirects: v),
@@ -148,7 +151,7 @@ class SettingsPage extends ConsumerWidget {
     return [
       // Material You exists on Android 12 and newer only.
       if (android)
-        SwitchListTile(
+        StillSwitchListTile(
           key: const Key('dynamic-color'),
           title: Text(context.l10n.settingsDynamicColor),
           subtitle: Text(context.l10n.settingsDynamicColorHint),
@@ -175,8 +178,7 @@ class SettingsPage extends ConsumerWidget {
                     customBorder: const CircleBorder(),
                     onTap: () =>
                         prefsNotifier.update(prefs.copyWith(accent: i)),
-                    child: AnimatedContainer(
-                      duration: Motion.of(context, Motion.fast),
+                    child: Container(
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
@@ -196,7 +198,7 @@ class SettingsPage extends ConsumerWidget {
           ),
         ),
       ),
-      SwitchListTile(
+      StillSwitchListTile(
         key: const Key('compact-density'),
         title: Text(context.l10n.settingsCompact),
         subtitle: Text(context.l10n.settingsCompactHint),
@@ -207,7 +209,7 @@ class SettingsPage extends ConsumerWidget {
         title: Text(
           context.l10n.settingsTextSize((prefs.fontScale * 100).round()),
         ),
-        subtitle: Slider(
+        subtitle: StillSlider(
           key: const Key('font-scale'),
           min: Prefs.minScale,
           max: Prefs.maxScale,
@@ -220,7 +222,7 @@ class SettingsPage extends ConsumerWidget {
         title: Text(
           context.l10n.settingsCodeFontSize(prefs.editorFontSize.round()),
         ),
-        subtitle: Slider(
+        subtitle: StillSlider(
           key: const Key('editor-font-size'),
           min: Prefs.minEditorSize,
           max: Prefs.maxEditorSize,
@@ -239,7 +241,7 @@ class SettingsPage extends ConsumerWidget {
     PrefsNotifier prefsNotifier,
   ) {
     return [
-      SwitchListTile(
+      StillSwitchListTile(
         key: const Key('history-bodies'),
         title: Text(context.l10n.historyBodies),
         subtitle: Text(context.l10n.historyBodiesHint),

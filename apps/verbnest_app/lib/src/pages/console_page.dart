@@ -44,6 +44,7 @@ class ConsolePage extends ConsumerWidget {
     String two(int n) => n.toString().padLeft(2, '0');
     final t = e.at;
     return ExpansionTile(
+      expansionAnimationStyle: AnimationStyle.noAnimation,
       dense: true,
       leading: Text(
         failed ? context.l10n.histError : '${e.status}',

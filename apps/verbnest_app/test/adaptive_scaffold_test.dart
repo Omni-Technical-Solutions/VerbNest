@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:verbnest_app/src/widgets/ui/still_nav.dart';
 import 'package:verbnest_app/src/app.dart';
 import 'package:verbnest_app/src/layout_class.dart';
 import 'package:verbnest_app/src/adaptive_scaffold.dart';
@@ -41,8 +42,8 @@ void main() {
   testWidgets('phone width uses a bottom navigation bar', (tester) async {
     await pumpAt(tester, const Size(390, 844));
     expect(find.byKey(const Key('layout-compact')), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.byType(NavigationRail), findsNothing);
+    expect(find.byType(StillNavigationBar), findsOneWidget);
+    expect(find.byType(StillNavigationRail), findsNothing);
     expect(find.byKey(const Key('sidebar-filter')), findsOneWidget);
   });
 
@@ -51,7 +52,7 @@ void main() {
   ) async {
     await pumpAt(tester, const Size(800, 1024));
     expect(find.byKey(const Key('layout-medium')), findsOneWidget);
-    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(find.byType(StillNavigationRail), findsOneWidget);
     expect(find.byKey(const Key('sidebar-filter')), findsOneWidget);
   });
 

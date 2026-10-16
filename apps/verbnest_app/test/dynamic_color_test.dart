@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:verbnest_app/src/widgets/ui/still_controls.dart';
 import 'package:verbnest_app/src/app.dart';
 import 'package:verbnest_app/src/state/prefs.dart';
 import 'package:verbnest_app/src/state/session.dart';
@@ -84,7 +85,7 @@ void main() {
       expect(c.read(prefsProvider).dynamicColor, isTrue);
       expect(t.takeException(), isNull);
       // The app keeps working; with no system colours it uses the accent.
-      final tile = t.widget<SwitchListTile>(
+      final tile = t.widget<StillSwitchListTile>(
         find.byKey(const Key('dynamic-color')),
       );
       expect(tile.value, isTrue);

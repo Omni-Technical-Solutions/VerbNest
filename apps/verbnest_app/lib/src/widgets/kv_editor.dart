@@ -1,4 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
+import 'ui/still_controls.dart';
+
 import 'package:verbnest_core/verbnest_core.dart';
 
 import '../state/var_text.dart';
@@ -158,7 +161,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
     );
   }
 
-  Widget _enabledBox(int i) => Checkbox(
+  Widget _enabledBox(int i) => StillCheckbox(
     value: rows[i].enabled,
     onChanged: (v) => _set(i, rows[i].copyWith(enabled: v)),
   );
@@ -240,41 +243,13 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
   }
 }
 
-/// Rows fade and slide in when the table grows; existing rows are not
-/// re-animated because the key moves with the row's position.
-class _RowIn extends StatefulWidget {
+/// A row of the table. It appears at once when the table grows (there was a
+/// fade and slide in; the app has no animation).
+class _RowIn extends StatelessWidget {
   const _RowIn({super.key, required this.child});
 
   final Widget child;
 
   @override
-  State<_RowIn> createState() => _RowInState();
-}
-
-class _RowInState extends State<_RowIn> {
-  bool _shown = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _shown = true);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final d = Motion.of(context, Motion.base);
-    return AnimatedOpacity(
-      opacity: _shown ? 1 : 0,
-      duration: d,
-      curve: Motion.curve,
-      child: AnimatedSlide(
-        offset: _shown ? Offset.zero : const Offset(0, -0.1),
-        duration: d,
-        curve: Motion.curve,
-        child: widget.child,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => child;
 }

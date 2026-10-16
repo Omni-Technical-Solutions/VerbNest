@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'adaptive_scaffold.dart';
 import 'state/prefs.dart';
+import 'widgets/ui/still_scrollbar.dart';
 import 'state/theme_state.dart';
 import 'theme.dart';
 
@@ -16,6 +17,9 @@ class VerbnestApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A text cursor that stays solid: the blink is an animation, and the only
+    // way to stop it is this flag.
+    EditableText.debugDeterministicCursor = true;
     final prefs = ref.watch(prefsProvider);
     final seed = AppAccents.seed(prefs.accent);
     Widget app(ColorScheme? light, ColorScheme? dark) => MaterialApp(
@@ -32,6 +36,9 @@ class VerbnestApp extends ConsumerWidget {
       locale: const Locale('en'),
       debugShowCheckedModeBanner: false,
       scrollBehavior: const _CalmScrollBehavior(),
+      // A theme change (light, dark, accent) applies at once.
+      themeAnimationDuration: Duration.zero,
+      themeAnimationStyle: AnimationStyle.noAnimation,
       theme: buildTheme(
         Brightness.light,
         seed: seed,
@@ -63,6 +70,8 @@ class VerbnestApp extends ConsumerWidget {
           ),
           child: MediaQuery(
             data: mq.copyWith(
+              // Widgets that honour it (reduced motion) skip their animation.
+              disableAnimations: true,
               textScaler: TextScaler.linear(mq.textScaler.scale(1) * scale),
             ),
             // Keep content clear of a landscape display cutout (the notch).
@@ -95,6 +104,21 @@ class _CalmScrollBehavior extends MaterialScrollBehavior {
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) =>
       const ClampingScrollPhysics();
+
+  // The desktop scrollbar does not fade in and out.
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    if (axisDirectionToAxis(details.direction) == Axis.horizontal) return child;
+    return switch (getPlatform(context)) {
+      TargetPlatform.macOS || TargetPlatform.windows || TargetPlatform.linux =>
+        StillScrollbar(controller: details.controller, child: child),
+      _ => child,
+    };
+  }
 
   @override
   Widget buildOverscrollIndicator(

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'ui/still_scrollbar.dart';
+
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/gestures.dart' show PointerDeviceKind, kPrimaryButton;
@@ -570,6 +572,7 @@ class _ResultTableViewState extends State<ResultTableView> {
     final overlay =
         Overlay.of(context).context.findRenderObject()! as RenderBox;
     final v = await showMenu<String>(
+      popUpAnimationStyle: AnimationStyle.noAnimation,
       context: context,
       position: RelativeRect.fromRect(
         Rect.fromPoints(global, global),
@@ -721,14 +724,14 @@ class _ResultTableViewState extends State<ResultTableView> {
       children: [
         _bar(context),
         Expanded(
-          child: Scrollbar(
+          child: StillScrollbar(
             controller: _v,
             notificationPredicate: (n) => n.metrics.axis == Axis.vertical,
             child: LayoutBuilder(
               builder: (context, c) {
                 _viewHeight = math.max(0, c.maxHeight - headerHeight);
                 _viewWidth = c.maxWidth;
-                return Scrollbar(
+                return StillScrollbar(
                   controller: _h,
                   thumbVisibility: contentWidth > c.maxWidth,
                   notificationPredicate: (n) =>
@@ -1170,6 +1173,7 @@ class _ResultTableViewState extends State<ResultTableView> {
             width: size,
             height: size,
             child: PopupMenuButton<String>(
+              popUpAnimationStyle: AnimationStyle.noAnimation,
               key: const Key('table-actions'),
               tooltip: l10n.tableActions,
               icon: const Icon(Icons.more_vert),

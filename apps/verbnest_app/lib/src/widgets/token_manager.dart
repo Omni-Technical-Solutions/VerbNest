@@ -16,8 +16,11 @@ String _when(BuildContext context, DateTime? t) {
 
 /// Lists the OAuth 2.0 tokens held for this app session and lets the user
 /// delete them (FR-AUTH-003). Token values are never shown.
-Future<void> showTokenManager(BuildContext context) =>
-    showDialog<void>(context: context, builder: (_) => const _TokenManager());
+Future<void> showTokenManager(BuildContext context) => showDialog<void>(
+  animationStyle: AnimationStyle.noAnimation,
+  context: context,
+  builder: (_) => const _TokenManager(),
+);
 
 class _TokenManager extends ConsumerStatefulWidget {
   const _TokenManager();

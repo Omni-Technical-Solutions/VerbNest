@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'ui/still_controls.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_http/verbnest_http.dart';
@@ -35,18 +37,19 @@ class NetworkSettingsSection extends ConsumerWidget {
           ),
           subtitle: Text(context.l10n.nsCookiesHint),
           onTap: () => showDialog<void>(
+            animationStyle: AnimationStyle.noAnimation,
             context: context,
             builder: (_) => const CookieManagerDialog(),
           ),
         ),
-        SwitchListTile(
+        StillSwitchListTile(
           key: const Key('proxy-enabled'),
           title: Text(context.l10n.nsUseProxy),
           value: c.proxyEnabled,
           onChanged: (v) => n.update((x) => x.copyWith(proxyEnabled: v)),
         ),
         if (c.proxyEnabled) ..._proxyFields(context, c, n),
-        SwitchListTile(
+        StillSwitchListTile(
           key: const Key('system-proxy'),
           title: Text(context.l10n.nsSystemProxy),
           subtitle: Text(context.l10n.nsSystemProxyHint),
@@ -178,6 +181,7 @@ class NetworkSettingsSection extends ConsumerWidget {
             icon: const Icon(Icons.add),
             label: Text(context.l10n.nsAddClientCert),
             onPressed: () => showDialog<void>(
+              animationStyle: AnimationStyle.noAnimation,
               context: context,
               builder: (_) => const _ClientCertDialog(),
             ),

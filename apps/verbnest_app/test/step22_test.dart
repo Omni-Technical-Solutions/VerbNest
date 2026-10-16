@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:verbnest_app/src/widgets/ui/still_nav.dart';
 import 'package:verbnest_app/src/app.dart';
 import 'package:verbnest_app/src/pages/command_palette.dart';
 import 'package:verbnest_app/src/state/folder_port.dart';
@@ -110,7 +111,7 @@ void main() {
       await pumpApp(tester, const Size(1100, 900));
       await tester.pumpAndSettle();
       expect(find.text('Settings'), findsWidgets);
-      final ctx = tester.element(find.byType(NavigationRail));
+      final ctx = tester.element(find.byType(StillNavigationRail));
       expect(Directionality.of(ctx), TextDirection.ltr);
       // The framework's own labels follow the app, not the device.
       expect(MaterialLocalizations.of(ctx).backButtonTooltip, 'Back');

@@ -1,4 +1,8 @@
 import 'package:material_ui/material_ui.dart';
+
+import 'ui/still_controls.dart';
+import 'ui/still_dropdown.dart';
+
 import 'package:verbnest_core/verbnest_core.dart';
 
 import '../../l10n/l10n.dart';
@@ -68,7 +72,7 @@ class AssertionsEditor extends StatelessWidget {
         runSpacing: 4,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Checkbox(
+          StillCheckbox(
             key: Key('assert-enabled-$i'),
             value: a.enabled,
             onChanged: (v) => _replace(i, a.copyWith(enabled: v ?? true)),
@@ -93,13 +97,12 @@ class AssertionsEditor extends StatelessWidget {
   }
 
   Widget _targetMenu(BuildContext context, int i, Assertion a) {
-    return DropdownMenu<AssertionTarget>(
+    return StillDropdown<AssertionTarget>(
       key: Key('assert-target-$i'),
-      initialSelection: a.target,
-      requestFocusOnTap: false,
-      dropdownMenuEntries: [
+      value: a.target,
+      entries: [
         for (final t in AssertionTarget.values)
-          DropdownMenuEntry(value: t, label: _targetLabel(context, t)),
+          StillEntry(value: t, label: _targetLabel(context, t)),
       ],
       onSelected: (t) {
         if (t == null) return;
@@ -136,13 +139,10 @@ class AssertionsEditor extends StatelessWidget {
   }
 
   Widget _opMenu(int i, Assertion a, List<AssertionOp> ops) {
-    return DropdownMenu<AssertionOp>(
+    return StillDropdown<AssertionOp>(
       key: Key('assert-op-$i'),
-      initialSelection: ops.contains(a.op) ? a.op : ops.first,
-      requestFocusOnTap: false,
-      dropdownMenuEntries: [
-        for (final o in ops) DropdownMenuEntry(value: o, label: o.label),
-      ],
+      value: ops.contains(a.op) ? a.op : ops.first,
+      entries: [for (final o in ops) StillEntry(value: o, label: o.label)],
       onSelected: (o) {
         if (o != null) _replace(i, a.copyWith(op: o));
       },

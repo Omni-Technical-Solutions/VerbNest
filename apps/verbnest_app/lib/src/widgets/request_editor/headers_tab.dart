@@ -55,6 +55,7 @@ class _AutoHeaders extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
+      expansionAnimationStyle: AnimationStyle.noAnimation,
       key: const Key('auto-headers'),
       dense: true,
       title: Text(context.l10n.reGenerated(auto.length)),

@@ -19,17 +19,19 @@ abstract final class Radii {
   static const double xl = 28;
 }
 
+/// The app has no animation: a state change swaps at once. The durations stay
+/// as tokens (Material 3 values) so a motion setting could bring them back, but
+/// [of] gives zero, and the theme, the dialogs, menus and sheets, the page
+/// changes, the tab views and the scrollbars are set to match (see
+/// `theme.dart`, `app.dart` and docs/adr/ADR-020-no-animation.md).
 abstract final class Motion {
-  // Material 3 motion tokens: short for small state changes, medium for
-  // elements entering or leaving, with the standard easing.
   static const fast = Durations.short3;
   static const base = Durations.medium1;
   static const slow = Durations.medium3;
   static const curve = Easing.standard;
 
-  /// Zero when the platform asks for reduced motion.
-  static Duration of(BuildContext context, Duration d) =>
-      MediaQuery.maybeDisableAnimationsOf(context) == true ? Duration.zero : d;
+  /// Always zero: nothing in the app animates.
+  static Duration of(BuildContext context, Duration d) => Duration.zero;
 }
 
 /// Family of the UI text. Bundled (`assets/fonts`), so it is the same on every

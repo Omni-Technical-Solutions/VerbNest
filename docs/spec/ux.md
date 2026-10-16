@@ -1,6 +1,7 @@
 # UX & Responsive Layout
 
 ## 1. Principles
+0. **No animation.** A change of state swaps at once (ADR-020): views, tabs, navigation, menus, dialogs, controls. Motion tokens stay in `Motion` but are zero.
 1. **Adaptive, not shrunk.** Width and height classes drive structure, not just scaling.
 2. **The request is the unit of work.** Everything (env, auth, scripts, response) is one tap/click from the request.
 3. **Always show what will be sent.** Unresolved variables, active environment and TLS-off state are always visible.

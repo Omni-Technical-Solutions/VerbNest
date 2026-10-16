@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'ui/still_route.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -118,6 +120,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
             onPressed: () => setState(() => _favOnly = !_favOnly),
           ),
           PopupMenuButton<String>(
+            popUpAnimationStyle: AnimationStyle.noAnimation,
             key: const Key('sidebar-more'),
             icon: const Icon(Icons.more_horiz),
             onSelected: (v) async {
@@ -286,10 +289,9 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AnimatedRotation(
-            turns: expanded ? 0.25 : 0,
-            duration: Motion.of(context, Motion.fast),
-            curve: Motion.curve,
+          // The chevron points down when open: it turns at once.
+          RotatedBox(
+            quarterTurns: expanded ? 1 : 0,
             child: const Icon(Icons.chevron_right, size: 16),
           ),
           Icon(expanded ? Icons.folder_open : Icons.folder_outlined, size: 20),
@@ -330,6 +332,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
 
   Widget _menu(BuildContext context, NodeInfo node) {
     return PopupMenuButton<_Action>(
+      popUpAnimationStyle: AnimationStyle.noAnimation,
       key: Key('menu-${node.id}'),
       tooltip: context.l10n.sbActions,
       icon: const Icon(Icons.more_vert, size: 18),
@@ -347,6 +350,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
     final overlay =
         Overlay.of(context).context.findRenderObject()! as RenderBox;
     final action = await showMenu<_Action>(
+      popUpAnimationStyle: AnimationStyle.noAnimation,
       context: context,
       position: RelativeRect.fromRect(
         position & const Size(1, 1),
@@ -467,13 +471,13 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         if (name != null) actions.rename(node.id, name);
       case _Action.settings:
         await Navigator.of(context).push(
-          MaterialPageRoute<void>(
+          StillPageRoute<void>(
             builder: (_) => ContainerSettingsPage(containerId: node.id),
           ),
         );
       case _Action.run:
         await Navigator.of(context).push(
-          MaterialPageRoute<void>(
+          StillPageRoute<void>(
             builder: (_) => RunnerPage(containerId: node.id),
           ),
         );
@@ -502,6 +506,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         setState(() => repo.setFavourite(node.id, !repo.isFavourite(node.id)));
       case _Action.generateCode:
         await showDialog<void>(
+          animationStyle: AnimationStyle.noAnimation,
           context: context,
           builder: (_) => CodeDialog(requestId: node.id),
         );
@@ -538,6 +543,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
 
   Future<void> _import(BuildContext context) async {
     final text = await showDialog<String>(
+      animationStyle: AnimationStyle.noAnimation,
       context: context,
       builder: (_) => const _ImportDialog(),
     );
@@ -548,13 +554,19 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       final warn = r.warnings.isEmpty
           ? ''
           : context.l10n.sbImportNotes(r.warnings.length, r.warnings.first);
-      messenger.showSnackBar(SnackBar(content: Text('${r.message}$warn')));
+      messenger.showSnackBar(
+        snackBarAnimationStyle: AnimationStyle.noAnimation,
+        SnackBar(content: Text('${r.message}$warn')),
+      );
       final id = r.nodeId;
       if (id != null) {
         ref.read(expandedProvider.notifier).expand(id);
       }
     } on FormatException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      messenger.showSnackBar(
+        snackBarAnimationStyle: AnimationStyle.noAnimation,
+        SnackBar(content: Text(e.message)),
+      );
     }
   }
 }

@@ -115,6 +115,7 @@ Future<void> showDetail(
 }) {
   if (_compact(context)) {
     return showModalBottomSheet<void>(
+      sheetAnimationStyle: AnimationStyle.noAnimation,
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -138,6 +139,7 @@ Future<void> showDetail(
     );
   }
   return showDialog<void>(
+    animationStyle: AnimationStyle.noAnimation,
     context: context,
     builder: (context) => AlertDialog(
       title: Text(title),

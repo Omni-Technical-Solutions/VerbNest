@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import '../widgets/ui/still_route.dart';
+import '../widgets/ui/still_tabs.dart';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../theme.dart';
@@ -82,9 +85,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
             key: const Key('console-open'),
             tooltip: context.l10n.histConsole,
             icon: const Icon(Icons.terminal),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const ConsolePage()),
-            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(StillPageRoute<void>(builder: (_) => const ConsolePage())),
           ),
           IconButton(
             key: const Key('history-clear'),
@@ -168,9 +171,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           if (e.environmentName != null) e.environmentName!,
         ].join(' · '),
       ),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => HistoryDetailPage(entry: e)),
-      ),
+      onTap: () => Navigator.of(
+        context,
+      ).push(StillPageRoute<void>(builder: (_) => HistoryDetailPage(entry: e))),
     );
   }
 }
@@ -187,6 +190,7 @@ class HistoryDetailPage extends ConsumerWidget {
     final request = const JsonEncoder.withIndent('  ')
         .convert(jsonDecode(entry.requestJson));
     return DefaultTabController(
+      animationDuration: Duration.zero,
       length: 2,
       child: Scaffold(
         appBar: AppBar(
@@ -195,7 +199,7 @@ class HistoryDetailPage extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
           ),
           actions: _actions(context, ref, session, exists),
-          bottom: TabBar(
+          bottom: StillTabBar(
             tabs: [
               Tab(text: context.l10n.histTabRequest),
               Tab(text: context.l10n.histTabResponse),
@@ -254,6 +258,7 @@ class HistoryDetailPage extends ConsumerWidget {
     final id = saveHistoryAsRequest(session, entry);
     ref.read(tabsProvider.notifier).open(id);
     ScaffoldMessenger.of(context).showSnackBar(
+      snackBarAnimationStyle: AnimationStyle.noAnimation,
       SnackBar(
         content: Text(
           masked

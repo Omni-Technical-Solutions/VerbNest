@@ -1,4 +1,8 @@
 import 'package:material_ui/material_ui.dart';
+
+import '../ui/still_controls.dart';
+import '../ui/still_dropdown.dart';
+
 import 'package:verbnest_core/verbnest_core.dart';
 
 import '../../../l10n/l10n.dart';
@@ -42,42 +46,41 @@ class SettingsTab extends StatelessWidget {
   }
 
   Widget _httpVersion(BuildContext context, RequestSettings s) {
-    return DropdownMenu<String>(
+    return StillDropdown<String>(
       key: const Key('http-version'),
-      initialSelection: s.httpVersion ?? 'auto',
-      expandedInsets: EdgeInsets.zero,
-      requestFocusOnTap: false,
-      label: Text(context.l10n.reHttpVersion),
+      value: s.httpVersion ?? 'auto',
+      expand: true,
+      labelText: context.l10n.reHttpVersion,
       helperText: context.l10n.reHttp2Hint,
-      dropdownMenuEntries: [
-        DropdownMenuEntry(value: 'auto', label: context.l10n.reHttpAuto),
-        DropdownMenuEntry(value: '1.1', label: context.l10n.reHttp11),
-        DropdownMenuEntry(value: '2', label: context.l10n.reHttp2),
+      entries: [
+        StillEntry(value: 'auto', label: context.l10n.reHttpAuto),
+        StillEntry(value: '1.1', label: context.l10n.reHttp11),
+        StillEntry(value: '2', label: context.l10n.reHttp2),
       ],
       onSelected: (v) => _set(s.copyWith(httpVersion: v == 'auto' ? null : v)),
     );
   }
 
   List<Widget> _redirectSwitches(BuildContext context, RequestSettings s) => [
-    SwitchListTile(
+    StillSwitchListTile(
       key: const Key('verify-tls'),
       title: Text(context.l10n.reVerifyTls),
       value: s.verifyTls ?? true,
       onChanged: (v) => _set(s.copyWith(verifyTls: v)),
     ),
-    SwitchListTile(
+    StillSwitchListTile(
       key: const Key('follow-redirects'),
       title: Text(context.l10n.reFollow),
       value: s.followRedirects ?? true,
       onChanged: (v) => _set(s.copyWith(followRedirects: v)),
     ),
-    SwitchListTile(
+    StillSwitchListTile(
       key: const Key('keep-method'),
       title: Text(context.l10n.reKeepMethod),
       value: s.keepMethodOnRedirect ?? false,
       onChanged: (v) => _set(s.copyWith(keepMethodOnRedirect: v)),
     ),
-    SwitchListTile(
+    StillSwitchListTile(
       key: const Key('strip-auth'),
       title: Text(context.l10n.reStripAuth),
       value: s.stripAuthCrossOrigin ?? true,
@@ -86,20 +89,20 @@ class SettingsTab extends StatelessWidget {
   ];
 
   List<Widget> _transportSwitches(BuildContext context, RequestSettings s) => [
-    SwitchListTile(
+    StillSwitchListTile(
       key: const Key('send-cookies'),
       title: Text(context.l10n.reCookies),
       value: s.sendCookies ?? true,
       onChanged: (v) => _set(s.copyWith(sendCookies: v)),
     ),
-    SwitchListTile(
+    StillSwitchListTile(
       key: const Key('use-proxy'),
       title: Text(context.l10n.reUseProxy),
       subtitle: Text(context.l10n.reUseProxyHint),
       value: s.useProxy ?? true,
       onChanged: (v) => _set(s.copyWith(useProxy: v)),
     ),
-    SwitchListTile(
+    StillSwitchListTile(
       key: const Key('auto-decompress'),
       title: Text(context.l10n.reDecompress),
       value: s.autoDecompress ?? true,

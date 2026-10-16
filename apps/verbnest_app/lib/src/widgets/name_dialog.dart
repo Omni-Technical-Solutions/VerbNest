@@ -10,6 +10,7 @@ Future<String?> askName(
   String? action,
 }) {
   return showDialog<String>(
+    animationStyle: AnimationStyle.noAnimation,
     context: context,
     builder: (_) => _NameDialog(title: title, initial: initial, action: action),
   );
@@ -80,6 +81,7 @@ Future<bool> confirm(
   String? action,
 }) async {
   final result = await showDialog<bool>(
+    animationStyle: AnimationStyle.noAnimation,
     context: context,
     builder: (context) => AlertDialog(
       title: Text(title),

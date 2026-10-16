@@ -1,4 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
+import '../widgets/ui/still_tabs.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
@@ -42,11 +45,12 @@ class _ContainerSettingsPageState extends ConsumerState<ContainerSettingsPage> {
         : VariableOwner.folder(node.id);
 
     return DefaultTabController(
+      animationDuration: Duration.zero,
       length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: Text('${node.name} settings'),
-          bottom: const TabBar(
+          bottom: const StillTabBar(
             tabs: [
               Tab(text: 'Overview'),
               Tab(text: 'Auth'),

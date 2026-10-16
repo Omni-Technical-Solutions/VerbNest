@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:verbnest_app/src/widgets/ui/still_scrollbar.dart';
 import 'package:verbnest_app/src/widgets/code_view.dart';
 
 Widget _app(String text, {required bool wrap, bool json = false}) =>
@@ -22,7 +23,7 @@ void main() {
     await t.pumpWidget(_app(long, wrap: false, json: true));
     final h = t.getSize(find.byType(Text).last).height;
     expect(h, lessThan(30));
-    expect(find.byType(Scrollbar), findsOneWidget);
+    expect(find.byType(StillScrollbar), findsOneWidget);
   });
 
   testWidgets('wrap on: a long line takes several rows, no sideways scroll', (

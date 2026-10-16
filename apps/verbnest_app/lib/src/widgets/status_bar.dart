@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'ui/still_route.dart';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/l10n.dart';
@@ -112,6 +115,7 @@ class StatusBar extends ConsumerWidget {
               label: l.nsCookies(cookies),
               tooltip: l.sbCookiesTooltip,
               onTap: () => showDialog<void>(
+                animationStyle: AnimationStyle.noAnimation,
                 context: context,
                 builder: (_) => const CookieManagerDialog(),
               ),
@@ -121,9 +125,9 @@ class StatusBar extends ConsumerWidget {
               icon: Icons.terminal,
               label: logCount == 0 ? l.sbConsole : '${l.sbConsole} $logCount',
               tooltip: l.consoleTitle,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const ConsolePage()),
-              ),
+              onTap: () => Navigator.of(
+                context,
+              ).push(StillPageRoute<void>(builder: (_) => const ConsolePage())),
             ),
             if (activeTab != null)
               item(

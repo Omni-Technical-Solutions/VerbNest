@@ -15,6 +15,7 @@ import '../../l10n/l10n.dart';
 /// Switch, create, import and export workspaces (FR-WS-002..007).
 Future<void> showWorkspaces(BuildContext context, WidgetRef ref) {
   return showDialog<void>(
+    animationStyle: AnimationStyle.noAnimation,
     context: context,
     builder: (_) => UncontrolledProviderScope(
       container: ProviderScope.containerOf(context),
@@ -36,9 +37,15 @@ class _WorkspacesDialog extends ConsumerWidget {
       await action();
       nav.pop();
     } on StorageError catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      messenger.showSnackBar(
+        snackBarAnimationStyle: AnimationStyle.noAnimation,
+        SnackBar(content: Text(e.message)),
+      );
     } on Object catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('$e')));
+      messenger.showSnackBar(
+        snackBarAnimationStyle: AnimationStyle.noAnimation,
+        SnackBar(content: Text('$e')),
+      );
     }
   }
 
@@ -174,6 +181,7 @@ class _WorkspacesDialog extends ConsumerWidget {
           ? ''
           : l10n.wsSnapshotKept(r.conflicts.length, r.conflicts.first);
       messenger.showSnackBar(
+        snackBarAnimationStyle: AnimationStyle.noAnimation,
         SnackBar(
           content: Text(
             l10n.wsSnapshotMerged(r.requests, r.environments) + kept,
@@ -181,7 +189,10 @@ class _WorkspacesDialog extends ConsumerWidget {
         ),
       );
     } on Object catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('$e')));
+      messenger.showSnackBar(
+        snackBarAnimationStyle: AnimationStyle.noAnimation,
+        SnackBar(content: Text('$e')),
+      );
     }
   }
 

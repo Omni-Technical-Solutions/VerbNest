@@ -64,6 +64,7 @@ Future<void> showCommandPalette(
   List<PaletteEntry> entries,
 ) async {
   final chosen = await showDialog<PaletteEntry>(
+    animationStyle: AnimationStyle.noAnimation,
     context: context,
     builder: (_) => _Palette(entries),
   );

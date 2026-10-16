@@ -23,6 +23,7 @@ void showToast(
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
+      snackBarAnimationStyle: AnimationStyle.noAnimation,
       SnackBar(
         content: Row(
           children: [

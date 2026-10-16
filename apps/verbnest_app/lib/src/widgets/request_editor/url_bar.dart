@@ -1,4 +1,7 @@
 import 'dart:convert';
+
+import '../ui/still_dropdown.dart';
+
 import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart';
@@ -164,27 +167,23 @@ class _MethodDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownMenu<String>(
+    return StillDropdown<String>(
       key: const Key('method'),
-      initialSelection: httpMethods.contains(item.method) ? item.method : null,
+      value: httpMethods.contains(item.method) ? item.method : null,
       width: narrow ? 108 : (compact ? 124 : 120),
       textStyle: TextStyle(
         fontWeight: FontWeight.bold,
         color: AppColors.of(context).method(item.method),
       ),
-      requestFocusOnTap: false,
-      decorationBuilder: (_, _) => InputDecoration(
-        border: InputBorder.none,
-        isDense: true,
-        hintText: item.method,
-        // The default 16 px inset leaves no room for "DELETE" in a narrow box.
-        contentPadding: compact
-            ? const EdgeInsetsDirectional.only(start: 10)
-            : null,
-      ),
-      dropdownMenuEntries: [
-        for (final m in httpMethods) DropdownMenuEntry(value: m, label: m),
-        DropdownMenuEntry(value: _customMethod, label: context.l10n.reCustom),
+      bordered: false,
+      hintText: item.method,
+      // The default 16 px inset leaves no room for "DELETE" in a narrow box.
+      contentPadding: compact
+          ? const EdgeInsetsDirectional.only(start: 10)
+          : null,
+      entries: [
+        for (final m in httpMethods) StillEntry(value: m, label: m),
+        StillEntry(value: _customMethod, label: context.l10n.reCustom),
       ],
       onSelected: (m) => _onSelected(context, m),
     );
@@ -256,6 +255,7 @@ void showLiveSession(
   LiveKind kind,
 ) {
   showDialog<void>(
+    animationStyle: AnimationStyle.noAnimation,
     context: context,
     barrierDismissible: false,
     builder: (_) => RealtimeDialog(
@@ -288,6 +288,7 @@ class LiveMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<LiveKind>(
+      popUpAnimationStyle: AnimationStyle.noAnimation,
       key: const Key('live'),
       tooltip: context.l10n.reLiveTooltip,
       icon: const Icon(Icons.sync_alt),

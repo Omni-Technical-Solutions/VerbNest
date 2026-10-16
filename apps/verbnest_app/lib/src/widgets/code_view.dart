@@ -1,4 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
+import 'ui/still_scrollbar.dart';
+
 import 'package:flutter/services.dart';
 
 import '../state/code_view.dart';
@@ -225,7 +228,7 @@ class _CodeViewState extends State<CodeView> {
             : c.maxWidth;
         // A visible bar when lines run past the edge, so wide content reads as
         // scrollable and not as cut off.
-        return Scrollbar(
+        return StillScrollbar(
           controller: _hScroll,
           thumbVisibility: !wrapped && width > c.maxWidth,
           notificationPredicate: (n) => n.metrics.axis == Axis.horizontal,

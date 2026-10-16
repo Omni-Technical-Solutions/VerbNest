@@ -1,4 +1,8 @@
 import 'package:material_ui/material_ui.dart';
+
+import 'ui/still_controls.dart';
+import 'ui/still_dropdown.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 
@@ -51,15 +55,14 @@ class AuthEditor extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        DropdownMenu<String>(
+        StillDropdown<String>(
           key: const Key('auth-type'),
-          initialSelection: auth.type,
-          requestFocusOnTap: false,
-          expandedInsets: EdgeInsets.zero,
-          dropdownMenuEntries: [
-            for (final t in _types) DropdownMenuEntry(value: t, label: t),
+          value: auth.type,
+          expand: true,
+          entries: [
+            for (final t in _types) StillEntry(value: t, label: t),
             if (!_types.contains(auth.type))
-              DropdownMenuEntry(value: auth.type, label: auth.type),
+              StillEntry(value: auth.type, label: auth.type),
           ],
           onSelected: (t) {
             if (t != null && t != auth.type) _set(_fresh(t));
@@ -210,14 +213,13 @@ extension on AuthEditor {
   );
 
   List<Widget> _jwt(BuildContext context, JwtAuth a) => [
-    DropdownMenu<JwtAlgorithm>(
+    StillDropdown<JwtAlgorithm>(
       key: const Key('jwt-algorithm'),
-      initialSelection: a.algorithm,
-      requestFocusOnTap: false,
-      expandedInsets: EdgeInsets.zero,
-      dropdownMenuEntries: [
+      value: a.algorithm,
+      expand: true,
+      entries: [
         for (final g in JwtAlgorithm.values)
-          DropdownMenuEntry(value: g, label: g.label),
+          StillEntry(value: g, label: g.label),
       ],
       onSelected: (g) {
         if (g != null) _set(a.copyWith(algorithm: g));
@@ -264,25 +266,24 @@ extension on AuthEditor {
   );
 
   Widget _oauthGrant(BuildContext context, OAuth2Auth a) =>
-      DropdownMenu<OAuth2Grant>(
+      StillDropdown<OAuth2Grant>(
         key: const Key('oauth-grant'),
-        initialSelection: a.grant,
-        requestFocusOnTap: false,
-        expandedInsets: EdgeInsets.zero,
-        dropdownMenuEntries: [
-          DropdownMenuEntry(
+        value: a.grant,
+        expand: true,
+        entries: [
+          StillEntry(
             value: OAuth2Grant.clientCredentials,
             label: context.l10n.oauthClientCredentials,
           ),
-          DropdownMenuEntry(
+          StillEntry(
             value: OAuth2Grant.password,
             label: context.l10n.oauthPassword,
           ),
-          DropdownMenuEntry(
+          StillEntry(
             value: OAuth2Grant.authorizationCode,
             label: context.l10n.oauthAuthCode,
           ),
-          DropdownMenuEntry(
+          StillEntry(
             value: OAuth2Grant.implicit,
             label: context.l10n.oauthImplicit,
           ),
@@ -352,7 +353,7 @@ extension on AuthEditor {
       ),
     ],
     if (a.grant == OAuth2Grant.authorizationCode)
-      SwitchListTile(
+      StillSwitchListTile(
         key: const Key('oauth-pkce'),
         contentPadding: EdgeInsets.zero,
         title: Text(context.l10n.oauthPkce),
@@ -375,7 +376,7 @@ extension on AuthEditor {
         ),
       ),
     ),
-    SwitchListTile(
+    StillSwitchListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(context.l10n.oauthBodyCreds),
       value: a.clientAuthInBody,

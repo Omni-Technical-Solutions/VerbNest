@@ -53,20 +53,25 @@ void main() {
         ),
         findsNothing,
       );
-      // After the tap's ripple has gone, only the progress line moves.
+      // The progress shown while it is in flight is a still bar, not a sliding
+      // one, so nothing runs at all.
       await t.pump(const Duration(seconds: 1));
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
-      expect(_running, 1, reason: 'the progress line, and nothing else');
+      // A finished animation is only noticed on the next frame.
+      await t.pump(const Duration(milliseconds: 16));
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(_running, 0, reason: 'nothing animates while sending');
       // The placeholder for the response is still, not pulsing.
       expect(find.byType(Skeleton), findsOneWidget);
 
-      // The response arrives: it replaces the placeholder at once.
+      // The response arrives: it replaces the placeholder at once. A scrollbar
+      // can keep one internal timer for a frame or two (nothing moves), and
+      // after 300 ms nothing is running.
       engine.gate.complete();
       await t.pump();
       await t.pump(const Duration(milliseconds: 20));
       expect(find.byType(Skeleton), findsNothing);
-      expect(_running, lessThanOrEqualTo(1), reason: 'at most the ripple');
-      await t.pump(const Duration(seconds: 1));
+      await t.pump(const Duration(milliseconds: 300));
+      await t.pump(const Duration(milliseconds: 16));
       expect(_running, 0);
       await t.pump(EditorNotifier.saveDelay);
     });
@@ -77,6 +82,8 @@ void main() {
     await openRequest(a, _desktop);
     await t.tap(find.byKey(const Key('send')), warnIfMissed: false);
     await t.pump(const Duration(seconds: 1));
+    // A finished animation is only noticed on the next frame.
+    await t.pump(const Duration(milliseconds: 16));
     await t.pumpAndSettle();
     final modes = find.byKey(const Key('body-view'));
     expect(
@@ -93,6 +100,8 @@ void main() {
         reason: '$label: at most the ripple',
       );
       await t.pump(const Duration(seconds: 1));
+      // A finished animation is only noticed on the next frame.
+      await t.pump(const Duration(milliseconds: 16));
       expect(_running, 0, reason: '$label settles');
     }
     await t.pump(EditorNotifier.saveDelay);

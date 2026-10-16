@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.64.0
+
+- Change: no animation anywhere. Changing the response view (Pretty, Raw, Hex, Table), sending a request, changing tab, navigating, opening a menu, dropdown, dialog or sheet, toggling a switch or checkbox, expanding a section, scrolling to the end of a list, and moving the mouse over a button all now swap at once instead of sliding, fading, growing or pulsing. See ADR-020.
+- Replaced because Material's own animate with no way to turn that off: the tab bars, the bottom navigation bar, rail and drawer, the drop-down menus, switches, checkboxes, chips, the sliders and the scrollbars (no longer fade). Pages and dialogs appear at once on every platform. The text cursor does not blink. A request in flight shows a still bar and a still placeholder.
+- Gone with it: hover and press tints on buttons and rows, and the thicker outline on a focused text field (the caret shows focus). Keyboard focus still has a tint.
+- Still moves, and why (ADR-020): colour cross-fade of surfaces when the accent or theme changes, tooltips fading in, the system's touch selection handle and keyboard, and inertial scrolling.
+- Tests: `no_motion_audit_test.dart` (a tour of the app that compares the screen 76 ms and 136 ms after every action, on desktop and phone), the caret test, the request-in-flight test; goldens for the new navigation, tabs and controls.
+
 ## 0.63.5
 
 Checked that everything in a body reaches the table, and closed the gaps:

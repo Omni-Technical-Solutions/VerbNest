@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'ui/still_controls.dart';
+import 'ui/still_dropdown.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
@@ -57,6 +60,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
   Future<void> _importSdl() async {
     final l10n = context.l10n;
     final text = await showDialog<String>(
+      animationStyle: AnimationStyle.noAnimation,
       context: context,
       builder: (_) => const _SdlDialog(),
     );
@@ -139,11 +143,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
     return FilledButton.tonalIcon(
       key: const Key('gql-fetch'),
       icon: _fetching
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
+          ? const Icon(Icons.hourglass_top, size: 18)
           : const Icon(Icons.cloud_download_outlined, size: 18),
       label: Text(context.l10n.gqlFetch),
       onPressed: _fetching || widget.url.trim().isEmpty ? null : _fetch,
@@ -156,6 +156,7 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
       onPressed: schema == null
           ? null
           : () => showDialog<void>(
+              animationStyle: AnimationStyle.noAnimation,
               context: context,
               builder: (_) => GraphqlExplorer(schema: schema),
             ),
@@ -165,17 +166,12 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
 
   Widget _buildOperationMenu(BuildContext context, List<String> ops) {
     final body = widget.body;
-    return DropdownMenu<String>(
+    return StillDropdown<String>(
       key: const Key('gql-operation'),
-      initialSelection: ops.contains(body.operationName)
-          ? body.operationName
-          : null,
+      value: ops.contains(body.operationName) ? body.operationName : null,
       hintText: context.l10n.gqlOperation,
-      expandedInsets: EdgeInsets.zero,
-      requestFocusOnTap: false,
-      dropdownMenuEntries: [
-        for (final o in ops) DropdownMenuEntry(value: o, label: o),
-      ],
+      expand: true,
+      entries: [for (final o in ops) StillEntry(value: o, label: o)],
       onSelected: (v) =>
           widget.onChanged(body.copyWith(operationName: v ?? '')),
     );
@@ -185,7 +181,8 @@ class _GraphqlEditorState extends ConsumerState<GraphqlEditor> {
     final body = widget.body;
     return Tooltip(
       message: context.l10n.gqlPersistedHint,
-      child: FilterChip(
+      child: StillChip(
+        showCheckmark: true,
         key: const Key('gql-persisted'),
         label: Text(context.l10n.gqlPersisted),
         selected: body.persisted,

@@ -1,4 +1,8 @@
 import 'package:material_ui/material_ui.dart';
+
+import 'ui/still_controls.dart';
+import 'ui/still_dropdown.dart';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_import/verbnest_import.dart';
@@ -42,18 +46,17 @@ class _CodeDialogState extends ConsumerState<CodeDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DropdownMenu<CodeLanguage>(
+          StillDropdown<CodeLanguage>(
             key: const Key('code-language'),
-            initialSelection: _language,
-            expandedInsets: EdgeInsets.zero,
-            requestFocusOnTap: false,
-            dropdownMenuEntries: [
+            value: _language,
+            expand: true,
+            entries: [
               for (final l in CodeLanguage.values)
-                DropdownMenuEntry(value: l, label: l.label),
+                StillEntry(value: l, label: l.label),
             ],
             onSelected: (l) => setState(() => _language = l ?? _language),
           ),
-          SwitchListTile(
+          StillSwitchListTile(
             key: const Key('code-resolve'),
             contentPadding: EdgeInsets.zero,
             title: Text(context.l10n.codeFillVariables),

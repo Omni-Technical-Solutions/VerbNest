@@ -1,4 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
+import 'ui/still_dropdown.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 
@@ -26,7 +29,7 @@ class EnvSelector extends ConsumerWidget {
       builder: (context, c) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DropdownMenu<String?>(
+          StillDropdown<String?>(
             key: const Key('env-select'),
             // Fits the row; the eye button takes the other 48.
             width:
@@ -34,14 +37,11 @@ class EnvSelector extends ConsumerWidget {
                 (c.maxWidth.isFinite
                     ? (c.maxWidth - 48).clamp(96.0, 220.0)
                     : null),
-            initialSelection: envs.any((e) => e.id == active) ? active : null,
-            requestFocusOnTap: false,
-            decorationBuilder: (_, _) =>
-                InputDecoration(border: InputBorder.none, isDense: true),
-            dropdownMenuEntries: [
-              DropdownMenuEntry(value: null, label: context.l10n.noEnvironment),
-              for (final e in envs)
-                DropdownMenuEntry(value: e.id, label: e.name),
+            value: envs.any((e) => e.id == active) ? active : null,
+            bordered: false,
+            entries: [
+              StillEntry(value: null, label: context.l10n.noEnvironment),
+              for (final e in envs) StillEntry(value: e.id, label: e.name),
             ],
             onSelected: ref.read(activeEnvProvider.notifier).select,
           ),

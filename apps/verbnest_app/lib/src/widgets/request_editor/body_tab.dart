@@ -1,4 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
+import '../ui/still_dropdown.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 
@@ -171,15 +174,12 @@ class _BodyModePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: DropdownMenu<String>(
+      child: StillDropdown<String>(
         key: const Key('body-mode'),
-        initialSelection: _modes.contains(body.mode) ? body.mode : null,
+        value: _modes.contains(body.mode) ? body.mode : null,
         hintText: body.mode,
-        expandedInsets: EdgeInsets.zero,
-        requestFocusOnTap: false,
-        dropdownMenuEntries: [
-          for (final m in _modes) DropdownMenuEntry(value: m, label: m),
-        ],
+        expand: true,
+        entries: [for (final m in _modes) StillEntry(value: m, label: m)],
         onSelected: _onSelected,
       ),
     );

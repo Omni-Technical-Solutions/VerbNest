@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'ui/still_controls.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:verbnest_core/verbnest_core.dart'
@@ -28,6 +30,8 @@ import 'html_preview.dart';
 import 'pdf_preview.dart';
 import 'ui/adaptive_dialog.dart';
 import 'ui/scroll_edge_fade.dart';
+import 'ui/still_dropdown.dart';
+import 'ui/still_tabs.dart';
 import 'ui/ui.dart';
 import '../../l10n/l10n.dart';
 import '../layout_class.dart';
@@ -163,7 +167,13 @@ class _ResponseViewState extends State<ResponseView> {
       children: [
         SizedBox(
           height: 3,
-          child: state.sending ? const LinearProgressIndicator() : null,
+          // A still bar, not a sliding one: nothing in the app animates.
+          child: state.sending
+              ? ColoredBox(
+                  color: Theme.of(context).colorScheme.primary
+                      .withValues(alpha: 0.6),
+                )
+              : null,
         ),
         Expanded(child: body),
       ],
@@ -195,6 +205,7 @@ class _ResponseViewState extends State<ResponseView> {
         if (k.toLowerCase() == 'set-cookie') ?parseSetCookie(v),
     ];
     return DefaultTabController(
+      animationDuration: Duration.zero,
       length: 5,
       // Measured from outside the column: inside it the height is unbounded.
       child: LayoutBuilder(
@@ -330,14 +341,12 @@ class _ResponseViewState extends State<ResponseView> {
   ) {
     // Secondary tabs: these sit inside the response panel, under the status.
     return ScrollEdgeFade(
-      child: TabBar.secondary(
+      child: StillTabBar(
+        key: const Key('response-tabs'),
+        secondary: true,
         // Five tabs do not fit a phone; scroll them rather than cut the labels.
         isScrollable:
             MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint,
-        tabAlignment:
-            MediaQuery.sizeOf(context).width < LayoutClass.mediumBreakpoint
-            ? TabAlignment.start
-            : null,
         tabs: [
           Tab(text: context.l10n.rvTabBody),
           Tab(
@@ -515,6 +524,7 @@ class _ResponseViewState extends State<ResponseView> {
               await Clipboard.setData(ClipboardData(text: r.headers[i].$2));
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
+                snackBarAnimationStyle: AnimationStyle.noAnimation,
                 SnackBar(
                   content: Text(context.l10n.rvHeaderCopied(r.headers[i].$1)),
                 ),
@@ -776,6 +786,7 @@ class _ResponseViewState extends State<ResponseView> {
     // A phone's row has room for the modes, search and filter and one more
     // button: the rest of the actions live in its menu.
     final more = PopupMenuButton<String>(
+      popUpAnimationStyle: AnimationStyle.noAnimation,
       key: const Key('body-more'),
       tooltip: MaterialLocalizations.of(context).showMenuTooltip,
       // The mode switch has no Table segment on a phone, so the menu button
@@ -897,7 +908,11 @@ class _ResponseViewState extends State<ResponseView> {
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const CircularProgressIndicator(key: Key('table-loading')),
+                  const Icon(
+                    Icons.hourglass_top,
+                    key: Key('table-loading'),
+                    size: 32,
+                  ),
                   const SizedBox(height: 12),
                   Text(context.l10n.tableLoading),
                 ],
@@ -921,35 +936,34 @@ class _ResponseViewState extends State<ResponseView> {
             children: [
               if (sources.length > 1) ...[
                 Text(l10n.tableRowsFrom),
-                DropdownButton<String>(
+                StillDropdown<String>(
                   key: const Key('table-source'),
-                  isDense: true,
                   value: sources.any((e) => e.path == _tableSource)
                       ? _tableSource
                       : table.label,
-                  items: [
+                  entries: [
                     for (final s in sources)
-                      DropdownMenuItem(
+                      StillEntry(
                         value: s.path,
-                        child: Text(
-                          s.path == r'$'
-                              ? l10n.tableWholeBody(s.count)
-                              : '${s.path} (${s.count})',
-                        ),
+                        label: s.path == r'$'
+                            ? l10n.tableWholeBody(s.count)
+                            : '${s.path} (${s.count})',
                       ),
                   ],
-                  onChanged: (v) => setState(() => _tableSource = v),
+                  onSelected: (v) => setState(() => _tableSource = v),
                 ),
               ],
               if (hasNested)
-                FilterChip(
+                StillChip(
+                  showCheckmark: true,
                   key: const Key('table-flatten'),
                   label: Text(l10n.tableFlatten),
                   selected: _flatten,
                   onSelected: (v) => setState(() => _flatten = v),
                 ),
               if (info.matrix)
-                FilterChip(
+                StillChip(
+                  showCheckmark: true,
                   key: const Key('table-header-row'),
                   label: Text(l10n.tableFirstRowHeader),
                   selected: _headerRow,

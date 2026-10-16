@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:verbnest_app/src/widgets/ui/still_nav.dart';
 import 'package:verbnest_app/src/layout_class.dart';
 import 'package:verbnest_app/src/state/editor_state.dart';
 
@@ -25,7 +26,7 @@ void main() {
       await launchApp(t, _l874);
       expect(find.byKey(const Key('layout-medium')), findsOneWidget);
       expect(find.byKey(const Key('layout-expanded')), findsNothing);
-      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.byType(StillNavigationRail), findsOneWidget);
       // The collection list is the page; there is no editor beside it.
       expect(find.byKey(const Key('sidebar-filter')), findsOneWidget);
       expect(find.byKey(const Key('url')), findsNothing);
@@ -50,7 +51,7 @@ void main() {
       expect(t.takeException(), isNull);
       expect(
         find.descendant(
-          of: find.byType(NavigationRail).first,
+          of: find.byType(StillNavigationRail).first,
           matching: find.text('Settings'),
         ),
         findsOneWidget,

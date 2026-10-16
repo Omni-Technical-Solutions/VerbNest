@@ -1,4 +1,7 @@
 import 'dart:typed_data';
+
+import 'ui/still_tabs.dart';
+
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart'
@@ -124,20 +127,17 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               slivers: [
                 SliverToBoxAdapter(
-                  child: AnimatedSize(
-                    duration: Motion.of(context, Motion.base),
-                    curve: Motion.curve,
-                    alignment: Alignment.topCenter,
-                    child: hideToolbar
-                        ? const SizedBox(width: double.infinity)
-                        : _Toolbar(
-                            requestId: requestId,
-                            compact: compact,
-                            narrow: narrow,
-                            item: state.item,
-                            notifier: notifier,
-                          ),
-                  ),
+                  // The toolbar folds away and returns at once (it used to size
+                  // over 200 ms).
+                  child: hideToolbar
+                      ? const SizedBox(width: double.infinity)
+                      : _Toolbar(
+                          requestId: requestId,
+                          compact: compact,
+                          narrow: narrow,
+                          item: state.item,
+                          notifier: notifier,
+                        ),
                 ),
                 SliverPersistentHeader(
                   pinned: true,
@@ -221,6 +221,7 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
 
 /// Opens the saved examples of a request.
 void showExamples(BuildContext context, String requestId) => showDialog<void>(
+  animationStyle: AnimationStyle.noAnimation,
   context: context,
   builder: (_) => UncontrolledProviderScope(
     container: ProviderScope.containerOf(context),
@@ -357,6 +358,7 @@ class ToolbarMenu extends ConsumerWidget {
     final repo = ref.read(repositoryProvider);
     final fav = repo.isFavourite(requestId);
     return PopupMenuButton<String>(
+      popUpAnimationStyle: AnimationStyle.noAnimation,
       key: const Key('toolbar-more'),
       tooltip: l.sbActions,
       icon: const Icon(Icons.more_vert),
@@ -701,13 +703,13 @@ class _RequestTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
+      animationDuration: Duration.zero,
       length: 7,
       child: Column(
         children: [
           ScrollEdgeFade(
-            child: TabBar(
+            child: StillTabBar(
               isScrollable: true,
-              tabAlignment: TabAlignment.start,
               tabs: [
                 _tab(context.l10n.reTabParams, _active(item.params)),
                 _tab(context.l10n.reTabHeaders, _active(item.headers)),

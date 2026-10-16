@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cupertino_ui/cupertino_ui.dart'
-    show CupertinoPageTransitionsBuilder;
 import 'package:material_ui/material_ui.dart';
 import 'package:verbnest_app/l10n/app_localizations.dart';
 import 'package:verbnest_app/src/app.dart';
@@ -91,30 +89,19 @@ void main() {
   });
 
   group('Android', () {
-    test('the theme uses predictive back page transitions', () {
+    test('every platform changes page with no transition', () {
+      // The app has no animation (ADR-020): not the iOS swipe-back slide, the
+      // Android predictive back preview or the desktop zoom.
       final builders = buildTheme(Brightness.light)
           .pageTransitionsTheme
           .builders;
-      expect(
-        builders[TargetPlatform.android],
-        isA<PredictiveBackPageTransitionsBuilder>(),
-      );
-    });
-
-    test('iOS and macOS keep the Cupertino swipe-back transition', () {
-      final builders = buildTheme(Brightness.light)
-          .pageTransitionsTheme
-          .builders;
-      expect(
-        builders[TargetPlatform.iOS],
-        isA<CupertinoPageTransitionsBuilder>(),
-      );
-      expect(
-        builders[TargetPlatform.macOS],
-        isA<CupertinoPageTransitionsBuilder>(),
-      );
       for (final p in TargetPlatform.values) {
         expect(builders.containsKey(p), isTrue, reason: '$p has a builder');
+        expect(
+          builders[p].runtimeType.toString(),
+          '_NoTransitions',
+          reason: '$p',
+        );
       }
     });
 

@@ -18,6 +18,7 @@ Future<void> showRevisions(
   final repo = ref.read(repositoryProvider);
   final revs = repo.revisions(requestId);
   final rev = await showDialog<int>(
+    animationStyle: AnimationStyle.noAnimation,
     context: context,
     builder: (_) => AlertDialog(
       title: Text(context.l10n.revisionsTitle),
