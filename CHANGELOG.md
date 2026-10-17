@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.64.4
+
+- Change: VerbNest is open source under the Apache License 2.0 (it was published under the Boost Software License 1.0 up to 0.64.3). The licence and notice ship with every installer, and Settings has a new About section with **Open source licences**, which shows VerbNest's own licence, the fonts' and every package's. The names "VerbNest" and "Omni" and the icon are not covered by the licence (`TRADEMARK.md`).
+- Project: README, `CONTRIBUTING.md` (commits are signed off under the Developer Certificate of Origin), `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue and pull request templates, `THIRD_PARTY_NOTICES.md`. The repositories moved to the Omni-Technical-Solutions organisation.
+- CI: line endings are LF everywhere; golden (screenshot) tests are tagged `golden` and compared on macOS only; the motion audit no longer writes to a fixed temp path.
+
 ## 0.64.3
 
 - Fix (macOS): text in the response body and the results table was garbled and soft on some Macs, with letters and digits drawn as speckled blocks that changed from frame to frame (which also read as flicker). Seen in a screen recording on a MacBook Pro with Intel UHD 630 and AMD Radeon Pro 5500M graphics. The engine's Impeller renderer always draws text through a distance-field glyph atlas, and that atlas corrupts on this hardware. The macOS app now renders with Skia (Metal): `FLTEnableImpeller` is false in `macos/Runner/Info.plist`. iOS and Android are unchanged.
