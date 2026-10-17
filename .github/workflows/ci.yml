@@ -149,6 +149,9 @@ jobs:
       - name: Android integration tests
         if: matrix.name == 'android'
         continue-on-error: true
+        # A wedged emulator (QEMU threads stop responding on the shared runner) used to
+        # hold the job for an hour and fail it; stop it after 25 minutes instead.
+        timeout-minutes: 25
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
