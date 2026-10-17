@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Renders store screenshots for iPhone, iPad, Android phone and Android 10"
-# tablet. The pixel sizes match the Triplogger store listings.
+# tablet. The pixel sizes match the store listings.
 #
 # Usage: scripts/screenshots_devices.sh [profile...]
 #        profiles: iphone ipad android-phone android-tablet iphone-landscape

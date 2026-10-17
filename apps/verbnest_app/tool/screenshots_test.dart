@@ -29,7 +29,7 @@ import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_http/verbnest_http.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
-/// One output size per store listing. Pixel sizes match the Triplogger
+/// One output size per store listing. Pixel sizes match the
 /// listings so both apps share the same store assets: iPhone 6.3" (Dynamic
 /// Island, 402 x 874 pt) and iPad
 /// 13" for the App Store, phone and 10" tablet for Google Play, and 2880 x

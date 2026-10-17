@@ -6,3 +6,10 @@ build/
 .DS_Store
 *.local.yaml
 .verbnest/cache/
+
+# Private working files (kept on the maintainer's machine, not published)
+.claude/
+.vscode/
+docs/context.md
+docs/release/windows-signing.md
+workspaces/
