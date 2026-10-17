@@ -1,0 +1,44 @@
+name: Bug report
+description: Something does not work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Do not** include real tokens, passwords or private URLs: replace them with placeholders. Security problems go to the [security policy](../../SECURITY.md), not here.
+  - type: input
+    id: version
+    attributes:
+      label: VerbNest version
+      description: The release you installed, for example 0.64.3 (build 42).
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [macOS, Windows, Linux, Android phone, Android tablet, iPhone, iPad]
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS version and device
+      placeholder: macOS 15.1, Pixel 8 on Android 15, ...
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. ...\n2. ...\n3. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected and what happened
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots, a screen recording or an example request (secrets removed)

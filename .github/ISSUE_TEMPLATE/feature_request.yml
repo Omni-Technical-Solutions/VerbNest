@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest an idea or an improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the problem first, not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like VerbNest to do?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What do you do today instead?
+  - type: markdown
+    attributes:
+      value: VerbNest is local-first (no account, no cloud, no telemetry), English only and has no animation. Ideas that fit those principles are easiest to take on.
