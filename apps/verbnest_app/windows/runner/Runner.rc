@@ -93,7 +93,7 @@ BEGIN
             VALUE "FileDescription", "VerbNest" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "verbnest_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Omni Technical Solutions Pty Ltd. Boost Software License 1.0." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Omni Technical Solutions Pty Ltd. Apache License 2.0." "\0"
             VALUE "OriginalFilename", "verbnest_app.exe" "\0"
             VALUE "ProductName", "VerbNest" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

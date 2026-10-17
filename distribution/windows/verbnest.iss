@@ -22,7 +22,7 @@ AppPublisher=Omni Technical Solutions Pty Ltd
 AppPublisherURL=https://github.com/Omni-Technical-Solutions/VerbNest-releases
 AppSupportURL=https://github.com/Omni-Technical-Solutions/VerbNest-releases/issues
 AppCopyright=Copyright (C) 2026 Omni Technical Solutions Pty Ltd
-LicenseFile=..\LICENSE_1_0.txt
+LicenseFile=..\..\LICENSE
 DefaultDirName={autopf}\VerbNest
 DefaultGroupName=VerbNest
 DisableProgramGroupPage=yes
@@ -49,7 +49,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\LICENSE_1_0.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
 ; Visual C++ runtime, app-local: without it the app does not start on PCs
 ; that lack the VC++ redistributable. Already signed by Microsoft.
 Source: "{#CrtDir}\msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion

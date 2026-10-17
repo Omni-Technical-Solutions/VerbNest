@@ -1,6 +1,6 @@
 # winget
 
-Package identifier: `Omni.VerbNest`. Publisher: Omni Technical Solutions Pty Ltd. Licence: BSL-1.0 (`distribution/LICENSE_1_0.txt`).
+Package identifier: `Omni.VerbNest`. Publisher: Omni Technical Solutions Pty Ltd. Licence: Apache-2.0 (`LICENSE` and `NOTICE` at the repo root) from 0.64.4; versions up to 0.64.3 were published under BSL-1.0 and their manifests say so. New manifests must use `License: Apache-2.0`.
 
 Repositories (moved to the Omni-Technical-Solutions organisation on 2026-10-17): source `https://github.com/Omni-Technical-Solutions/VerbNest` (private), installers `https://github.com/Omni-Technical-Solutions/VerbNest-releases` (public), and the winget fork `https://github.com/Omni-Technical-Solutions/winget-pkgs` (the open PR #451601 now has its branch there). The old `bulhanb/...` addresses redirect, except the source repo.
 

@@ -31,3 +31,9 @@ Postman became the default API tool, then moved toward mandatory cloud accounts,
 - **MUST / SHOULD / MAY** follow RFC 2119.
 - Priorities: **P0** = MVP, **P1** = v1, **P2** = later, **—** = explicitly out of scope.
 - Requirement IDs (`FR-HTTP-003`) are stable; reference them in issues and PRs.
+
+## Licence
+
+VerbNest is licensed under the [Apache License, Version 2.0](LICENSE); see also [NOTICE](NOTICE). Versions up to 0.64.3 were published under the Boost Software License 1.0 and stay available under it.
+
+The licence covers the code and docs. It grants no rights to the names "VerbNest" and "Omni", or to the VerbNest icon (`assets/icon`): a fork must use its own name and icon.

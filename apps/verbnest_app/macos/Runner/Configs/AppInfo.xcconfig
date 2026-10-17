@@ -11,4 +11,4 @@ PRODUCT_NAME = VerbNest
 PRODUCT_BUNDLE_IDENTIFIER = com.omni.verbnest
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 Omni. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Omni Technical Solutions Pty Ltd. Apache License 2.0.

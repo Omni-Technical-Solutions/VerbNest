@@ -9,7 +9,7 @@ Status (2026-10-14): submitted as [microsoft/winget-pkgs#451601](https://github.
 | # | Question | Decision |
 | --- | --- | --- |
 | B1 | Where to host installers (winget downloads anonymously; the source repo is private) | Public installer-only repo [`Omni-Technical-Solutions/VerbNest-releases`](https://github.com/Omni-Technical-Solutions/VerbNest-releases) |
-| B2 | Licence | Boost Software License 1.0 (`BSL-1.0`), confirmed as Boost, not Business Source. Text: `distribution/LICENSE_1_0.txt`, shown and installed by the installer, `LICENSE` in the releases repo |
+| B2 | Licence | Apache License 2.0 (`Apache-2.0`) from 0.64.4 (decided 2026-10-17, ADR-021); up to 0.64.3 the Boost Software License 1.0 (`BSL-1.0`, not the Business Source licence) applied. Text: `LICENSE` and `NOTICE` at the repo root, shown and installed by the installer, `LICENSE` in the releases repo |
 | B3 | Publisher name | Omni Technical Solutions Pty Ltd: installer `AppPublisher`, exe `CompanyName`, manifest `Publisher` |
 | — | Account for the winget PR | `bulhanb` (fork `bulhanb/winget-pkgs`, created by `wingetcreate`); on 2026-10-17 the fork moved to `Omni-Technical-Solutions/winget-pkgs` along with the source repo (`Omni-Technical-Solutions/VerbNest`) and the installer repo (`Omni-Technical-Solutions/VerbNest-releases`). Installer URLs in the open PR still use the old `bulhanb/verbnest-releases` address, which redirects (checked: 200). |
 
