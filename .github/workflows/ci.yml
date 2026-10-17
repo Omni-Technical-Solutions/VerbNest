@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
@@ -49,7 +49,15 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
         working-directory: apps/verbnest_app
-      - run: flutter test
+      # Golden pictures are made on macOS; text anti-aliasing differs on other
+      # systems, so only macOS compares them and the others skip them.
+      - name: Tests (no goldens)
+        if: matrix.os != 'macos-latest'
+        run: flutter test --exclude-tags golden
+        working-directory: apps/verbnest_app
+      - name: Tests (goldens)
+        if: matrix.os == 'macos-latest'
+        run: flutter test --tags golden
         working-directory: apps/verbnest_app
 
   build:

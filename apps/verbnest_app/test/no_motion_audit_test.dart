@@ -92,14 +92,16 @@ class _Tour {
     if (settle > Duration.zero) await t.pump(settle);
     await t.pump(const Duration(milliseconds: 60));
     final tag = label.replaceAll(RegExp('[^a-z0-9]+'), '_');
+    // Set AUDIT_DIR to keep the two frames of every step as PNGs.
+    final dir = Platform.environment['AUDIT_DIR'];
     final b = await _frame(
       t,
-      '/private/tmp/claude-501/audit_${name}_${tag}_b.png',
+      dir == null ? null : '$dir/audit_${name}_${tag}_b.png',
     );
     await t.pump(const Duration(milliseconds: 60));
     final c = await _frame(
       t,
-      '/private/tmp/claude-501/audit_${name}_${tag}_c.png',
+      dir == null ? null : '$dir/audit_${name}_${tag}_c.png',
     );
     ran++;
     // A state that reaches the screen a frame late (a caret, a scrollbar) is

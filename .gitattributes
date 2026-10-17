@@ -1,0 +1,21 @@
+# Source is LF everywhere, so a Windows checkout does not turn generated files
+# or goldens' inputs into CRLF (and the format check does not see a change).
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.iss text eol=crlf
+*.rc text eol=crlf
+
+# Binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.icns binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.jar binary
+*.keystore binary
