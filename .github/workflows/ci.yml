@@ -114,6 +114,14 @@ jobs:
       - name: Rust toolchain
         run: rustup toolchain install stable --profile minimal
       - run: flutter pub get
+      # The project signs with a team certificate that CI does not have; sign
+      # ad hoc here (a CI build is only a compile and test check).
+      - name: macOS ad hoc signing
+        if: matrix.name == 'macos'
+        run: |
+          echo "FLUTTER_XCODE_CODE_SIGN_STYLE=Manual" >> "$GITHUB_ENV"
+          echo "FLUTTER_XCODE_CODE_SIGN_IDENTITY=-" >> "$GITHUB_ENV"
+          echo "FLUTTER_XCODE_DEVELOPMENT_TEAM=" >> "$GITHUB_ENV"
       - run: ${{ matrix.build }}
         working-directory: apps/verbnest_app
       - name: Integration tests
