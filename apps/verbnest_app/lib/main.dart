@@ -11,9 +11,12 @@ import 'src/workspace_host.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // The bundled fonts' licence texts appear on the licence page.
+  // VerbNest's own licence and the bundled fonts' licence texts appear on the
+  // licence page, ahead of the packages' own.
   LicenseRegistry.addLicense(() async* {
     for (final (name, asset) in const [
+      ('VerbNest', 'assets/licenses/VerbNest-Apache-2.0.txt'),
+      ('VerbNest (notice)', 'assets/licenses/VerbNest-NOTICE.txt'),
       ('Inter', 'assets/fonts/Inter-LICENSE.txt'),
       ('JetBrains Mono', 'assets/fonts/JetBrainsMono-OFL.txt'),
     ]) {

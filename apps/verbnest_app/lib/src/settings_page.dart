@@ -46,6 +46,21 @@ class SettingsPage extends ConsumerWidget {
               ),
               ..._history(context, prefs, prefsNotifier),
             ]),
+            _card([
+              _section(context, context.l10n.aboutSection),
+              ListTile(
+                key: const Key('licenses'),
+                leading: const Icon(Icons.balance_outlined),
+                title: Text(context.l10n.aboutLicenses),
+                subtitle: Text(context.l10n.aboutLicensesHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => showLicensePage(
+                  context: context,
+                  applicationName: 'VerbNest',
+                  applicationLegalese: context.l10n.aboutLegalese,
+                ),
+              ),
+            ]),
           ],
         ),
       ),

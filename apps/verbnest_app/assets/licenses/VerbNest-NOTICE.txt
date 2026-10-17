@@ -1,0 +1,14 @@
+VerbNest
+Copyright 2026 Omni Technical Solutions Pty Ltd
+
+This product includes software developed at Omni Technical Solutions Pty Ltd
+(https://github.com/Omni-Technical-Solutions/VerbNest).
+
+Licensed under the Apache License, Version 2.0 (see LICENSE). The names
+"VerbNest" and the VerbNest icon are not licensed for use by forks; see the
+trademark note in the README.
+
+Third-party software and fonts bundled with VerbNest keep their own licences
+(Inter and JetBrains Mono: SIL Open Font License 1.1, texts in
+apps/verbnest_app/assets/fonts; Dart and Flutter packages: BSD, MIT and Apache-2.0,
+see pubspec.lock for the exact set and each package's LICENSE file).

@@ -99,6 +99,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Scripts can read variables and send requests. Turn on only for workspaces you trust. Secret variables are never given to scripts.';
 
   @override
+  String get aboutSection => 'About';
+
+  @override
+  String get aboutLicenses => 'Open source licences';
+
+  @override
+  String get aboutLicensesHint =>
+      'VerbNest is open source under the Apache License 2.0. See the licences of everything it is built on.';
+
+  @override
+  String get aboutLegalese =>
+      'Copyright 2026 Omni Technical Solutions Pty Ltd. Licensed under the Apache License, Version 2.0.';
+
+  @override
   String get historySection => 'History (this device)';
 
   @override

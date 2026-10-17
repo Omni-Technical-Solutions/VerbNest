@@ -262,6 +262,30 @@ abstract class AppLocalizations {
   /// **'Scripts can read variables and send requests. Turn on only for workspaces you trust. Secret variables are never given to scripts.'**
   String get trustScriptsHint;
 
+  /// No description provided for @aboutSection.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get aboutSection;
+
+  /// No description provided for @aboutLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source licences'**
+  String get aboutLicenses;
+
+  /// No description provided for @aboutLicensesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'VerbNest is open source under the Apache License 2.0. See the licences of everything it is built on.'**
+  String get aboutLicensesHint;
+
+  /// No description provided for @aboutLegalese.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright 2026 Omni Technical Solutions Pty Ltd. Licensed under the Apache License, Version 2.0.'**
+  String get aboutLegalese;
+
   /// No description provided for @historySection.
   ///
   /// In en, this message translates to:

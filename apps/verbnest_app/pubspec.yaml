@@ -108,6 +108,8 @@ flutter:
     - assets/logo.png
     - assets/fonts/Inter-LICENSE.txt
     - assets/fonts/JetBrainsMono-OFL.txt
+    - assets/licenses/VerbNest-Apache-2.0.txt
+    - assets/licenses/VerbNest-NOTICE.txt
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
