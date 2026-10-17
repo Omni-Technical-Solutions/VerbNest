@@ -3,6 +3,8 @@
 **Name:** VerbNest
 **Subtitle:** Local-first API client
 
+Subtitle, name and promotional text must not mention price in any form (guideline 2.3.7 / 2.3.10: free, discounted, no cost, no subscription, "open source" as a price claim). The Mac App Store review of 0.64.3 rejected a subtitle for this; the text above has none, so the subtitle entered in App Store Connect must be set to exactly this line. Price belongs in Pricing and Availability only.
+
 ## Promotional text (139/170)
 Send requests, write tests and keep every collection on your own device. No account, no cloud, no tracking. Built for iPhone, iPad and Mac.
 
