@@ -8,10 +8,10 @@ Status (2026-10-14): submitted as [microsoft/winget-pkgs#451601](https://github.
 
 | # | Question | Decision |
 | --- | --- | --- |
-| B1 | Where to host installers (winget downloads anonymously; the source repo is private) | Public installer-only repo [`bulhanb/verbnest-releases`](https://github.com/bulhanb/verbnest-releases) |
+| B1 | Where to host installers (winget downloads anonymously; the source repo is private) | Public installer-only repo [`Omni-Technical-Solutions/VerbNest-releases`](https://github.com/Omni-Technical-Solutions/VerbNest-releases) |
 | B2 | Licence | Boost Software License 1.0 (`BSL-1.0`), confirmed as Boost, not Business Source. Text: `distribution/LICENSE_1_0.txt`, shown and installed by the installer, `LICENSE` in the releases repo |
 | B3 | Publisher name | Omni Technical Solutions Pty Ltd: installer `AppPublisher`, exe `CompanyName`, manifest `Publisher` |
-| — | Account for the winget PR | `bulhanb` (fork `bulhanb/winget-pkgs`, created by `wingetcreate`) |
+| — | Account for the winget PR | `bulhanb` (fork `bulhanb/winget-pkgs`, created by `wingetcreate`); on 2026-10-17 the fork moved to `Omni-Technical-Solutions/winget-pkgs` along with the source repo (`Omni-Technical-Solutions/VerbNest`) and the installer repo (`Omni-Technical-Solutions/VerbNest-releases`). Installer URLs in the open PR still use the old `bulhanb/verbnest-releases` address, which redirects (checked: 200). |
 
 Code signing (owner, 2026-10-13): Azure Artifact Signing (formerly Trusted Signing). `scripts/package_windows.sh` supports it and the build machine has the tools; it signs once the owner has the Azure account, identity validation and certificate profile (`docs/release/windows-signing.md`). The submitted 0.59.3 build 25 is unsigned.
 
@@ -25,8 +25,8 @@ Code signing (owner, 2026-10-13): Azure Artifact Signing (formerly Trusted Signi
 
 ### 2. Host the installer publicly ✅
 
-- ✅ Repo `bulhanb/verbnest-releases` with README and LICENSE.
-- ✅ Release [`v0.59.3`](https://github.com/bulhanb/verbnest-releases/releases/tag/v0.59.3) with `VerbNest-0.59.3+25-windows-x64-setup.exe`, SHA-256 `514D2D2788149CCC3BC5313660E044774A4613EB247336AD26830931310C2F21`. An anonymous download returns the same hash. Never replace this asset.
+- ✅ Repo `Omni-Technical-Solutions/VerbNest-releases` with README and LICENSE.
+- ✅ Release [`v0.59.3`](https://github.com/Omni-Technical-Solutions/VerbNest-releases/releases/tag/v0.59.3) with `VerbNest-0.59.3+25-windows-x64-setup.exe`, SHA-256 `514D2D2788149CCC3BC5313660E044774A4613EB247336AD26830931310C2F21`. An anonymous download returns the same hash. Never replace this asset.
 
 ### 3. Manifests ✅
 
