@@ -82,6 +82,8 @@ jobs:
     name: build (${{ matrix.name }})
     needs: [packages, app]
     runs-on: ${{ matrix.os }}
+    # A hung simulator or emulator once held a build job for six hours.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -156,6 +158,7 @@ jobs:
       - name: iOS integration tests
         if: matrix.name == 'ios'
         continue-on-error: true
+        timeout-minutes: 20
         run: ../../scripts/ci_integration.sh "$SIM_UDID" - integration_test/platform_test.dart integration_test/vault_test.dart integration_test/pdf_test.dart
         working-directory: apps/verbnest_app
       - name: Enable KVM
