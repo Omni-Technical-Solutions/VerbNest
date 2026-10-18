@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   verbnest_core: any
-  sqlite3: ^3.0.0
+  sqlite3: ^3.7.1
   path: ^1.9.0
 
 dev_dependencies:
