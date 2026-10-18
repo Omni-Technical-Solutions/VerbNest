@@ -57,6 +57,11 @@ Source: "{#CrtDir}\msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#CrtDir}\vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#CrtDir}\vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
 
+[InstallDelete]
+; Up to 0.64.3 the installer shipped the Boost licence; 0.64.4 and later ship
+; the Apache LICENSE and NOTICE. Remove the old file when upgrading.
+Type: files; Name: "{app}\LICENSE_1_0.txt"
+
 [Icons]
 Name: "{group}\VerbNest"; Filename: "{app}\verbnest_app.exe"
 Name: "{autodesktop}\VerbNest"; Filename: "{app}\verbnest_app.exe"; Tasks: desktopicon

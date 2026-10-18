@@ -8,6 +8,11 @@
 # already built with the number in BUILD_NUMBER).
 # Needs Inno Setup 6 (winget install JRSoftware.InnoSetup); set ISCC to the
 # compiler path if it is not in a standard location.
+# Build prerequisites: Visual Studio 2019 with the C++ desktop workload AND the
+# "C++ ATL for latest v142 build tools" component in EVERY 2019 instance on the
+# machine (flutter_secure_storage_windows includes atlstr.h, and CMake picks
+# the most recently updated instance, not the one `flutter doctor` names), and
+# rustup (the fjs plugin compiles Rust).
 #
 # Code signing (app exe and DLLs, setup, uninstaller), first match wins:
 #   SIGN_METADATA     Azure Artifact Signing metadata.json; defaults to
