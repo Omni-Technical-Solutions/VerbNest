@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'widgets/ui/still_controls.dart';
@@ -5,6 +6,7 @@ import 'widgets/ui/still_controls.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
+import 'state/app_info_state.dart';
 import 'state/prefs.dart';
 import 'state/session.dart';
 import 'state/settings_state.dart';
@@ -12,6 +14,7 @@ import 'state/theme_state.dart';
 import 'theme.dart';
 import 'widgets/network_settings.dart';
 import 'widgets/synced_field.dart';
+import 'widgets/ui/toast.dart';
 
 /// Workspace HTTP defaults; requests can override them (FR-HTTP-007).
 class SettingsPage extends ConsumerWidget {
@@ -21,6 +24,7 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final prefs = ref.watch(prefsProvider);
     final prefsNotifier = ref.read(prefsProvider.notifier);
+    final version = ref.watch(appVersionProvider).asData?.value;
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
@@ -49,6 +53,24 @@ class SettingsPage extends ConsumerWidget {
             _card([
               _section(context, context.l10n.aboutSection),
               ListTile(
+                key: const Key('app-version'),
+                leading: const Icon(Icons.info_outline),
+                title: Text(context.l10n.aboutVersion),
+                subtitle: Text(version?.label ?? ''),
+                onTap: version == null
+                    ? null
+                    : () {
+                        Clipboard.setData(
+                          ClipboardData(text: 'VerbNest ${version.label}'),
+                        );
+                        showToast(
+                          context,
+                          context.l10n.aboutVersionCopied,
+                          tone: ToastTone.success,
+                        );
+                      },
+              ),
+              ListTile(
                 key: const Key('licenses'),
                 leading: const Icon(Icons.balance_outlined),
                 title: Text(context.l10n.aboutLicenses),
@@ -57,6 +79,7 @@ class SettingsPage extends ConsumerWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'VerbNest',
+                  applicationVersion: version?.label,
                   applicationLegalese: context.l10n.aboutLegalese,
                 ),
               ),

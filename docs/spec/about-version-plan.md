@@ -1,6 +1,6 @@
 # Plan: show the application version in Settings → About
 
-Status: plan only, nothing changed yet. Planned release type: `minor` (a small
+Status: done in 0.65.0 (the tap-to-copy hint string was dropped). Planned release type: `minor` (a small
 addition to an existing capability), so 0.64.5 → 0.65.0.
 
 ## Where things stand (v0.64.5+47)

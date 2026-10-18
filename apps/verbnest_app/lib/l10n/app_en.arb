@@ -36,6 +36,8 @@
   "trustScripts": "Run scripts in this workspace",
   "trustScriptsHint": "Scripts can read variables and send requests. Turn on only for workspaces you trust. Secret variables are never given to scripts.",
   "aboutSection": "About",
+  "aboutVersion": "Version",
+  "aboutVersionCopied": "Version copied",
   "aboutLicenses": "Open source licences",
   "aboutLicensesHint": "VerbNest is open source under the Apache License 2.0. See the licences of everything it is built on.",
   "aboutLegalese": "Copyright 2026 Omni Technical Solutions Pty Ltd. Licensed under the Apache License, Version 2.0.",

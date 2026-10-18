@@ -51,6 +51,8 @@ void main() {
         find.byType(ListView).last,
         const Offset(0, -300),
       );
+      await t.ensureVisible(tile);
+      await t.pump(const Duration(milliseconds: 300));
       await t.tap(tile);
       await t.pumpAndSettle();
       expect(find.text('VerbNest'), findsWidgets);

@@ -102,6 +102,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutSection => 'About';
 
   @override
+  String get aboutVersion => 'Version';
+
+  @override
+  String get aboutVersionCopied => 'Version copied';
+
+  @override
   String get aboutLicenses => 'Open source licences';
 
   @override

@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.65.0
+
+- Change: Settings → About shows the version and build number (for example `0.65.0 (48)`), read from the installed app. Tapping it copies "VerbNest 0.65.0 (48)" for bug reports. The open source licences page shows the version as well. New dependency: `package_info_plus` (BSD).
+- Tests: `settings_about_version_test.dart`; the licence page test scrolls its tile fully into view. Plan: `docs/spec/about-version-plan.md`.
+
 ## 0.64.5
 
 - Update: dependencies: `sqlite3` 3.7.1, `image` 4.12.0 (tests and tools) and `cupertino_icons` 2.0.0. No change in behaviour.

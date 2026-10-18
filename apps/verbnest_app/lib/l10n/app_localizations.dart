@@ -268,6 +268,18 @@ abstract class AppLocalizations {
   /// **'About'**
   String get aboutSection;
 
+  /// No description provided for @aboutVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get aboutVersion;
+
+  /// No description provided for @aboutVersionCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Version copied'**
+  String get aboutVersionCopied;
+
   /// No description provided for @aboutLicenses.
   ///
   /// In en, this message translates to:
