@@ -1,6 +1,6 @@
 name: verbnest_storage
 description: SQLite workspace and local databases for VerbNest.
-version: 0.64.4
+version: 0.64.5
 publish_to: none
 resolution: workspace
 

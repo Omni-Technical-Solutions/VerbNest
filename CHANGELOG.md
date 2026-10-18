@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.64.5
+
+- Update: dependencies: `sqlite3` 3.7.1, `image` 4.12.0 (tests and tools) and `cupertino_icons` 2.0.0. No change in behaviour.
+- CI: secret scanning with gitleaks on every push and pull request, time limits on the emulator and simulator steps, ad hoc signing for the macOS build check, and GitHub Actions updated (checkout 7, setup-java 6, upload-artifact 7).
+- Project: starter issues, security policy and community files are in place; the repository is public.
+
 ## 0.64.4
 
 - Change: VerbNest is open source under the Apache License 2.0 (it was published under the Boost Software License 1.0 up to 0.64.3). The licence and notice ship with every installer, and Settings has a new About section with **Open source licences**, which shows VerbNest's own licence, the fonts' and every package's. The names "VerbNest" and "Omni" and the icon are not covered by the licence (`TRADEMARK.md`).
