@@ -7,6 +7,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - Update: dependencies: `sqlite3` 3.7.1, `image` 4.12.0 (tests and tools) and `cupertino_icons` 2.0.0. No change in behaviour.
 - CI: secret scanning with gitleaks on every push and pull request, time limits on the emulator and simulator steps, ad hoc signing for the macOS build check, and GitHub Actions updated (checkout 7, setup-java 6, upload-artifact 7).
 - Project: starter issues, security policy and community files are in place; the repository is public.
+- Release: build 46 for macOS (App Store package and DMG), iOS and Android. Not uploaded.
 
 ## 0.64.4
 
