@@ -53,7 +53,7 @@ dependencies:
   fjs: ^3.3.2
   url_launcher: ^6.3.0
   flutter_widget_from_html_core: ^0.17.4
-  pdfrx: ^2.6.5
+  pdfrx: ^2.9.0
   material_ui: ^1.6.0
   cupertino_ui: ^1.1.2
   dynamic_color: ^2.1.0
