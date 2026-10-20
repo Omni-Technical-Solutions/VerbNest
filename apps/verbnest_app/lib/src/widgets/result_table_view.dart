@@ -11,9 +11,10 @@ import 'package:verbnest_core/verbnest_core.dart';
 
 import '../../l10n/l10n.dart';
 import '../theme.dart';
-import 'ui/adaptive_dialog.dart';
 import 'ui/toast.dart';
-import 'ui/still_tooltip.dart';
+import 'result_table_cell.dart';
+import 'result_table_chrome.dart';
+import 'result_table_header.dart';
 import 'result_table_selection.dart';
 import 'result_table_sizing.dart';
 
@@ -383,108 +384,21 @@ class _ResultTableViewState extends State<ResultTableView> {
     await save(t.toCsv(_order, List<int>.generate(t.columnCount, (i) => i)));
   }
 
-  void _showValue(int row, int col) {
-    final t = widget.table;
-    final value = t.rows[_order[row]][col];
-    final l10n = context.l10n;
-    showDetail(
-      context,
-      title: t.columns[col].name,
-      closeLabel: l10n.close,
-      width: 520,
-      content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SelectableText(
-            value == null ? l10n.tableNull : cellFull(value),
-            key: const Key('table-value'),
-            style: monoStyle(fontSize: 13),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const Key('table-value-copy'),
-            icon: const Icon(Icons.copy, size: 18),
-            label: Text(l10n.tableCopy),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: cellFull(value)));
-              showToast(context, l10n.tableCopied(1));
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  /// The menu items for the current selection; [column] adds the header's.
+  List<PopupMenuEntry<String>> _menuEntries({int? column}) => tableMenuEntries(
+    context,
+    hasSelection: _hasSelection,
+    singleCell: _hasSelection && !_sel.wholeRows && !_sel.wholeCols,
+    canSave: widget.onSaveCsv != null,
+    column: column,
+    columnSorted: column != null && _sortCol == column,
+  );
 
-  List<PopupMenuEntry<String>> _menuEntries({int? column}) {
-    final l10n = context.l10n;
-    return [
-      PopupMenuItem(
-        key: const Key('menu-copy-cells'),
-        value: 'copy',
-        enabled: _hasSelection,
-        child: Text(l10n.tableCopy),
-      ),
-      PopupMenuItem(
-        key: const Key('menu-copy-headers'),
-        value: 'copy-headers',
-        enabled: _hasSelection,
-        child: Text(l10n.tableCopyWithHeaders),
-      ),
-      PopupMenuItem(
-        key: const Key('menu-copy-csv'),
-        value: 'csv',
-        child: Text(l10n.tableCopyAsCsv),
-      ),
-      PopupMenuItem(
-        key: const Key('menu-copy-json'),
-        value: 'json',
-        child: Text(l10n.tableCopyAsJson),
-      ),
-      PopupMenuItem(
-        key: const Key('menu-copy-markdown'),
-        value: 'markdown',
-        child: Text(l10n.tableCopyAsMarkdown),
-      ),
-      const PopupMenuDivider(),
-      PopupMenuItem(
-        key: const Key('menu-select-all'),
-        value: 'all',
-        child: Text(l10n.tableSelectAll),
-      ),
-      if (column != null) ...[
-        PopupMenuItem(
-          key: const Key('menu-select-column'),
-          value: 'column:$column',
-          child: Text(l10n.tableSelectColumn),
-        ),
-        PopupMenuItem(
-          key: const Key('menu-fit-column'),
-          value: 'fit:$column',
-          child: Text(l10n.tableFitColumn),
-        ),
-        if (_sortCol == column)
-          PopupMenuItem(
-            key: const Key('menu-clear-sort'),
-            value: 'clear-sort',
-            child: Text(l10n.tableClearSort),
-          ),
-      ],
-      if (_hasSelection && !_sel.wholeRows && !_sel.wholeCols)
-        PopupMenuItem(
-          key: const Key('menu-view-value'),
-          value: 'view',
-          child: Text(l10n.tableViewValue),
-        ),
-      if (widget.onSaveCsv != null) ...[
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          key: const Key('menu-save-csv'),
-          value: 'save',
-          child: Text(l10n.tableSaveCsv),
-        ),
-      ],
-    ];
-  }
+  void _showValue(int row, int col) => showTableValue(
+    context,
+    title: widget.table.columns[col].name,
+    value: widget.table.rows[_order[row]][col],
+  );
 
   void _onMenu(String v) {
     if (v == 'copy') return _copy(_Format.tsv);
@@ -555,8 +469,6 @@ class _ResultTableViewState extends State<ResultTableView> {
         scaler: MediaQuery.textScalerOf(context),
         typeName: (type) => _typeName(context, type),
       );
-
-  String _shownText(Object? v) => TableColumnSizer.shownText(v);
 
   List<double> _initialWidths(BuildContext context, TextStyle style) => [
     for (var c = 0; c < _cols; c++) _fit(context, c, style),
@@ -673,7 +585,14 @@ class _ResultTableViewState extends State<ResultTableView> {
             ),
           ),
         ),
-        _footer(context, scheme),
+        TableFooter(
+          table: widget.table,
+          matches: _matches,
+          selectedCount: _selectedCount,
+          touch: _touch,
+          onMenu: _onMenu,
+          entries: _menuEntries,
+        ),
       ],
     );
   }
@@ -748,8 +667,34 @@ class _ResultTableViewState extends State<ResultTableView> {
                   width: widths[c],
                   child: Stack(
                     children: [
-                      _headerLabel(context, c),
-                      _resizeHandle(context, c, widths, scheme),
+                      TableHeaderLabel(
+                        index: c,
+                        name: widget.table.columns[c].name,
+                        typeName: _typeName(
+                          context,
+                          widget.table.columns[c].type,
+                        ),
+                        ascending: _sortCol == c ? _ascending : null,
+                        nameStyle: _cellStyle(context)
+                            .copyWith(fontWeight: FontWeight.w600),
+                        onSort: () => _sortBy(c),
+                        onMenu: (at) => _menuAt(at, column: c),
+                      ),
+                      TableResizeHandle(
+                        index: c,
+                        onResize: (dx) => setState(() {
+                          widths[c] = (widths[c] + dx)
+                              .clamp(
+                                ResultTableView.minColumnWidth,
+                                ResultTableView.maxColumnWidth,
+                              )
+                              .roundToDouble();
+                        }),
+                        onFit: () => setState(
+                          () =>
+                              widths[c] = _fit(context, c, _cellStyle(context)),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -774,121 +719,6 @@ class _ResultTableViewState extends State<ResultTableView> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// The name and type of column [c], tappable to sort, with its menu.
-  Widget _headerLabel(BuildContext context, int c) {
-    final t = widget.table;
-    final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
-    final small = Theme.of(context).textTheme.bodySmall
-        ?.copyWith(color: scheme.outline, fontSize: 11);
-    final bold = _cellStyle(context).copyWith(fontWeight: FontWeight.w600);
-    return Positioned.fill(
-      child: StillTooltip(
-        message: l10n.tableSortBy(t.columns[c].name),
-        child: Semantics(
-          button: true,
-          label: l10n.tableHeaderLabel(
-            t.columns[c].name,
-            _typeName(context, t.columns[c].type),
-          ),
-          value: _sortCol != c
-              ? null
-              : (_ascending
-                    ? l10n.tableSortedAscending
-                    : l10n.tableSortedDescending),
-          onTap: () => _sortBy(c),
-          excludeSemantics: true,
-          child: GestureDetector(
-            excludeFromSemantics: true,
-            onSecondaryTapDown: (d) => _menuAt(d.globalPosition, column: c),
-            onLongPressStart: (d) => _menuAt(d.globalPosition, column: c),
-            child: InkWell(
-              key: ValueKey('table-sort-$c'),
-              onTap: () => _sortBy(c),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            t.columns[c].name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: bold,
-                          ),
-                          Text(
-                            _typeName(context, t.columns[c].type),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: small,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_sortCol == c)
-                      Icon(
-                        _ascending ? Icons.arrow_upward : Icons.arrow_downward,
-                        key: Key(
-                          _ascending
-                              ? 'table-sort-asc-$c'
-                              : 'table-sort-desc-$c',
-                        ),
-                        size: 16,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Drag to resize; double-tap to fit the content.
-  Widget _resizeHandle(
-    BuildContext context,
-    int c,
-    List<double> widths,
-    ColorScheme scheme,
-  ) {
-    return Positioned(
-      top: 0,
-      bottom: 0,
-      right: 0,
-      width: 12,
-      // Out of the accessibility tree: it is a 12 dp drag handle,
-      // and "Fit column" is in the header menu.
-      child: ExcludeSemantics(
-        child: GestureDetector(
-          key: ValueKey('table-resize-$c'),
-          behavior: HitTestBehavior.opaque,
-          onHorizontalDragUpdate: (d) => setState(() {
-            widths[c] = (widths[c] + d.delta.dx)
-                .clamp(
-                  ResultTableView.minColumnWidth,
-                  ResultTableView.maxColumnWidth,
-                )
-                .roundToDouble();
-          }),
-          onDoubleTap: () =>
-              setState(() => widths[c] = _fit(context, c, _cellStyle(context))),
-          child: MouseRegion(
-            cursor: SystemMouseCursors.resizeColumn,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Container(width: 1, color: scheme.outlineVariant),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -934,15 +764,22 @@ class _ResultTableViewState extends State<ResultTableView> {
             children: [
               const SizedBox(width: ResultTableView._rowNumberWidth),
               for (var c = 0; c < _cols; c++)
-                _cell(
-                  context,
-                  position,
-                  c,
-                  row[c],
-                  widths[c],
-                  style,
-                  muted,
-                  scheme,
+                TableValueCell(
+                  row: position,
+                  col: c,
+                  value: row[c],
+                  columnName: t.columns[c].name,
+                  type: t.columns[c].type,
+                  width: widths[c],
+                  style: style,
+                  muted: muted,
+                  matches: _matches,
+                  selected: _isSelected(position, c),
+                  focused: _isFocus(position, c),
+                  onActivate: () {
+                    _selectCell(position, c);
+                    _showValue(position, c);
+                  },
                 ),
             ],
           ),
@@ -975,127 +812,6 @@ class _ResultTableViewState extends State<ResultTableView> {
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _cell(
-    BuildContext context,
-    int row,
-    int col,
-    Object? value,
-    double width,
-    TextStyle style,
-    TextStyle muted,
-    ColorScheme scheme,
-  ) {
-    final type = widget.table.columns[col].type;
-    final numeric = type == ColumnType.number && value is num;
-    final selected = _isSelected(row, col);
-    final Widget text = value == null
-        ? Text(
-            context.l10n.tableNull,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: muted,
-          )
-        : Text(
-            _shownText(value),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: numeric
-                ? style.copyWith(fontFeatures: kTabularFigures)
-                : (value is Map || value is List)
-                ? style.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontFamily: kMonoFamily,
-                    fontSize: 12,
-                  )
-                : style,
-          );
-    final l10n = context.l10n;
-    final spoken = value == null ? l10n.tableNull : cellText(value);
-    return Semantics(
-      label: l10n.tableCellLabel(
-        widget.table.columns[col].name,
-        row + 1,
-        _matches,
-        spoken.length > 200 ? spoken.substring(0, 200) : spoken,
-      ),
-      selected: selected,
-      // A screen reader activates a cell to see its value in full.
-      onTap: () {
-        _selectCell(row, col);
-        _showValue(row, col);
-      },
-      excludeSemantics: true,
-      child: Container(
-        key: ValueKey('table-cell-$row-$col'),
-        width: width,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        alignment: numeric ? Alignment.centerRight : Alignment.centerLeft,
-        decoration: BoxDecoration(
-          color: selected ? scheme.secondaryContainer : null,
-          border: Border(
-            right: BorderSide(color: scheme.outlineVariant),
-            bottom: BorderSide(color: scheme.outlineVariant),
-          ),
-        ),
-        foregroundDecoration: _isFocus(row, col)
-            ? BoxDecoration(border: Border.all(color: scheme.primary, width: 2))
-            : null,
-        child: text,
-      ),
-    );
-  }
-
-  Widget _footer(BuildContext context, ColorScheme scheme) {
-    final t = widget.table;
-    final l10n = context.l10n;
-    final filtered = _matches != t.rowCount;
-    final parts = <String>[
-      filtered
-          ? l10n.tableFiltered(_matches, t.rowCount)
-          : l10n.tableSummary(t.rowCount, t.columnCount),
-      if (filtered) l10n.tableColumns(t.columnCount),
-      if (_matches > ResultTable.maxGridRows)
-        l10n.tableCapped(ResultTable.maxGridRows),
-      if (t.columnsDropped > 0) l10n.tableColumnsDropped(t.columnsDropped),
-      if (_selectedCount > 1) l10n.tableSelected(_selectedCount),
-    ];
-    // The copy and export menu sits at the end of the footer: a bar of its
-    // own above the grid would cost every table a row.
-    final size = _touch ? 48.0 : 32.0;
-    return Container(
-      key: const Key('table-footer'),
-      padding: const EdgeInsets.only(left: 12),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: scheme.outlineVariant)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              parts.join(' · '),
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-          ),
-          SizedBox(
-            width: size,
-            height: size,
-            child: PopupMenuButton<String>(
-              popUpAnimationStyle: AnimationStyle.noAnimation,
-              key: const Key('table-actions'),
-              tooltip: l10n.tableActions,
-              icon: const Icon(Icons.more_vert),
-              iconSize: 20,
-              padding: EdgeInsets.zero,
-              onSelected: _onMenu,
-              itemBuilder: (context) => _menuEntries(),
             ),
           ),
         ],
