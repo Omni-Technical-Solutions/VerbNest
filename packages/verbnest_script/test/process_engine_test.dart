@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:verbnest_script/verbnest_script.dart';
 import 'package:test/test.dart';
 
@@ -81,4 +83,43 @@ console.log("hi");
         .run(_input('1'));
     expect(out.error, contains('no-such-js-runtime'));
   });
+
+  sandboxTests();
+}
+
+/// A stand-in runtime that has no `--permission` flag (an old Node).
+Future<String> _oldNode() async {
+  final dir = await Directory.systemTemp.createTemp('oldnode');
+  final marker = File('${dir.path}/ran');
+  final f = File('${dir.path}/node');
+  f.writeAsStringSync('''#!/bin/sh
+for a in "\$@"; do
+  if [ "\$a" = "--permission" ]; then exit 9; fi
+  if [ "\$a" = "--version" ]; then echo v18.0.0; exit 0; fi
+done
+touch "${marker.path}"
+printf '{"error":"ran without the permission model"}'
+''');
+  Process.runSync('chmod', ['+x', f.path]);
+  return f.path;
+}
+
+void sandboxTests() {
+  test('a runtime without the permission model does not run scripts', () async {
+    final exe = await _oldNode();
+    final out = await ProcessScriptEngine(executable: exe).run(_input('1'));
+    expect(out.error, contains('permission model'));
+    expect(out.error, contains('--unsafe-node-scripts'));
+    expect(File('${File(exe).parent.path}/ran').existsSync(), isFalse);
+  }, skip: Platform.isWindows ? 'needs a shell script' : null);
+
+  test('--unsafe-node-scripts runs them on an old runtime', () async {
+    final exe = await _oldNode();
+    final out = await ProcessScriptEngine(
+      executable: exe,
+      allowUnsandboxed: true,
+    ).run(_input('1'));
+    expect(out.error, contains('ran without the permission model'));
+    expect(File('${File(exe).parent.path}/ran').existsSync(), isTrue);
+  }, skip: Platform.isWindows ? 'needs a shell script' : null);
 }

@@ -21,7 +21,7 @@ Runs the requests of a collection or folder and exits 0 when every request
 and test passed, 1 when something failed, 2 on a usage or file error.
 Pre-request and post-response scripts are skipped and reported unless you pass
 --allow-scripts, which runs them in an external JavaScript runtime (see
---js-runtime). Only allow scripts in workspaces you trust. Variables
+--js-runtime; Node 20 or newer, or --unsafe-node-scripts). Only allow scripts in workspaces you trust. Variables
 scripts set last for the run only; nothing is written to the workspace file.
 
 `verbnest mock` serves the saved examples of a collection over HTTP until
@@ -91,6 +91,13 @@ ArgParser _runParser() => ArgParser()
     'js-runtime',
     defaultsTo: 'node',
     help: 'Program that runs scripts.',
+  )
+  ..addFlag(
+    'unsafe-node-scripts',
+    help:
+        'Run scripts even if Node has no permission model (older than Node 20). '
+        'Only for scripts you wrote or fully trust.',
+    negatable: false,
   )
   ..addFlag(
     'allow-scripts',
@@ -581,7 +588,10 @@ Future<ScriptEngine?> _scriptEngine(ArgResults r) async {
   if (r['no-scripts'] as bool || !(r['allow-scripts'] as bool)) return null;
   final exe = r['js-runtime'] as String;
   return await ProcessScriptEngine.available(exe)
-      ? ProcessScriptEngine(executable: exe)
+      ? ProcessScriptEngine(
+          executable: exe,
+          allowUnsandboxed: r['unsafe-node-scripts'] as bool,
+        )
       : null;
 }
 

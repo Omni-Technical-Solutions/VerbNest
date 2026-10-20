@@ -24,9 +24,17 @@ const scriptMemoryLimit = 64 * 1024 * 1024;
 /// globals beyond the language built-ins, with a wall-clock timeout.
 /// QuickJS in the app and Node here differ in rare edge cases of the language.
 class ProcessScriptEngine implements ScriptEngine {
-  ProcessScriptEngine({this.executable = 'node'});
+  /// Scripts run only when the runtime has Node's permission model (so a
+  /// script that escapes the `vm` context still has no files, processes or
+  /// workers). [allowUnsandboxed] runs them anyway on an older Node, which is
+  /// then exactly as trustworthy as the scripts.
+  ProcessScriptEngine({
+    this.executable = 'node',
+    this.allowUnsandboxed = false,
+  });
 
   final String executable;
+  final bool allowUnsandboxed;
 
   static const _runner =
       "const vm=require('vm');"
@@ -60,10 +68,20 @@ class ProcessScriptEngine implements ScriptEngine {
     Duration timeout = defaultScriptTimeout,
   }) async {
     final watch = Stopwatch()..start();
+    final sandboxed = await _supportsPermission();
+    if (!sandboxed && !allowUnsandboxed) {
+      return ScriptOutput.failed(
+        '"$executable" has no permission model (Node 20 or newer), and '
+        '`node:vm` alone is not a security boundary, so the script was not '
+        'run. Upgrade Node, or pass --unsafe-node-scripts for scripts you '
+        'wrote or fully trust.',
+        elapsed: watch.elapsed,
+      );
+    }
     final Process p;
     try {
       p = await Process.start(executable, [
-        if (await _supportsPermission()) '--permission',
+        if (sandboxed) '--permission',
         '--max-old-space-size=${scriptMemoryLimit ~/ (1024 * 1024)}',
         '-e',
         _runner,
