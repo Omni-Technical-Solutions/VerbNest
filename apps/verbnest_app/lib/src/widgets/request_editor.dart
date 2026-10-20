@@ -14,7 +14,6 @@ import '../state/editor_state.dart';
 import '../state/file_port.dart';
 import '../state/prefs.dart';
 import '../state/session.dart';
-import '../state/settings_state.dart';
 import '../state/variables.dart';
 import 'assertions_editor.dart';
 import 'auth_editor.dart';
@@ -24,6 +23,7 @@ import 'request_editor/headers_tab.dart';
 import 'request_editor/params_tab.dart';
 import 'request_editor/settings_tab.dart';
 import 'request_editor/url_bar.dart';
+import 'request_banners.dart';
 import 'request_extras.dart';
 import 'response_view.dart';
 import 'scripts_editor.dart';
@@ -191,16 +191,16 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       if (state.pendingUnresolved.isNotEmpty)
-        _PendingBanner(state: state, notifier: notifier),
+        PendingBanner(state: state, notifier: notifier),
       if (state.pendingSecretHost != null)
-        _SecretHostBanner(state: state, notifier: notifier),
+        SecretHostBanner(state: state, notifier: notifier),
       if (state.unresolved.isNotEmpty)
-        _Banner(
+        NoticeBanner(
           context.l10n.reUndefined(
             state.unresolved.map((n) => '{{$n}}').join(', '),
           ),
         ),
-      for (final w in state.warnings) _Banner(w),
+      for (final w in state.warnings) NoticeBanner(w),
     ],
   );
 
@@ -414,102 +414,6 @@ class ToolbarMenu extends ConsumerWidget {
         if (item.body is GraphqlBody)
           PopupMenuItem(value: 'sub', child: Text(l.reLiveSub)),
       ],
-    );
-  }
-}
-
-class _PendingBanner extends ConsumerWidget {
-  const _PendingBanner({required this.state, required this.notifier});
-
-  final EditorState state;
-  final EditorNotifier notifier;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return InlineBanner(
-      key: const Key('pending-banner'),
-      tone: BannerTone.danger,
-      child: Wrap(
-        spacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text(
-            context.l10n.reNotDefined(
-              state.pendingUnresolved.map((n) => '{{$n}}').join(', '),
-            ),
-          ),
-          TextButton(
-            key: const Key('send-anyway'),
-            onPressed: () => notifier.send(force: true),
-            child: Text(context.l10n.reSendAnyway),
-          ),
-          TextButton(
-            key: const Key('dont-warn'),
-            onPressed: () {
-              ref.read(warnUnresolvedProvider.notifier).set(false);
-              notifier.send(force: true);
-            },
-            child: Text(context.l10n.reDontWarn),
-          ),
-          TextButton(
-            key: const Key('dismiss-pending'),
-            onPressed: notifier.dismissPending,
-            child: Text(context.l10n.reCancel),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SecretHostBanner extends StatelessWidget {
-  const _SecretHostBanner({required this.state, required this.notifier});
-
-  final EditorState state;
-  final EditorNotifier notifier;
-
-  @override
-  Widget build(BuildContext context) {
-    final pending = state.pendingSecretHost!;
-    return InlineBanner(
-      key: const Key('secret-host-banner'),
-      tone: BannerTone.danger,
-      child: Wrap(
-        spacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text(
-            context.l10n.reSecretHostPrompt(
-              pending.names.map((n) => '{{$n}}').join(', '),
-              pending.host,
-            ),
-          ),
-          TextButton(
-            key: const Key('secret-host-allow'),
-            onPressed: notifier.approveSecretHostAndSend,
-            child: Text(context.l10n.reSecretHostAllow),
-          ),
-          TextButton(
-            key: const Key('secret-host-cancel'),
-            onPressed: notifier.dismissPending,
-            child: Text(context.l10n.reCancel),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Banner extends StatelessWidget {
-  const _Banner(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return InlineBanner(
-      tone: BannerTone.warning,
-      child: Text(text, key: const Key('banner')),
     );
   }
 }

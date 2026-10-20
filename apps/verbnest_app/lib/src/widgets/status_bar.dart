@@ -94,26 +94,8 @@ class StatusBar extends ConsumerWidget {
                 icon: Icons.alt_route,
                 label: l.sbProxyOn,
               ),
-            item(
-              key: const Key('status-cookies'),
-              icon: Icons.cookie_outlined,
-              label: l.nsCookies(cookies),
-              tooltip: l.sbCookiesTooltip,
-              onTap: () => showDialog<void>(
-                animationStyle: AnimationStyle.noAnimation,
-                context: context,
-                builder: (_) => const CookieManagerDialog(),
-              ),
-            ),
-            item(
-              key: const Key('status-console'),
-              icon: Icons.terminal,
-              label: logCount == 0 ? l.sbConsole : '${l.sbConsole} $logCount',
-              tooltip: l.consoleTitle,
-              onTap: () => Navigator.of(
-                context,
-              ).push(StillPageRoute<void>(builder: (_) => const ConsolePage())),
-            ),
+            _cookiesItem(context, cookies),
+            _consoleItem(context, logCount),
             if (activeTab != null)
               item(
                 key: const Key('status-save'),
@@ -126,6 +108,34 @@ class StatusBar extends ConsumerWidget {
       ),
     );
   }
+}
+
+Widget _cookiesItem(BuildContext context, int count) {
+  final l = context.l10n;
+  return _StatusItem(
+    key: const Key('status-cookies'),
+    icon: Icons.cookie_outlined,
+    label: l.nsCookies(count),
+    tooltip: l.sbCookiesTooltip,
+    onTap: () => showDialog<void>(
+      animationStyle: AnimationStyle.noAnimation,
+      context: context,
+      builder: (_) => const CookieManagerDialog(),
+    ),
+  );
+}
+
+Widget _consoleItem(BuildContext context, int lines) {
+  final l = context.l10n;
+  return _StatusItem(
+    key: const Key('status-console'),
+    icon: Icons.terminal,
+    label: lines == 0 ? l.sbConsole : '${l.sbConsole} $lines',
+    tooltip: l.consoleTitle,
+    onTap: () =>
+        Navigator.of(context)
+            .push(StillPageRoute<void>(builder: (_) => const ConsolePage())),
+  );
 }
 
 class _StatusItem extends StatelessWidget {

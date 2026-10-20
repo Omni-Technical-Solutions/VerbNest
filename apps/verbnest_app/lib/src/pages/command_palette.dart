@@ -143,6 +143,23 @@ class _PaletteState extends State<_Palette> {
   String _query = '';
   int _index = 0;
 
+  Widget _tile(
+    PaletteEntry e, {
+    required bool selected,
+    required VoidCallback onTap,
+  }) => ListTile(
+    key: Key('palette-${e.id}'),
+    dense: true,
+    selected: selected,
+    leading: Icon(e.icon ?? Icons.http, size: 18),
+    title: Text.rich(_highlight(context, e.title, _query)),
+    trailing: e.shortcut == null ? null : Kbd(e.shortcut!),
+    subtitle: e.subtitle == null
+        ? null
+        : Text.rich(_highlight(context, e.subtitle!, _query)),
+    onTap: onTap,
+  );
+
   @override
   Widget build(BuildContext context) {
     final shown = filterPalette(widget.entries, _query).take(50).toList();
@@ -214,22 +231,9 @@ class _PaletteState extends State<_Palette> {
                         return _groupHeader(context, row);
                       }
                       final i = row as int;
-                      return ListTile(
-                        key: Key('palette-${shown[i].id}'),
-                        dense: true,
+                      return _tile(
+                        shown[i],
                         selected: i == _index,
-                        leading: Icon(shown[i].icon ?? Icons.http, size: 18),
-                        title: Text.rich(
-                          _highlight(context, shown[i].title, _query),
-                        ),
-                        trailing: shown[i].shortcut == null
-                            ? null
-                            : Kbd(shown[i].shortcut!),
-                        subtitle: shown[i].subtitle == null
-                            ? null
-                            : Text.rich(
-                                _highlight(context, shown[i].subtitle!, _query),
-                              ),
                         onTap: () => choose(i),
                       );
                     },

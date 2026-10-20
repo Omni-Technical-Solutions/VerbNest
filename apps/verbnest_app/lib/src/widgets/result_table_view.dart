@@ -17,6 +17,7 @@ import 'result_table_chrome.dart';
 import 'result_table_header.dart';
 import 'result_table_selection.dart';
 import 'result_table_sizing.dart';
+import 'result_table_viewport.dart';
 
 /// A read-only grid of a [ResultTable], in the manner of a database client's
 /// results grid (FR-RES-008, FR-RES-009): the header and the row numbers stay
@@ -54,7 +55,6 @@ class ResultTableView extends StatefulWidget {
 
   static const minColumnWidth = 60.0;
   static const maxColumnWidth = 800.0;
-  static const _rowNumberWidth = 56.0;
 
   @override
   State<ResultTableView> createState() => _ResultTableViewState();
@@ -63,10 +63,8 @@ class ResultTableView extends StatefulWidget {
 enum _Format { tsv, csv, json, markdown }
 
 class _ResultTableViewState extends State<ResultTableView> {
-  final _h = ScrollController();
-  final _v = ScrollController();
+  final _vp = TableViewport();
   final _focus = FocusNode(debugLabel: 'result table');
-  List<double>? _widths;
   List<int> _order = const [];
   int? _sortCol;
   bool _ascending = true;
@@ -80,20 +78,10 @@ class _ResultTableViewState extends State<ResultTableView> {
   Duration? _lastClickAt;
   ({int row, int col})? _lastClickCell;
 
-  // From the last build, to turn a pointer position into a cell.
-  double _rowHeight = 32;
-  double _viewHeight = 0;
-  double _viewWidth = 0;
-
   int get _shown => math.min(_order.length, ResultTable.maxGridRows);
 
   /// Columns drawn. The rest are still in the table for search, copy and export.
   int get _cols => math.min(widget.table.columnCount, ResultTable.maxColumns);
-
-  /// A controller's offset, or 0 when it has no view (or, for an instant while
-  /// the grid is rebuilt, more than one).
-  double _offset(ScrollController c) =>
-      c.hasClients && c.positions.length == 1 ? c.offset : 0;
 
   @override
   void initState() {
@@ -103,8 +91,7 @@ class _ResultTableViewState extends State<ResultTableView> {
 
   @override
   void dispose() {
-    _h.dispose();
-    _v.dispose();
+    _vp.dispose();
     _focus.dispose();
     super.dispose();
   }
@@ -113,12 +100,11 @@ class _ResultTableViewState extends State<ResultTableView> {
   void didUpdateWidget(ResultTableView old) {
     super.didUpdateWidget(old);
     if (!identical(old.table, widget.table)) {
-      _widths = null;
+      _vp.widths = null;
       _sortCol = null;
       _ascending = true;
       _clearSelection();
-      if (_v.hasClients) _v.jumpTo(0);
-      if (_h.hasClients) _h.jumpTo(0);
+      _vp.jumpToStart();
       _recompute();
     } else if (old.filter != widget.filter) {
       _clearSelection();
@@ -205,28 +191,11 @@ class _ResultTableViewState extends State<ResultTableView> {
     _focus.requestFocus();
   }
 
-  /// The row and column under a pointer inside the body; a column of -1 is the
-  /// row-number column.
-  ({int row, int col})? _cellAt(Offset p) {
-    final r = ((p.dy + (_offset(_v))) / _rowHeight).floor();
-    if (r < 0 || r >= _shown) return null;
-    final hx = _offset(_h);
-    if (p.dx - hx < ResultTableView._rowNumberWidth) return (row: r, col: -1);
-    var x = p.dx - ResultTableView._rowNumberWidth;
-    final widths = _widths;
-    if (widths == null) return null;
-    for (var c = 0; c < widths.length; c++) {
-      if (x < widths[c]) return (row: r, col: c);
-      x -= widths[c];
-    }
-    return null;
-  }
-
   void _pointerDown(PointerDownEvent e) {
     if (e.kind != PointerDeviceKind.mouse || e.buttons != kPrimaryButton) {
       return;
     }
-    final cell = _cellAt(e.localPosition);
+    final cell = _vp.cellAt(e.localPosition, shown: _shown);
     _focus.requestFocus();
     if (cell == null) return;
     final shift = HardwareKeyboard.instance.isShiftPressed;
@@ -250,7 +219,7 @@ class _ResultTableViewState extends State<ResultTableView> {
 
   void _pointerMove(PointerMoveEvent e) {
     if (!_dragging || e.kind != PointerDeviceKind.mouse) return;
-    final cell = _cellAt(e.localPosition);
+    final cell = _vp.cellAt(e.localPosition, shown: _shown);
     if (cell == null || cell.col < 0) return;
     if (cell.row != _sel.fr || cell.col != _sel.fc) {
       setState(() {
@@ -265,7 +234,7 @@ class _ResultTableViewState extends State<ResultTableView> {
   void _touchTap(TapDownDetails d) {
     // A touch screen has no hover or selection handles: a tap shows the value.
     if (d.kind == PointerDeviceKind.mouse) return;
-    final cell = _cellAt(d.localPosition);
+    final cell = _vp.cellAt(d.localPosition, shown: _shown);
     if (cell == null || cell.col < 0) return;
     _selectCell(cell.row, cell.col);
     _showValue(cell.row, cell.col);
@@ -304,52 +273,15 @@ class _ResultTableViewState extends State<ResultTableView> {
       _showValue(_sel.fr!, _sel.fc!);
       return KeyEventResult.handled;
     }
-    final page = math.max(1, (_viewHeight / _rowHeight).floor() - 2);
+    final move = tableKeyMove(key, page: _vp.pageRows, cols: _cols);
+    if (move == null || _shown == 0) return KeyEventResult.ignored;
+    final (:dr, :dc) = move;
     final cols = _cols;
-    var dr = 0, dc = 0;
-    if (key == LogicalKeyboardKey.arrowDown) dr = 1;
-    if (key == LogicalKeyboardKey.arrowUp) dr = -1;
-    if (key == LogicalKeyboardKey.arrowRight) dc = 1;
-    if (key == LogicalKeyboardKey.arrowLeft) dc = -1;
-    if (key == LogicalKeyboardKey.pageDown) dr = page;
-    if (key == LogicalKeyboardKey.pageUp) dr = -page;
-    if (key == LogicalKeyboardKey.home) dc = -cols;
-    if (key == LogicalKeyboardKey.end) dc = cols;
-    if ((dr == 0 && dc == 0) || _shown == 0) return KeyEventResult.ignored;
     final r = ((_sel.fr ?? 0) + (_hasSelection ? dr : 0)).clamp(0, _shown - 1);
     final c = ((_sel.fc ?? 0) + (_hasSelection ? dc : 0)).clamp(0, cols - 1);
     _selectCell(r, c, extend: kb.isShiftPressed);
-    _reveal(r, c);
+    _vp.reveal(r, c);
     return KeyEventResult.handled;
-  }
-
-  /// Scrolls so that the cell at [r], [c] is in view.
-  void _reveal(int r, int c) {
-    if (_v.hasClients) {
-      final top = r * _rowHeight;
-      final bottom = top + _rowHeight;
-      final off = _v.offset;
-      if (top < off) {
-        _v.jumpTo(top);
-      } else if (bottom > off + _viewHeight) {
-        _v.jumpTo(bottom - _viewHeight);
-      }
-    }
-    final widths = _widths;
-    if (_h.hasClients && widths != null) {
-      var left = ResultTableView._rowNumberWidth;
-      for (var i = 0; i < c; i++) {
-        left += widths[i];
-      }
-      final right = left + widths[c];
-      final off = _h.offset;
-      // The row numbers cover the first 56 dp of the view.
-      if (left < off + ResultTableView._rowNumberWidth) {
-        _h.jumpTo(math.max(0, left - ResultTableView._rowNumberWidth));
-      } else if (right > off + _viewWidth) {
-        _h.jumpTo(right - _viewWidth);
-      }
-    }
   }
 
   // ---------------------------------------------------------------- copy
@@ -421,7 +353,7 @@ class _ResultTableViewState extends State<ResultTableView> {
       _selectColumn(int.parse(v.substring(7)));
     } else if (v.startsWith('fit:')) {
       final c = int.parse(v.substring(4));
-      setState(() => _widths![c] = _fit(context, c, _cellStyle(context)));
+      setState(() => _vp.widths![c] = _fit(context, c, _cellStyle(context)));
     }
   }
 
@@ -441,7 +373,7 @@ class _ResultTableViewState extends State<ResultTableView> {
   }
 
   void _bodyMenu(Offset local, Offset global) {
-    final cell = _cellAt(local);
+    final cell = _vp.cellAt(local, shown: _shown);
     if (cell == null) return;
     // A right click on a cell outside the selection selects it first.
     if (cell.col >= 0 && !_isSelected(cell.row, cell.col)) {
@@ -480,8 +412,8 @@ class _ResultTableViewState extends State<ResultTableView> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final style = _cellStyle(context);
-    _widths ??= _initialWidths(context, style);
-    final widths = _widths!;
+    _vp.widths ??= _initialWidths(context, style);
+    final widths = _vp.widths!;
 
     final scale = MediaQuery.textScalerOf(context).scale(13) / 13;
     // Whole pixels throughout, so rows, rules and text never land between
@@ -492,10 +424,9 @@ class _ResultTableViewState extends State<ResultTableView> {
     final headerHeight = math
         .max(_touch ? 56.0 : 44.0, 13 * scale * 2.9)
         .roundToDouble();
-    _rowHeight = rowHeight;
+    _vp.rowHeight = rowHeight;
     final contentWidth =
-        ResultTableView._rowNumberWidth +
-        widths.fold<double>(0, (a, b) => a + b);
+        TableViewport.rowNumberWidth + widths.fold<double>(0, (a, b) => a + b);
 
     // Code, JSON and numbers read left to right even in a right-to-left app.
     return Directionality(
@@ -553,20 +484,20 @@ class _ResultTableViewState extends State<ResultTableView> {
         _bar(context),
         Expanded(
           child: StillScrollbar(
-            controller: _v,
+            controller: _vp.v,
             notificationPredicate: (n) => n.metrics.axis == Axis.vertical,
             child: LayoutBuilder(
               builder: (context, c) {
-                _viewHeight = math.max(0, c.maxHeight - headerHeight);
-                _viewWidth = c.maxWidth;
+                _vp.height = math.max(0, c.maxHeight - headerHeight);
+                _vp.width = c.maxWidth;
                 return StillScrollbar(
-                  controller: _h,
+                  controller: _vp.h,
                   thumbVisibility: contentWidth > c.maxWidth,
                   axis: Axis.horizontal,
                   notificationPredicate: (n) =>
                       n.metrics.axis == Axis.horizontal,
                   child: SingleChildScrollView(
-                    controller: _h,
+                    controller: _vp.h,
                     scrollDirection: Axis.horizontal,
                     child: SizedBox(
                       width: math.max(contentWidth, c.maxWidth),
@@ -619,7 +550,7 @@ class _ResultTableViewState extends State<ResultTableView> {
       },
       child: ListView.builder(
         key: const Key('result-table-body'),
-        controller: _v,
+        controller: _vp.v,
         physics: const ClampingScrollPhysics(),
         itemExtent: rowHeight,
         itemCount: _shown,
@@ -660,7 +591,7 @@ class _ResultTableViewState extends State<ResultTableView> {
         children: [
           Row(
             children: [
-              const SizedBox(width: ResultTableView._rowNumberWidth),
+              const SizedBox(width: TableViewport.rowNumberWidth),
               for (var c = 0; c < _cols; c++)
                 SizedBox(
                   key: ValueKey('table-header-$c'),
@@ -725,11 +656,11 @@ class _ResultTableViewState extends State<ResultTableView> {
 
   /// [child] held at the left edge of the horizontal scroller.
   Widget _pinned(double height, Widget child) => AnimatedBuilder(
-    animation: _h,
+    animation: _vp.h,
     builder: (context, child) => Positioned(
-      left: _offset(_h),
+      left: _vp.offset(_vp.h),
       top: 0,
-      width: ResultTableView._rowNumberWidth,
+      width: TableViewport.rowNumberWidth,
       height: height,
       child: child!,
     ),
@@ -762,7 +693,7 @@ class _ResultTableViewState extends State<ResultTableView> {
         children: [
           Row(
             children: [
-              const SizedBox(width: ResultTableView._rowNumberWidth),
+              const SizedBox(width: TableViewport.rowNumberWidth),
               for (var c = 0; c < _cols; c++)
                 TableValueCell(
                   row: position,

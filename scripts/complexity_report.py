@@ -18,10 +18,10 @@ import os
 import re
 import sys
 
-MAX_FUNCTION_LINES = 100
-MAX_FUNCTION_BRANCHES = 50
-MAX_CLASS_LINES = 800
-MAX_FILE_LINES = 1000
+MAX_FUNCTION_LINES = 90
+MAX_FUNCTION_BRANCHES = 40
+MAX_CLASS_LINES = 700
+MAX_FILE_LINES = 800
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
