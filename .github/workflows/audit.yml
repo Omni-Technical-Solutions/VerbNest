@@ -1,0 +1,42 @@
+name: Dependency audit
+
+# Known advisories in the Dart packages (pubspec.lock) and in the Rust crates
+# behind the embedded JavaScript engine (fjs). Reviewed exceptions, each with a
+# reason and an expiry, are in osv-scanner.toml.
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - pubspec.lock
+      - '**/pubspec.yaml'
+      - osv-scanner.toml
+      - .github/workflows/audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  osv:
+    name: osv-scanner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # The plain binary, pinned and checked, like gitleaks in ci.yml.
+      - name: Scan for known vulnerabilities
+        env:
+          OSV_VERSION: v2.7.0
+          OSV_SHA256: 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b
+        run: |
+          curl -sSfL -o osv-scanner "https://github.com/google/osv-scanner/releases/download/${OSV_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SHA256}  osv-scanner" | sha256sum -c -
+          chmod +x osv-scanner
+          cargo_lock=$(ls "$HOME"/.pub-cache/hosted/pub.dev/fjs-*/libfjs/Cargo.lock | head -n 1)
+          echo "Rust lockfile: $cargo_lock"
+          ./osv-scanner scan source --config=osv-scanner.toml -L pubspec.lock -L "$cargo_lock"

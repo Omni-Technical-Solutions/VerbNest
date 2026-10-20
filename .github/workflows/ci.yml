@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege: CI only reads the repository (security review S5).
+permissions:
+  contents: read
+
 jobs:
   secrets:
     name: secrets (gitleaks)

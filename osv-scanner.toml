@@ -1,0 +1,36 @@
+# Reviewed advisories for scripts/CI `osv-scanner` (see .github/workflows/audit.yml).
+# All six are in the Rust TLS stack that `fjs` (the embedded JavaScript engine)
+# links for its own fetch/http modules. VerbNest creates the engine without any
+# host modules, so scripts have no network access and this code is never reached;
+# the lockfile belongs to the `fjs` package, so the fix is an `fjs` update.
+# Each entry expires so it is looked at again.
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0346"
+ignoreUntil = 2026-12-31
+reason = "rustls/webpki in fjs' unused fetch stack; no network host module is exposed to scripts; wait for an fjs release"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0347"
+ignoreUntil = 2026-12-31
+reason = "rustls/webpki in fjs' unused fetch stack; no network host module is exposed to scripts; wait for an fjs release"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0348"
+ignoreUntil = 2026-12-31
+reason = "rustls/webpki in fjs' unused fetch stack; no network host module is exposed to scripts; wait for an fjs release"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0349"
+ignoreUntil = 2026-12-31
+reason = "rustls/webpki in fjs' unused fetch stack; no network host module is exposed to scripts; wait for an fjs release"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0382"
+ignoreUntil = 2026-12-31
+reason = "rustls/webpki in fjs' unused fetch stack; no network host module is exposed to scripts; wait for an fjs release"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0381"
+ignoreUntil = 2026-12-31
+reason = "rustls/webpki in fjs' unused fetch stack; no network host module is exposed to scripts; wait for an fjs release"
