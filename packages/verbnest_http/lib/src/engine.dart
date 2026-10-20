@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:verbnest_core/verbnest_core.dart' show CookieJar;
 
@@ -11,6 +10,9 @@ import 'http2_exchange.dart';
 import 'models.dart';
 import 'proxy.dart';
 import 'proxy_tunnel.dart';
+import 'redirects.dart';
+import 'request_writer.dart';
+import 'response_reader.dart';
 import 'tls_config.dart';
 
 /// Lets callers abort an in-flight request (FR-HTTP-009).
@@ -66,7 +68,7 @@ class HttpEngine {
       final sending = _withCookies(current);
       final response = await _exchange(sending, token);
       _storeCookies(current, response);
-      final next = _nextHop(current, response);
+      final next = nextHop(current, response);
       if (next == null) return _withRedirects(response, hops);
       if (hops.length >= spec.settings.maxRedirects) {
         throw TooManyRedirectsError(spec.settings.maxRedirects);
@@ -131,75 +133,6 @@ class HttpEngine {
     );
   }
 
-  HttpRequestSpec? _nextHop(HttpRequestSpec spec, HttpResponseRecord r) {
-    final s = spec.settings;
-    if (!s.followRedirects ||
-        !const {301, 302, 303, 307, 308}.contains(r.status)) {
-      return null;
-    }
-    final location = r.header('location');
-    if (location == null) return null;
-    final target = spec.url.resolve(location);
-    final switchToGet =
-        !s.keepMethodOnRedirect &&
-        (r.status == 303 ||
-            ((r.status == 301 || r.status == 302) && spec.method != 'HEAD'));
-    final crossOrigin = _origin(target) != _origin(spec.url);
-    final stripped = crossOrigin && s.stripAuthCrossOrigin;
-    return HttpRequestSpec(
-      method: switchToGet ? 'GET' : spec.method,
-      url: target,
-      headers: [
-        for (final h in spec.headers)
-          if (!_dropOnRedirect(h.$1, switchToGet, crossOrigin, stripped)) h,
-      ],
-      body: switchToGet ? null : spec.body,
-      settings: s,
-    );
-  }
-
-  bool _dropOnRedirect(
-    String name,
-    bool switchToGet,
-    bool crossOrigin,
-    bool stripAuth,
-  ) {
-    final n = name.toLowerCase();
-    if (n == 'host') return true;
-    if (switchToGet && (n == 'content-length' || n == 'content-type')) {
-      return true;
-    }
-    // Even when a request opts out of stripping (stripAuthCrossOrigin: false),
-    // the common credential carriers never cross origins: imported requests
-    // could otherwise flip the flag and arrange a credential leak.
-    if (crossOrigin &&
-        (n == 'authorization' || n == 'proxy-authorization' || n == 'cookie')) {
-      return true;
-    }
-    return stripAuth && _looksLikeCredential(n);
-  }
-
-  /// Headers that may follow a redirect to another origin. Anything else,
-  /// including custom names that carry secrets, is dropped: a denylist cannot
-  /// know every credential header.
-  static const _crossOriginSafe = {
-    'accept',
-    'accept-encoding',
-    'accept-language',
-    'cache-control',
-    'content-length',
-    'content-type',
-    'user-agent',
-    'pragma',
-    'origin',
-    'referer',
-  };
-
-  bool _looksLikeCredential(String lowerName) =>
-      !_crossOriginSafe.contains(lowerName);
-
-  String _origin(Uri u) => '${u.scheme}://${u.host}:${u.port}';
-
   Future<HttpResponseRecord> _exchange(
     HttpRequestSpec spec,
     CancelToken token,
@@ -208,8 +141,9 @@ class HttpEngine {
     final conn = _Connection(spec, token, proxy);
     try {
       return await conn.run(
-        _buildRequest(
+        buildWireRequest(
           spec,
+          userAgent,
           absoluteForm:
               proxy != null &&
               proxy.kind == ProxyKind.http &&
@@ -222,80 +156,6 @@ class HttpEngine {
       conn.dispose();
     }
   }
-
-  _Wire _buildRequest(
-    HttpRequestSpec spec, {
-    bool absoluteForm = false,
-    ProxyConfig? proxy,
-  }) {
-    final body = Uint8List.fromList(spec.body ?? const []);
-    final headers = _withAutoHeaders(spec, body.length);
-    _rejectLineBreaks(spec, headers);
-    if (absoluteForm &&
-        proxy!.hasAuth &&
-        !headers.any((h) => h.$1.toLowerCase() == 'proxy-authorization')) {
-      headers.add(('Proxy-Authorization', basicProxyAuth(proxy)));
-    }
-    final target = absoluteForm
-        ? spec.url.removeFragment().toString()
-        : spec.url.hasQuery
-        ? '${spec.url.path.isEmpty ? '/' : spec.url.path}?${spec.url.query}'
-        : (spec.url.path.isEmpty ? '/' : spec.url.path);
-    final head = StringBuffer('${spec.method} $target HTTP/1.1\r\n');
-    for (final (k, v) in headers) {
-      head.write('$k: $v\r\n');
-    }
-    head.write('\r\n');
-    return _Wire(head.toString(), body, spec.method, target, headers);
-  }
-
-  /// A CR, LF or NUL in the method, URL or a header would split the request
-  /// on the wire and let one field forge others.
-  void _rejectLineBreaks(HttpRequestSpec spec, List<Header> headers) {
-    final bad = RegExp(r'[\r\n\x00]');
-    final fields = [spec.method, spec.url.toString()];
-    for (final (k, v) in headers) {
-      fields
-        ..add(k)
-        ..add(v);
-    }
-    if (fields.any(bad.hasMatch)) {
-      throw ProtocolError('A request line or header contains a line break');
-    }
-  }
-
-  List<Header> _withAutoHeaders(HttpRequestSpec spec, int bodyLength) {
-    final user = spec.headers;
-    bool has(String n) => user.any((h) => h.$1.toLowerCase() == n);
-    final u = spec.url;
-    final defaultPort = u.scheme == 'https' ? 443 : 80;
-    final hostValue = u.hasPort && u.port != defaultPort
-        ? hostPort(u.host, u.port)
-        : (u.host.contains(':') ? '[${u.host}]' : u.host);
-    return [
-      ...user,
-      if (!has('host')) ('Host', hostValue),
-      if (!has('user-agent')) ('User-Agent', userAgent),
-      if (!has('accept')) ('Accept', '*/*'),
-      if (!has('accept-encoding') && spec.settings.autoDecompress)
-        ('Accept-Encoding', 'gzip, deflate'),
-      if (!has('content-length') &&
-          (bodyLength > 0 ||
-              const {'POST', 'PUT', 'PATCH'}.contains(spec.method)))
-        ('Content-Length', '$bodyLength'),
-      if (!has('connection')) ('Connection', 'close'),
-    ];
-  }
-}
-
-class _Wire {
-  _Wire(this.head, this.body, this.method, this.target, this.headers);
-
-  final String head;
-  final Uint8List body;
-  final String method;
-  final String target;
-  final List<Header> headers;
 }
 
 /// One TCP/TLS connection and the request/response on it.
@@ -310,7 +170,7 @@ class _Connection {
   bool _timedOut = false;
   void _onCancel() => _socket?.destroy();
 
-  Future<HttpResponseRecord> run(_Wire wire, String userAgent) async {
+  Future<HttpResponseRecord> run(WireRequest wire, String userAgent) async {
     final sw = Stopwatch()..start();
     token._listen(_onCancel);
     _timer = Timer(spec.settings.timeout, () {
@@ -330,7 +190,7 @@ class _Connection {
     _socket?.destroy();
   }
 
-  Future<HttpResponseRecord> _roundTrip(_Wire wire, Stopwatch sw) async {
+  Future<HttpResponseRecord> _roundTrip(WireRequest wire, Stopwatch sw) async {
     final u = spec.url;
     if (u.host.isEmpty || (u.scheme != 'http' && u.scheme != 'https')) {
       throw ProtocolError('Unsupported URL: $u');
@@ -359,10 +219,11 @@ class _Connection {
 
     // A TLS handshake consumed the reader that spoke to the proxy.
     final reader = tls.secured ? ByteReader(socket) : tcp.reader;
-    final parsed = await _readResponse(
+    final parsed = await readResponse(
       reader ?? ByteReader(socket),
       sw,
       sentAt,
+      method: spec.method,
     );
     return _record(parsed, wire, dns.time, tcp.time, tls.time, sw, tls.info);
   }
@@ -459,7 +320,7 @@ class _Connection {
   }
 
   Future<HttpResponseRecord> _exchangeH2(
-    _Wire wire,
+    WireRequest wire,
     Socket socket,
     Stopwatch sw,
     Duration dns,
@@ -467,7 +328,7 @@ class _Connection {
     _Secured tls,
   ) async {
     final fields = h2Fields(wire.method, spec.url, wire.target, wire.headers);
-    final h2Wire = _Wire(
+    final h2Wire = WireRequest(
       h2HeadText(wire.method, fields),
       wire.body,
       wire.method,
@@ -475,7 +336,7 @@ class _Connection {
       wire.headers,
     );
     final r = await h2Exchange(socket, fields, wire.body, sw);
-    final parsed = _Parsed(
+    final parsed = ParsedResponse(
       httpVersion: '2',
       status: r.status,
       reason: '',
@@ -491,103 +352,18 @@ class _Connection {
     if (token.isCancelled) throw const CancelledError();
   }
 
-  Future<_Parsed> _readResponse(
-    ByteReader reader,
-    Stopwatch sw,
-    Duration sentAt,
-  ) async {
-    final head = await reader.readHead();
-    if (head == null) {
-      throw const NetworkError('Connection closed before a response arrived');
-    }
-    final ttfb = sw.elapsed - sentAt;
-    final lines = latin1.decode(head).split('\r\n');
-    final status = lines.first.split(' ');
-    if (status.length < 2 || !status.first.startsWith('HTTP/')) {
-      throw ProtocolError('Malformed status line: ${lines.first}');
-    }
-    final headers = <Header>[
-      for (final line in lines.skip(1))
-        if (line.contains(':'))
-          (
-            line.substring(0, line.indexOf(':')),
-            line.substring(line.indexOf(':') + 1).trim(),
-          ),
-    ];
-    final code = int.tryParse(status[1]);
-    if (code == null) throw ProtocolError('Bad status code: ${status[1]}');
-    final downloadStart = sw.elapsed;
-    final body = await _readBody(reader, headers, code);
-    return _Parsed(
-      httpVersion: status.first.substring(5),
-      status: code,
-      reason: status.skip(2).join(' '),
-      headers: headers,
-      body: body,
-      ttfb: ttfb,
-      download: sw.elapsed - downloadStart,
-    );
-  }
-
-  Future<Uint8List> _readBody(
-    ByteReader reader,
-    List<Header> headers,
-    int status,
-  ) async {
-    String? h(String n) {
-      for (final (k, v) in headers) {
-        if (k.toLowerCase() == n) return v;
-      }
-      return null;
-    }
-
-    final noBody =
-        spec.method == 'HEAD' ||
-        status == 204 ||
-        status == 304 ||
-        (status >= 100 && status < 200);
-    if (noBody) return Uint8List(0);
-    if (h('transfer-encoding')?.toLowerCase().contains('chunked') ?? false) {
-      return _readChunked(reader);
-    }
-    final length = int.tryParse(h('content-length') ?? '');
-    if (length != null && length > maxBodyBytes) {
-      throw const ProtocolError('Response body is too large');
-    }
-    return length != null
-        ? reader.readExact(length)
-        : reader.readToEnd(max: maxBodyBytes);
-  }
-
-  Future<Uint8List> _readChunked(ByteReader reader) async {
-    final out = BytesBuilder(copy: false);
-    while (true) {
-      final size = int.parse(
-        (await reader.readLine()).split(';').first.trim(),
-        radix: 16,
-      );
-      if (size < 0 || out.length + size > maxBodyBytes) {
-        throw const ProtocolError('Response body is too large');
-      }
-      if (size == 0) {
-        while ((await reader.readLine()).isNotEmpty) {}
-        return out.toBytes();
-      }
-      out.add(await reader.readExact(size));
-      await reader.readLine();
-    }
-  }
-
   HttpResponseRecord _record(
-    _Parsed p,
-    _Wire wire,
+    ParsedResponse p,
+    WireRequest wire,
     Duration dns,
     Duration connect,
     Duration tls,
     Stopwatch sw,
     TlsInfo? tlsInfo,
   ) {
-    final decoded = spec.settings.autoDecompress ? _decode(p) : p.body;
+    final decoded = spec.settings.autoDecompress
+        ? decodeContentEncoding(p.headers, p.body)
+        : p.body;
     return HttpResponseRecord(
       status: p.status,
       reason: p.reason,
@@ -607,34 +383,6 @@ class _Connection {
       sent: SentRequest(head: wire.head, body: wire.body, url: spec.url),
       tls: tlsInfo,
     );
-  }
-
-  Uint8List _decode(_Parsed p) {
-    String? encoding;
-    for (final (k, v) in p.headers) {
-      if (k.toLowerCase() == 'content-encoding') encoding = v.toLowerCase();
-    }
-    try {
-      return switch (encoding) {
-        'gzip' || 'x-gzip' => _inflate(gzip, p.body),
-        'deflate' => _inflate(zlib, p.body),
-        _ => p.body,
-      };
-    } on FormatException catch (e) {
-      throw ProtocolError('Could not decode $encoding body: ${e.message}');
-    }
-  }
-
-  /// Inflates in chunks so a small compressed body cannot expand past
-  /// [maxBodyBytes] in memory.
-  Uint8List _inflate(Codec<List<int>, List<int>> codec, Uint8List body) {
-    final out = BytesBuilder(copy: false);
-    final sink = codec.decoder.startChunkedConversion(
-      ByteConversionSink.from(_CappedSink(out, maxBodyBytes)),
-    );
-    sink.add(body);
-    sink.close();
-    return out.toBytes();
   }
 
   HttpEngineError _translate(Object e) {
@@ -672,42 +420,4 @@ class _Secured {
   final String? negotiated;
   final TlsInfo? info;
   final Duration time;
-}
-
-class _Parsed {
-  _Parsed({
-    required this.httpVersion,
-    required this.status,
-    required this.reason,
-    required this.headers,
-    required this.body,
-    required this.ttfb,
-    required this.download,
-  });
-
-  final String httpVersion;
-  final int status;
-  final String reason;
-  final List<Header> headers;
-  final Uint8List body;
-  final Duration ttfb;
-  final Duration download;
-}
-
-class _CappedSink implements Sink<List<int>> {
-  _CappedSink(this._out, this._max);
-
-  final BytesBuilder _out;
-  final int _max;
-
-  @override
-  void add(List<int> chunk) {
-    if (_out.length + chunk.length > _max) {
-      throw const ProtocolError('Decompressed response body is too large');
-    }
-    _out.add(chunk);
-  }
-
-  @override
-  void close() {}
 }
