@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.65.1
+
+- Security (Android): Auto Backup and device-to-device transfer are off, so workspaces, history and settings are never copied to Google's cloud or another device. Move a workspace with a snapshot export. (Review finding S1.)
+- Security: on a phone or tablet, history no longer keeps request and response bodies by default (it is stored unencrypted on the device). The choice is in Settings; the hint now says history is not encrypted. Computers keep the old default. (S2.)
+- Security (command line): `verbnest run --allow-scripts` runs scripts only when Node has its permission model (Node 20 or newer). On an older Node it refuses with an explanation; `--unsafe-node-scripts` runs them anyway for scripts you trust. (S3.)
+- Dependencies: `pdfrx` 2.9.0 (the PDF renderer). Notices refreshed.
+- Project: read-only CI token permissions, a weekly dependency audit (`osv-scanner` over the Dart and Rust lockfiles; reviewed exceptions in `osv-scanner.toml`), a complexity gate with class and file limits, and strict Dart analysis (`strict-casts`, `strict-raw-types`, `strict-inference`, `unawaited_futures`, `avoid_dynamic_calls`). Plan: `docs/spec/security-and-complexity-plan.md`.
+
 ## 0.65.0
 
 - Change: Settings → About shows the version and build number (for example `0.65.0 (48)`), read from the installed app. Tapping it copies "VerbNest 0.65.0 (48)" for bug reports. The open source licences page shows the version as well. New dependency: `package_info_plus` (BSD).

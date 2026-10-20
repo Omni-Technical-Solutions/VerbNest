@@ -62,6 +62,7 @@ Dynamic testing (fuzzing the importers, the HTTP/2 and WebSocket parsers, the co
 Principles: every step is behaviour-preserving, ships with the tests that already exist plus characterisation tests where coverage is thin, keeps all goldens and the no-motion audit green, and is one pull request (a `chore` or `minor` in the release workflow). Security fixes (S1 to S5) go first because they are small and user-visible. Refactors go by risk: pure packages first, then state, then widgets.
 
 ### Phase A: quick security fixes (0.65.x patch releases)
+Status 2026-10-21: A1, A2, A3, A4, A6 done (0.65.1); A5 deferred (needs a device check); S8 mitigated by `pdfrx` 2.9.0. S4 (response size cap) and S9 are not done yet.
 - A1 (S1): Android backup off, extraction rules, manifest test. Release note.
 - A2 (S5): `permissions: contents: read` in `ci.yml`; org default to read-only.
 - A3 (S3): CLI refuses scripts without the Node permission model unless forced; tests.
@@ -70,6 +71,7 @@ Principles: every step is behaviour-preserving, ships with the tests that alread
 - A6 (S6): scheduled OSV/`cargo audit` workflow.
 
 ### Phase B: measurement and guardrails
+Status 2026-10-21: done. `complexity_report.py --check` now limits functions to 100 lines and 50 branches, classes to 800 lines and files to 1000 lines, skips the generated prelude, and keeps the known debt (9 items) in `scripts/complexity_allowlist.txt`. `strict-casts`, `strict-raw-types`, `strict-inference`, `unawaited_futures` and `avoid_dynamic_calls` are on in every package (`avoid_dynamic_calls` is off only in the http and import tests). Lower the limits as phases C to E shrink the allowlist.
 - B1: exclude `prelude.dart` from `complexity_report.py`; add class and file size to the report; make the report print the top offenders in CI.
 - B2: lower the ratchet in steps: functions 260/90 to 150/60 now, then 100/45, then 80/40; classes 600; files 800. Keep a short, dated allowlist file for the known offenders so the gate can be strict for new code.
 - B3: turn on `strict-casts`, then `strict-raw-types`, then `strict-inference`, one package at a time (`core`, `http`, `storage`, `import`, then the app), fixing what each flags. Add `avoid_dynamic_calls` and `unawaited_futures`.
