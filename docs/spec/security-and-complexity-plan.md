@@ -77,6 +77,7 @@ Status 2026-10-21: done. `complexity_report.py --check` now limits functions to 
 - B3: turn on `strict-casts`, then `strict-raw-types`, then `strict-inference`, one package at a time (`core`, `http`, `storage`, `import`, then the app), fixing what each flags. Add `avoid_dynamic_calls` and `unawaited_futures`.
 
 ### Phase C: pure packages (lowest risk, best tests)
+Status 2026-10-21: C1 started: `RevisionStore`, `EnvironmentStore` (variables and environments) and `ExampleStore` are separate classes in `packages/verbnest_storage`, with `WorkspaceRepository` delegating (769 to 603 lines, public API unchanged, all tests unchanged). Left for C1: nodes and tree, containers, requests, snapshot support. C2 to C5 not started.
 - C1 (`WorkspaceRepository`): split into `NodeRepository`, `EnvironmentRepository`, `ExampleRepository`, `RevisionRepository`, `AttachmentRepository` behind the same public facade, so callers do not change; move SQL to one file per aggregate. Target: no class over 300 lines.
 - C2 (`engine.dart`): extract `ConnectionSetup` (DNS, proxy, TLS), `RequestWriter` and `ResponseReader` from `_Connection`; keep `HttpEngine` public API unchanged. Existing engine, HTTP/2 and proxy tests are the net.
 - C3 (`cli.dart`): one file per command (`run`, `send`, `import`, `export`, `history`, `vault`) with a small shared option layer; keep exit codes.
