@@ -14,6 +14,8 @@ import '../theme.dart';
 import 'ui/adaptive_dialog.dart';
 import 'ui/toast.dart';
 import 'ui/still_tooltip.dart';
+import 'result_table_selection.dart';
+import 'result_table_sizing.dart';
 
 /// A read-only grid of a [ResultTable], in the manner of a database client's
 /// results grid (FR-RES-008, FR-RES-009): the header and the row numbers stay
@@ -51,8 +53,6 @@ class ResultTableView extends StatefulWidget {
 
   static const minColumnWidth = 60.0;
   static const maxColumnWidth = 800.0;
-  static const _fitMin = 80.0;
-  static const _fitMax = 360.0;
   static const _rowNumberWidth = 56.0;
 
   @override
@@ -71,11 +71,7 @@ class _ResultTableViewState extends State<ResultTableView> {
   bool _ascending = true;
   int _matches = 0;
 
-  // Selection: an anchor and a focus cell (row position, column) and whether it
-  // covers whole rows or whole columns.
-  int? _ar, _ac, _fr, _fc;
-  bool _wholeRows = false;
-  bool _wholeCols = false;
+  final _sel = TableSelection();
   bool _dragging = false;
 
   // The last mouse click, to tell a double click without a gesture recogniser
@@ -97,9 +93,6 @@ class _ResultTableViewState extends State<ResultTableView> {
   /// the grid is rebuilt, more than one).
   double _offset(ScrollController c) =>
       c.hasClients && c.positions.length == 1 ? c.offset : 0;
-
-  /// [w] in whole pixels, so cell edges and text sit on pixel boundaries.
-  static double _whole(double w) => w.roundToDouble();
 
   @override
   void initState() {
@@ -175,96 +168,39 @@ class _ResultTableViewState extends State<ResultTableView> {
 
   // ------------------------------------------------------------ selection
 
-  void _clearSelection() {
-    _ar = _ac = _fr = _fc = null;
-    _wholeRows = _wholeCols = false;
-  }
+  void _clearSelection() => _sel.clear();
 
-  bool get _hasSelection => _fr != null;
+  bool get _hasSelection => _sel.hasSelection;
 
-  ({int r0, int r1, int c0, int c1})? get _range {
-    if (_fr == null || _shown == 0) return null;
-    var r0 = math.min(_ar!, _fr!), r1 = math.max(_ar!, _fr!);
-    var c0 = math.min(_ac!, _fc!), c1 = math.max(_ac!, _fc!);
-    final cols = _cols;
-    if (_wholeRows) {
-      c0 = 0;
-      c1 = cols - 1;
-    }
-    if (_wholeCols) {
-      r0 = 0;
-      r1 = _shown - 1;
-    }
-    return (
-      r0: r0.clamp(0, _shown - 1),
-      r1: r1.clamp(0, _shown - 1),
-      c0: c0.clamp(0, cols - 1),
-      c1: c1.clamp(0, cols - 1),
-    );
-  }
+  ({int r0, int r1, int c0, int c1})? get _range =>
+      _sel.range(shown: _shown, cols: _cols);
 
-  bool _isSelected(int r, int c) {
-    final g = _range;
-    return g != null && r >= g.r0 && r <= g.r1 && c >= g.c0 && c <= g.c1;
-  }
+  bool _isSelected(int r, int c) =>
+      _sel.isSelected(r, c, shown: _shown, cols: _cols);
 
-  bool _isFocus(int r, int c) =>
-      _fr == r && _fc == c && !_wholeRows && !_wholeCols;
+  bool _isFocus(int r, int c) => _sel.isFocus(r, c);
 
-  /// Cells selected. A whole row or column covers the rows and columns that
-  /// are not drawn too, as copying it will.
-  int get _selectedCount {
-    final g = _range;
-    if (g == null) return 0;
-    final rows = _wholeCols ? _order.length : g.r1 - g.r0 + 1;
-    final cols = _wholeRows ? widget.table.columnCount : g.c1 - g.c0 + 1;
-    return rows * cols;
-  }
+  int get _selectedCount => _sel.selectedCount(
+    shown: _shown,
+    cols: _cols,
+    totalRows: _order.length,
+    totalCols: widget.table.columnCount,
+  );
 
-  void _selectCell(int r, int c, {bool extend = false}) {
-    setState(() {
-      if (extend && _hasSelection && !_wholeRows && !_wholeCols) {
-        _fr = r;
-        _fc = c;
-      } else {
-        _ar = _fr = r;
-        _ac = _fc = c;
-        _wholeRows = _wholeCols = false;
-      }
-    });
-  }
+  void _selectCell(int r, int c, {bool extend = false}) =>
+      setState(() => _sel.selectCell(r, c, extend: extend));
 
-  void _selectRow(int r, {bool extend = false}) {
-    setState(() {
-      if (extend && _hasSelection && _wholeRows) {
-        _fr = r;
-      } else {
-        _ar = _fr = r;
-        _ac = _fc = 0;
-        _wholeRows = true;
-        _wholeCols = false;
-      }
-    });
-  }
+  void _selectRow(int r, {bool extend = false}) =>
+      setState(() => _sel.selectRow(r, extend: extend));
 
   void _selectColumn(int c) {
-    setState(() {
-      _ar = _fr = 0;
-      _ac = _fc = c;
-      _wholeCols = true;
-      _wholeRows = false;
-    });
+    setState(() => _sel.selectColumn(c));
     _focus.requestFocus();
   }
 
   void _selectAll() {
     if (_shown == 0) return;
-    setState(() {
-      _ar = _fr = 0;
-      _ac = _fc = 0;
-      _wholeRows = true;
-      _wholeCols = true;
-    });
+    setState(_sel.selectAll);
     _focus.requestFocus();
   }
 
@@ -315,10 +251,10 @@ class _ResultTableViewState extends State<ResultTableView> {
     if (!_dragging || e.kind != PointerDeviceKind.mouse) return;
     final cell = _cellAt(e.localPosition);
     if (cell == null || cell.col < 0) return;
-    if (cell.row != _fr || cell.col != _fc) {
+    if (cell.row != _sel.fr || cell.col != _sel.fc) {
       setState(() {
-        _fr = cell.row;
-        _fc = cell.col;
+        _sel.fr = cell.row;
+        _sel.fc = cell.col;
       });
     }
   }
@@ -358,10 +294,13 @@ class _ResultTableViewState extends State<ResultTableView> {
     }
     if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.numpadEnter) {
-      if (_fr == null || _fc == null || _wholeRows || _wholeCols) {
+      if (_sel.fr == null ||
+          _sel.fc == null ||
+          _sel.wholeRows ||
+          _sel.wholeCols) {
         return KeyEventResult.ignored;
       }
-      _showValue(_fr!, _fc!);
+      _showValue(_sel.fr!, _sel.fc!);
       return KeyEventResult.handled;
     }
     final page = math.max(1, (_viewHeight / _rowHeight).floor() - 2);
@@ -376,8 +315,8 @@ class _ResultTableViewState extends State<ResultTableView> {
     if (key == LogicalKeyboardKey.home) dc = -cols;
     if (key == LogicalKeyboardKey.end) dc = cols;
     if ((dr == 0 && dc == 0) || _shown == 0) return KeyEventResult.ignored;
-    final r = ((_fr ?? 0) + (_hasSelection ? dr : 0)).clamp(0, _shown - 1);
-    final c = ((_fc ?? 0) + (_hasSelection ? dc : 0)).clamp(0, cols - 1);
+    final r = ((_sel.fr ?? 0) + (_hasSelection ? dr : 0)).clamp(0, _shown - 1);
+    final c = ((_sel.fc ?? 0) + (_hasSelection ? dc : 0)).clamp(0, cols - 1);
     _selectCell(r, c, extend: kb.isShiftPressed);
     _reveal(r, c);
     return KeyEventResult.handled;
@@ -420,10 +359,10 @@ class _ResultTableViewState extends State<ResultTableView> {
     final g = _range;
     // A whole column takes every row, a whole row every column (also those the
     // grid does not draw); a range takes just its cells.
-    final rows = g == null || _wholeCols
+    final rows = g == null || _sel.wholeCols
         ? _order
         : [for (var r = g.r0; r <= g.r1; r++) _order[r]];
-    final cols = g == null || _wholeRows
+    final cols = g == null || _sel.wholeRows
         ? List<int>.generate(t.columnCount, (i) => i)
         : [for (var c = g.c0; c <= g.c1; c++) c];
     if (rows.isEmpty) return;
@@ -530,7 +469,7 @@ class _ResultTableViewState extends State<ResultTableView> {
             child: Text(l10n.tableClearSort),
           ),
       ],
-      if (_hasSelection && !_wholeRows && !_wholeCols)
+      if (_hasSelection && !_sel.wholeRows && !_sel.wholeCols)
         PopupMenuItem(
           key: const Key('menu-view-value'),
           value: 'view',
@@ -556,8 +495,8 @@ class _ResultTableViewState extends State<ResultTableView> {
     if (v == 'all') return _selectAll();
     if (v == 'save') {
       _saveCsv();
-    } else if (v == 'view' && _fr != null && _fc != null) {
-      _showValue(_fr!, _fc!);
+    } else if (v == 'view' && _sel.fr != null && _sel.fc != null) {
+      _showValue(_sel.fr!, _sel.fc!);
     } else if (v == 'clear-sort') {
       setState(() {
         _sortCol = null;
@@ -607,50 +546,17 @@ class _ResultTableViewState extends State<ResultTableView> {
       );
 
   /// Width that fits a column's name and a sample of its cells.
-  double _fit(BuildContext context, int col, TextStyle style) {
-    final t = widget.table;
-    final scaler = MediaQuery.textScalerOf(context);
-    double measure(String s, TextStyle st) {
-      final p = TextPainter(
-        text: TextSpan(text: s, style: st),
-        textDirection: TextDirection.ltr,
-        textScaler: scaler,
-        maxLines: 1,
-      )..layout();
-      final w = p.width;
-      p.dispose();
-      return w;
-    }
+  double _fit(BuildContext context, int col, TextStyle style) =>
+      TableColumnSizer.fit(
+        table: widget.table,
+        col: col,
+        drawn: _cols,
+        style: style,
+        scaler: MediaQuery.textScalerOf(context),
+        typeName: (type) => _typeName(context, type),
+      );
 
-    final head = style.copyWith(fontWeight: FontWeight.w600);
-    final small = style.copyWith(fontSize: 11);
-    // Room for the sort arrow beside the name and the type under it.
-    var w =
-        math.max(
-          measure(t.columns[col].name, head),
-          measure(_typeName(context, t.columns[col].type), small),
-        ) +
-        24 +
-        20;
-    // Fewer rows are sampled when there are many columns, so a wide result
-    // does not make the first build slow.
-    final sample = math.min(t.rowCount, math.max(20, 4000 ~/ _cols));
-    for (var r = 0; r < sample; r++) {
-      final text = _shownText(t.rows[r][col]);
-      final cut = text.length > 80 ? text.substring(0, 80) : text;
-      // A few pixels of slack: text measures a little differently when laid
-      // out in a cell, and an exact fit would show an ellipsis.
-      w = math.max(w, measure(cut, style) + 24 + 8);
-    }
-    return _whole(w.clamp(ResultTableView._fitMin, ResultTableView._fitMax));
-  }
-
-  String _shownText(Object? v) {
-    final s = v == null ? '' : cellPreview(v);
-    return s.length > ResultTable.maxCellChars
-        ? s.substring(0, ResultTable.maxCellChars)
-        : s;
-  }
+  String _shownText(Object? v) => TableColumnSizer.shownText(v);
 
   List<double> _initialWidths(BuildContext context, TextStyle style) => [
     for (var c = 0; c < _cols; c++) _fit(context, c, style),
