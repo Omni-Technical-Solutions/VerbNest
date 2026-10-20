@@ -65,7 +65,8 @@ for f in files:
                 ):
                     k -= 1
                 head = lines[k] if k >= 0 else ''
-                name = re.search(r'(\w+)\s*\($', head.rstrip())
+                # A declaration has a return type before the name; a call does not.
+                name = re.search(r'^\s*(?:static\s+)?[\w<>?,\[\]() ]+\s(\w+)\s*\($', head.rstrip())
                 if name and name.group(1) not in ('if', 'for', 'while', 'switch', 'catch'):
                     m = re.match(r'^(\s*)', l)
                     m = type('M', (), {'group': lambda self, n, _i=m.group(1), _n=name.group(1): _i if n == 1 else _n})()

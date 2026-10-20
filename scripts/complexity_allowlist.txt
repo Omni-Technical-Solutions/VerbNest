@@ -1,8 +1,3 @@
 # Known over-limit code (see scripts/complexity_report.py). Each entry is
 # `kind path::name size`; shrink the code, then delete the line.
-function apps/verbnest_app/lib/src/macos_menu.dart::buildMacMenus 151  # 151 lines, 1 branches
 function apps/verbnest_app/lib/src/state/js_syntax.dart::_isIdStart 102  # 102 lines, 24 branches
-function apps/verbnest_app/lib/src/widgets/code_view.dart::_layout 139  # 139 lines, 17 branches
-function apps/verbnest_app/lib/src/widgets/request_editor.dart::build 116  # 116 lines, 13 branches
-function apps/verbnest_app/lib/src/widgets/status_bar.dart::build 115  # 115 lines, 14 branches
-function packages/verbnest_core/lib/src/graphql/schema.dart::_definition 103  # 103 lines, 30 branches

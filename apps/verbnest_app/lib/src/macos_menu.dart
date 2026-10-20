@@ -40,154 +40,161 @@ void _toFocus(Intent intent) {
 List<PlatformMenuItem> buildMacMenus(BuildContext context, MenuActions a) {
   final l = context.l10n;
   return [
-    PlatformMenu(
-      label: 'VerbNest',
-      menus: [
-        const PlatformProvidedMenuItem(
-          type: PlatformProvidedMenuItemType.about,
-        ),
-        PlatformMenuItemGroup(
-          members: [
-            if (PlatformProvidedMenuItem.hasMenu(
-              PlatformProvidedMenuItemType.servicesSubmenu,
-            ))
-              const PlatformProvidedMenuItem(
-                type: PlatformProvidedMenuItemType.servicesSubmenu,
-              ),
-          ],
-        ),
-        const PlatformMenuItemGroup(
-          members: [
-            PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.hide),
-            PlatformProvidedMenuItem(
-              type: PlatformProvidedMenuItemType.hideOtherApplications,
-            ),
-            PlatformProvidedMenuItem(
-              type: PlatformProvidedMenuItemType.showAllApplications,
-            ),
-          ],
-        ),
-        const PlatformMenuItemGroup(
-          members: [
-            PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.quit),
-          ],
-        ),
-      ],
-    ),
-    PlatformMenu(
-      label: l.menuFile,
-      menus: [
-        PlatformMenuItem(
-          label: l.cmdNewRequest,
-          shortcut: _cmd(LogicalKeyboardKey.keyN),
-          onSelected: a.newRequest,
-        ),
-        PlatformMenuItem(
-          label: l.cmdCloseTab,
-          shortcut: _cmd(LogicalKeyboardKey.keyW),
-          onSelected: a.closeTab,
-        ),
-        PlatformMenuItem(
-          label: l.cmdSearch,
-          shortcut: _cmd(LogicalKeyboardKey.keyF, shift: true),
-          onSelected: a.search,
-        ),
-      ],
-    ),
-    PlatformMenu(
-      label: l.menuEdit,
-      menus: [
-        PlatformMenuItem(
-          label: l.menuUndo,
-          shortcut: _cmd(LogicalKeyboardKey.keyZ),
-          onSelected: () =>
-              _toFocus(const UndoTextIntent(SelectionChangedCause.keyboard)),
-        ),
-        PlatformMenuItem(
-          label: l.menuRedo,
-          shortcut: _cmd(LogicalKeyboardKey.keyZ, shift: true),
-          onSelected: () =>
-              _toFocus(const RedoTextIntent(SelectionChangedCause.keyboard)),
-        ),
-        PlatformMenuItemGroup(
-          members: [
-            PlatformMenuItem(
-              label: l.menuCut,
-              shortcut: _cmd(LogicalKeyboardKey.keyX),
-              onSelected: () => _toFocus(
-                CopySelectionTextIntent.cut(SelectionChangedCause.keyboard),
-              ),
-            ),
-            PlatformMenuItem(
-              label: l.copy,
-              shortcut: _cmd(LogicalKeyboardKey.keyC),
-              onSelected: () => _toFocus(CopySelectionTextIntent.copy),
-            ),
-            PlatformMenuItem(
-              label: l.menuPaste,
-              shortcut: _cmd(LogicalKeyboardKey.keyV),
-              onSelected: () => _toFocus(
-                const PasteTextIntent(SelectionChangedCause.keyboard),
-              ),
-            ),
-            PlatformMenuItem(
-              label: l.menuSelectAll,
-              shortcut: _cmd(LogicalKeyboardKey.keyA),
-              onSelected: () => _toFocus(
-                const SelectAllTextIntent(SelectionChangedCause.keyboard),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-    PlatformMenu(
-      label: l.menuRequest,
-      menus: [
-        PlatformMenuItem(
-          label: l.cmdSend,
-          shortcut: _cmd(LogicalKeyboardKey.enter),
-          onSelected: a.send,
-        ),
-      ],
-    ),
-    PlatformMenu(
-      label: l.menuView,
-      menus: [
-        PlatformMenuItem(
-          label: l.cmdToggleSidebar,
-          shortcut: _cmd(LogicalKeyboardKey.backslash),
-          onSelected: a.toggleSidebar,
-        ),
-        PlatformMenuItem(
-          label: l.menuPalette,
-          shortcut: _cmd(LogicalKeyboardKey.keyK),
-          onSelected: a.palette,
-        ),
-        PlatformMenuItem(
-          label: l.cmdShortcuts,
-          shortcut: _cmd(LogicalKeyboardKey.slash),
-          onSelected: a.shortcuts,
-        ),
-        const PlatformProvidedMenuItem(
-          type: PlatformProvidedMenuItemType.toggleFullScreen,
-        ),
-      ],
-    ),
-    PlatformMenu(
-      label: l.menuWindow,
-      menus: const [
-        PlatformProvidedMenuItem(
-          type: PlatformProvidedMenuItemType.minimizeWindow,
-        ),
-        PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.zoomWindow),
-        PlatformProvidedMenuItem(
-          type: PlatformProvidedMenuItemType.arrangeWindowsInFront,
-        ),
-      ],
-    ),
+    _appMenu(),
+    _fileMenu(l, a),
+    _editMenu(l),
+    _requestMenu(l, a),
+    _viewMenu(l, a),
+    _windowMenu(l),
   ];
 }
+
+PlatformMenu _appMenu() => PlatformMenu(
+  label: 'VerbNest',
+  menus: [
+    const PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.about),
+    PlatformMenuItemGroup(
+      members: [
+        if (PlatformProvidedMenuItem.hasMenu(
+          PlatformProvidedMenuItemType.servicesSubmenu,
+        ))
+          const PlatformProvidedMenuItem(
+            type: PlatformProvidedMenuItemType.servicesSubmenu,
+          ),
+      ],
+    ),
+    const PlatformMenuItemGroup(
+      members: [
+        PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.hide),
+        PlatformProvidedMenuItem(
+          type: PlatformProvidedMenuItemType.hideOtherApplications,
+        ),
+        PlatformProvidedMenuItem(
+          type: PlatformProvidedMenuItemType.showAllApplications,
+        ),
+      ],
+    ),
+    const PlatformMenuItemGroup(
+      members: [
+        PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.quit),
+      ],
+    ),
+  ],
+);
+
+PlatformMenu _fileMenu(AppLocalizations l, MenuActions a) => PlatformMenu(
+  label: l.menuFile,
+  menus: [
+    PlatformMenuItem(
+      label: l.cmdNewRequest,
+      shortcut: _cmd(LogicalKeyboardKey.keyN),
+      onSelected: a.newRequest,
+    ),
+    PlatformMenuItem(
+      label: l.cmdCloseTab,
+      shortcut: _cmd(LogicalKeyboardKey.keyW),
+      onSelected: a.closeTab,
+    ),
+    PlatformMenuItem(
+      label: l.cmdSearch,
+      shortcut: _cmd(LogicalKeyboardKey.keyF, shift: true),
+      onSelected: a.search,
+    ),
+  ],
+);
+
+PlatformMenu _editMenu(AppLocalizations l) => PlatformMenu(
+  label: l.menuEdit,
+  menus: [
+    PlatformMenuItem(
+      label: l.menuUndo,
+      shortcut: _cmd(LogicalKeyboardKey.keyZ),
+      onSelected: () =>
+          _toFocus(const UndoTextIntent(SelectionChangedCause.keyboard)),
+    ),
+    PlatformMenuItem(
+      label: l.menuRedo,
+      shortcut: _cmd(LogicalKeyboardKey.keyZ, shift: true),
+      onSelected: () =>
+          _toFocus(const RedoTextIntent(SelectionChangedCause.keyboard)),
+    ),
+    PlatformMenuItemGroup(
+      members: [
+        PlatformMenuItem(
+          label: l.menuCut,
+          shortcut: _cmd(LogicalKeyboardKey.keyX),
+          onSelected: () => _toFocus(
+            CopySelectionTextIntent.cut(SelectionChangedCause.keyboard),
+          ),
+        ),
+        PlatformMenuItem(
+          label: l.copy,
+          shortcut: _cmd(LogicalKeyboardKey.keyC),
+          onSelected: () => _toFocus(CopySelectionTextIntent.copy),
+        ),
+        PlatformMenuItem(
+          label: l.menuPaste,
+          shortcut: _cmd(LogicalKeyboardKey.keyV),
+          onSelected: () =>
+              _toFocus(const PasteTextIntent(SelectionChangedCause.keyboard)),
+        ),
+        PlatformMenuItem(
+          label: l.menuSelectAll,
+          shortcut: _cmd(LogicalKeyboardKey.keyA),
+          onSelected: () => _toFocus(
+            const SelectAllTextIntent(SelectionChangedCause.keyboard),
+          ),
+        ),
+      ],
+    ),
+  ],
+);
+
+PlatformMenu _requestMenu(AppLocalizations l, MenuActions a) => PlatformMenu(
+  label: l.menuRequest,
+  menus: [
+    PlatformMenuItem(
+      label: l.cmdSend,
+      shortcut: _cmd(LogicalKeyboardKey.enter),
+      onSelected: a.send,
+    ),
+  ],
+);
+
+PlatformMenu _viewMenu(AppLocalizations l, MenuActions a) => PlatformMenu(
+  label: l.menuView,
+  menus: [
+    PlatformMenuItem(
+      label: l.cmdToggleSidebar,
+      shortcut: _cmd(LogicalKeyboardKey.backslash),
+      onSelected: a.toggleSidebar,
+    ),
+    PlatformMenuItem(
+      label: l.menuPalette,
+      shortcut: _cmd(LogicalKeyboardKey.keyK),
+      onSelected: a.palette,
+    ),
+    PlatformMenuItem(
+      label: l.cmdShortcuts,
+      shortcut: _cmd(LogicalKeyboardKey.slash),
+      onSelected: a.shortcuts,
+    ),
+    const PlatformProvidedMenuItem(
+      type: PlatformProvidedMenuItemType.toggleFullScreen,
+    ),
+  ],
+);
+
+PlatformMenu _windowMenu(AppLocalizations l) => PlatformMenu(
+  label: l.menuWindow,
+  menus: const [
+    PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.minimizeWindow),
+    PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.zoomWindow),
+    PlatformProvidedMenuItem(
+      type: PlatformProvidedMenuItemType.arrangeWindowsInFront,
+    ),
+  ],
+);
 
 /// Puts the menu bar around [child] on macOS and does nothing elsewhere.
 class MacMenuBar extends StatelessWidget {

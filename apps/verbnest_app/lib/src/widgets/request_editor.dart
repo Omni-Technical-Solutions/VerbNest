@@ -150,66 +150,82 @@ class _RequestEditorState extends ConsumerState<RequestEditor> {
                       compact: compact,
                       narrow: narrow,
                       trailing: short
-                          ? Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // A fixed width keeps the URL readable beside it.
-                                EnvSelector(requestId: requestId, width: 140),
-                                ToolbarMenu(
-                                  requestId: requestId,
-                                  item: state.item,
-                                  notifier: notifier,
-                                  onExamples: () =>
-                                      showExamples(context, requestId),
-                                ),
-                              ],
-                            )
+                          ? _shortTrailing(context, state, notifier)
                           : null,
                     ),
                   ),
                 ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (state.pendingUnresolved.isNotEmpty)
-                        _PendingBanner(state: state, notifier: notifier),
-                      if (state.pendingSecretHost != null)
-                        _SecretHostBanner(state: state, notifier: notifier),
-                      if (state.unresolved.isNotEmpty)
-                        _Banner(
-                          context.l10n.reUndefined(
-                            state.unresolved.map((n) => '{{$n}}').join(', '),
-                          ),
-                        ),
-                      for (final w in state.warnings) _Banner(w),
-                    ],
-                  ),
-                ),
-                SliverLayoutBuilder(
-                  builder: (context, sc) {
-                    final remaining =
-                        sc.viewportMainAxisExtent - sc.precedingScrollExtent;
-                    return SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: remaining < _minPaneHeight
-                            ? _minPaneHeight
-                            : remaining,
-                        child: _Panes(
-                          requestId: requestId,
-                          state: state,
-                          notifier: notifier,
-                          compact: compact,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                SliverToBoxAdapter(child: _banners(state, notifier)),
+                _panesSliver(state, notifier, compact),
               ],
             ),
           );
         },
       ),
+    );
+  }
+
+  /// The environment picker and the menu, put into the URL row of a short
+  /// window (a landscape phone), which has no height for a toolbar row.
+  Widget _shortTrailing(
+    BuildContext context,
+    EditorState state,
+    EditorNotifier notifier,
+  ) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // A fixed width keeps the URL readable beside it.
+      EnvSelector(requestId: requestId, width: 140),
+      ToolbarMenu(
+        requestId: requestId,
+        item: state.item,
+        notifier: notifier,
+        onExamples: () => showExamples(context, requestId),
+      ),
+    ],
+  );
+
+  /// What needs attention before sending: values to confirm, undefined
+  /// variables and warnings.
+  Widget _banners(EditorState state, EditorNotifier notifier) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (state.pendingUnresolved.isNotEmpty)
+        _PendingBanner(state: state, notifier: notifier),
+      if (state.pendingSecretHost != null)
+        _SecretHostBanner(state: state, notifier: notifier),
+      if (state.unresolved.isNotEmpty)
+        _Banner(
+          context.l10n.reUndefined(
+            state.unresolved.map((n) => '{{$n}}').join(', '),
+          ),
+        ),
+      for (final w in state.warnings) _Banner(w),
+    ],
+  );
+
+  /// The request and response panes, given what is left of the page but at
+  /// least [_minPaneHeight].
+  Widget _panesSliver(
+    EditorState state,
+    EditorNotifier notifier,
+    bool compact,
+  ) {
+    return SliverLayoutBuilder(
+      builder: (context, sc) {
+        final remaining = sc.viewportMainAxisExtent - sc.precedingScrollExtent;
+        return SliverToBoxAdapter(
+          child: SizedBox(
+            height: remaining < _minPaneHeight ? _minPaneHeight : remaining,
+            child: _Panes(
+              requestId: requestId,
+              state: state,
+              notifier: notifier,
+              compact: compact,
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -44,9 +44,7 @@ class StatusBar extends ConsumerWidget {
     final verifyTls = ref.watch(httpDefaultsProvider).verifyTls;
     final logCount = ref.watch(consoleLogProvider).length;
 
-    final style = Theme.of(context).textTheme.labelMedium
-        ?.copyWith(color: scheme.onSurfaceVariant);
-
+    // One item of the bar; the item's own look is in [_StatusItem].
     Widget item({
       Key? key,
       required IconData icon,
@@ -54,28 +52,14 @@ class StatusBar extends ConsumerWidget {
       Color? color,
       String? tooltip,
       VoidCallback? onTap,
-    }) {
-      final c = color ?? scheme.onSurfaceVariant;
-      return StillTooltip(
-        message: tooltip ?? label,
-        child: InkWell(
-          key: key,
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(Radii.sm),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Space.sm),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 14, color: c),
-                const SizedBox(width: Space.xs),
-                Text(label, style: style?.copyWith(color: c)),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    }) => _StatusItem(
+      key: key,
+      icon: icon,
+      label: label,
+      color: color,
+      tooltip: tooltip,
+      onTap: onTap,
+    );
 
     return Material(
       key: const Key('status-bar'),
@@ -138,6 +122,48 @@ class StatusBar extends ConsumerWidget {
               ),
             const SizedBox(width: Space.sm),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusItem extends StatelessWidget {
+  const _StatusItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.color,
+    this.tooltip,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color? color;
+  final String? tooltip;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final c = color ?? scheme.onSurfaceVariant;
+    final style = Theme.of(context).textTheme.labelMedium?.copyWith(color: c);
+    return StillTooltip(
+      message: tooltip ?? label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Radii.sm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: c),
+              const SizedBox(width: Space.xs),
+              Text(label, style: style),
+            ],
+          ),
         ),
       ),
     );

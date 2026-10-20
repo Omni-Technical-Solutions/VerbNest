@@ -416,97 +416,124 @@ class _SdlParser {
     }
     switch (kw) {
       case 'schema':
-        _directives();
-        _punct('{');
-        while (!_eatPunct('}')) {
-          final op = _name();
-          _punct(':');
-          final t = _name();
-          switch (op) {
-            case 'query':
-              query = t;
-            case 'mutation':
-              mutation = t;
-            case 'subscription':
-              subscription = t;
-          }
-        }
+        _schemaDefinition();
       case 'scalar':
         final name = _name();
         _directives();
         _declare(name, GqlKind.scalar, desc, extend);
       case 'type' || 'interface':
-        final name = _name();
-        final t = _declare(
-          name,
-          kw == 'type' ? GqlKind.object : GqlKind.interface,
-          desc,
-          extend,
-        );
-        if (cur?.isName('implements') == true) {
-          p++;
-          _eatPunct('&');
-          t.interfaces.add(_name());
-          while (_eatPunct('&') ||
-              (cur?.kind == GqlTok.name &&
-                  !_definitionKeywords.contains(cur?.text))) {
-            t.interfaces.add(_name());
-          }
-        }
-        _directives();
-        if (_eatPunct('{')) {
-          while (!_eatPunct('}')) {
-            t.fields.add(_field());
-          }
-        }
+        _objectDefinition(kw, desc, extend);
       case 'input':
-        final name = _name();
-        final t = _declare(name, GqlKind.inputObject, desc, extend);
-        _directives();
-        if (_eatPunct('{')) {
-          while (!_eatPunct('}')) {
-            t.inputFields.add(_inputValue());
-          }
-        }
+        _inputDefinition(desc, extend);
       case 'enum':
-        final name = _name();
-        final t = _declare(name, GqlKind.enumeration, desc, extend);
-        _directives();
-        if (_eatPunct('{')) {
-          while (!_eatPunct('}')) {
-            final d = _description();
-            final v = _name();
-            final dep = _directives();
-            t.enumValues.add(GqlEnumValue(v, description: d, deprecated: dep));
-          }
-        }
+        _enumDefinition(desc, extend);
       case 'union':
-        final name = _name();
-        final t = _declare(name, GqlKind.union, desc, extend);
-        _directives();
-        if (_eatPunct('=')) {
-          _eatPunct('|');
-          t.possibleTypes.add(_name());
-          while (_eatPunct('|')) {
-            t.possibleTypes.add(_name());
-          }
-        }
+        _unionDefinition(desc, extend);
       case 'directive':
-        _punct('@');
-        _name();
-        if (cur?.isPunct('(') == true) _skipBalanced('(', ')');
-        if (cur?.isName('repeatable') == true) p++;
-        if (cur?.isName('on') == true) {
-          p++;
-          _eatPunct('|');
-          _name();
-          while (_eatPunct('|')) {
-            _name();
-          }
-        }
+        _directiveDefinition();
       default:
         p--;
         throw _fail('Unexpected "$kw"');
+    }
+  }
+
+  /// `schema { query: Q mutation: M subscription: S }`
+  void _schemaDefinition() {
+    _directives();
+    _punct('{');
+    while (!_eatPunct('}')) {
+      final op = _name();
+      _punct(':');
+      final t = _name();
+      switch (op) {
+        case 'query':
+          query = t;
+        case 'mutation':
+          mutation = t;
+        case 'subscription':
+          subscription = t;
+      }
+    }
+  }
+
+  /// `type` or `interface`, with its `implements` list and fields.
+  void _objectDefinition(String kw, String desc, bool extend) {
+    final name = _name();
+    final t = _declare(
+      name,
+      kw == 'type' ? GqlKind.object : GqlKind.interface,
+      desc,
+      extend,
+    );
+    if (cur?.isName('implements') == true) {
+      p++;
+      _eatPunct('&');
+      t.interfaces.add(_name());
+      while (_eatPunct('&') ||
+          (cur?.kind == GqlTok.name &&
+              !_definitionKeywords.contains(cur?.text))) {
+        t.interfaces.add(_name());
+      }
+    }
+    _directives();
+    if (_eatPunct('{')) {
+      while (!_eatPunct('}')) {
+        t.fields.add(_field());
+      }
+    }
+  }
+
+  void _inputDefinition(String desc, bool extend) {
+    final name = _name();
+    final t = _declare(name, GqlKind.inputObject, desc, extend);
+    _directives();
+    if (_eatPunct('{')) {
+      while (!_eatPunct('}')) {
+        t.inputFields.add(_inputValue());
+      }
+    }
+  }
+
+  void _enumDefinition(String desc, bool extend) {
+    final name = _name();
+    final t = _declare(name, GqlKind.enumeration, desc, extend);
+    _directives();
+    if (_eatPunct('{')) {
+      while (!_eatPunct('}')) {
+        final d = _description();
+        final v = _name();
+        final dep = _directives();
+        t.enumValues.add(GqlEnumValue(v, description: d, deprecated: dep));
+      }
+    }
+  }
+
+  void _unionDefinition(String desc, bool extend) {
+    final name = _name();
+    final t = _declare(name, GqlKind.union, desc, extend);
+    _directives();
+    if (_eatPunct('=')) {
+      _eatPunct('|');
+      t.possibleTypes.add(_name());
+      while (_eatPunct('|')) {
+        t.possibleTypes.add(_name());
+      }
+    }
+  }
+
+  /// `directive @name(args) repeatable on A | B`; read and dropped.
+  void _directiveDefinition() {
+    _punct('@');
+    _name();
+    if (cur?.isPunct('(') == true) _skipBalanced('(', ')');
+    if (cur?.isName('repeatable') == true) p++;
+    if (cur?.isName('on') == true) {
+      p++;
+      _eatPunct('|');
+      _name();
+      while (_eatPunct('|')) {
+        _name();
+      }
     }
   }
 
