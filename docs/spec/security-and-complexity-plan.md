@@ -96,7 +96,7 @@ Status 2026-10-21: E1 started: `TableSelection` and `TableColumnSizer` are their
 - Each E step: run the goldens, `no_motion_audit_test`, `body_view_frames_test` (macOS), and the device matrix tests before merging.
 
 ### Phase F: verification
-Status 2026-10-21: F1 done for the core and http parsers (fuzz tests in `packages/verbnest_core/test/fuzz_test.dart` and `packages/verbnest_http/test/fuzz_test.dart`; the importers already had one). The first long run found a real bug (quoted JSONPath keys), now fixed. Fuzzing the HTTP/2 and WebSocket frame parsers, and F2 (threat model), are not done.
+Status 2026-10-21: F1 done for the core and http parsers (fuzz tests in `packages/verbnest_core/test/fuzz_test.dart` and `packages/verbnest_http/test/fuzz_test.dart`; the importers already had one). The first long run found a real bug (quoted JSONPath keys), now fixed. F2 done: `docs/spec/threat-model.md`. Fuzzing the HTTP/2 and WebSocket frame parsers is not done.
 - F1 (S10): fuzz or property tests for the importers (Postman, OpenAPI, HAR, cURL, snapshots), the cookie parser, the HTTP/2 and WebSocket framing, and JSONPath, run in CI with a time budget.
 - F2: a short threat model in `docs/spec/` (assets, trust boundaries, abuse cases) and an external review before 1.0.
 
