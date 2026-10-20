@@ -28,7 +28,9 @@ import 'code_view.dart';
 import 'result_table_view.dart';
 import 'html_preview.dart';
 import 'pdf_preview.dart';
-import 'ui/adaptive_dialog.dart';
+import 'response_panels.dart';
+
+export 'response_panels.dart' show formatDuration, timingRows;
 import 'ui/scroll_edge_fade.dart';
 import 'ui/still_dropdown.dart';
 import 'ui/still_tabs.dart';
@@ -74,28 +76,6 @@ String sizeLabel(HttpResponseRecord r, {String onWire = 'on the wire'}) =>
     r.wireBodySize == r.body.length
     ? formatBytes(r.body.length)
     : '${formatBytes(r.body.length)} (${formatBytes(r.wireBodySize)} $onWire)';
-
-/// The phases of one exchange in order. Phases that did not happen (plain
-/// HTTP has no TLS) are left out. "Other" is time outside the measured phases,
-/// such as writing the request.
-List<(String, Duration)> timingRows(Timings t) {
-  final measured = t.dns + t.connect + t.tls + t.ttfb + t.download;
-  final other = t.total - measured;
-  return [
-    ('DNS lookup', t.dns),
-    ('TCP connect', t.connect),
-    if (t.tls > Duration.zero) ('TLS handshake', t.tls),
-    ('Waiting (TTFB)', t.ttfb),
-    ('Download', t.download),
-    if (other > const Duration(milliseconds: 1)) ('Other', other),
-  ];
-}
-
-String formatDuration(Duration d) => d.inMicroseconds < 1000
-    ? '${d.inMicroseconds} µs'
-    : d.inMilliseconds < 1000
-    ? '${(d.inMicroseconds / 1000).toStringAsFixed(1)} ms'
-    : '${(d.inMilliseconds / 1000).toStringAsFixed(2)} s';
 
 Color statusColor(BuildContext context, int status) =>
     AppColors.of(context).status(status);
@@ -236,10 +216,13 @@ class _ResponseViewState extends State<ResponseView> {
               child: TabBarView(
                 children: [
                   _body(r),
-                  _cookies(cookies),
-                  _headers(r),
-                  _scroll(_sentText(state), key: const Key('response-sent')),
-                  _tests(state),
+                  ResponseCookiesPanel(cookies),
+                  ResponseHeadersPanel(r),
+                  _scroll(
+                    responseSentText(state),
+                    key: const Key('response-sent'),
+                  ),
+                  ResponseTestsPanel(state),
                 ],
               ),
             ),
@@ -272,7 +255,7 @@ class _ResponseViewState extends State<ResponseView> {
             child: InkWell(
               key: const Key('response-timing'),
               borderRadius: BorderRadius.circular(Radii.sm),
-              onTap: () => _showTiming(r),
+              onTap: () => showResponseTiming(context, r),
               child: ConstrainedBox(
                 // 48 dp on touch screens, tighter with a pointer.
                 constraints: BoxConstraints(
@@ -308,7 +291,7 @@ class _ResponseViewState extends State<ResponseView> {
           if (r.tls != null)
             InkWell(
               key: const Key('response-tls'),
-              onTap: () => _showTls(r.tls!),
+              onTap: () => showResponseTls(context, r.tls!),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -381,184 +364,11 @@ class _ResponseViewState extends State<ResponseView> {
           ),
           Tab(text: context.l10n.rvTabHeaders),
           Tab(text: context.l10n.rvTabSent),
-          Tab(text: _testsLabel(context, state)),
+          Tab(text: responseTestsLabel(context, state)),
         ],
       ),
     );
   }
-
-  void _showTiming(HttpResponseRecord r) {
-    final rows = timingRows(r.timings);
-    final total = r.timings.total.inMicroseconds;
-    showDetail(
-      context,
-      title: context.l10n.rvTiming,
-      closeLabel: context.l10n.rvClose,
-      content: Column(
-        key: const Key('timing-rows'),
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final (label, d) in rows)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(child: Text(_timingLabel(context, label))),
-                      Text(formatDuration(d)),
-                    ],
-                  ),
-                  LinearProgressIndicator(
-                    value: total == 0 ? 0 : d.inMicroseconds / total,
-                  ),
-                ],
-              ),
-            ),
-          const Divider(),
-          Row(
-            children: [
-              Expanded(child: Text(context.l10n.rvTotal)),
-              Text(formatDuration(r.timings.total)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTls(TlsInfo t) {
-    String d(DateTime x) => x.toUtc().toIso8601String().substring(0, 10);
-    showDetail(
-      context,
-      title: context.l10n.rvTlsTitle,
-      closeLabel: context.l10n.rvClose,
-      content: SelectableText(
-        [
-          context.l10n.rvTlsSubject(t.subject),
-          context.l10n.rvTlsIssuer(t.issuer),
-          context.l10n.rvTlsValid(d(t.validFrom), d(t.validTo)),
-          if (t.protocol != null) context.l10n.rvTlsProtocol(t.protocol!),
-          context.l10n.rvTlsClientCert(
-            t.clientCertificateSent ? context.l10n.rvYes : context.l10n.rvNo,
-          ),
-        ].join('\n'),
-      ),
-    );
-  }
-
-  static String _timingLabel(BuildContext context, String id) {
-    final l = context.l10n;
-    return switch (id) {
-      'DNS lookup' => l.rvDns,
-      'TCP connect' => l.rvTcp,
-      'TLS handshake' => l.rvTlsHandshake,
-      'Waiting (TTFB)' => l.rvTtfb,
-      'Download' => l.rvDownload,
-      'Other' => l.rvOther,
-      _ => id,
-    };
-  }
-
-  static String _testsLabel(BuildContext context, EditorState s) {
-    if (s.tests.isEmpty && s.scriptError == null) {
-      return context.l10n.rvTabTests;
-    }
-    final passed = s.tests.where((t) => t.passed).length;
-    final counted = s.tests.where((t) => !t.status.startsWith('skip')).length;
-    return context.l10n.rvTabTestsN(passed, counted);
-  }
-
-  Widget _tests(EditorState s) {
-    if (s.tests.isEmpty && s.scriptError == null && s.scriptLogs.isEmpty) {
-      return Center(child: Text(context.l10n.rvNoTests));
-    }
-    final scheme = Theme.of(context).colorScheme;
-    return ListView(
-      key: const Key('response-tests'),
-      padding: const EdgeInsets.all(8),
-      children: [
-        if (s.scriptError != null)
-          ListTile(
-            key: const Key('script-error'),
-            leading: Icon(Icons.error_outline, color: scheme.error),
-            title: Text(
-              context.l10n.rvScriptError,
-              style: TextStyle(color: scheme.error),
-            ),
-            subtitle: SelectableText(s.scriptError!),
-          ),
-        for (final t in s.tests)
-          ListTile(
-            dense: true,
-            key: Key('test-${t.name}'),
-            leading: Icon(
-              switch (t.status) {
-                'pass' => Icons.check_circle,
-                'skip' => Icons.remove_circle_outline,
-                _ => Icons.cancel,
-              },
-              color: switch (t.status) {
-                'pass' => AppColors.of(context).success,
-                'skip' => scheme.outline,
-                _ => scheme.error,
-              },
-            ),
-            title: Text(t.name),
-            subtitle: t.message == null ? null : SelectableText(t.message!),
-          ),
-        if (s.scriptLogs.isNotEmpty) ...[
-          const Divider(),
-          Text(
-            context.l10n.rvConsole,
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          for (final l in s.scriptLogs)
-            SelectableText(
-              '${l.level == 'log' ? '' : '${l.level}: '}${l.text}',
-              style: monoStyle(fontSize: 12),
-            ),
-        ],
-      ],
-    );
-  }
-
-  static String _sentText(EditorState s) {
-    final head = s.maskedSentHead ?? '';
-    final body = s.maskedSentBody ?? '';
-    return body.isEmpty ? head : '${head.trimRight()}\n\n$body';
-  }
-
-  Widget _headers(HttpResponseRecord r) => ListView(
-    key: const Key('response-headers'),
-    children: [
-      for (var i = 0; i < r.headers.length; i++)
-        ListTile(
-          dense: true,
-          visualDensity: VisualDensity.compact,
-          title: SelectableText(
-            '${r.headers[i].$1}: ${r.headers[i].$2}',
-            style: monoStyle(fontSize: 13),
-          ),
-          trailing: StillIconButton(
-            key: ValueKey('copy-header-$i'),
-            tooltip: context.l10n.rvCopyValue,
-            icon: const Icon(Icons.copy, size: 16),
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: r.headers[i].$2));
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                snackBarAnimationStyle: AnimationStyle.noAnimation,
-                SnackBar(
-                  content: Text(context.l10n.rvHeaderCopied(r.headers[i].$1)),
-                ),
-              );
-            },
-          ),
-        ),
-    ],
-  );
 
   _TableInfo? _tableInfoCache;
   String? _tableInfoKey;
@@ -1049,27 +859,6 @@ class _ResponseViewState extends State<ResponseView> {
           wrap: _wrap,
         ),
       };
-
-  Widget _cookies(List<SetCookie> cookies) {
-    if (cookies.isEmpty) {
-      return Center(child: Text(context.l10n.rvNoCookies));
-    }
-    return ListView(
-      key: const Key('response-cookies'),
-      children: [
-        for (final c in cookies)
-          ListTile(
-            dense: true,
-            title: Text('${c.name} = ${c.value}'),
-            subtitle: Text(
-              c.attributes.entries
-                  .map((e) => e.value.isEmpty ? e.key : '${e.key}=${e.value}')
-                  .join('; '),
-            ),
-          ),
-      ],
-    );
-  }
 
   Widget _scroll(String text, {Key? key}) => SingleChildScrollView(
     padding: const EdgeInsets.all(8),
