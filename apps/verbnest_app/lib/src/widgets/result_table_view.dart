@@ -822,11 +822,9 @@ class _ResultTableViewState extends State<ResultTableView> {
     double height,
     ColorScheme scheme,
   ) {
-    final t = widget.table;
     final l10n = context.l10n;
     final small = Theme.of(context).textTheme.bodySmall
         ?.copyWith(color: scheme.outline, fontSize: 11);
-    final bold = _cellStyle(context).copyWith(fontWeight: FontWeight.w600);
     return Container(
       height: height,
       decoration: BoxDecoration(
@@ -844,125 +842,8 @@ class _ResultTableViewState extends State<ResultTableView> {
                   width: widths[c],
                   child: Stack(
                     children: [
-                      Positioned.fill(
-                        child: StillTooltip(
-                          message: l10n.tableSortBy(t.columns[c].name),
-                          child: Semantics(
-                            button: true,
-                            label: l10n.tableHeaderLabel(
-                              t.columns[c].name,
-                              _typeName(context, t.columns[c].type),
-                            ),
-                            value: _sortCol != c
-                                ? null
-                                : (_ascending
-                                      ? l10n.tableSortedAscending
-                                      : l10n.tableSortedDescending),
-                            onTap: () => _sortBy(c),
-                            excludeSemantics: true,
-                            child: GestureDetector(
-                              excludeFromSemantics: true,
-                              onSecondaryTapDown: (d) =>
-                                  _menuAt(d.globalPosition, column: c),
-                              onLongPressStart: (d) =>
-                                  _menuAt(d.globalPosition, column: c),
-                              child: InkWell(
-                                key: ValueKey('table-sort-$c'),
-                                onTap: () => _sortBy(c),
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    12,
-                                    4,
-                                    12,
-                                    4,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              t.columns[c].name,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: bold,
-                                            ),
-                                            Text(
-                                              _typeName(
-                                                context,
-                                                t.columns[c].type,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: small,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (_sortCol == c)
-                                        Icon(
-                                          _ascending
-                                              ? Icons.arrow_upward
-                                              : Icons.arrow_downward,
-                                          key: Key(
-                                            _ascending
-                                                ? 'table-sort-asc-$c'
-                                                : 'table-sort-desc-$c',
-                                          ),
-                                          size: 16,
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Drag to resize; double-tap to fit the content.
-                      Positioned(
-                        top: 0,
-                        bottom: 0,
-                        right: 0,
-                        width: 12,
-                        // Out of the accessibility tree: it is a 12 dp drag handle,
-                        // and "Fit column" is in the header menu.
-                        child: ExcludeSemantics(
-                          child: GestureDetector(
-                            key: ValueKey('table-resize-$c'),
-                            behavior: HitTestBehavior.opaque,
-                            onHorizontalDragUpdate: (d) => setState(() {
-                              widths[c] = (widths[c] + d.delta.dx)
-                                  .clamp(
-                                    ResultTableView.minColumnWidth,
-                                    ResultTableView.maxColumnWidth,
-                                  )
-                                  .roundToDouble();
-                            }),
-                            onDoubleTap: () => setState(
-                              () => widths[c] = _fit(
-                                context,
-                                c,
-                                _cellStyle(context),
-                              ),
-                            ),
-                            child: MouseRegion(
-                              cursor: SystemMouseCursors.resizeColumn,
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Container(
-                                  width: 1,
-                                  color: scheme.outlineVariant,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      _headerLabel(context, c),
+                      _resizeHandle(context, c, widths, scheme),
                     ],
                   ),
                 ),
@@ -987,6 +868,121 @@ class _ResultTableViewState extends State<ResultTableView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// The name and type of column [c], tappable to sort, with its menu.
+  Widget _headerLabel(BuildContext context, int c) {
+    final t = widget.table;
+    final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    final small = Theme.of(context).textTheme.bodySmall
+        ?.copyWith(color: scheme.outline, fontSize: 11);
+    final bold = _cellStyle(context).copyWith(fontWeight: FontWeight.w600);
+    return Positioned.fill(
+      child: StillTooltip(
+        message: l10n.tableSortBy(t.columns[c].name),
+        child: Semantics(
+          button: true,
+          label: l10n.tableHeaderLabel(
+            t.columns[c].name,
+            _typeName(context, t.columns[c].type),
+          ),
+          value: _sortCol != c
+              ? null
+              : (_ascending
+                    ? l10n.tableSortedAscending
+                    : l10n.tableSortedDescending),
+          onTap: () => _sortBy(c),
+          excludeSemantics: true,
+          child: GestureDetector(
+            excludeFromSemantics: true,
+            onSecondaryTapDown: (d) => _menuAt(d.globalPosition, column: c),
+            onLongPressStart: (d) => _menuAt(d.globalPosition, column: c),
+            child: InkWell(
+              key: ValueKey('table-sort-$c'),
+              onTap: () => _sortBy(c),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            t.columns[c].name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: bold,
+                          ),
+                          Text(
+                            _typeName(context, t.columns[c].type),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: small,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_sortCol == c)
+                      Icon(
+                        _ascending ? Icons.arrow_upward : Icons.arrow_downward,
+                        key: Key(
+                          _ascending
+                              ? 'table-sort-asc-$c'
+                              : 'table-sort-desc-$c',
+                        ),
+                        size: 16,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Drag to resize; double-tap to fit the content.
+  Widget _resizeHandle(
+    BuildContext context,
+    int c,
+    List<double> widths,
+    ColorScheme scheme,
+  ) {
+    return Positioned(
+      top: 0,
+      bottom: 0,
+      right: 0,
+      width: 12,
+      // Out of the accessibility tree: it is a 12 dp drag handle,
+      // and "Fit column" is in the header menu.
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          key: ValueKey('table-resize-$c'),
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragUpdate: (d) => setState(() {
+            widths[c] = (widths[c] + d.delta.dx)
+                .clamp(
+                  ResultTableView.minColumnWidth,
+                  ResultTableView.maxColumnWidth,
+                )
+                .roundToDouble();
+          }),
+          onDoubleTap: () =>
+              setState(() => widths[c] = _fit(context, c, _cellStyle(context))),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.resizeColumn,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Container(width: 1, color: scheme.outlineVariant),
+            ),
+          ),
+        ),
       ),
     );
   }
