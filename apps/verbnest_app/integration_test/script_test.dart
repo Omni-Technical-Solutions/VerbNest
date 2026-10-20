@@ -161,7 +161,7 @@ void main() {
     expect(r['method'], 'POST');
     expect(r['url'], 'https://api.test/a?x=1&y=2');
     expect(r['body'], '{"a":1}');
-    final headers = (r['headers'] as List).cast<Map>();
+    final headers = (r['headers'] as List).cast<Map<dynamic, dynamic>>();
     expect(headers.map((h) => h['key']), ['Accept', 'X-A']);
     expect(headers.first['value'], 'application/json');
   });

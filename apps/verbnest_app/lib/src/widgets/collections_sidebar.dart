@@ -132,9 +132,9 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
                     widget.onOpenRequest?.call(hit.id);
                   }
                 case 'import':
-                  _import(context);
+                  unawaited(_import(context));
                 case 'workspaces':
-                  showWorkspaces(context, ref);
+                  unawaited(showWorkspaces(context, ref));
               }
             },
             itemBuilder: (_) => [
@@ -359,7 +359,9 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       ),
       items: _items(context, node),
     );
-    if (action != null && context.mounted) _run(context, action, node);
+    if (action != null && context.mounted) {
+      unawaited(_run(context, action, node));
+    }
   }
 
   List<PopupMenuEntry<_Action>> _items(BuildContext context, NodeInfo node) => [

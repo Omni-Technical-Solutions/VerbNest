@@ -26,7 +26,8 @@ bool requestStillExists(WorkspaceSession s, HistoryEntry entry) {
 ) {
   final j = (jsonDecode(entry.requestJson) as Map).cast<String, Object?>();
   final headers = [
-    for (final pair in (j['headers'] as List? ?? const []).cast<List>())
+    for (final pair
+        in (j['headers'] as List? ?? const []).cast<List<dynamic>>())
       KeyValue(key: pair[0].toString(), value: pair[1].toString()),
   ];
   final bodyText = j['body'] as String?;

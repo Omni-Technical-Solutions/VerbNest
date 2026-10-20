@@ -176,7 +176,7 @@ class GraphqlBody extends RequestBody {
   };
 
   factory GraphqlBody.fromJson(Object? json) {
-    final m = json is Map ? json : const {};
+    final m = json is Map ? json : const <dynamic, dynamic>{};
     return GraphqlBody(
       query: m['query'] as String? ?? '',
       variables: m['variables'] as String? ?? '',

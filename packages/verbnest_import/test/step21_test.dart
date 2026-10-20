@@ -300,7 +300,7 @@ void main() {
     });
 
     test('rejects other JSON', () {
-      expect(looksLikeHar({'log': {}}), isFalse);
+      expect(looksLikeHar({'log': <String, Object?>{}}), isFalse);
       expect(() => importHar({}), throwsFormatException);
     });
   });

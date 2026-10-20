@@ -570,7 +570,10 @@ void main() {
         }, onError: (Object _) {});
       }, onError: (Object _) {});
       addTearDown(() => server.close());
-      return (server, (c) => TlsConfig(clientCertificates: [c]));
+      return (
+        server,
+        (ClientCertificate c) => TlsConfig(clientCertificates: [c]),
+      );
     }
 
     HttpRequestSpec mtlsReq(int port, TlsConfig tls) => HttpRequestSpec(

@@ -140,8 +140,8 @@ void main() {
       'list': [
         {'k': 1, 'z': null},
         'x',
-        [],
-        {},
+        <Object?>[],
+        <String, Object?>{},
       ],
       'nested': {'b': false, 'a': 1.5},
     };

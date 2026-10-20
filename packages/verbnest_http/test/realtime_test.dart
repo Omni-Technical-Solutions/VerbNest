@@ -153,9 +153,7 @@ void main() {
         server.listen((req) async {
           seen.add(req.headers.value('last-event-id'));
           if (seen.length > 2) {
-            req.response
-              ..statusCode = 503
-              ..close();
+            unawaited((req.response..statusCode = 503).close());
             return;
           }
           req.response.headers.contentType = ContentType(

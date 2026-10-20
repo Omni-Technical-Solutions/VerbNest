@@ -58,7 +58,7 @@ void main() {
   test('PersistedQueryNotFound triggers one retry with the query', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => server.close(force: true));
-    final seen = <Map>[];
+    final seen = <Map<dynamic, dynamic>>[];
     server.listen((req) async {
       final m = jsonDecode(await utf8.decoder.bind(req).join()) as Map;
       seen.add(m);

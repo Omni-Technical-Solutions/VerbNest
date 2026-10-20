@@ -80,13 +80,23 @@ void _check(Object? v, Object? schema, String at, List<String> errors) {
   }
 }
 
-void _checkNumber(num v, Map schema, String at, List<String> errors) {
+void _checkNumber(
+  num v,
+  Map<dynamic, dynamic> schema,
+  String at,
+  List<String> errors,
+) {
   final min = schema['minimum'], max = schema['maximum'];
   if (min is num && v < min) errors.add('$at: $v is below minimum $min');
   if (max is num && v > max) errors.add('$at: $v is above maximum $max');
 }
 
-void _checkString(String v, Map schema, String at, List<String> errors) {
+void _checkString(
+  String v,
+  Map<dynamic, dynamic> schema,
+  String at,
+  List<String> errors,
+) {
   final min = schema['minLength'], max = schema['maxLength'];
   if (min is int && v.length < min) {
     errors.add('$at: shorter than $min characters');
@@ -105,7 +115,12 @@ void _checkString(String v, Map schema, String at, List<String> errors) {
   }
 }
 
-void _checkList(List v, Map schema, String at, List<String> errors) {
+void _checkList(
+  List<dynamic> v,
+  Map<dynamic, dynamic> schema,
+  String at,
+  List<String> errors,
+) {
   final min = schema['minItems'], max = schema['maxItems'];
   if (min is int && v.length < min) {
     errors.add('$at: fewer than $min items');
@@ -119,7 +134,12 @@ void _checkList(List v, Map schema, String at, List<String> errors) {
   }
 }
 
-void _checkMap(Map v, Map schema, String at, List<String> errors) {
+void _checkMap(
+  Map<dynamic, dynamic> v,
+  Map<dynamic, dynamic> schema,
+  String at,
+  List<String> errors,
+) {
   final required = schema['required'];
   if (required is List) {
     for (final r in required) {

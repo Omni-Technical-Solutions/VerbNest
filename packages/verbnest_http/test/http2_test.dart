@@ -71,7 +71,10 @@ void main() {
       final r = await engine.send(
         req('/echo', method: 'POST', body: utf8.encode('{"a":1}')),
       );
-      expect(utf8.decode(base64Decode(echoed(r)['bodyBase64'])), '{"a":1}');
+      expect(
+        utf8.decode(base64Decode(echoed(r)['bodyBase64'] as String)),
+        '{"a":1}',
+      );
       final names = [for (final h in echoed(r)['headers'] as List) h[0]];
       expect(names, contains('content-length'));
     });

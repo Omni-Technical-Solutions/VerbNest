@@ -145,11 +145,14 @@ class NetworkNotifier extends Notifier<NetworkConfig> {
         bypass: j['bypass'] as String? ?? '',
         useSystemProxy: j['useSystemProxy'] as bool? ?? false,
         cas: [
-          for (final c in (j['cas'] as List? ?? const []).cast<Map>())
+          for (final c
+              in (j['cas'] as List? ?? const []).cast<Map<dynamic, dynamic>>())
             CaEntry(c['name'] as String, bytes(c['pem'])),
         ],
         clientCerts: [
-          for (final c in (j['certs'] as List? ?? const []).cast<Map>())
+          for (final c
+              in (j['certs'] as List? ?? const [])
+                  .cast<Map<dynamic, dynamic>>())
             ClientCertEntry(
               id: c['id'] as String,
               pattern: c['pattern'] as String,

@@ -1,0 +1,6 @@
+include: ../analysis_options.yaml
+
+# Tests walk decoded JSON (`body['a']['b']`); the rule stays on for lib/.
+linter:
+  rules:
+    avoid_dynamic_calls: false

@@ -18,7 +18,7 @@ ResultTable sample() => tableFromJson([
     'note': 'a, "b"',
     'tags': ['x', 'y'],
   },
-  {'id': 2, 'name': 'Tom', 'age': 2.5, 'note': null, 'tags': []},
+  {'id': 2, 'name': 'Tom', 'age': 2.5, 'note': null, 'tags': <Object?>[]},
   {
     'id': 3,
     'name': 'Ann',

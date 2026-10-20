@@ -14,7 +14,7 @@ ResultTable pets() => tableFromJson([
     'owner': null,
     'tags': ['a', 'b'],
   },
-  {'id': 2, 'name': 'tom', 'age': 2.5, 'owner': 'Ann', 'tags': []},
+  {'id': 2, 'name': 'tom', 'age': 2.5, 'owner': 'Ann', 'tags': <Object?>[]},
   {
     'id': 3,
     'name': 'Ann',

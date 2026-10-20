@@ -193,7 +193,10 @@ subscription { y }
     });
 
     test('empty fields are not stored', () {
-      expect(const GraphqlBody().toJson(), {'mode': 'graphql', 'graphql': {}});
+      expect(const GraphqlBody().toJson(), {
+        'mode': 'graphql',
+        'graphql': <String, Object?>{},
+      });
     });
   });
 
@@ -409,7 +412,7 @@ subscription { y }
               'kind': 'OBJECT',
               'name': 'Query',
               'fields': [
-                {'name': 'f', 'args': [], 'type': ref},
+                {'name': 'f', 'args': <Object?>[], 'type': ref},
               ],
             },
           ],

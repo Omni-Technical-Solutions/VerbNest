@@ -309,7 +309,7 @@ List<TableSource> findTableSources(Object? root) {
   return out;
 }
 
-bool _isRecords(List list) {
+bool _isRecords(List<dynamic> list) {
   for (final e in list) {
     if (e != null) return e is Map || e is List;
   }
@@ -410,7 +410,11 @@ ResultTable? tableFromJson(
   );
 }
 
-ResultTable _fromObjects(List<Map> objects, bool flatten, String label) {
+ResultTable _fromObjects(
+  List<Map<dynamic, dynamic>> objects,
+  bool flatten,
+  String label,
+) {
   final names = <String>[];
   final index = <String, int>{};
   final records = <Map<String, Object?>>[];
