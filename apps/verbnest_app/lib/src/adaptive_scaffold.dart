@@ -1,5 +1,3 @@
-import 'package:flutter/gestures.dart' show kTertiaryButton;
-
 import 'widgets/ui/still_route.dart';
 
 import 'package:material_ui/material_ui.dart';
@@ -21,14 +19,13 @@ import 'package:verbnest_storage/verbnest_storage.dart';
 
 import 'state/tree_state.dart';
 import 'state/variables.dart';
-import 'theme.dart';
 import 'widgets/collections_sidebar.dart';
 import 'widgets/request_editor.dart';
+import 'widgets/scaffold_parts.dart';
 import 'widgets/status_bar.dart';
 import 'widgets/ui/still_nav.dart';
 import 'widgets/ui/toast.dart';
 import 'widgets/ui/ui.dart';
-import 'widgets/ui/still_tooltip.dart';
 
 /// The product name; it is not translated.
 const kAppName = 'VerbNest';
@@ -172,46 +169,14 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
 
   void _showShortcuts() {
     final l = context.l10n;
-    final rows = [
+    showShortcutsDialog(context, [
       (l.cmdNewRequest, _combo('N')),
       (l.cmdSend, _combo('↵')),
       (l.cmdSearch, _combo('⇧F')),
       (l.cmdToggleSidebar, _combo('\\')),
       (l.cmdCloseTab, _combo('W')),
       (l.cmdShortcuts, _combo('/')),
-    ];
-    showDialog<void>(
-      animationStyle: AnimationStyle.noAnimation,
-      context: context,
-      builder: (ctx) => AlertDialog(
-        key: const Key('shortcuts-dialog'),
-        title: Text(l.cmdShortcuts),
-        content: SizedBox(
-          width: 360,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final (title, keys) in rows)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(title)),
-                      Kbd(keys),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l.shortcutsClose),
-          ),
-        ],
-      ),
-    );
+    ]);
   }
 
   void _newRequest() {
@@ -398,43 +363,12 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
     );
   }
 
-  /// Material 3 permanent navigation drawer for large windows: the same four
-  /// destinations as the rail, with labels beside the icons and the app name.
-  Widget _navDrawer() {
-    return SizedBox(
-      key: const Key('nav-drawer'),
-      width: 240,
-      child: StillNavigationDrawer(
-        selectedIndex: _selected.index,
-        onDestinationSelected: _select,
-        destinations: _still(),
-        header: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Space.xl,
-            Space.lg,
-            Space.lg,
-            Space.md,
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(Radii.sm),
-                child: Image.asset(
-                  'assets/logo.png',
-                  width: 28,
-                  height: 28,
-                  errorBuilder: (_, _, _) =>
-                      const SizedBox(width: 28, height: 28),
-                ),
-              ),
-              const SizedBox(width: Space.md),
-              Text(kAppName, style: Theme.of(context).textTheme.titleMedium),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _navDrawer() => AppNavDrawer(
+    selectedIndex: _selected.index,
+    onSelect: _select,
+    destinations: _still(),
+    appName: kAppName,
+  );
 
   List<StillDestination> _still() => [
     for (final d in _Destination.values)
@@ -455,28 +389,13 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
   double _sidebarWidth = 280;
   static const _minSidebar = 200.0, _maxSidebar = 480.0;
 
-  /// Divider that doubles as a drag handle; double-click resets the width.
-  Widget _sidebarHandle() {
-    final line = Theme.of(context).colorScheme.outlineVariant;
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeColumn,
-      child: GestureDetector(
-        key: const Key('sidebar-handle'),
-        behavior: HitTestBehavior.opaque,
-        onDoubleTap: () => setState(() => _sidebarWidth = 280),
-        onHorizontalDragUpdate: (d) => setState(() {
-          final dx = Directionality.of(context) == TextDirection.rtl
-              ? -d.delta.dx
-              : d.delta.dx;
-          _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebar, _maxSidebar);
-        }),
-        child: SizedBox(
-          width: 7,
-          child: Center(child: Container(width: 1, color: line)),
-        ),
-      ),
-    );
-  }
+  Widget _sidebarHandle() => SidebarHandle(
+    onReset: () => setState(() => _sidebarWidth = 280),
+    onDrag: (dx) => setState(
+      () =>
+          _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebar, _maxSidebar),
+    ),
+  );
 
   bool _expanded = false;
 
@@ -491,38 +410,9 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
       );
     }
     ref.watch(workspaceVersionProvider);
-    final tabs = ref.watch(tabsProvider);
-    final repo = ref.read(repositoryProvider);
     return Column(
       children: [
-        SizedBox(
-          height: 40,
-          // Drag a tab to reorder; the drag starts at once (no long press) so
-          // it works with a mouse.
-          child: ReorderableListView(
-            scrollDirection: Axis.horizontal,
-            buildDefaultDragHandles: false,
-            proxyDecorator: (child, _, _) =>
-                Material(color: Colors.transparent, child: child),
-            onReorderItem: ref.read(tabsProvider.notifier).move,
-            children: [
-              for (final (i, id) in tabs.open.indexed)
-                ReorderableDragStartListener(
-                  key: Key('tab-$id'),
-                  index: i,
-                  child: _TabChip(
-                    title: repo.node(id).name,
-                    method: repo.node(id).method,
-                    selected: id == active,
-                    preview: id == tabs.preview,
-                    onTap: () => ref.read(tabsProvider.notifier).activate(id),
-                    onPin: () => ref.read(tabsProvider.notifier).pin(id),
-                    onClose: () => _closeTab(id),
-                  ),
-                ),
-            ],
-          ),
-        ),
+        TabStrip(onClose: _closeTab),
         const Divider(height: 1),
         Expanded(
           child: RequestEditor(key: ValueKey(active), requestId: active),
@@ -564,96 +454,5 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
       ),
       _Destination.collections => _activeRequest(),
     };
-  }
-}
-
-class _TabChip extends StatefulWidget {
-  const _TabChip({
-    required this.title,
-    required this.method,
-    required this.selected,
-    required this.preview,
-    required this.onTap,
-    required this.onPin,
-    required this.onClose,
-  });
-
-  final String title;
-  final String? method;
-  final bool selected;
-
-  /// A preview tab (italic) is replaced by the next single click.
-  final bool preview;
-  final VoidCallback onTap;
-  final VoidCallback onPin;
-  final VoidCallback onClose;
-
-  @override
-  State<_TabChip> createState() => _TabChipState();
-}
-
-class _TabChipState extends State<_TabChip> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final selected = widget.selected;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: Listener(
-        // Middle-click closes, like a browser tab.
-        onPointerDown: (e) {
-          if (e.buttons == kTertiaryButton) widget.onClose();
-        },
-        child: InkWell(
-          onTap: widget.onTap,
-          onDoubleTap: widget.onPin,
-          child: AnimatedContainer(
-            duration: Motion.of(context, Motion.base),
-            curve: Motion.curve,
-            padding: const EdgeInsetsDirectional.only(start: Space.md),
-            decoration: BoxDecoration(
-              color: selected
-                  ? scheme.primaryContainer.withValues(alpha: 0.3)
-                  : _hover
-                  ? scheme.onSurface.withValues(alpha: 0.05)
-                  : Colors.transparent,
-              border: Border(
-                bottom: BorderSide(
-                  width: 2,
-                  color: selected ? scheme.primary : Colors.transparent,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                if (widget.method != null) ...[
-                  MethodBadge(widget.method!, width: 34),
-                ],
-                Text(
-                  widget.title,
-                  style: TextStyle(
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                    fontStyle: widget.preview
-                        ? FontStyle.italic
-                        : FontStyle.normal,
-                  ),
-                ),
-                Opacity(
-                  opacity: selected || _hover ? 1 : 0.4,
-                  child: StillIconButton(
-                    tooltip: context.l10n.closeTab,
-                    icon: const Icon(Icons.close, size: 14),
-                    onPressed: widget.onClose,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

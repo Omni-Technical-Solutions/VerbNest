@@ -7,7 +7,6 @@ import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_http/verbnest_http.dart';
 import 'package:verbnest_runner/verbnest_runner.dart'
     show
-        HistoryRecorder,
         SecretHostNotApproved,
         evaluateAssertions,
         prepareRequest,
@@ -20,9 +19,9 @@ import '../scripting/script_engine.dart';
 import '../scripting/script_flow.dart';
 import '../scripting/script_io.dart';
 import 'browser_port.dart';
-import 'console_log.dart';
+import 'exchange_recorder.dart';
+import 'oauth_bearer.dart';
 import 'network_state.dart';
-import 'prefs.dart';
 import 'session.dart';
 import 'tree_state.dart';
 import 'settings_state.dart';
@@ -284,7 +283,7 @@ class EditorNotifier extends Notifier<EditorState> {
         item: item,
         resolver: resolver,
         defaults: defaults,
-        oauthToken: (auth) => _oauthToken(auth, resolver, defaults, token),
+        oauthToken: _bearer(resolver, defaults, token),
         secretHosts: SecretHosts(session.secrets, repo.workspaceId),
       );
       if (!force &&
@@ -359,7 +358,7 @@ class EditorNotifier extends Notifier<EditorState> {
         ),
         resolver: resolver,
         defaults: defaults,
-        oauthToken: (auth) => _oauthToken(auth, resolver, defaults, token),
+        oauthToken: _bearer(resolver, defaults, token),
         secretHosts: SecretHosts(session.secrets, repo.workspaceId),
       );
       final response = await sendPrepared(
@@ -404,8 +403,7 @@ class EditorNotifier extends Notifier<EditorState> {
         ),
         resolver: resolver,
         defaults: defaults,
-        oauthToken: (auth) =>
-            _oauthToken(auth, resolver, defaults, CancelToken()),
+        oauthToken: _bearer(resolver, defaults, CancelToken()),
         secretHosts: SecretHosts(session.secrets, repo.workspaceId),
       );
       final spec = prepared.spec;
@@ -490,131 +488,36 @@ class EditorNotifier extends Notifier<EditorState> {
     );
   }
 
-  /// A bearer token for [auth], from the cache or the token endpoint.
-  Future<Auth> _oauthToken(
-    OAuth2Auth auth,
+  /// A bearer token for an OAuth 2.0 auth, as [prepareRequest] asks for it.
+  Future<Auth> Function(OAuth2Auth) _bearer(
     VariableResolver resolver,
     HttpSettings defaults,
     CancelToken cancel,
-  ) async {
-    final resolved = auth.mapText((t) => resolver.resolve(t).value);
-    final cache = ref.read(oauthCacheProvider);
-    final engine = ref.read(engineProvider);
-    var token = cache.get(resolved);
-    if (token == null) {
-      final stale = cache.peek(resolved);
-      if (stale?.refreshToken != null) {
-        try {
-          token = await refreshOAuth2Token(
-            engine,
-            resolved,
-            stale!.refreshToken!,
-            cancel: cancel,
-            settings: defaults,
-          );
-        } on OAuth2Error {
-          // The refresh token was refused; sign in again below.
-        }
-      }
-      token ??= resolved.interactive
-          ? await authorizeInBrowser(
-              engine,
-              resolved,
-              openUrl: ref.read(browserOpenerProvider),
-              cancel: cancel,
-              settings: defaults,
-            )
-          : await fetchOAuth2Token(
-              engine,
-              resolved,
-              cancel: cancel,
-              settings: defaults,
-            );
-      cache.put(resolved, token);
-    }
-    return BearerAuth(token: token.accessToken);
-  }
+  ) =>
+      (auth) => oauthBearer(
+        engine: ref.read(engineProvider),
+        cache: ref.read(oauthCacheProvider),
+        openUrl: ref.read(browserOpenerProvider),
+        auth: auth,
+        resolver: resolver,
+        defaults: defaults,
+        cancel: cancel,
+      );
 
-  /// Stores the exchange in the console and in local history with secrets
-  /// masked (FR-HIS-001). A failure to record must never break sending.
   void _record(
     PreparedRequest p,
     String? envId, {
     HttpResponseRecord? response,
     String? error,
-  }) {
-    try {
-      final session = ref.read(sessionProvider);
-      final prefs = ref.read(prefsProvider);
-      ref
-          .read(consoleLogProvider.notifier)
-          .add(_consoleEntry(p, response, error));
-      final recorder = HistoryRecorder(
-        local: session.local,
-        workspaceId: session.repo.workspaceId,
-        environmentName: envId == null
-            ? null
-            : session.repo
-                  .environments()
-                  .where((e) => e.id == envId)
-                  .firstOrNull
-                  ?.name,
-        storeBodies: prefs.historyBodies,
-        maxEntries: prefs.historyMax,
-        maxAge: prefs.historyDays == 0
-            ? null
-            : Duration(days: prefs.historyDays),
-      );
-      recorder.record(
-        requestId: id,
-        item: state.item,
-        prepared: p,
-        response: response,
-        error: error,
-      );
-      if (recorder.lastError != null) {
-        ref
-            .read(consoleLogProvider.notifier)
-            .warnOnce(
-              'history',
-              ConsoleEntry(
-                at: DateTime.now(),
-                method: 'HISTORY',
-                url: '',
-                sentHead: '',
-                error: 'History could not be saved: ${recorder.lastError}',
-              ),
-            );
-      }
-      ref.read(historyTickProvider.notifier).bump();
-    } catch (_) {
-      // History is best-effort.
-    }
-  }
-
-  static ConsoleEntry _consoleEntry(
-    PreparedRequest p,
-    HttpResponseRecord? response,
-    String? error,
-  ) {
-    final spec = p.spec;
-    final url = p.masker.maskText(spec.url.toString());
-    return ConsoleEntry(
-      at: DateTime.now(),
-      method: spec.method,
-      url: url,
-      sentHead: response != null
-          ? p.masker.maskHead(response.sent.head)
-          : '${spec.method} $url',
-      status: response?.status,
-      ms: response?.timings.total.inMilliseconds,
-      responseHead: response == null
-          ? null
-          : '${response.httpVersion} ${response.status} ${response.reason}\n'
-                '${response.headers.map((h) => '${h.$1}: ${h.$2}').join('\n')}',
-      error: error,
-    );
-  }
+  }) => recordExchange(
+    ref,
+    requestId: id,
+    item: state.item,
+    prepared: p,
+    envId: envId,
+    response: response,
+    error: error,
+  );
 }
 
 final editorProvider =
