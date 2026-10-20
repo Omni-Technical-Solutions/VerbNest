@@ -204,50 +204,17 @@ class CookieJar {
 
   StoredCookie? _parse(Uri url, String header, DateTime now) {
     final parts = header.split(';');
-    final first = parts.first;
-    final eq = first.indexOf('=');
-    if (eq <= 0) return null;
-    final name = first.substring(0, eq).trim();
-    if (name.isEmpty) return null;
-    final value = first.substring(eq + 1).trim();
-    // Control characters would split the Cookie header or a log line, and
-    // browsers cap a cookie at 4096 bytes.
-    if (_control.hasMatch(name) ||
-        _control.hasMatch(value) ||
-        name.length + value.length > 4096) {
-      return null;
-    }
-
-    String? domainAttr;
-    String? pathAttr;
-    DateTime? expires;
-    int? maxAge;
-    var secure = false;
-    var httpOnly = false;
-    String? sameSite;
-    for (final raw in parts.skip(1)) {
-      final t = raw.trim();
-      if (t.isEmpty) continue;
-      final i = t.indexOf('=');
-      final key = (i == -1 ? t : t.substring(0, i)).trim().toLowerCase();
-      final val = i == -1 ? '' : t.substring(i + 1).trim();
-      switch (key) {
-        case 'domain':
-          domainAttr = val.toLowerCase().replaceFirst(RegExp(r'^\.'), '');
-        case 'path':
-          pathAttr = val;
-        case 'expires':
-          expires = parseCookieDate(val);
-        case 'max-age':
-          maxAge = int.tryParse(val);
-        case 'secure':
-          secure = true;
-        case 'httponly':
-          httpOnly = true;
-        case 'samesite':
-          sameSite = val;
-      }
-    }
+    final pair = _nameValue(parts.first);
+    if (pair == null) return null;
+    final (name, value) = pair;
+    final attrs = _Attributes.read(parts.skip(1));
+    final domainAttr = attrs.domain;
+    final pathAttr = attrs.path;
+    final expires = attrs.expires;
+    final maxAge = attrs.maxAge;
+    final secure = attrs.secure;
+    final httpOnly = attrs.httpOnly;
+    final sameSite = attrs.sameSite;
 
     final host = url.host.toLowerCase();
     if (host.isEmpty) return null;
@@ -280,6 +247,24 @@ class CookieJar {
       sameSite: sameSite,
       createdAt: now,
     );
+  }
+
+  /// The name and value of the first `name=value` part, or null when it is
+  /// not a usable cookie.
+  static (String, String)? _nameValue(String first) {
+    final eq = first.indexOf('=');
+    if (eq <= 0) return null;
+    final name = first.substring(0, eq).trim();
+    if (name.isEmpty) return null;
+    final value = first.substring(eq + 1).trim();
+    // Control characters would split the Cookie header or a log line, and
+    // browsers cap a cookie at 4096 bytes.
+    if (_control.hasMatch(name) ||
+        _control.hasMatch(value) ||
+        name.length + value.length > 4096) {
+      return null;
+    }
+    return (name, value);
   }
 
   /// The cookie's domain and whether it is host-only, or null when [host] may
@@ -397,4 +382,45 @@ DateTime? parseCookieDate(String text) {
     int.parse(time[2]!),
     int.parse(time[3]!),
   );
+}
+
+/// The attributes after the first part of a Set-Cookie header.
+class _Attributes {
+  String? domain;
+  String? path;
+  DateTime? expires;
+  int? maxAge;
+  bool secure = false;
+  bool httpOnly = false;
+  String? sameSite;
+
+  _Attributes.read(Iterable<String> parts) {
+    for (final raw in parts) {
+      final t = raw.trim();
+      if (t.isEmpty) continue;
+      final i = t.indexOf('=');
+      final key = (i == -1 ? t : t.substring(0, i)).trim().toLowerCase();
+      final val = i == -1 ? '' : t.substring(i + 1).trim();
+      _set(key, val);
+    }
+  }
+
+  void _set(String key, String val) {
+    switch (key) {
+      case 'domain':
+        domain = val.toLowerCase().replaceFirst(RegExp(r'^\.'), '');
+      case 'path':
+        path = val;
+      case 'expires':
+        expires = parseCookieDate(val);
+      case 'max-age':
+        maxAge = int.tryParse(val);
+      case 'secure':
+        secure = true;
+      case 'httponly':
+        httpOnly = true;
+      case 'samesite':
+        sameSite = val;
+    }
+  }
 }

@@ -1,3 +1,2 @@
 # Known over-limit code (see scripts/complexity_report.py). Each entry is
 # `kind path::name size`; shrink the code, then delete the line.
-function apps/verbnest_app/lib/src/state/js_syntax.dart::_isIdStart 102  # 102 lines, 24 branches

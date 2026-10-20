@@ -72,24 +72,12 @@ class _CurlParser {
       if (url != w) warnings.add('Ignored extra argument "$w"');
       return i + 1;
     }
-    String flag;
-    String? inline;
-    if (isLong) {
-      final eq = w.indexOf('=');
-      flag = eq == -1 ? w.substring(2) : w.substring(2, eq);
-      inline = eq == -1 ? null : w.substring(eq + 1);
-    } else {
-      flag = w.substring(1);
-    }
+    var (flag, inline) = _splitFlag(w, isLong);
 
     // Short flags may be bundled (-sSL) or carry their value (-XPOST).
     if (!isLong && flag.length > 1) {
       if (!_takesArg.contains(flag[0])) {
-        for (final ch in flag.split('')) {
-          if (!_switchOption(ch) && !_noArg.contains(ch)) {
-            warnings.add('Ignored flag -$ch');
-          }
-        }
+        _bundledSwitches(flag);
         return i + 1;
       }
       inline = flag.substring(1);
@@ -111,6 +99,23 @@ class _CurlParser {
     }
     warnings.add('Ignored unknown option "$w"');
     return i + 1;
+  }
+
+  /// The flag name of word [w] and the value written after `=`, if any.
+  (String, String?) _splitFlag(String w, bool isLong) {
+    if (!isLong) return (w.substring(1), null);
+    final eq = w.indexOf('=');
+    return eq == -1
+        ? (w.substring(2), null)
+        : (w.substring(2, eq), w.substring(eq + 1));
+  }
+
+  void _bundledSwitches(String flags) {
+    for (final ch in flags.split('')) {
+      if (!_switchOption(ch) && !_noArg.contains(ch)) {
+        warnings.add('Ignored flag -$ch');
+      }
+    }
   }
 
   bool _switchOption(String flag) {

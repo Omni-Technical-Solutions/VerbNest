@@ -36,23 +36,12 @@ GqlLexed lexGraphql(String src) {
   final out = <GqlToken>[];
   var i = 0;
   final n = src.length;
-  bool isStart(int c) =>
-      (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95;
-  bool isPart(int c) => isStart(c) || (c >= 48 && c <= 57);
   while (i < n) {
     final c = src.codeUnitAt(i);
-    if (c == 32 || c == 9 || c == 10 || c == 13 || c == 44 || c == 0xFEFF) {
+    if (_isBlank(c)) {
       i++;
     } else if (c == 35) {
-      while (i < n && src.codeUnitAt(i) != 10) {
-        i++;
-      }
-    } else if (src.startsWith('...', i)) {
-      out.add(GqlToken(GqlTok.spread, '...', i, i + 3));
-      i += 3;
-    } else if (_punct.contains(src[i])) {
-      out.add(GqlToken(GqlTok.punct, src[i], i, i + 1));
-      i++;
+      i = _skipComment(src, i);
     } else if (c == 34) {
       final tok = src.startsWith('"""', i)
           ? _lexBlockString(src, i)
@@ -60,32 +49,61 @@ GqlLexed lexGraphql(String src) {
       if (tok == null) return GqlLexed(out, openString: true);
       out.add(tok);
       i = tok.end;
-    } else if (c == 36) {
-      var j = i + 1;
-      while (j < n && isPart(src.codeUnitAt(j))) {
-        j++;
-      }
-      out.add(GqlToken(GqlTok.variable, src.substring(i, j), i, j));
-      i = j;
-    } else if (isStart(c)) {
-      var j = i + 1;
-      while (j < n && isPart(src.codeUnitAt(j))) {
-        j++;
-      }
-      out.add(GqlToken(GqlTok.name, src.substring(i, j), i, j));
-      i = j;
-    } else if ((c >= 48 && c <= 57) || c == 45) {
-      var j = i + 1;
-      while (j < n && RegExp(r'[0-9.eE+\-]').hasMatch(src[j])) {
-        j++;
-      }
-      out.add(GqlToken(GqlTok.number, src.substring(i, j), i, j));
-      i = j;
     } else {
-      i++;
+      final tok = _lexSimple(src, i, c);
+      if (tok == null) {
+        i++;
+      } else {
+        out.add(tok);
+        i = tok.end;
+      }
     }
   }
   return GqlLexed(out);
+}
+
+bool _isBlank(int c) =>
+    c == 32 || c == 9 || c == 10 || c == 13 || c == 44 || c == 0xFEFF;
+
+bool _isNameStart(int c) =>
+    (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95;
+
+bool _isNamePart(int c) => _isNameStart(c) || (c >= 48 && c <= 57);
+
+int _skipComment(String src, int i) {
+  while (i < src.length && src.codeUnitAt(i) != 10) {
+    i++;
+  }
+  return i;
+}
+
+final _numberChar = RegExp(r'[0-9.eE+\-]');
+
+/// The spread, punctuation, variable, name or number starting at [i], or null
+/// for a character that is skipped.
+GqlToken? _lexSimple(String src, int i, int c) {
+  if (src.startsWith('...', i)) {
+    return GqlToken(GqlTok.spread, '...', i, i + 3);
+  }
+  if (_punct.contains(src[i])) return GqlToken(GqlTok.punct, src[i], i, i + 1);
+  if (c == 36) return _lexRun(src, i, GqlTok.variable);
+  if (_isNameStart(c)) return _lexRun(src, i, GqlTok.name);
+  if ((c >= 48 && c <= 57) || c == 45) {
+    var j = i + 1;
+    while (j < src.length && _numberChar.hasMatch(src[j])) {
+      j++;
+    }
+    return GqlToken(GqlTok.number, src.substring(i, j), i, j);
+  }
+  return null;
+}
+
+GqlToken _lexRun(String src, int i, GqlTok kind) {
+  var j = i + 1;
+  while (j < src.length && _isNamePart(src.codeUnitAt(j))) {
+    j++;
+  }
+  return GqlToken(kind, src.substring(i, j), i, j);
 }
 
 /// A `"""` block string starting at [start], or null if it never closes.

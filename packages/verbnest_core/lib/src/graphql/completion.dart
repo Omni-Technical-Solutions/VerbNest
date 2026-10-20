@@ -24,6 +24,12 @@ class GqlCompletion {
   final List<GqlSuggestion> items;
 }
 
+bool _isWordChar(int c) =>
+    (c >= 65 && c <= 90) ||
+    (c >= 97 && c <= 122) ||
+    (c >= 48 && c <= 57) ||
+    c == 95;
+
 /// Suggestions for the caret at [offset] in [query] (FR-GQL-002): field names
 /// inside a selection set, argument names inside `( … )`. Returns null when
 /// nothing sensible applies (inside a string, no schema match, a value
@@ -32,8 +38,7 @@ GqlCompletion? graphqlComplete(GraphqlSchema schema, String query, int offset) {
   if (offset < 0 || offset > query.length) return null;
   final head = query.substring(0, offset);
   var prefixStart = offset;
-  while (prefixStart > 0 &&
-      RegExp(r'[A-Za-z0-9_]').hasMatch(head[prefixStart - 1])) {
+  while (prefixStart > 0 && _isWordChar(head.codeUnitAt(prefixStart - 1))) {
     prefixStart--;
   }
   final prefix = head.substring(prefixStart);
@@ -58,77 +63,90 @@ class _Scan {
 }
 
 _Scan _scan(GraphqlSchema schema, List<GqlToken> tokens) {
+  final scanner = _Scanner(schema);
+  for (final t in tokens) {
+    scanner.feed(t);
+  }
+  return _Scan(scanner.stack, scanner.parens, scanner.prev);
+}
+
+/// Walks the tokens before the caret, tracking the open braces and parens.
+class _Scanner {
+  _Scanner(this.schema);
+
+  final GraphqlSchema schema;
   final stack = <GqlType?>[];
   final parens = <GqlField?>[];
-  String? opKeyword;
-  String? lastName; // last name seen at the current level, before `{` or `(`
-  String? inlineOn; // set after `... on` or `fragment X on`
-  var sawOn = false;
   GqlToken? prev;
-  var fragmentDef = false;
+  String? _opKeyword;
+  String? _lastName; // last name seen at the current level, before `{` or `(`
+  String? _inlineOn; // set after `... on` or `fragment X on`
+  bool _sawOn = false;
+  bool _fragmentDef = false;
 
-  GqlType? top() => stack.isEmpty ? null : stack.last;
+  GqlType? get _top => stack.isEmpty ? null : stack.last;
 
-  for (final t in tokens) {
+  GqlField? _fieldNamed(String? name) =>
+      _top?.fields.where((f) => f.name == name).firstOrNull;
+
+  void feed(GqlToken t) {
     if (parens.isNotEmpty) {
       if (t.isPunct('(')) parens.add(null);
       if (t.isPunct(')')) parens.removeLast();
-      prev = t;
-      continue;
-    }
-    if (t.kind == GqlTok.name) {
-      if (stack.isEmpty &&
-          (t.text == 'query' ||
-              t.text == 'mutation' ||
-              t.text == 'subscription')) {
-        opKeyword = t.text;
-        fragmentDef = false;
-      } else if (stack.isEmpty && t.text == 'fragment') {
-        fragmentDef = true;
-      } else if (t.text == 'on' &&
-          (prev?.kind == GqlTok.spread || fragmentDef)) {
-        sawOn = true;
-      } else if (sawOn) {
-        inlineOn = t.text;
-        sawOn = false;
-      } else {
-        lastName = t.text;
-      }
+    } else if (t.kind == GqlTok.name) {
+      _name(t.text);
     } else if (t.isPunct('(')) {
-      final field = top()?.fields.where((f) => f.name == lastName).firstOrNull;
-      parens.add(field);
+      parens.add(_fieldNamed(_lastName));
     } else if (t.isPunct('{')) {
-      GqlType? next;
-      if (stack.isEmpty) {
-        if (inlineOn != null) {
-          next = schema.type(inlineOn);
-        } else {
-          next = schema.type(switch (opKeyword) {
-            'mutation' => schema.mutationType ?? '',
-            'subscription' => schema.subscriptionType ?? '',
-            _ => schema.queryType,
-          });
-        }
-      } else if (inlineOn != null) {
-        next = schema.type(inlineOn);
-      } else if (prev?.kind == GqlTok.spread) {
-        next = top();
-      } else {
-        final f = top()?.fields.where((f) => f.name == lastName).firstOrNull;
-        next = f == null ? null : schema.type(f.namedType);
-      }
-      stack.add(next);
-      lastName = null;
-      inlineOn = null;
-      opKeyword = null;
-      fragmentDef = false;
+      _openBrace();
     } else if (t.isPunct('}')) {
       if (stack.isNotEmpty) stack.removeLast();
-      lastName = null;
+      _lastName = null;
     }
     prev = t;
   }
-  return _Scan(stack, parens, prev);
+
+  void _name(String text) {
+    if (stack.isEmpty &&
+        (text == 'query' || text == 'mutation' || text == 'subscription')) {
+      _opKeyword = text;
+      _fragmentDef = false;
+    } else if (stack.isEmpty && text == 'fragment') {
+      _fragmentDef = true;
+    } else if (text == 'on' && (prev?.kind == GqlTok.spread || _fragmentDef)) {
+      _sawOn = true;
+    } else if (_sawOn) {
+      _inlineOn = text;
+      _sawOn = false;
+    } else {
+      _lastName = text;
+    }
+  }
+
+  /// The type the selection set that opens now belongs to.
+  GqlType? _nextType() {
+    final on = _inlineOn;
+    if (stack.isEmpty) {
+      if (on != null) return schema.type(on);
+      return schema.type(switch (_opKeyword) {
+        'mutation' => schema.mutationType ?? '',
+        'subscription' => schema.subscriptionType ?? '',
+        _ => schema.queryType,
+      });
+    }
+    if (on != null) return schema.type(on);
+    if (prev?.kind == GqlTok.spread) return _top;
+    final f = _fieldNamed(_lastName);
+    return f == null ? null : schema.type(f.namedType);
+  }
+
+  void _openBrace() {
+    stack.add(_nextType());
+    _lastName = null;
+    _inlineOn = null;
+    _opKeyword = null;
+    _fragmentDef = false;
+  }
 }
 
 GqlCompletion? _suggest(

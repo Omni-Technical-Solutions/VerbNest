@@ -34,4 +34,21 @@ void main() {
     expect(r.caret, r.text.length);
     expect(scriptCompletions('p'), isEmpty);
   });
+
+  test('escapes, line breaks and template literals', () {
+    // An escaped quote does not end the string.
+    expect(tokenizeJs(r"'a\'b' x").single.end, 6);
+    // A plain string stops at the line break, a template literal does not.
+    expect(tokenizeJs("'ab\ncd'").first.end, 3);
+    expect(tokenizeJs('`ab\ncd`').single.end, 7);
+    // Numbers take their suffix and decimals.
+    expect(tokenizeJs('1.5e3n').single.end, 6);
+    // A line comment stops before the line break.
+    final t = tokenizeJs('// a\nlet');
+    expect(
+      [for (final x in t) x.kind],
+      [JsTokenKind.comment, JsTokenKind.keyword],
+    );
+    expect(t.first.end, 4);
+  });
 }

@@ -33,57 +33,74 @@ List<JsToken> tokenizeJs(String s) {
   var i = 0;
   while (i < s.length) {
     final c = s.codeUnitAt(i);
-    if (c == 47 && i + 1 < s.length && s.codeUnitAt(i + 1) == 47) {
-      var j = s.indexOf('\n', i);
-      if (j == -1) j = s.length;
-      out.add(JsToken(JsTokenKind.comment, i, j));
-      i = j;
-    } else if (c == 47 && i + 1 < s.length && s.codeUnitAt(i + 1) == 42) {
+    final next = i + 1 < s.length ? s.codeUnitAt(i + 1) : -1;
+    if (c == 47 && next == 47) {
+      i = _add(out, JsTokenKind.comment, i, _lineEnd(s, i));
+    } else if (c == 47 && next == 42) {
       final j = s.indexOf('*/', i + 2);
-      final end = j == -1 ? s.length : j + 2;
-      out.add(JsToken(JsTokenKind.comment, i, end));
-      i = end;
+      i = _add(out, JsTokenKind.comment, i, j == -1 ? s.length : j + 2);
     } else if (c == 34 || c == 39 || c == 96) {
-      var j = i + 1;
-      while (j < s.length && s.codeUnitAt(j) != c) {
-        if (s.codeUnitAt(j) == 92) j++;
-        if (c != 96 && j < s.length && s.codeUnitAt(j) == 10) break;
-        j++;
-      }
-      final end = j < s.length && s.codeUnitAt(j) == c
-          ? j + 1
-          : j.clamp(0, s.length);
-      out.add(JsToken(JsTokenKind.string, i, end));
-      i = end;
+      i = _add(out, JsTokenKind.string, i, _stringEnd(s, i, c));
     } else if (_isDigit(c)) {
-      var j = i + 1;
-      while (j < s.length &&
-          (_isDigit(s.codeUnitAt(j)) ||
-              s.codeUnitAt(j) == 46 ||
-              _isIdStart(s.codeUnitAt(j)))) {
-        j++;
-      }
-      out.add(JsToken(JsTokenKind.number, i, j));
-      i = j;
+      i = _add(out, JsTokenKind.number, i, _numberEnd(s, i));
     } else if (_isIdStart(c)) {
-      var j = i + 1;
-      while (j < s.length &&
-          (_isIdStart(s.codeUnitAt(j)) || _isDigit(s.codeUnitAt(j)))) {
-        j++;
-      }
-      final word = s.substring(i, j);
-      final afterDot = i > 0 && s.codeUnitAt(i - 1) == 46;
-      if (!afterDot && (word == 'pm' || word == 'console')) {
-        out.add(JsToken(JsTokenKind.api, i, j));
-      } else if (!afterDot && _keywords.contains(word)) {
-        out.add(JsToken(JsTokenKind.keyword, i, j));
-      }
-      i = j;
+      i = _word(s, i, out);
     } else {
       i++;
     }
   }
   return out;
+}
+
+int _add(List<JsToken> out, JsTokenKind kind, int start, int end) {
+  out.add(JsToken(kind, start, end));
+  return end;
+}
+
+int _lineEnd(String s, int i) {
+  final j = s.indexOf('\n', i);
+  return j == -1 ? s.length : j;
+}
+
+/// The end of the string that opens at [i] with quote [q]. A quote or
+/// backslash ends or escapes; only a template literal may span lines.
+int _stringEnd(String s, int i, int q) {
+  var j = i + 1;
+  while (j < s.length && s.codeUnitAt(j) != q) {
+    if (s.codeUnitAt(j) == 92) j++;
+    if (q != 96 && j < s.length && s.codeUnitAt(j) == 10) break;
+    j++;
+  }
+  return j < s.length && s.codeUnitAt(j) == q ? j + 1 : j.clamp(0, s.length);
+}
+
+int _numberEnd(String s, int i) {
+  var j = i + 1;
+  while (j < s.length) {
+    final c = s.codeUnitAt(j);
+    if (!_isDigit(c) && c != 46 && !_isIdStart(c)) break;
+    j++;
+  }
+  return j;
+}
+
+/// Adds the keyword or API token for the word at [i] (if it is one) and
+/// returns where the word ends.
+int _word(String s, int i, List<JsToken> out) {
+  var j = i + 1;
+  while (j < s.length) {
+    final c = s.codeUnitAt(j);
+    if (!_isIdStart(c) && !_isDigit(c)) break;
+    j++;
+  }
+  final word = s.substring(i, j);
+  final afterDot = i > 0 && s.codeUnitAt(i - 1) == 46;
+  if (!afterDot && (word == 'pm' || word == 'console')) {
+    out.add(JsToken(JsTokenKind.api, i, j));
+  } else if (!afterDot && _keywords.contains(word)) {
+    out.add(JsToken(JsTokenKind.keyword, i, j));
+  }
+  return j;
 }
 
 /// The members VerbNest scripts can use, for completion.
