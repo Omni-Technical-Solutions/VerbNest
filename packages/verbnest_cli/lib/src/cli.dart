@@ -239,6 +239,13 @@ NodeInfo? _findContainer(WorkspaceRepository repo, String spec) {
   return current;
 }
 
+/// A bad option or input: printed to stderr, exit code 2.
+class _UsageError implements Exception {
+  _UsageError(this.message);
+
+  final String message;
+}
+
 Future<int> _run(
   ArgResults r,
   WorkspaceRepository repo,
@@ -247,45 +254,120 @@ Future<int> _run(
   Map<String, String>? environment,
   SecretVault? vault,
 ) async {
+  LocalStore? historyDb;
+  try {
+    final container = _pickContainer(r, repo);
+    final (envId, envName) = _pickEnvironment(r, repo);
+    final overrides = _variableOverrides(r, environment);
+    final data = _loadData(r);
+    final (iterations, delay) = _loopSettings(r);
+    final ids = [for (final n in requestsUnder(repo, container.id)) n.id];
+    if (ids.isEmpty) throw _UsageError('"${container.name}" has no requests.');
+    final defaults = _httpDefaults(r, repo, err);
+    final secrets = await _openSecrets(r, repo, vault);
+    HistoryRecorder? recorder;
+    final historyPath = (r['history'] as String?) ?? _historyEnv(environment);
+    if (historyPath != null && historyPath.isNotEmpty) {
+      historyDb = _openHistory(historyPath);
+      recorder = HistoryRecorder(
+        local: historyDb,
+        workspaceId: repo.workspaceId,
+        environmentName: envName,
+        storeBodies: r['history-bodies'] as bool,
+      );
+    }
+    final sender = HeadlessSender(
+      repo: repo,
+      secrets: secrets,
+      secretHostFlags: _secretHostFlags(r),
+      history: recorder,
+      engine: HttpEngine(cookieJar: CookieJar()),
+      defaults: defaults,
+      envId: envId,
+      overrides: overrides,
+      scripts: await _scriptEngine(r),
+    );
+    final reporter = r['reporter'] as String;
+    final live = reporter == 'cli' && r['out'] == null;
+    final printed = <RunEntry>{};
+    final report = await executeRun(
+      config: RunConfig(
+        name: container.name,
+        requestIds: ids,
+        iterations: iterations,
+        delay: Duration(milliseconds: delay),
+        stopOnFailure: r['bail'] as bool,
+        data: data,
+      ),
+      repo: repo,
+      step: sender.step,
+      environment: envName,
+      onProgress: live
+          ? (p) {
+              for (final e in p.entries) {
+                if (printed.add(e)) out.writeln(_line(e, p.total > 1));
+              }
+            }
+          : null,
+    );
+    if (sender.scriptsSkipped.isNotEmpty) {
+      err.writeln(
+        'Scripts were not run (no JavaScript runtime; see --js-runtime) for: '
+        '${sender.scriptsSkipped.join(', ')}',
+      );
+    }
+    _writeReport(report, reporter, live, r['out'] as String?, out);
+    return report.ok && !report.stoppedEarly ? 0 : 1;
+  } on _UsageError catch (e) {
+    err.writeln(e.message);
+    return 2;
+  } finally {
+    historyDb?.close();
+  }
+}
+
+/// The collection or folder to run: `--collection`, or the only one.
+NodeInfo _pickContainer(ArgResults r, WorkspaceRepository repo) {
   final spec = r['collection'] as String?;
-  final NodeInfo? container;
   if (spec == null) {
     final roots = repo.children(null).where((n) => n.isContainer).toList();
     if (roots.length != 1) {
-      err.writeln(
+      throw _UsageError(
         roots.isEmpty
             ? 'The workspace has no collections.'
             : 'Several collections; pick one with --collection: '
                   '${roots.map((n) => n.name).join(', ')}',
       );
-      return 2;
     }
-    container = roots.single;
-  } else {
-    container = _findContainer(repo, spec);
-    if (container == null) {
-      err.writeln('No collection or folder "$spec".');
-      return 2;
-    }
+    return roots.single;
   }
+  return _findContainer(repo, spec) ??
+      (throw _UsageError('No collection or folder "$spec".'));
+}
 
+/// The environment to use (`--env`, else the workspace's default) and its name.
+(String?, String?) _pickEnvironment(ArgResults r, WorkspaceRepository repo) {
   final envSpec = r['env'] as String?;
-  String? envId = repo.defaultEnvironmentId;
+  var envId = repo.defaultEnvironmentId;
   if (envSpec != null) {
     envId = repo
         .environments()
         .where((e) => e.id == envSpec || e.name == envSpec)
         .firstOrNull
         ?.id;
-    if (envId == null) {
-      err.writeln('No environment "$envSpec".');
-      return 2;
-    }
+    if (envId == null) throw _UsageError('No environment "$envSpec".');
   }
   final envName = envId == null
       ? null
       : repo.environments().where((e) => e.id == envId).firstOrNull?.name;
+  return (envId, envName);
+}
 
+/// Variables from the environment (`VERBNEST_VAR_*`) and `--var name=value`.
+Map<String, String> _variableOverrides(
+  ArgResults r,
+  Map<String, String>? environment,
+) {
   // POSTIT_VAR_ is the name from before the rename to Verbnest; the new one
   // wins when both are set.
   final env = environment ?? Platform.environment;
@@ -299,42 +381,35 @@ Future<int> _run(
   };
   for (final v in r['var'] as List<String>) {
     final i = v.indexOf('=');
-    if (i <= 0) {
-      err.writeln('--var expects name=value, got "$v".');
-      return 2;
-    }
+    if (i <= 0) throw _UsageError('--var expects name=value, got "$v".');
     overrides[v.substring(0, i)] = v.substring(i + 1);
   }
+  return overrides;
+}
 
-  var data = <DataRow>[];
+List<DataRow> _loadData(ArgResults r) {
   final dataPath = r['data'] as String?;
-  if (dataPath != null) {
-    try {
-      data = parseDataFile(
-        File(dataPath).readAsStringSync(),
-        fileName: dataPath,
-      );
-    } on FormatException catch (e) {
-      err.writeln('Data file: ${e.message}');
-      return 2;
-    } on FileSystemException catch (e) {
-      err.writeln('Data file: ${e.message}');
-      return 2;
-    }
+  if (dataPath == null) return <DataRow>[];
+  try {
+    return parseDataFile(File(dataPath).readAsStringSync(), fileName: dataPath);
+  } on FormatException catch (e) {
+    throw _UsageError('Data file: ${e.message}');
+  } on FileSystemException catch (e) {
+    throw _UsageError('Data file: ${e.message}');
   }
+}
+
+(int, int) _loopSettings(ArgResults r) {
   final iterations = int.tryParse(r['iterations'] as String);
   final delay = int.tryParse(r['delay'] as String);
   if (iterations == null || iterations < 1 || delay == null || delay < 0) {
-    err.writeln('--iterations must be 1 or more and --delay 0 or more.');
-    return 2;
+    throw _UsageError('--iterations must be 1 or more and --delay 0 or more.');
   }
+  return (iterations, delay);
+}
 
-  final ids = [for (final n in requestsUnder(repo, container.id)) n.id];
-  if (ids.isEmpty) {
-    err.writeln('"${container.name}" has no requests.');
-    return 2;
-  }
-
+/// The workspace's HTTP settings, with `--insecure` applied.
+HttpSettings _httpDefaults(ArgResults r, WorkspaceRepository repo, IOSink err) {
   final s = repo.settings;
   const d = HttpSettings();
   if (!(r['insecure'] as bool) && s['verifyTls'] == false) {
@@ -342,7 +417,7 @@ Future<int> _run(
       'Warning: this workspace turns off TLS certificate verification.',
     );
   }
-  final defaults = HttpSettings(
+  return HttpSettings(
     timeout: Duration(
       milliseconds: s['timeoutMs'] as int? ?? d.timeout.inMilliseconds,
     ),
@@ -353,102 +428,65 @@ Future<int> _run(
     maxRedirects: s['maxRedirects'] as int? ?? d.maxRedirects,
     useSystemProxy: true,
   );
-  SecretStore? secrets;
-  if (r['vault'] as bool) {
-    try {
-      secrets = await VaultSecretStore.load(
-        vault ?? SystemSecretVault(),
-        repo.workspaceId,
-      );
-    } on UnsupportedError catch (e) {
-      err.writeln('--vault: ${e.message}');
-      return 2;
-    }
-  }
+}
 
-  final historyPath = (r['history'] as String?) ?? _historyEnv(environment);
-  LocalStore? historyDb;
-  HistoryRecorder? recorder;
-  if (historyPath != null && historyPath.isNotEmpty) {
-    try {
-      historyDb = LocalStore.open(historyPath);
-    } on Object catch (e) {
-      err.writeln('Cannot open history database: $e');
-      return 2;
-    }
-    recorder = HistoryRecorder(
-      local: historyDb,
-      workspaceId: repo.workspaceId,
-      environmentName: envName,
-      storeBodies: r['history-bodies'] as bool,
+Future<SecretStore?> _openSecrets(
+  ArgResults r,
+  WorkspaceRepository repo,
+  SecretVault? vault,
+) async {
+  if (!(r['vault'] as bool)) return null;
+  try {
+    return await VaultSecretStore.load(
+      vault ?? SystemSecretVault(),
+      repo.workspaceId,
     );
+  } on UnsupportedError catch (e) {
+    throw _UsageError('--vault: ${e.message}');
   }
-  final secretHostFlags = <String, Set<String>>{};
+}
+
+LocalStore _openHistory(String path) {
+  try {
+    return LocalStore.open(path);
+  } on Object catch (e) {
+    throw _UsageError('Cannot open history database: $e');
+  }
+}
+
+/// `--allow-secret-host NAME=HOST`, as a map from variable name to hosts.
+Map<String, Set<String>> _secretHostFlags(ArgResults r) {
+  final flags = <String, Set<String>>{};
   for (final entry in r['allow-secret-host'] as List<String>) {
     final eq = entry.indexOf('=');
     if (eq < 1 || eq == entry.length - 1) {
-      err.writeln('--allow-secret-host expects NAME=HOST, got "$entry".');
-      return 2;
+      throw _UsageError('--allow-secret-host expects NAME=HOST, got "$entry".');
     }
-    (secretHostFlags[entry.substring(0, eq)] ??= {}).add(
+    (flags[entry.substring(0, eq)] ??= {}).add(
       entry.substring(eq + 1).toLowerCase(),
     );
   }
-  final sender = HeadlessSender(
-    repo: repo,
-    secrets: secrets,
-    secretHostFlags: secretHostFlags,
-    history: recorder,
-    engine: HttpEngine(cookieJar: CookieJar()),
-    defaults: defaults,
-    envId: envId,
-    overrides: overrides,
-    scripts: await _scriptEngine(r),
-  );
-  final reporter = r['reporter'] as String;
-  final live = reporter == 'cli' && r['out'] == null;
-  final printed = <RunEntry>{};
-  final report = await executeRun(
-    config: RunConfig(
-      name: container.name,
-      requestIds: ids,
-      iterations: iterations,
-      delay: Duration(milliseconds: delay),
-      stopOnFailure: r['bail'] as bool,
-      data: data,
-    ),
-    repo: repo,
-    step: sender.step,
-    environment: envName,
-    onProgress: live
-        ? (p) {
-            for (final e in p.entries) {
-              if (printed.add(e)) out.writeln(_line(e, p.total > 1));
-            }
-          }
-        : null,
-  );
+  return flags;
+}
 
-  historyDb?.close();
-  if (sender.scriptsSkipped.isNotEmpty) {
-    err.writeln(
-      'Scripts were not run (no JavaScript runtime; see --js-runtime) for: '
-      '${sender.scriptsSkipped.join(', ')}',
-    );
-  }
+void _writeReport(
+  RunReport report,
+  String reporter,
+  bool live,
+  String? file,
+  IOSink out,
+) {
   final text = switch (reporter) {
     'json' => report.toJsonText(),
     'junit' => report.toJUnit(),
     'html' => report.toHtml(),
     _ => live ? _summary(report) : '${_all(report)}\n${_summary(report)}',
   };
-  final file = r['out'] as String?;
   if (file != null) {
     File(file).writeAsStringSync(text);
   } else {
     out.writeln(text);
   }
-  return report.ok && !report.stoppedEarly ? 0 : 1;
 }
 
 String _line(RunEntry e, bool showIteration) {
