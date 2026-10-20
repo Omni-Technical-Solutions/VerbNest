@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:typed_data';
 
 import 'proxy.dart';
@@ -47,8 +48,16 @@ enum HttpVersionPref {
 }
 
 /// Largest response body read from the wire, and the largest after
-/// decompression.
-const maxBodyBytes = 512 * 1024 * 1024;
+/// decompression, on a computer and on a phone or tablet (which the operating
+/// system ends the app for long before). Bodies are held in memory, then
+/// formatted and searched, so a hostile or mistaken server must not be able to
+/// ask for more (security review S4).
+const desktopMaxBodyBytes = 256 * 1024 * 1024;
+const mobileMaxBodyBytes = 64 * 1024 * 1024;
+
+final int maxBodyBytes = Platform.isAndroid || Platform.isIOS
+    ? mobileMaxBodyBytes
+    : desktopMaxBodyBytes;
 
 class HttpSettings {
   const HttpSettings({

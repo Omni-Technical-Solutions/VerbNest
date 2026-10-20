@@ -4,6 +4,8 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 
 ## Unreleased
 
+- Security: a server can no longer make the app hold a response larger than 256 MB on a computer or 64 MB on a phone or tablet (it was 512 MB everywhere). The error now names the limit. (Review finding S4.)
+- History: a history write that fails is no longer invisible: the app shows a one-time "History could not be saved" line in the console, and `verbnest run` prints a warning at the end. (S9.)
 - Fix: a JSON response with a key that has a quote, a bracket or a backslash in it (for example `it's` or `a]b`) holding a list of records made the results table fail. JSONPath now reads quoted keys with escapes (`['it\'s']`, `['a]b']`), and the table no longer depends on that path resolving. Found by the new fuzz tests.
 - Tests: fuzz tests for the JSONPath, JSON schema, body filter, data file, GraphQL, results table, cookie and HTTP response parsers (`FUZZ_ROUNDS=50000 dart test test/fuzz_test.dart` runs a longer search), selection and sizing tests for the results table, redirect rule tests.
 - Internal (no change in behaviour): the HTTP engine, the workspace repository, the CLI run command, the headless request step and the results table are split into smaller classes and functions (`docs/spec/security-and-complexity-plan.md`).

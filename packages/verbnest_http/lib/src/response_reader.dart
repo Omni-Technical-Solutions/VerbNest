@@ -71,7 +71,9 @@ Future<Uint8List> _readBody(
   }
   final length = int.tryParse(h('content-length') ?? '');
   if (length != null && length > maxBodyBytes) {
-    throw const ProtocolError('Response body is too large');
+    throw ProtocolError(
+      'Response body is larger than ${maxBodyBytes ~/ (1024 * 1024)} MB',
+    );
   }
   return length != null
       ? reader.readExact(length)
@@ -86,7 +88,9 @@ Future<Uint8List> _readChunked(ByteReader reader) async {
       radix: 16,
     );
     if (size < 0 || out.length + size > maxBodyBytes) {
-      throw const ProtocolError('Response body is too large');
+      throw ProtocolError(
+        'Response body is larger than ${maxBodyBytes ~/ (1024 * 1024)} MB',
+      );
     }
     if (size == 0) {
       while ((await reader.readLine()).isNotEmpty) {}

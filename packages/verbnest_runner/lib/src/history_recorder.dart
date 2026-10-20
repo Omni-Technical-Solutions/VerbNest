@@ -28,6 +28,11 @@ class HistoryRecorder {
   /// Number of rows written by this recorder.
   int recorded = 0;
 
+  /// How many writes failed, and the last failure. History is best-effort and
+  /// a failure never stops a request, but it must not be invisible either.
+  int failed = 0;
+  Object? lastError;
+
   void record({
     required String requestId,
     required HttpRequestItem item,
@@ -78,8 +83,10 @@ class HistoryRecorder {
       );
       recorded++;
       local.pruneHistory(workspaceId, maxEntries: maxEntries, maxAge: maxAge);
-    } catch (_) {
-      // History is best-effort.
+    } catch (e) {
+      // Best-effort: the request goes on, but the caller can report this.
+      failed++;
+      lastError = e;
     }
   }
 }

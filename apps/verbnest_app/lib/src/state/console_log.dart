@@ -36,7 +36,18 @@ class ConsoleLog extends Notifier<List<ConsoleEntry>> {
     state = next.length > capacity ? next.sublist(0, capacity) : next;
   }
 
-  void clear() => state = const [];
+  final _warned = <String>{};
+
+  /// Adds [e] unless [key] was already warned about in this session, so a
+  /// problem that repeats on every request shows up once.
+  void warnOnce(String key, ConsoleEntry e) {
+    if (_warned.add(key)) add(e);
+  }
+
+  void clear() {
+    _warned.clear();
+    state = const [];
+  }
 }
 
 final consoleLogProvider = NotifierProvider<ConsoleLog, List<ConsoleEntry>>(

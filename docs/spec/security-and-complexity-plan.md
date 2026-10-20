@@ -62,7 +62,7 @@ Dynamic testing (fuzzing the importers, the HTTP/2 and WebSocket parsers, the co
 Principles: every step is behaviour-preserving, ships with the tests that already exist plus characterisation tests where coverage is thin, keeps all goldens and the no-motion audit green, and is one pull request (a `chore` or `minor` in the release workflow). Security fixes (S1 to S5) go first because they are small and user-visible. Refactors go by risk: pure packages first, then state, then widgets.
 
 ### Phase A: quick security fixes (0.65.x patch releases)
-Status 2026-10-21: A1, A2, A3, A4, A6 done (0.65.1); A5 deferred (needs a device check); S8 mitigated by `pdfrx` 2.9.0. S4 (response size cap) and S9 are not done yet.
+Status 2026-10-21: A1, A2, A3, A4, A6 done (0.65.1); A5 deferred (needs a device check); S8 mitigated by `pdfrx` 2.9.0. S4 (response size cap: 256 MB desktop, 64 MB mobile) and S9 (history failures shown in the console and the CLI) are done after 0.65.1, listed under Unreleased in the changelog.
 - A1 (S1): Android backup off, extraction rules, manifest test. Release note.
 - A2 (S5): `permissions: contents: read` in `ci.yml`; org default to read-only.
 - A3 (S3): CLI refuses scripts without the Node permission model unless forced; tests.

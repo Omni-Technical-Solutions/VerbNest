@@ -310,6 +310,12 @@ Future<int> _run(
             }
           : null,
     );
+    if (recorder != null && recorder.failed > 0) {
+      err.writeln(
+        'Warning: ${recorder.failed} history writes failed '
+        '(${recorder.lastError}).',
+      );
+    }
     if (sender.scriptsSkipped.isNotEmpty) {
       err.writeln(
         'Scripts were not run (no JavaScript runtime; see --js-runtime) for: '

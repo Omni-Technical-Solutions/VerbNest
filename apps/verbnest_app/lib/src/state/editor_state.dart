@@ -549,7 +549,7 @@ class EditorNotifier extends Notifier<EditorState> {
       ref
           .read(consoleLogProvider.notifier)
           .add(_consoleEntry(p, response, error));
-      HistoryRecorder(
+      final recorder = HistoryRecorder(
         local: session.local,
         workspaceId: session.repo.workspaceId,
         environmentName: envId == null
@@ -564,13 +564,28 @@ class EditorNotifier extends Notifier<EditorState> {
         maxAge: prefs.historyDays == 0
             ? null
             : Duration(days: prefs.historyDays),
-      ).record(
+      );
+      recorder.record(
         requestId: id,
         item: state.item,
         prepared: p,
         response: response,
         error: error,
       );
+      if (recorder.lastError != null) {
+        ref
+            .read(consoleLogProvider.notifier)
+            .warnOnce(
+              'history',
+              ConsoleEntry(
+                at: DateTime.now(),
+                method: 'HISTORY',
+                url: '',
+                sentHead: '',
+                error: 'History could not be saved: ${recorder.lastError}',
+              ),
+            );
+      }
       ref.read(historyTickProvider.notifier).bump();
     } catch (_) {
       // History is best-effort.
