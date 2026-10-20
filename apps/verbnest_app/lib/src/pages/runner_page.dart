@@ -11,8 +11,8 @@ import 'package:verbnest_core/verbnest_core.dart';
 import '../state/file_port.dart';
 import '../state/runner.dart';
 import '../state/session.dart';
-import '../theme.dart';
 import '../widgets/mock_server_dialog.dart';
+import 'runner_parts.dart';
 import '../../l10n/l10n.dart';
 import '../layout_class.dart';
 import '../widgets/ui/toast.dart';
@@ -159,10 +159,15 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
               child: SingleChildScrollView(child: _setup(context)),
             ),
           if (!run.running) _startBar(context),
-          if (run.running) _progress(context, run),
+          if (run.running)
+            RunProgress(
+              run: run,
+              onStop: ref.read(runnerProvider.notifier).stop,
+            ),
           const Divider(height: 1),
-          Expanded(child: _results(context, run)),
-          if (run.report != null) _summary(context, run.report!),
+          Expanded(child: RunResults(run: run)),
+          if (run.report != null)
+            RunSummary(report: run.report!, onExport: _export),
         ],
       ),
     );
@@ -309,143 +314,4 @@ class _RunnerPageState extends ConsumerState<RunnerPage> {
           : Align(alignment: AlignmentDirectional.centerEnd, child: button),
     );
   }
-
-  Widget _progress(BuildContext context, RunnerState run) => Padding(
-    padding: const EdgeInsets.all(8),
-    child: Row(
-      children: [
-        SizedBox(
-          width: 28,
-          height: 28,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              CircularProgressIndicator(
-                strokeWidth: 3,
-                // Iterations advance in steps; between them the ring spins.
-                value: run.total == 0 ? 0.0 : run.iteration / run.total,
-              ),
-              Text(
-                run.total == 0
-                    ? ''
-                    : '${(100 * run.iteration / run.total).round()}',
-                style: const TextStyle(fontSize: 8),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            '${context.l10n.runProgress(run.iteration, run.total)}'
-            '${run.currentName == null ? '' : ' · ${run.currentName}'}',
-            key: const Key('run-progress'),
-          ),
-        ),
-        OutlinedButton(
-          key: const Key('run-stop'),
-          onPressed: ref.read(runnerProvider.notifier).stop,
-          child: Text(context.l10n.runStop),
-        ),
-      ],
-    ),
-  );
-
-  Widget _results(BuildContext context, RunnerState run) {
-    if (run.entries.isEmpty) {
-      return EmptyState(
-        icon: Icons.play_circle_outline,
-        title: context.l10n.runResultsHere,
-      );
-    }
-    return ListView(
-      key: const Key('run-results'),
-      children: [for (final e in run.entries) _entryTile(context, run, e)],
-    );
-  }
-
-  Widget _entryTile(BuildContext context, RunnerState run, RunEntry e) {
-    final scheme = Theme.of(context).colorScheme;
-    return ExpansionTile(
-      expansionAnimationStyle: AnimationStyle.noAnimation,
-      leading: Icon(
-        e.skipped
-            ? Icons.skip_next
-            : e.ok
-            ? Icons.check_circle
-            : Icons.cancel,
-        color: e.skipped
-            ? null
-            : e.ok
-            ? AppColors.of(context).success
-            : scheme.error,
-      ),
-      title: Text('${e.method} ${e.name}', overflow: TextOverflow.ellipsis),
-      subtitle: Text(
-        e.skipped
-            ? context.l10n.runSkipped
-            : context.l10n.runEntrySummary(
-                    '${e.status ?? '—'}',
-                    e.timeMs,
-                    e.passedTests,
-                    e.failedTests,
-                  ) +
-                  (run.total > 1
-                      ? ' · ${context.l10n.runIterationSuffix(e.iteration)}'
-                      : ''),
-      ),
-      children: [
-        if (e.error != null)
-          ListTile(
-            dense: true,
-            title: Text(e.error!, style: TextStyle(color: scheme.error)),
-          ),
-        for (final t in e.tests)
-          ListTile(
-            dense: true,
-            leading: Icon(
-              t.passed ? Icons.check : (t.failed ? Icons.close : Icons.remove),
-              size: 16,
-              color: t.failed ? scheme.error : null,
-            ),
-            title: Text(t.name),
-            subtitle: t.message == null ? null : Text(t.message!),
-          ),
-      ],
-    );
-  }
-
-  Widget _summary(BuildContext context, RunReport r) => Material(
-    elevation: 2,
-    child: Padding(
-      padding: const EdgeInsets.all(8),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 4,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text(
-            context.l10n.runSummary(
-                  r.requests,
-                  r.passedTests,
-                  r.failedTests,
-                  r.errors,
-                ) +
-                (r.stoppedEarly ? ' · ${context.l10n.runStoppedEarly}' : ''),
-            key: const Key('run-summary'),
-          ),
-          for (final (kind, label) in const [
-            ('json', 'JSON'),
-            ('junit', 'JUnit'),
-            ('html', 'HTML'),
-          ])
-            OutlinedButton(
-              key: Key('export-$kind'),
-              onPressed: () => _export(r, kind),
-              child: Text(label),
-            ),
-        ],
-      ),
-    ),
-  );
 }
