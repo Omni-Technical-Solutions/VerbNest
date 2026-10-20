@@ -7,6 +7,8 @@
     <application
         android:enableOnBackInvokedCallback="true"
         android:label="VerbNest"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:usesCleartextTraffic="true"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
