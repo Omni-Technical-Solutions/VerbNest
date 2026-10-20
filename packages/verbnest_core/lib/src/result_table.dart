@@ -318,7 +318,7 @@ bool _isRecords(List<dynamic> list) {
 
 String _keyPath(String key) => RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(key)
     ? '.$key'
-    : "['${key.replaceAll("'", r"\'")}']";
+    : "['${key.replaceAll(r'\', r'\\').replaceAll("'", r"\'")}']";
 
 /// Reads [root] as a table, or returns null when it is not tabular.
 ///
@@ -350,8 +350,12 @@ ResultTable? tableFromJson(
     if (sources.isNotEmpty) {
       final best = sources.reduce((a, b) => b.count > a.count ? b : a);
       final hits = jsonPath(root, best.path);
-      data = hits.single;
-      label = best.path;
+      // The path is built from the keys, so it resolves; if it ever does not,
+      // show the whole body as Key / Value rather than failing.
+      if (hits.length == 1) {
+        data = hits.single;
+        label = best.path;
+      }
     }
   }
 

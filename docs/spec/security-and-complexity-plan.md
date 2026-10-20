@@ -77,7 +77,7 @@ Status 2026-10-21: done. `complexity_report.py --check` now limits functions to 
 - B3: turn on `strict-casts`, then `strict-raw-types`, then `strict-inference`, one package at a time (`core`, `http`, `storage`, `import`, then the app), fixing what each flags. Add `avoid_dynamic_calls` and `unawaited_futures`.
 
 ### Phase C: pure packages (lowest risk, best tests)
-Status 2026-10-21: C1 started: `RevisionStore`, `EnvironmentStore` (variables and environments) and `ExampleStore` are separate classes in `packages/verbnest_storage`, with `WorkspaceRepository` delegating (769 to 603 lines, public API unchanged, all tests unchanged). Left for C1: nodes and tree, containers, requests, snapshot support. C2 to C5 not started.
+Status 2026-10-21: C1 started: `RevisionStore`, `EnvironmentStore` (variables and environments) and `ExampleStore` are separate classes in `packages/verbnest_storage`, with `WorkspaceRepository` delegating (769 to 603 lines, public API unchanged, all tests unchanged). Left for C1: nodes and tree, containers, requests, snapshot support. C2 done: `redirects.dart`, `request_writer.dart` and `response_reader.dart` are split out of `engine.dart` (713 to 423 lines), with redirect rule tests. C3 done for the `run` command (`_run` 204 lines to small steps); other commands are under the limit. The 167-line headless request step is a small class (`_StepRun`). C4 and C5 not started.
 - C1 (`WorkspaceRepository`): split into `NodeRepository`, `EnvironmentRepository`, `ExampleRepository`, `RevisionRepository`, `AttachmentRepository` behind the same public facade, so callers do not change; move SQL to one file per aggregate. Target: no class over 300 lines.
 - C2 (`engine.dart`): extract `ConnectionSetup` (DNS, proxy, TLS), `RequestWriter` and `ResponseReader` from `_Connection`; keep `HttpEngine` public API unchanged. Existing engine, HTTP/2 and proxy tests are the net.
 - C3 (`cli.dart`): one file per command (`run`, `send`, `import`, `export`, `history`, `vault`) with a small shared option layer; keep exit codes.
@@ -89,12 +89,14 @@ Status 2026-10-21: C1 started: `RevisionStore`, `EnvironmentStore` (variables an
 - D2 (`_AdaptiveScaffoldState`, `_CollectionsSidebarState`, `_RunnerPageState`): move actions (drag and drop, rename, run) into plain controller classes with their own unit tests; keep widgets for layout.
 
 ### Phase E: widgets (highest risk; goldens and the audit are the safety net)
+Status 2026-10-21: E1 started: `TableSelection` and `TableColumnSizer` are their own classes with unit tests, and the table header is split into label, resize handle and corner; `_ResultTableViewState` is 1054 lines (was 1152), still over the 800 limit and on the allowlist. E2 and the rest of E3 not started.
 - E1 (`ResultTableView`): extract a `TableSelectionController` (selection model and keyboard), a `TableClipboard` (copy and export strings), `TableColumnLayout` (widths, fit, resize), and a menu builder; the State keeps only layout and gesture wiring. Target: no file over 600 lines, State under 400.
 - E2 (`ResponseView`): extract `BodyToolbar`, `TableSourceBar` and `ResponseFilter` widgets and a `ResponseViewController` for mode, search and filter.
 - E3 (`request_editor`, `status_bar`, `command_palette`, `url_bar`, `graphql_editor`): break `build` methods over 60 lines into named private widgets; no behaviour change.
 - Each E step: run the goldens, `no_motion_audit_test`, `body_view_frames_test` (macOS), and the device matrix tests before merging.
 
 ### Phase F: verification
+Status 2026-10-21: F1 done for the core and http parsers (fuzz tests in `packages/verbnest_core/test/fuzz_test.dart` and `packages/verbnest_http/test/fuzz_test.dart`; the importers already had one). The first long run found a real bug (quoted JSONPath keys), now fixed. Fuzzing the HTTP/2 and WebSocket frame parsers, and F2 (threat model), are not done.
 - F1 (S10): fuzz or property tests for the importers (Postman, OpenAPI, HAR, cURL, snapshots), the cookie parser, the HTTP/2 and WebSocket framing, and JSONPath, run in CI with a time budget.
 - F2: a short threat model in `docs/spec/` (assets, trust boundaries, abuse cases) and an external review before 1.0.
 

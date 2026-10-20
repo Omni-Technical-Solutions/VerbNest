@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## Unreleased
+
+- Fix: a JSON response with a key that has a quote, a bracket or a backslash in it (for example `it's` or `a]b`) holding a list of records made the results table fail. JSONPath now reads quoted keys with escapes (`['it\'s']`, `['a]b']`), and the table no longer depends on that path resolving. Found by the new fuzz tests.
+- Tests: fuzz tests for the JSONPath, JSON schema, body filter, data file, GraphQL, results table, cookie and HTTP response parsers (`FUZZ_ROUNDS=50000 dart test test/fuzz_test.dart` runs a longer search), selection and sizing tests for the results table, redirect rule tests.
+- Internal (no change in behaviour): the HTTP engine, the workspace repository, the CLI run command, the headless request step and the results table are split into smaller classes and functions (`docs/spec/security-and-complexity-plan.md`).
+
 ## 0.65.1
 
 - Security (Android): Auto Backup and device-to-device transfer are off, so workspaces, history and settings are never copied to Google's cloud or another device. Move a workspace with a snapshot export. (Review finding S1.)
