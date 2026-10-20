@@ -313,7 +313,7 @@ abstract class AppLocalizations {
   /// No description provided for @historyBodiesHint.
   ///
   /// In en, this message translates to:
-  /// **'Off stores only URLs, headers and status'**
+  /// **'Off stores only URLs, headers and status. History is kept on this device without encryption.'**
   String get historyBodiesHint;
 
   /// No description provided for @historyDays.

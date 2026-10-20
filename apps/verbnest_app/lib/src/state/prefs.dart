@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'session.dart';
@@ -70,6 +72,14 @@ class Prefs {
   );
 }
 
+/// Bodies in history are kept by default on a computer. On a phone or tablet
+/// they are not: history is stored unencrypted on the device and bodies often
+/// hold tokens or personal data (security review S2). The choice is in
+/// Settings.
+bool get defaultHistoryBodies =>
+    defaultTargetPlatform != TargetPlatform.android &&
+    defaultTargetPlatform != TargetPlatform.iOS;
+
 class PrefsNotifier extends Notifier<Prefs> {
   @override
   Prefs build() {
@@ -81,7 +91,7 @@ class PrefsNotifier extends Notifier<Prefs> {
       historyDays: int.tryParse(get('historyDays') ?? ''),
       historyMax: int.tryParse(get('historyMax') ?? ''),
       historyBodies: get('historyBodies') == null
-          ? null
+          ? defaultHistoryBodies
           : get('historyBodies') == 'true',
       fontScale: double.tryParse(get('fontScale') ?? ''),
       editorFontSize: double.tryParse(get('editorFontSize') ?? ''),

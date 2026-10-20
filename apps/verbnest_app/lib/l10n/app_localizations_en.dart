@@ -125,7 +125,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get historyBodies => 'Keep request and response bodies';
 
   @override
-  String get historyBodiesHint => 'Off stores only URLs, headers and status';
+  String get historyBodiesHint =>
+      'Off stores only URLs, headers and status. History is kept on this device without encryption.';
 
   @override
   String get historyDays => 'Delete history older than (days, 0 = never)';

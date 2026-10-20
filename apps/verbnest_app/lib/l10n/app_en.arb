@@ -43,7 +43,7 @@
   "aboutLegalese": "Copyright 2026 Omni Technical Solutions Pty Ltd. Licensed under the Apache License, Version 2.0.",
   "historySection": "History (this device)",
   "historyBodies": "Keep request and response bodies",
-  "historyBodiesHint": "Off stores only URLs, headers and status",
+  "historyBodiesHint": "Off stores only URLs, headers and status. History is kept on this device without encryption.",
   "historyDays": "Delete history older than (days, 0 = never)",
   "historyMax": "Keep at most this many entries",
   "close": "Close",
