@@ -34,3 +34,6 @@ Object? plainYaml(Object? root) {
 
   return walk(root, 0);
 }
+
+/// A JSON scalar as text: null is empty, anything else its string form.
+String jsonText(Object? v) => v == null ? '' : '$v';
