@@ -1,15 +1,9 @@
 import 'dart:async';
 
-import 'ui/still_route.dart';
-
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
-import '../pages/container_settings_page.dart';
-import '../pages/runner_page.dart';
-import '../pages/revisions_dialog.dart';
 import '../pages/search_dialog.dart';
 import '../pages/workspaces_dialog.dart';
 import '../workspace_host.dart';
@@ -18,29 +12,13 @@ import '../state/session.dart';
 import '../state/sidebar_rows.dart';
 import '../state/tree_state.dart';
 import '../theme.dart';
-import 'code_dialog.dart';
+import 'import_dialog.dart';
+import 'sidebar_actions.dart';
 import 'ui/ui.dart';
 import 'name_dialog.dart';
 import '../../l10n/l10n.dart';
 import 'ui/toast.dart';
 import 'ui/still_tooltip.dart';
-
-enum _Action {
-  newRequest,
-  newFolder,
-  rename,
-  settings,
-  run,
-  duplicate,
-  moveUp,
-  moveDown,
-  delete,
-  copyCurl,
-  generateCode,
-  toggleFavourite,
-  versions,
-  exportPostman,
-}
 
 /// The collections tree with filter and per-item actions (FR-COL-001/003).
 ///
@@ -206,7 +184,7 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
       onAcceptWithDetails: (d) {
         try {
           final undo = ref.read(treeActionsProvider).drop(d.data, node.id);
-          if (undo != null) _movedToast(context, d.data, undo);
+          if (undo != null) movedToast(context, ref, d.data, undo);
         } on StorageError catch (e) {
           showToast(context, e.message);
         }
@@ -332,13 +310,13 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
   }
 
   Widget _menu(BuildContext context, NodeInfo node) {
-    return PopupMenuButton<_Action>(
+    return PopupMenuButton<SidebarAction>(
       popUpAnimationStyle: AnimationStyle.noAnimation,
       key: Key('menu-${node.id}'),
       tooltip: context.l10n.sbActions,
       icon: const Icon(Icons.more_vert, size: 18),
       onSelected: (a) => _run(context, a, node),
-      itemBuilder: (_) => _items(context, node),
+      itemBuilder: (_) => sidebarMenuItems(context, ref, node),
     );
   }
 
@@ -350,89 +328,32 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
   ) async {
     final overlay =
         Overlay.of(context).context.findRenderObject()! as RenderBox;
-    final action = await showMenu<_Action>(
+    final action = await showMenu<SidebarAction>(
       popUpAnimationStyle: AnimationStyle.noAnimation,
       context: context,
       position: RelativeRect.fromRect(
         position & const Size(1, 1),
         Offset.zero & overlay.size,
       ),
-      items: _items(context, node),
+      items: sidebarMenuItems(context, ref, node),
     );
     if (action != null && context.mounted) {
       unawaited(_run(context, action, node));
     }
   }
 
-  List<PopupMenuEntry<_Action>> _items(BuildContext context, NodeInfo node) => [
-    if (node.isContainer) ...[
-      PopupMenuItem(
-        value: _Action.newRequest,
-        child: Text(context.l10n.sbNewRequest),
-      ),
-      PopupMenuItem(
-        value: _Action.newFolder,
-        child: Text(context.l10n.sbNewFolder),
-      ),
-    ],
-    PopupMenuItem(value: _Action.rename, child: Text(context.l10n.sbRename)),
-    if (node.isContainer)
-      PopupMenuItem(value: _Action.run, child: Text(context.l10n.sbRun)),
-    if (node.isContainer)
-      PopupMenuItem(
-        value: _Action.settings,
-        child: Text(context.l10n.sbSettings),
-      ),
-    PopupMenuItem(
-      value: _Action.duplicate,
-      child: Text(context.l10n.sbDuplicate),
-    ),
-    PopupMenuItem(value: _Action.moveUp, child: Text(context.l10n.sbMoveUp)),
-    PopupMenuItem(
-      value: _Action.moveDown,
-      child: Text(context.l10n.sbMoveDown),
-    ),
-    if (!node.isContainer)
-      PopupMenuItem(
-        value: _Action.versions,
-        child: Text(context.l10n.sbVersions),
-      ),
-    if (!node.isContainer)
-      PopupMenuItem(
-        value: _Action.copyCurl,
-        child: Text(context.l10n.sbCopyCurl),
-      ),
-    if (!node.isContainer)
-      PopupMenuItem(
-        value: _Action.toggleFavourite,
-        child: Text(
-          ref.read(repositoryProvider).isFavourite(node.id)
-              ? context.l10n.sbFavRemove
-              : context.l10n.sbFavAdd,
-        ),
-      ),
-    if (!node.isContainer)
-      PopupMenuItem(
-        value: _Action.generateCode,
-        child: Text(context.l10n.sbGenerateCode),
-      ),
-    if (node.parentId == null)
-      PopupMenuItem(
-        value: _Action.exportPostman,
-        child: Text(context.l10n.sbCopyPostman),
-      ),
-    PopupMenuItem(value: _Action.delete, child: Text(context.l10n.sbDelete)),
-  ];
-
-  void _movedToast(BuildContext context, String id, Undo undo) {
-    final name = ref.read(repositoryProvider).node(id).name;
-    showToast(
-      context,
-      context.l10n.toastMoved(name),
-      onUndo: undo,
-      undoLabel: context.l10n.undo,
-    );
-  }
+  Future<void> _run(
+    BuildContext context,
+    SidebarAction action,
+    NodeInfo node,
+  ) => runSidebarAction(
+    context,
+    ref,
+    action,
+    node,
+    onOpenRequest: widget.onOpenRequest,
+    onChanged: () => setState(() {}),
+  );
 
   Future<void> _newCollection(BuildContext context) async {
     final name = await askName(
@@ -444,111 +365,11 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
     ref.read(treeActionsProvider).newCollection(name);
   }
 
-  Future<void> _run(BuildContext context, _Action action, NodeInfo node) async {
-    final l10n = context.l10n;
-    final actions = ref.read(treeActionsProvider);
-    switch (action) {
-      case _Action.newRequest:
-        final name = await askName(
-          context,
-          title: l10n.sbNewRequest,
-          action: l10n.sbCreate,
-        );
-        if (name == null) return;
-        final id = actions.newRequest(node.id, name: name);
-        widget.onOpenRequest?.call(id);
-      case _Action.newFolder:
-        if (!context.mounted) return;
-        final name = await askName(
-          context,
-          title: l10n.sbNewFolder,
-          action: l10n.sbCreate,
-        );
-        if (name != null) actions.newFolder(node.id, name);
-      case _Action.rename:
-        final name = await askName(
-          context,
-          title: l10n.sbRename,
-          initial: node.name,
-        );
-        if (name != null) actions.rename(node.id, name);
-      case _Action.settings:
-        await Navigator.of(context).push(
-          StillPageRoute<void>(
-            builder: (_) => ContainerSettingsPage(containerId: node.id),
-          ),
-        );
-      case _Action.run:
-        await Navigator.of(context).push(
-          StillPageRoute<void>(
-            builder: (_) => RunnerPage(containerId: node.id),
-          ),
-        );
-      case _Action.duplicate:
-        actions.duplicate(node.id);
-      case _Action.moveUp:
-        final undo = actions.nudge(node.id, -1);
-        if (undo != null && context.mounted) {
-          _movedToast(context, node.id, undo);
-        }
-      case _Action.moveDown:
-        final undo = actions.nudge(node.id, 1);
-        if (undo != null && context.mounted) {
-          _movedToast(context, node.id, undo);
-        }
-      case _Action.versions:
-        await showRevisions(context, ref, node.id);
-      case _Action.copyCurl:
-        await _copy(
-          context,
-          requestAsCurl(ref.read(sessionProvider), node.id),
-          l10n.sbCurlCopied,
-        );
-      case _Action.toggleFavourite:
-        final repo = ref.read(repositoryProvider);
-        setState(() => repo.setFavourite(node.id, !repo.isFavourite(node.id)));
-      case _Action.generateCode:
-        await showDialog<void>(
-          animationStyle: AnimationStyle.noAnimation,
-          context: context,
-          builder: (_) => CodeDialog(requestId: node.id),
-        );
-      case _Action.exportPostman:
-        await _copy(
-          context,
-          exportCollectionJson(ref.read(sessionProvider), node.id),
-          l10n.sbPostmanCopied,
-        );
-      case _Action.delete:
-        final ok = await confirm(
-          context,
-          title: l10n.sbDeleteTitle(node.name),
-          message: node.isContainer ? l10n.sbDeleteFolderMsg : l10n.sbDeleteMsg,
-        );
-        if (!ok) return;
-        final undo = actions.deleteUndoable(node.id);
-        if (context.mounted) {
-          showToast(
-            context,
-            l10n.toastDeleted(node.name),
-            onUndo: undo,
-            undoLabel: l10n.undo,
-          );
-        }
-    }
-  }
-
-  Future<void> _copy(BuildContext context, String text, String message) async {
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!context.mounted) return;
-    showToast(context, message);
-  }
-
   Future<void> _import(BuildContext context) async {
     final text = await showDialog<String>(
       animationStyle: AnimationStyle.noAnimation,
       context: context,
-      builder: (_) => const _ImportDialog(),
+      builder: (_) => const ImportDialog(),
     );
     if (text == null || !context.mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -571,52 +392,5 @@ class _CollectionsSidebarState extends ConsumerState<CollectionsSidebar> {
         SnackBar(content: Text(e.message)),
       );
     }
-  }
-}
-
-class _ImportDialog extends StatefulWidget {
-  const _ImportDialog();
-
-  @override
-  State<_ImportDialog> createState() => _ImportDialogState();
-}
-
-class _ImportDialogState extends State<_ImportDialog> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      // Scrolls when the window is short or the keyboard is up.
-      scrollable: true,
-      title: Text(context.l10n.sbImport),
-      content: SizedBox(
-        width: 520,
-        child: TextField(
-          key: const Key('import-text'),
-          controller: _controller,
-          autofocus: true,
-          maxLines: 12,
-          decoration: InputDecoration(hintText: context.l10n.sbImportHint),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.l10n.sbCancel),
-        ),
-        FilledButton(
-          key: const Key('import-confirm'),
-          onPressed: () => Navigator.pop(context, _controller.text),
-          child: Text(context.l10n.sbImport),
-        ),
-      ],
-    );
   }
 }
