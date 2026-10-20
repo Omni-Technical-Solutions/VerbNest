@@ -5,14 +5,17 @@ import 'package:verbnest_core/verbnest_core.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'attachment_store.dart';
+import 'environment_store.dart';
 import 'errors.dart';
+import 'example_store.dart';
 import 'models.dart';
 import 'repository_models.dart';
+import 'revision_store.dart';
 import 'row_mapper.dart';
 import 'search_documents.dart';
 import 'workspace_database.dart';
 
-typedef Json = Map<String, Object?>;
+import 'store_support.dart' show Json;
 
 /// Reads and writes workspace content: the collection tree, requests,
 /// environments, variables and revisions.
@@ -395,161 +398,43 @@ class WorkspaceRepository {
 
   // ---- revisions (FR-WS-008) -------------------------------------------
 
-  void _addRevision(String id, String snapshot) {
-    final last = _db.select(
-      'SELECT rev, snapshot FROM revision WHERE node_id = ? ORDER BY rev DESC LIMIT 1',
-      [id],
-    );
-    if (last.isNotEmpty && last.first['snapshot'] == snapshot) return;
-    final rev = last.isEmpty ? 1 : (last.first.integer('rev')) + 1;
-    _db.execute(
-      'INSERT INTO revision(node_id, rev, saved_at, snapshot) VALUES (?, ?, ?, ?)',
-      [id, rev, _now, snapshot],
-    );
-    _db.execute('DELETE FROM revision WHERE node_id = ? AND rev <= ?', [
-      id,
-      rev - maxRevisions,
-    ]);
-  }
+  late final RevisionStore _revisions = RevisionStore(
+    _db,
+    () => _now,
+    maxRevisions,
+  );
 
-  List<RevisionInfo> revisions(String id) => [
-    for (final r in _db.select(
-      'SELECT rev, saved_at FROM revision WHERE node_id = ? ORDER BY rev DESC',
-      [id],
-    ))
-      RevisionInfo(
-        rev: r.integer('rev'),
-        savedAt: DateTime.fromMillisecondsSinceEpoch(r.integer('saved_at')),
-      ),
-  ];
+  void _addRevision(String id, String snapshot) => _revisions.add(id, snapshot);
+
+  List<RevisionInfo> revisions(String id) => _revisions.list(id);
 
   /// The request as it was at [rev].
-  HttpRequestItem revision(String id, int rev) {
-    final rows = _db.select(
-      'SELECT snapshot FROM revision WHERE node_id = ? AND rev = ?',
-      [id, rev],
-    );
-    if (rows.isEmpty) throw NotFoundError('Revision $rev of $id');
-    final s = _decode(rows.first['snapshot']);
-    return HttpRequestItem.fromData(
-      id: id,
-      name: s['name'] as String,
-      data: (s['data'] as Map).cast<String, Object?>(),
-      auth: (s['auth'] as Map?)?.cast<String, Object?>(),
-      scripts: (s['scripts'] as Map?)?.cast<String, Object?>(),
-      description: s['description'] as String? ?? '',
-    );
-  }
+  HttpRequestItem revision(String id, int rev) => _revisions.at(id, rev);
 
   /// Makes [rev] the current version; recorded as a new revision.
   void restoreRevision(String id, int rev) => saveRequest(revision(id, rev));
 
-  // ---- variables --------------------------------------------------------
+  // ---- variables and environments ----------------------------------------
 
-  List<Variable> variables(VariableOwner owner) => [
-    for (final r in _db.select(
-      'SELECT * FROM variable WHERE owner_kind = ? AND owner_id = ? ORDER BY position',
-      [owner.kind, owner.id],
-    ))
-      Variable(
-        key: r.str('key'),
-        value: (r.strOrNull('value')) ?? '',
-        secret: r['type'] == 'secret',
-        enabled: r.flag('enabled'),
-        description: r.str('description'),
-      ),
-  ];
+  late final EnvironmentStore _environments = EnvironmentStore(_ws, _clock);
+
+  List<Variable> variables(VariableOwner owner) =>
+      _environments.variables(owner);
 
   /// Replaces all variables of [owner]. Secret values are never stored
   /// (constitution II.4); they belong in the secret store.
   void saveVariables(VariableOwner owner, List<Variable> vars) =>
-      _ws.transaction(() => _replaceVariables(owner, vars));
+      _environments.saveVariables(owner, vars);
 
-  void _replaceVariables(VariableOwner owner, List<Variable> vars) {
-    _db.execute('DELETE FROM variable WHERE owner_kind = ? AND owner_id = ?', [
-      owner.kind,
-      owner.id,
-    ]);
-    final seen = <String>{};
-    for (var i = 0; i < vars.length; i++) {
-      final v = vars[i];
-      if (!seen.add(v.key)) throw DuplicateNameError(v.key);
-      _db.execute(
-        'INSERT INTO variable(id, owner_kind, owner_id, key, value, type, enabled, description, position) '
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          Ulid.generate(now: _clock()),
-          owner.kind,
-          owner.id,
-          v.key,
-          v.secret ? null : v.value,
-          v.secret ? 'secret' : 'default',
-          v.enabled ? 1 : 0,
-          v.description,
-          (i + 1) * _step,
-        ],
-      );
-    }
-  }
+  List<Environment> environments() => _environments.environments();
 
-  // ---- environments -----------------------------------------------------
-
-  List<Environment> environments() => [
-    for (final r in _db.select(
-      'SELECT * FROM environment ORDER BY position, name',
-    ))
-      Environment(
-        id: r.str('id'),
-        name: r.str('name'),
-        color: r.strOrNull('color'),
-        variables: variables(VariableOwner.environment(r.str('id'))),
-      ),
-  ];
-
-  Environment environment(String id) {
-    final rows = _db.select('SELECT * FROM environment WHERE id = ?', [id]);
-    if (rows.isEmpty) throw NotFoundError('Environment $id');
-    return environments().firstWhere((e) => e.id == id);
-  }
+  Environment environment(String id) => _environments.environment(id);
 
   /// Inserts or updates [env] together with its variables.
-  void saveEnvironment(Environment env) => _ws.transaction(() {
-    final exists = _db.select('SELECT 1 FROM environment WHERE id = ?', [
-      env.id,
-    ]);
-    try {
-      if (exists.isEmpty) {
-        _db.execute(
-          'INSERT INTO environment(id, name, color, position) VALUES (?, ?, ?, ?)',
-          [env.id, env.name, env.color, _nextEnvPosition()],
-        );
-      } else {
-        _db.execute('UPDATE environment SET name = ?, color = ? WHERE id = ?', [
-          env.name,
-          env.color,
-          env.id,
-        ]);
-      }
-    } on SqliteException catch (e) {
-      if (e.extendedResultCode == 2067) throw DuplicateNameError(env.name);
-      rethrow;
-    }
-    _replaceVariables(VariableOwner.environment(env.id), env.variables);
-  });
-
-  int _nextEnvPosition() {
-    final max =
-        _db.select('SELECT MAX(position) AS p FROM environment').first['p']
-            as int?;
-    return max == null ? _step : max + _step;
-  }
+  void saveEnvironment(Environment env) => _environments.saveEnvironment(env);
 
   void deleteEnvironment(String id) => _ws.transaction(() {
-    _db.execute('DELETE FROM environment WHERE id = ?', [id]);
-    _db.execute(
-      "DELETE FROM variable WHERE owner_kind = 'environment' AND owner_id = ?",
-      [id],
-    );
+    _environments.delete(id);
     if (meta('default_environment_id') == id) {
       _db.execute("DELETE FROM meta WHERE key = 'default_environment_id'");
     }
@@ -597,72 +482,24 @@ class WorkspaceRepository {
 
   // ---- saved examples (FR-COL-005) -----------------------------------------
 
-  List<ExampleInfo> examples(String requestId) => [
-    for (final r in _db.select(
-      'SELECT * FROM example WHERE request_id = ? ORDER BY position, id',
-      [requestId],
-    ))
-      _example(r),
-  ];
+  late final ExampleStore _examples = ExampleStore(_ws, _clock, _row);
 
-  ExampleInfo example(String id) {
-    final rows = _db.select('SELECT * FROM example WHERE id = ?', [id]);
-    if (rows.isEmpty) throw NotFoundError('Example $id');
-    return _example(rows.first);
-  }
+  List<ExampleInfo> examples(String requestId) =>
+      _examples.forRequest(requestId);
 
-  ExampleInfo _example(Row r) => ExampleInfo(
-    id: r.str('id'),
-    requestId: r.str('request_id'),
-    name: r.str('name'),
-    data: _decode(r['data']),
-    body: (r['body_blob'] as Uint8List?) ?? Uint8List(0),
-  );
+  ExampleInfo example(String id) => _examples.get(id);
 
   /// Adds a saved response for [requestId] and returns its id. [data] holds
   /// `status`, `reason`, `headers` and optionally `request`.
   String addExample(String requestId, String name, Json data, Uint8List body) =>
-      _ws.transaction(() {
-        _row(requestId);
-        return restoreExample(
-          ExampleInfo(
-            id: Ulid.generate(now: _clock()),
-            requestId: requestId,
-            name: name,
-            data: data,
-            body: body,
-          ),
-        );
-      });
+      _examples.add(requestId, name, data, body);
 
   /// Inserts or replaces an example keeping its id.
-  String restoreExample(ExampleInfo e) => _ws.transaction(() {
-    final old = _db.select('SELECT position FROM example WHERE id = ?', [e.id]);
-    final pos = old.isNotEmpty
-        ? old.first.integer('position')
-        : ((_db.select(
-                        'SELECT MAX(position) AS p FROM example WHERE request_id = ?',
-                        [e.requestId],
-                      ).first['p']
-                      as int?) ??
-                  0) +
-              _step;
-    _db.execute(
-      'INSERT INTO example(id, request_id, name, position, data, body_blob) '
-      'VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET '
-      'name = excluded.name, data = excluded.data, body_blob = excluded.body_blob',
-      [e.id, e.requestId, e.name, pos, jsonEncode(e.data), e.body],
-    );
-    return e.id;
-  });
+  String restoreExample(ExampleInfo e) => _examples.restore(e);
 
-  void renameExample(String id, String name) => _ws.transaction(
-    () => _db.execute('UPDATE example SET name = ? WHERE id = ?', [name, id]),
-  );
+  void renameExample(String id, String name) => _examples.rename(id, name);
 
-  void deleteExample(String id) => _ws.transaction(
-    () => _db.execute('DELETE FROM example WHERE id = ?', [id]),
-  );
+  void deleteExample(String id) => _examples.delete(id);
 
   // ---- snapshot support (FR-WS-006) -----------------------------------------
 
