@@ -17,7 +17,7 @@ A local-first API client for **macOS, Windows, Linux, Android and iOS**: compose
 ![The results table](docs/release/screenshots/macos/19-results-table.png)
 
 ## Install
-- **Downloads** (Windows installer, Linux packages): [VerbNest-releases](https://github.com/Omni-Technical-Solutions/VerbNest-releases/releases).
+- **Downloads** (Windows installer, MacOS DMG Linux packages): [VerbNest-releases](https://github.com/Omni-Technical-Solutions/VerbNest-releases/releases).
 - **Windows:** `winget install Omni.VerbNest` once the package is accepted.
 - **App stores:** the macOS, Android and iOS store builds are produced from this repository by Omni Technical Solutions.
 
