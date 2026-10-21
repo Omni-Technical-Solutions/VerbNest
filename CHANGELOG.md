@@ -2,7 +2,7 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
-## Unreleased
+## 0.65.2
 
 - Security (Android): the app no longer sets `usesCleartextTraffic`. Requests use `dart:io`, which the policy does not govern (checked on an Android 15 emulator: `http://` to a local host still works), so the flag only loosened it for other components. (S7.)
 - Fix: a Server-Sent Events stream no longer ends with an error when a server sends one invalid UTF-8 byte; the byte shows as a replacement character. Found by the new fuzz tests for the SSE parser.
