@@ -31,6 +31,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - CI: secret scanning with gitleaks on every push and pull request, time limits on the emulator and simulator steps, ad hoc signing for the macOS build check, and GitHub Actions updated (checkout 7, setup-java 6, upload-artifact 7).
 - Project: starter issues, security policy and community files are in place; the repository is public.
 - Release: build 46 for macOS (App Store package and DMG), iOS and Android. Not uploaded.
+- Release: build 54, Linux `.deb` (Ubuntu 22.04 root, glibc 2.35), published on the VerbNest-releases `v0.65.2` release.
 - Release: build 47, Linux `.deb` (Ubuntu 22.04 root, glibc 2.35), built after the repository went public. Not uploaded.
 
 ## 0.64.4
