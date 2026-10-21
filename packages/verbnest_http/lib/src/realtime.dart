@@ -380,7 +380,8 @@ class _SseConnection implements RealtimeConnection {
           }
           return chunk;
         })
-        .transform(utf8.decoder)
+        // A stray invalid byte becomes U+FFFD; it must not end the stream.
+        .transform(const Utf8Decoder(allowMalformed: true))
         .transform(const LineSplitter())
         .listen(
           (l) {

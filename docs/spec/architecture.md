@@ -144,7 +144,7 @@ Each package is evaluated for: licence compatible with Apache-2.0, maintained in
 
 ### Android
 - Min SDK 24, target latest. Permissions: `INTERNET`, `ACCESS_NETWORK_STATE`; `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` (or `DATA_SYNC`) only for long collection runs / mock server, with Play policy justification.
-- Cleartext HTTP: `android:usesCleartextTraffic="true"` and a network security config allowing user CAs, because testing `http://` and local endpoints is core. (Applies to the native adapter; the `dart:io` engine uses its own trust settings, and VerbNest's custom CA feature covers user CAs.)
+- Cleartext HTTP: testing `http://` and local endpoints is core, and it works without `android:usesCleartextTraffic`: requests go through `dart:io`, which Android's cleartext policy does not govern (checked on an Android 15 emulator, 2026-10-21). The flag is therefore not set. The `dart:io` engine uses its own trust settings, and VerbNest's custom CA feature covers user CAs.
 - Emulator → host machine is `10.0.2.2`; surface a hint when users type `localhost`.
 - Workspace databases live in app storage, so no folder permission is needed. Import/export files go through the Storage Access Framework picker.
 - Background: OS may kill sockets when backgrounded; runner uses a foreground service with notification.

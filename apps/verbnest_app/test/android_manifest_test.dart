@@ -35,4 +35,11 @@ void main() {
       expect(body, isNot(contains('<include')), reason: section);
     }
   });
+
+  test('the Android cleartext policy is not loosened', () {
+    // Requests go through dart:io, which the policy does not govern (checked
+    // on an Android 15 emulator: http:// to the host works without the flag),
+    // so the flag would only loosen it for other components (S7).
+    expect(manifest, isNot(contains('usesCleartextTraffic')));
+  });
 }

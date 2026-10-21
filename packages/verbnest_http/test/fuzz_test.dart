@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:test/test.dart';
 import 'package:verbnest_http/src/byte_reader.dart';
+import 'package:verbnest_http/src/realtime.dart';
 import 'package:verbnest_http/src/errors.dart';
 import 'package:verbnest_http/src/response_reader.dart';
 
@@ -115,5 +116,88 @@ void main() {
         );
       }
     }
+  });
+
+  test('the SSE parser takes any line without failing', () {
+    final r = Random(20261021);
+    const fields = ['data', 'event', 'id', 'retry', ':', '', 'x'];
+    final parser = SseParser();
+    var events = 0;
+    for (var i = 0; i < count * 4; i++) {
+      final line = r.nextInt(6) == 0
+          ? String.fromCharCodes(
+              List.generate(r.nextInt(30), (_) => r.nextInt(0x250)),
+            )
+          : '${fields[r.nextInt(fields.length)]}'
+                '${r.nextBool() ? ':' : ''}${r.nextBool() ? ' ' : ''}'
+                '${r.nextBool() ? '${r.nextInt(100000)}' : 'v\u0000${r.nextInt(9)}'}';
+      try {
+        if (parser.line(line) != null) events++;
+      } on Object catch (e, st) {
+        fail('${e.runtimeType} for ${line.codeUnits}:\n$e\n$st');
+      }
+    }
+    expect(events, greaterThanOrEqualTo(0));
+    // A blank line after a data line always completes an event.
+    parser.line('');
+    parser.line('data: end');
+    expect(parser.line('')?.data, 'end');
+  });
+
+  test('the SSE line pipeline survives broken UTF-8 and long lines', () async {
+    final r = Random(20261021);
+    for (var i = 0; i < count ~/ 5; i++) {
+      final bytes = List<int>.generate(r.nextInt(200), (_) {
+        final k = r.nextInt(10);
+        return k == 0 ? 10 : (k == 1 ? 13 : r.nextInt(256));
+      });
+      final parser = SseParser();
+      await for (final l
+          in _chunks(bytes, r)
+              .transform(const Utf8Decoder(allowMalformed: true))
+              .transform(const LineSplitter())) {
+        parser.line(l);
+      }
+    }
+  });
+
+  test('hex input is parsed or refused with a FormatException', () {
+    final r = Random(20261021);
+    const alphabet = '0123456789abcdefABCDEFxX :,\t\ng-';
+    for (var i = 0; i < count * 4; i++) {
+      final text = String.fromCharCodes(
+        List.generate(
+          r.nextInt(40),
+          (_) => alphabet.codeUnitAt(r.nextInt(alphabet.length)),
+        ),
+      );
+      try {
+        final bytes = parseHexBytes(text);
+        expect(bytes.length, lessThanOrEqualTo(text.length));
+      } on FormatException {
+        // Refused, and said so.
+      } on Object catch (e, st) {
+        fail('${e.runtimeType} for "$text":\n$e\n$st');
+      }
+    }
+  });
+
+  test('the session log formats any message', () {
+    final r = Random(20261021);
+    final messages = [
+      for (var i = 0; i < count ~/ 5; i++)
+        RealtimeMessage(
+          direction: RealtimeDirection.values[r.nextInt(3)],
+          data: r.nextBool()
+              ? String.fromCharCodes(
+                  List.generate(r.nextInt(20), (_) => r.nextInt(0x250)),
+                )
+              : Uint8List.fromList(
+                  List.generate(r.nextInt(20), (_) => r.nextInt(256)),
+                ),
+          event: r.nextBool() ? 'e${r.nextInt(9)}' : null,
+        ),
+    ];
+    expect(formatRealtimeLog(messages), isNotEmpty);
   });
 }

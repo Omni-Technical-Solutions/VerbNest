@@ -51,5 +51,5 @@ Not in scope: a user who already controls the device (rooted or jailbroken, malw
 - A "save to file" path for responses above the cap (S4 follow-up).
 - Optional encryption of the history table.
 - Fuzz the HTTP/2 frame reader and the WebSocket frame reader (the HTTP/1 reader, importers and core parsers are fuzzed).
-- Verify on a device that `usesCleartextTraffic="false"` still allows `http://` requests (S7) and remove the flag if so.
+- Done (S7): verified on an Android 15 emulator that `http://` requests work without `usesCleartextTraffic`; the flag is removed.
 - An external review before 1.0.

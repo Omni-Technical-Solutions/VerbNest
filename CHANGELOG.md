@@ -4,6 +4,8 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 
 ## Unreleased
 
+- Security (Android): the app no longer sets `usesCleartextTraffic`. Requests use `dart:io`, which the policy does not govern (checked on an Android 15 emulator: `http://` to a local host still works), so the flag only loosened it for other components. (S7.)
+- Fix: a Server-Sent Events stream no longer ends with an error when a server sends one invalid UTF-8 byte; the byte shows as a replacement character. Found by the new fuzz tests for the SSE parser.
 - Security: a server can no longer make the app hold a response larger than 256 MB on a computer or 64 MB on a phone or tablet (it was 512 MB everywhere). The error now names the limit. (Review finding S4.)
 - History: a history write that fails is no longer invisible: the app shows a one-time "History could not be saved" line in the console, and `verbnest run` prints a warning at the end. (S9.)
 - Fix: a JSON response with a key that has a quote, a bracket or a backslash in it (for example `it's` or `a]b`) holding a list of records made the results table fail. JSONPath now reads quoted keys with escapes (`['it\'s']`, `['a]b']`), and the table no longer depends on that path resolving. Found by the new fuzz tests.
