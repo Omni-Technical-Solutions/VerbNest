@@ -55,7 +55,7 @@ dependencies:
   flutter_widget_from_html_core: ^0.17.4
   pdfrx: ^2.9.0
   material_ui: ^1.6.0
-  cupertino_ui: ^1.1.2
+  cupertino_ui: ^1.1.4
   dynamic_color: ^2.1.0
   package_info_plus: ^10.2.2
 dev_dependencies:
