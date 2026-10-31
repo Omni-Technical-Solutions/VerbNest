@@ -123,6 +123,7 @@ class SyncedTextField extends StatefulWidget {
     this.suggestions = const [],
     this.fontSize,
     this.completer,
+    this.autofocus = false,
   });
 
   final String value;
@@ -144,6 +145,9 @@ class SyncedTextField extends StatefulWidget {
   /// the other completion modes while it returns something.
   final GqlCompletion? Function(String text, int caret)? completer;
 
+  /// Takes focus, and scrolls into view, when first shown (a row just added).
+  final bool autofocus;
+
   @override
   State<SyncedTextField> createState() => _SyncedTextFieldState();
 }
@@ -151,12 +155,21 @@ class SyncedTextField extends StatefulWidget {
 class _SyncedTextFieldState extends State<SyncedTextField> {
   late final _VarController _controller = _VarController(widget.value, null);
   final FocusNode _focus = FocusNode();
+  final _fieldKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_refresh);
     _focus.addListener(_refresh);
+    if (widget.autofocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _focus.requestFocus();
+        final ctx = _fieldKey.currentContext;
+        if (ctx != null) Scrollable.ensureVisible(ctx);
+      });
+    }
   }
 
   void _refresh() {
@@ -294,7 +307,11 @@ class _SyncedTextFieldState extends State<SyncedTextField> {
       }
     }
     if (widget.suggestions.isNotEmpty) {
-      final names = matchSuggestions(widget.suggestions, text);
+      // An empty field offers the first few options: a new header has no
+      // letter to narrow them yet.
+      final names = text.isEmpty
+          ? widget.suggestions.take(8).toList()
+          : matchSuggestions(widget.suggestions, text);
       if (names.isNotEmpty) return _chips(names, _pick);
     }
     return null;
@@ -307,6 +324,7 @@ class _SyncedTextFieldState extends State<SyncedTextField> {
         : null;
     _controller.script = widget.script;
     final field = TextField(
+      key: _fieldKey,
       controller: _controller,
       focusNode: _focus,
       onChanged: widget.onChanged,
@@ -324,20 +342,20 @@ class _SyncedTextFieldState extends State<SyncedTextField> {
         labelText: widget.label,
       ),
     );
+    // The same shape whether or not there is something under the field. If
+    // the field were the root of the subtree one moment and a Column child
+    // the next, Flutter would rebuild it, which on a phone closes the
+    // keyboard connection after the first letter.
     final info = _info(context);
-    if (info == null) return field;
-    if (widget.expands) {
-      return Column(
-        children: [
-          Expanded(child: field),
-          info,
-        ],
-      );
-    }
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: widget.expands ? MainAxisSize.max : MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [field, info],
+      children: [
+        // Flexible: in a box of fixed height the field gives way to the
+        // height it is given, as a bare field would.
+        widget.expands ? Expanded(child: field) : Flexible(child: field),
+        ?info,
+      ],
     );
   }
 }

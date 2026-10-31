@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.65.3
+
+- Fix (phones): in the headers, params and form tables, typing a key stopped after the first letter. The text field was rebuilt when the suggestions appeared, which closed the keyboard connection. The field now keeps its state while suggestions come and go (all text fields with suggestions or `{{` completion benefit).
+- Change: a new, empty header key offers the common header names (Content-Type, Authorization, Accept, ...) as soon as it has focus; typing narrows them. The list now starts with the most used names.
+- Change: **Add** is at the top of the table, next to Bulk edit, so it stays in reach with many rows or the keyboard open. A new row takes focus and scrolls into view.
+- Tests: `key_value_editor_test.dart`. Plan: `docs/spec/key-value-editor-plan.md`.
+
 ## 0.65.2
 
 - Security (Android): the app no longer sets `usesCleartextTraffic`. Requests use `dart:io`, which the policy does not govern (checked on an Android 15 emulator: `http://` to a local host still works), so the flag only loosened it for other components. (S7.)

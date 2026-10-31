@@ -76,21 +76,23 @@ List<KeyValue> parseBulk(String text) {
   return out;
 }
 
+/// Header names, the ones people use most first: an empty key offers the
+/// first few.
 const headerNames = [
+  'Content-Type',
+  'Authorization',
   'Accept',
+  'User-Agent',
+  'Cache-Control',
+  'Cookie',
+  'Origin',
+  'X-Api-Key',
   'Accept-Charset',
   'Accept-Encoding',
   'Accept-Language',
-  'Authorization',
-  'Cache-Control',
-  'Content-Type',
-  'Cookie',
   'If-Modified-Since',
   'If-None-Match',
-  'Origin',
   'Referer',
-  'User-Agent',
-  'X-Api-Key',
   'X-Requested-With',
 ];
 

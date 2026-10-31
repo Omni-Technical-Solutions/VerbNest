@@ -1,6 +1,6 @@
 # Key/value editor: typing stops after the first letter, suggestions missing
 
-Status 2026-11-01: reviewed, root cause of the typing bug reproduced in a test; fix not started. Released as 0.65.3 (fix).
+Status 2026-11-01: steps 1 to 3 done in 0.65.3 (a GlobalKey on the field plus a stable Column shape; common header names for an empty key; Add moved to the top, new row focused). The test fails on the old code (field state replaced) and passes now. Not checked on a physical phone keyboard; step 4 is the release.
 
 ## What was reported
 

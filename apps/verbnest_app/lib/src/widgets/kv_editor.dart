@@ -48,6 +48,7 @@ class KeyValueEditor extends StatefulWidget {
 class _KeyValueEditorState extends State<KeyValueEditor> {
   bool _bulk = false;
   late final TextEditingController _bulkController = TextEditingController();
+  final _scroll = ScrollController();
 
   List<KeyValue> get rows => widget.rows;
   String get idPrefix => widget.idPrefix;
@@ -56,6 +57,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
   @override
   void dispose() {
     _bulkController.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -112,6 +114,21 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
     ],
   );
 
+  /// The row just added; its key field takes focus.
+  int? _newRow;
+
+  void _add() {
+    setState(() => _newRow = rows.length);
+    onChanged([...rows, const KeyValue(key: '')]);
+    // The list builds rows as they scroll into view: bring the new one in
+    // so it exists to take focus.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.jumpTo(_scroll.position.maxScrollExtent);
+      }
+    });
+  }
+
   void _set(int i, KeyValue row) {
     final next = [...rows];
     next[i] = row;
@@ -122,27 +139,30 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
   Widget build(BuildContext context) {
     if (_bulk) return _bulkEditor();
     return ListView(
+      controller: _scroll,
       padding: const EdgeInsets.all(8),
       children: [
-        if (widget.allowBulk)
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: TextButton(
-              key: Key('$idPrefix-bulk-toggle'),
-              onPressed: _toggleBulk,
-              child: Text(context.l10n.kvBulkEdit),
+        // Add and bulk edit stay at the top, in reach however many rows there
+        // are and with the keyboard open.
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            TextButton.icon(
+              key: Key('$idPrefix-add'),
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(context.l10n.add),
+              onPressed: _add,
             ),
-          ),
-        for (var i = 0; i < rows.length; i++) _row(i),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton.icon(
-            key: Key('$idPrefix-add'),
-            icon: const Icon(Icons.add, size: 18),
-            label: Text(context.l10n.add),
-            onPressed: () => onChanged([...rows, const KeyValue(key: '')]),
-          ),
+            if (widget.allowBulk)
+              TextButton(
+                key: Key('$idPrefix-bulk-toggle'),
+                onPressed: _toggleBulk,
+                child: Text(context.l10n.kvBulkEdit),
+              ),
+          ],
         ),
+        for (var i = 0; i < rows.length; i++) _row(i),
       ],
     );
   }
@@ -173,6 +193,7 @@ class _KeyValueEditorState extends State<KeyValueEditor> {
     hint: context.l10n.kvKey,
     variables: true,
     suggestions: widget.keySuggestions,
+    autofocus: _newRow == i,
     onChanged: (v) => _set(i, rows[i].copyWith(key: v)),
   );
 
