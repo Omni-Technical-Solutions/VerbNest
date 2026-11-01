@@ -20,13 +20,18 @@ class ScrollIfShort extends StatelessWidget {
     final needed = scale <= 1
         ? minHeight
         : minHeight * scale * math.sqrt(scale);
+    // One shape whatever the height. If the child sat directly in the tree
+    // when there was room and inside a scroll view when there was not, the
+    // keyboard opening (which takes the room away) would rebuild the whole
+    // form: the focused field is lost and the keyboard closes again.
     return LayoutBuilder(
-      builder: (context, c) => c.maxHeight >= needed
-          ? child
-          : SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: SizedBox(height: needed, child: child),
-            ),
+      builder: (context, c) => SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        child: SizedBox(
+          height: math.max(needed, c.hasBoundedHeight ? c.maxHeight : needed),
+          child: child,
+        ),
+      ),
     );
   }
 }

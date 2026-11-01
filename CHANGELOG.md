@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.65.4
+
+- Fix (phones): in the request tabs (headers above all) the keyboard kept closing as soon as a field was tapped. Opening the keyboard took room from the tab, and the tab then rebuilt its whole form in a scroll view, which dropped the focus and closed the keyboard, over and over. The tab now keeps one layout whatever the room. Test: `scroll_if_short_test.dart`.
+
 ## 0.65.3
 
 - Fix (phones): in the headers, params and form tables, typing a key stopped after the first letter. The text field was rebuilt when the suggestions appeared, which closed the keyboard connection. The field now keeps its state while suggestions come and go (all text fields with suggestions or `{{` completion benefit).
