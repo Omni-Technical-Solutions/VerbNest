@@ -57,3 +57,5 @@ I could not tell from the report which of these is meant, or whether it is somet
 ## Follow-up 2026-11-01 (0.65.4): the keyboard kept disappearing
 
 0.65.3 fixed the field being rebuilt by its own suggestions, but on a phone the keyboard still closed when a header field was tapped. Second cause: `ScrollIfShort` (`widgets/ui/scroll_if_short.dart`) wraps each request tab. It returned the child directly when the tab had at least 420 dp (headers) and a `SingleChildScrollView` around it when it had less. Tapping a field opens the keyboard, which takes room from the tab, so the tab switched shape, Flutter rebuilt the whole form, the focused field was lost and the keyboard closed; the room came back and it flipped again. Fix: one shape, always a scroll view whose child is at least as tall as the tab and at least `needed` tall, so only the height changes. Test: `scroll_if_short_test.dart` (the form's text field keeps its state and focus while the room changes; it fails on the old code).
+
+Verified 2026-11-01 on an iPhone XR (iOS 18.7, debug build of 0.65.4): the keyboard stayed up through header data entry. Both causes are fixed.
