@@ -8,6 +8,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - Change: a new, empty header key offers the common header names (Content-Type, Authorization, Accept, ...) as soon as it has focus; typing narrows them. The list now starts with the most used names.
 - Change: **Add** is at the top of the table, next to Bulk edit, so it stays in reach with many rows or the keyboard open. A new row takes focus and scrolls into view.
 - Tests: `key_value_editor_test.dart`. Plan: `docs/spec/key-value-editor-plan.md`.
+- Release: build 57, Linux `.deb` (Ubuntu 22.04 root, glibc 2.35), published on the VerbNest-releases `v0.65.3` release.
 
 ## 0.65.2
 
