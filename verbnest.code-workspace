@@ -10,6 +10,7 @@
 		"flutterTools.displayMobxContextMenu": false,
 		"flutterTools.displayRiverpodContextMenu": false,
 		"flutterTools.displayModularContextMenu": false,
-		"flutterTools.displaySignalsContextMenu": false
+		"flutterTools.displaySignalsContextMenu": false,
+		"java.compile.nullAnalysis.mode": "automatic"
 	}
 }
