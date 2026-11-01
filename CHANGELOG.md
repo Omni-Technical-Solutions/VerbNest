@@ -9,6 +9,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - Change: **Add** is at the top of the table, next to Bulk edit, so it stays in reach with many rows or the keyboard open. A new row takes focus and scrolls into view.
 - Tests: `key_value_editor_test.dart`. Plan: `docs/spec/key-value-editor-plan.md`.
 - Release: build 57, Linux `.deb` (Ubuntu 22.04 root, glibc 2.35), published on the VerbNest-releases `v0.65.3` release.
+- Release: build 57, Windows installer (unsigned, same build number as the Linux `.deb`), published on the VerbNest-releases `v0.65.3` release.
 
 ## 0.65.2
 
