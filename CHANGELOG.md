@@ -4,6 +4,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 
 ## 0.65.4
 
+- Release: build 59, Windows installer (unsigned), published on the VerbNest-releases `v0.65.4` release.
 - Fix (phones): in the request tabs (headers above all) the keyboard kept closing as soon as a field was tapped. Opening the keyboard took room from the tab, and the tab then rebuilt its whole form in a scroll view, which dropped the focus and closed the keyboard, over and over. The tab now keeps one layout whatever the room. Test: `scroll_if_short_test.dart`.
 - Release: build 59, Linux `.deb` (Ubuntu 22.04 root, glibc 2.35), published on the VerbNest-releases `v0.65.4` release.
 
