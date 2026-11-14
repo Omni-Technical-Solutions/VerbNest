@@ -31,7 +31,10 @@ for f in "${files[@]}"; do
     kill_app
     sleep 3
     echo "== $f (attempt $attempt)"
-    if ${runner[@]+"${runner[@]}"} flutter test "$f" -d "$device"; then ok=1; break; fi
+    # The expanded reporter, not the GitHub one that Flutter picks inside
+    # Actions: with Flutter 3.50 the GitHub reporter counted the device tests as
+    # "0 tests passed. No tests were found." and failed a passing run.
+    if ${runner[@]+"${runner[@]}"} flutter test "$f" -d "$device" --reporter expanded; then ok=1; break; fi
   done
   if [ "$ok" -ne 1 ]; then echo "FAILED: $f"; status=1; fi
 done
