@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -49,6 +50,31 @@ void addTlsOptions(ArgParser p, {bool appNetwork = true}) {
       valueHelp: 'file',
     )
     ..addOption(
+      'tls-min',
+      help: 'Refuse servers that cannot do at least this TLS version.',
+      allowed: ['1.2', '1.3'],
+      valueHelp: '1.2|1.3',
+    )
+    ..addMultiOption(
+      'pin',
+      help:
+          'Expect this server key (SHA-256 of the public key, or of the '
+          'certificate): host[:port]=hash. Repeatable.',
+      valueHelp: 'host=sha256',
+    )
+    ..addOption(
+      'pin-file',
+      help:
+          'Keep pins in this file: read at the start, and a server seen for '
+          'the first time is added to it.',
+      valueHelp: 'file',
+    )
+    ..addFlag(
+      'trust-changed',
+      help: 'Accept a changed key for a pin that was recorded, and update it.',
+      negatable: false,
+    )
+    ..addOption(
       'network-config',
       help: 'A file made by Settings > Network > Export for the command line.',
       valueHelp: 'file',
@@ -77,9 +103,17 @@ void addTlsOptions(ArgParser p, {bool appNetwork = true}) {
 
 /// The TLS material and proxy the options ask for.
 class TlsSetup {
-  const TlsSetup({this.tls, this.proxy, this.notes = const []});
+  TlsSetup({
+    this.tls,
+    this.proxy,
+    this.notes = const [],
+    List<PinEntry>? pinMismatches,
+  }) : pinMismatches = pinMismatches ?? [];
 
   final TlsConfig? tls;
+
+  /// Pinned servers that showed another key during the run (exit code 3).
+  final List<PinEntry> pinMismatches;
   final ProxyConfig? proxy;
 
   /// One line each about where entries came from; never a secret.
@@ -147,6 +181,9 @@ Future<TlsSetup> buildTlsSetup(
   final certs = <ClientCertificate>[];
   final notes = <String>[];
   ProxyConfig? proxy;
+  final pins = <PinEntry>[];
+  String? appMin;
+  var pinByDefault = true;
 
   // 1. Files named on the command line win ties.
   for (final path in r['ca'] as List<String>) {
@@ -220,6 +257,9 @@ Future<TlsSetup> buildTlsSetup(
         pass,
       );
       _take(cfg, cas, certs, notes, 'export file $exportPath');
+      pins.addAll(cfg.pins);
+      appMin ??= cfg.minTls == null ? null : _versionText(cfg.minTls!);
+      pinByDefault = pinByDefault && cfg.pinByDefault;
       proxy ??= cfg.proxy;
     } on NetworkExportError catch (e) {
       throw TlsUsageError('--network-config: ${e.message}');
@@ -233,6 +273,9 @@ Future<TlsSetup> buildTlsSetup(
         .where((c) => c.enabled && c.needsKey)
         .length;
     _take(cfg, cas, certs, notes, 'the app');
+    pins.addAll(cfg.pins);
+    appMin ??= cfg.minTls == null ? null : _versionText(cfg.minTls!);
+    pinByDefault = pinByDefault && cfg.pinByDefault;
     if (skipped > 0) {
       warn(
         'Warning: $skipped client certificate(s) in the app need their key: '
@@ -242,11 +285,100 @@ Future<TlsSetup> buildTlsSetup(
     proxy ??= cfg.proxy;
   }
 
-  final tls = cas.isEmpty && certs.isEmpty
+  final mismatches = <PinEntry>[];
+  final book = _pins(r, pins, notes, mismatches);
+  final minTls = switch (r['tls-min'] as String? ?? appMin) {
+    '1.3' => TlsVersion.v13,
+    '1.2' => TlsVersion.v12,
+    _ => null,
+  };
+  final tls =
+      cas.isEmpty && certs.isEmpty && book.entries.isEmpty && minTls == null
       ? null
-      : TlsConfig(caCertificates: cas, clientCertificates: certs);
-  return TlsSetup(tls: tls, proxy: proxy, notes: notes);
+      : TlsConfig(
+          caCertificates: cas,
+          clientCertificates: certs,
+          pins: book,
+          pinByDefault: pinByDefault,
+          minimumVersion: minTls,
+        );
+  return TlsSetup(
+    tls: tls,
+    proxy: proxy,
+    notes: notes,
+    pinMismatches: mismatches,
+  );
 }
+
+/// The pins in force: those of the export file or the app, those in
+/// `--pin-file`, and `--pin` ones (which win). With `--pin-file` a pin
+/// recorded on first use is saved there.
+PinBook _pins(
+  ArgResults r,
+  List<PinEntry> given,
+  List<String> notes,
+  List<PinEntry> mismatches,
+) {
+  final byKey = <String, PinEntry>{
+    for (final p in given) '${p.host}:${p.port}': p,
+  };
+  final file = r['pin-file'] as String?;
+  if (file != null && File(file).existsSync()) {
+    try {
+      final j = jsonDecode(File(file).readAsStringSync()) as Map;
+      for (final p in (j['pins'] as List? ?? const [])) {
+        final e = PinEntry.fromJson(p as Map);
+        byKey['${e.host}:${e.port}'] = e;
+      }
+    } on Object catch (e) {
+      throw TlsUsageError('--pin-file $file: not a pin file ($e)');
+    }
+  }
+  for (final text in r['pin'] as List<String>) {
+    final i = text.indexOf('=');
+    if (i <= 0) {
+      throw TlsUsageError('--pin $text: expected host[:port]=sha256.');
+    }
+    final hash = normalizeFingerprint(text.substring(i + 1));
+    if (!RegExp(r'^([0-9A-F]{2}:){31}[0-9A-F]{2}$').hasMatch(hash)) {
+      throw TlsUsageError(
+        '--pin $text: that is not a SHA-256 (64 hex digits).',
+      );
+    }
+    var host = text.substring(0, i).toLowerCase();
+    var port = 443;
+    final c = host.lastIndexOf(':');
+    if (c > 0 && int.tryParse(host.substring(c + 1)) != null) {
+      port = int.parse(host.substring(c + 1));
+      host = host.substring(0, c);
+    }
+    byKey['$host:$port'] = PinEntry(
+      host: host,
+      port: port,
+      spki: hash,
+      leaf: hash,
+      manual: true,
+    );
+  }
+  final book = PinBook(byKey.values)
+    ..trustChanges = r['trust-changed'] as bool
+    ..onMismatch = (pin, _) => mismatches.add(pin);
+  if (file != null) {
+    book.onChanged = (all) {
+      File(file).writeAsStringSync(
+        '${const JsonEncoder.withIndent('  ').convert({
+          'pins': [for (final p in all) p.toJson()],
+        })}\n',
+      );
+    };
+  }
+  if (book.entries.isNotEmpty) {
+    notes.add('${book.entries.length} pinned server(s)');
+  }
+  return book;
+}
+
+String _versionText(TlsVersion v) => v == TlsVersion.v13 ? '1.3' : '1.2';
 
 /// Adds the usable entries of [cfg] and a note about them.
 void _take(

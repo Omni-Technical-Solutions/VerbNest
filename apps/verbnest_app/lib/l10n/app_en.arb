@@ -514,7 +514,7 @@
   "nsExportPass2": "Repeat the passphrase",
   "nsExportMismatch": "The passphrases are not the same.",
   "nsExportSaved": "Saved the network export.",
-  "nsExportBusy": "Locking the file (a few seconds)\u2026",
+  "nsExportBusy": "Locking the file (a few seconds)…",
   "nsExportNothing": "There is nothing to export yet.",
   "nsCancel": "Cancel",
   "nsAdd": "Add",
@@ -1118,5 +1118,100 @@
   "menuPalette": "Command palette",
   "settingsDynamicColor": "Use system colours",
   "settingsDynamicColorHint": "Match your wallpaper colours (Android 12 and newer). The accent colour below is used otherwise.",
-  "rvFilter": "Filter"
+  "rvFilter": "Filter",
+  "nsPinsTitle": "Pinned servers",
+  "nsPinByDefault": "Pin servers that get a client certificate",
+  "nsPinByDefaultHint": "The first key a server shows is remembered; a different key later stops the request.",
+  "nsPinsNone": "No server keys pinned yet.",
+  "nsPinSub": "Key {key} · seen {date}",
+  "@nsPinSub": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "nsPinManual": "Key {key} · set by you",
+  "@nsPinManual": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "nsPinRemove": "Forget this pin",
+  "nsPinEnabled": "Check this pin",
+  "nsMinTls": "Oldest TLS version",
+  "nsMinTlsDefault": "Default",
+  "nsMinTls12": "1.2",
+  "nsMinTls13": "1.3",
+  "nsTestConn": "Test connection",
+  "nsTestTitle": "Test connection",
+  "nsTestUrl": "Server (host or URL)",
+  "nsTestRun": "Connect",
+  "nsTestOk": "Connected in {ms} ms",
+  "@nsTestOk": {
+    "placeholders": {
+      "ms": {
+        "type": "String"
+      }
+    }
+  },
+  "nsTestServer": "Server certificate: {subject}",
+  "@nsTestServer": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "nsTestExpires": "Expires {date}",
+  "@nsTestExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "nsTestTrusted": "Trusted by the system and your CAs",
+  "nsTestUntrusted": "Not trusted by the system or your CAs",
+  "nsTestName": "Names the host",
+  "nsTestNameNo": "Does not name the host",
+  "nsTestClient": "Client certificate offered: {name}",
+  "@nsTestClient": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "nsTestClientNone": "No client certificate for this host",
+  "nsTestRejected": "The server closed the connection after the handshake: it probably needs a client certificate or does not accept the one offered.",
+  "nsTestPinRecorded": "This server is not pinned yet.",
+  "nsTestPinMatches": "The pinned key matches.",
+  "nsTestPinMismatch": "The key is not the pinned one. Pinned {pinned}, now {actual}.",
+  "@nsTestPinMismatch": {
+    "placeholders": {
+      "pinned": {
+        "type": "String"
+      },
+      "actual": {
+        "type": "String"
+      }
+    }
+  },
+  "nsTestPin": "Pin this server",
+  "nsTestTrustNew": "Trust the new key",
+  "nsTestFailed": "Could not connect: {error}",
+  "@nsTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "nsTestClose": "Close"
 }

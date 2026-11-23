@@ -80,6 +80,9 @@ class NetworkConfig {
     this.useSystemProxy = false,
     this.cas = const [],
     this.clientCerts = const [],
+    this.pins = const [],
+    this.pinByDefault = true,
+    this.minTls,
   });
 
   final bool proxyEnabled;
@@ -95,6 +98,16 @@ class NetworkConfig {
   final List<CaEntry> cas;
   final List<ClientCertEntry> clientCerts;
 
+  /// Server keys pinned by the engine on first use or by the person
+  /// (FR-HTTP-013d).
+  final List<PinEntry> pins;
+
+  /// Pin a host on first use when a client certificate entry applies to it.
+  final bool pinByDefault;
+
+  /// The oldest TLS version to accept; null leaves the platform default.
+  final TlsVersion? minTls;
+
   NetworkConfig copyWith({
     bool? proxyEnabled,
     ProxyKind? proxyKind,
@@ -106,6 +119,10 @@ class NetworkConfig {
     bool? useSystemProxy,
     List<CaEntry>? cas,
     List<ClientCertEntry>? clientCerts,
+    List<PinEntry>? pins,
+    bool? pinByDefault,
+    TlsVersion? minTls,
+    bool clearMinTls = false,
   }) => NetworkConfig(
     proxyEnabled: proxyEnabled ?? this.proxyEnabled,
     proxyKind: proxyKind ?? this.proxyKind,
@@ -117,6 +134,9 @@ class NetworkConfig {
     useSystemProxy: useSystemProxy ?? this.useSystemProxy,
     cas: cas ?? this.cas,
     clientCerts: clientCerts ?? this.clientCerts,
+    pins: pins ?? this.pins,
+    pinByDefault: pinByDefault ?? this.pinByDefault,
+    minTls: clearMinTls ? null : (minTls ?? this.minTls),
   );
 
   ProxyConfig? get proxy => proxyEnabled && proxyHost.trim().isNotEmpty
@@ -133,10 +153,18 @@ class NetworkConfig {
         )
       : null;
 
-  TlsConfig? get tls => cas.isEmpty && clientCerts.isEmpty
+  TlsConfig? get tls => tlsWith();
+
+  /// The TLS configuration for the engine. [onPinsChanged] receives the whole
+  /// pin list when the engine records a pin, so the caller can save it.
+  TlsConfig? tlsWith({void Function(List<PinEntry>)? onPinsChanged}) =>
+      cas.isEmpty && clientCerts.isEmpty && pins.isEmpty && minTls == null
       ? null
       : TlsConfig(
           caCertificates: [for (final c in cas) c.bytes],
+          pins: PinBook(pins, onPinsChanged),
+          pinByDefault: pinByDefault,
+          minimumVersion: minTls,
           clientCertificates: [
             for (final c in clientCerts)
               if (c.none)
@@ -212,6 +240,17 @@ class NetworkConfigStore {
             in (j['cas'] as List? ?? const []).cast<Map<dynamic, dynamic>>())
           CaEntry(c['name'] as String, bytes(c['pem'])),
       ],
+      pins: [
+        for (final p
+            in (j['pins'] as List? ?? const []).cast<Map<dynamic, dynamic>>())
+          PinEntry.fromJson(p),
+      ],
+      pinByDefault: j['pinning'] as bool? ?? true,
+      minTls: switch (j['minTls']) {
+        '1.3' => TlsVersion.v13,
+        '1.2' => TlsVersion.v12,
+        _ => null,
+      },
       clientCerts: [
         for (final c
             in (j['certs'] as List? ?? const []).cast<Map<dynamic, dynamic>>())
@@ -243,6 +282,10 @@ class NetworkConfigStore {
     'cas': [
       for (final c in next.cas) {'name': c.name, 'pem': base64Encode(c.bytes)},
     ],
+    if (next.pins.isNotEmpty) 'pins': [for (final p in next.pins) p.toJson()],
+    if (!next.pinByDefault) 'pinning': false,
+    if (next.minTls != null)
+      'minTls': next.minTls == TlsVersion.v13 ? '1.3' : '1.2',
     'certs': [
       for (final c in next.clientCerts)
         {

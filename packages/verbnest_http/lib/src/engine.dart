@@ -7,6 +7,7 @@ import 'package:verbnest_core/verbnest_core.dart' show CookieJar;
 import 'byte_reader.dart';
 import 'cert_inspect.dart';
 import 'errors.dart';
+import 'pin.dart';
 import 'http2_exchange.dart';
 import 'models.dart';
 import 'proxy.dart';
@@ -309,6 +310,24 @@ class _Connection {
         // The details below come from dart:io's own fields.
       }
     }
+    // Pinning (FR-HTTP-013d): with verification on, a certificate that got
+    // this far is trusted, so the key can be recorded or compared. A key that
+    // changed closes the connection before anything is sent.
+    var pin = PinStatus.notApplicable;
+    if (parsed != null) {
+      final check = checkPin(
+        config,
+        u.host,
+        u.port,
+        parsed,
+        verified: spec.settings.verifyTls,
+      );
+      if (check.status == PinStatus.mismatch) {
+        secure.destroy();
+        throw PinMismatchError(check.entry!, parsed);
+      }
+      pin = check.status;
+    }
     return _Secured(
       secure,
       secured: true,
@@ -329,6 +348,7 @@ class _Connection {
               fingerprint: parsed?.sha256 ?? fingerprintOf(cert.der),
               spkiFingerprint: parsed?.spkiSha256,
               names: parsed?.names ?? const [],
+              pin: pin,
             ),
     );
   }

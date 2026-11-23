@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'pin.dart';
+
 /// A client certificate offered to hosts that match [hostPattern]
 /// (FR-HTTP-013, FR-HTTP-013b). Either PEM ([certificate] plus [privateKey])
 /// or a PKCS#12 bundle in [certificate] with no [privateKey].
@@ -93,19 +95,41 @@ class _Pattern {
   }
 }
 
+/// The oldest TLS version a connection may use.
+enum TlsVersion { v12, v13 }
+
 /// TLS material beyond the system trust store: extra CA certificates and
 /// per-host client certificates.
 class TlsConfig {
   const TlsConfig({
     this.caCertificates = const [],
     this.clientCertificates = const [],
+    this.pins,
+    this.pinByDefault = true,
+    this.minimumVersion,
   });
 
   /// PEM or DER bytes, added to the trusted roots.
   final List<Uint8List> caCertificates;
   final List<ClientCertificate> clientCertificates;
 
-  bool get isEmpty => caCertificates.isEmpty && clientCertificates.isEmpty;
+  /// Pinned server keys, and where the first key a host presents is recorded
+  /// (FR-HTTP-013d). Null means no pinning.
+  final PinBook? pins;
+
+  /// Whether a host that has a client certificate entry is pinned on first
+  /// use even without a pin of its own.
+  final bool pinByDefault;
+
+  /// The oldest TLS version to accept: [TlsVersion.v12] (the default of the
+  /// platform library) or [TlsVersion.v13].
+  final TlsVersion? minimumVersion;
+
+  bool get isEmpty =>
+      caCertificates.isEmpty &&
+      clientCertificates.isEmpty &&
+      pins == null &&
+      minimumVersion == null;
 
   /// The entry that applies to [host] on [port]: the most specific enabled
   /// match, the first one added when two are equally specific. A
@@ -135,6 +159,9 @@ class TlsConfig {
   /// certificate or key cannot be read, e.g. a wrong passphrase.
   SecurityContext contextFor(String host, {int? port}) {
     final context = SecurityContext(withTrustedRoots: true);
+    if (minimumVersion == TlsVersion.v13) {
+      context.minimumTlsProtocolVersion = TlsProtocolVersion.tls1_3;
+    }
     for (final ca in caCertificates) {
       context.setTrustedCertificatesBytes(ca);
     }
@@ -164,6 +191,7 @@ class TlsInfo {
     this.fingerprint,
     this.spkiFingerprint,
     this.names = const [],
+    this.pin = PinStatus.notApplicable,
   });
 
   final String subject;
@@ -188,4 +216,7 @@ class TlsInfo {
 
   /// The names the certificate covers (`DNS:api.example.com`, `IP:...`).
   final List<String> names;
+
+  /// How the server key compared with the pins (FR-HTTP-013d).
+  final PinStatus pin;
 }

@@ -15,7 +15,13 @@ class HttpDefaultsNotifier extends Notifier<HttpSettings> {
     return HttpSettings(
       proxy: net.proxy,
       useSystemProxy: net.useSystemProxy,
-      tls: net.tls,
+      // First-use pins are saved as the engine records them, so they survive
+      // a restart.
+      tls: net.tlsWith(
+        onPinsChanged: (pins) => ref
+            .read(networkProvider.notifier)
+            .update((c) => c.copyWith(pins: pins)),
+      ),
       timeout: Duration(
         milliseconds: s['timeoutMs'] as int? ?? d.timeout.inMilliseconds,
       ),

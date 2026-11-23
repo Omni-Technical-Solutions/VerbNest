@@ -112,6 +112,7 @@ void main() {
       ),
     );
     db.close();
+    File('${dir.path}/s.pem').writeAsBytesSync(cert);
     File('${dir.path}/c.pem').writeAsBytesSync(client.$1);
     File('${dir.path}/k.pem').writeAsBytesSync(client.$2);
   });
@@ -377,6 +378,101 @@ void main() {
         expect(text, isNot(contains('BEGIN')));
       }
     });
+  });
+
+  group('pinning', () {
+    List<String> trusted(List<String> extra) => [
+      'run', workspace, '-c', 'API', //
+      '--ca', '${dir.path}/s.pem',
+      '--cert', '${dir.path}/c.pem',
+      '--key', '${dir.path}/k.pem',
+      ...extra,
+    ];
+
+    test('--pin-file records the key on first use and holds it', () async {
+      if (!available) return markTestSkipped('openssl not found');
+      final file = '${dir.path}/pins.json';
+      final (c1, o1, e1) = await cli(trusted(['--pin-file', file]));
+      expect(c1, 0, reason: '$o1 $e1');
+      final saved = jsonDecode(File(file).readAsStringSync()) as Map;
+      final pins = (saved['pins'] as List).cast<Map<String, Object?>>();
+      expect(pins.single['host'], '127.0.0.1');
+      final (c2, _, _) = await cli(trusted(['--pin-file', file]));
+      expect(c2, 0);
+
+      // Another key is now behind the host: exit 3, nothing sent.
+      pins.single['spki'] = '00:' * 31 + '00';
+      File(file).writeAsStringSync(jsonEncode(saved));
+      final (c3, o3, e3) = await cli(trusted(['--pin-file', file]));
+      expect(c3, 3, reason: '$o3 $e3');
+      expect(e3, contains('server key changed for 127.0.0.1'));
+      expect(File(file).readAsStringSync(), contains('00:00:00'));
+
+      // --trust-changed accepts and updates it.
+      final (c4, _, _) = await cli(
+        trusted(['--pin-file', file, '--trust-changed']),
+      );
+      expect(c4, 0);
+      expect(File(file).readAsStringSync(), isNot(contains('00:00:00')));
+    });
+
+    test('--pin host=hash is checked and a wrong one is exit code 3', () async {
+      if (!available) return markTestSkipped('openssl not found');
+      final wrong = 'ab' * 32;
+      final (code, _, err) = await cli(
+        trusted(['--pin', '127.0.0.1:${server.port}=$wrong']),
+      );
+      expect(code, 3);
+      expect(err, contains('server key changed'));
+      // A manual pin is not replaced by --trust-changed.
+      final (still, _, _) = await cli(
+        trusted([
+          '--pin',
+          '127.0.0.1:${server.port}=$wrong',
+          '--trust-changed',
+        ]),
+      );
+      expect(still, 3);
+    });
+
+    test('a pin is not checked when the certificate is not verified', () async {
+      if (!available) return markTestSkipped('openssl not found');
+      final (code, out, err) = await cli(
+        run([
+          '--cert', '${dir.path}/c.pem', '--key', '${dir.path}/k.pem', //
+          '--pin', '127.0.0.1=${'ab' * 32}',
+        ]),
+      );
+      expect(code, 0, reason: '$out $err');
+    });
+
+    test(
+      'tls check reports the pin; --tls-min 1.3 works; bad --pin is 2',
+      () async {
+        if (!available) return markTestSkipped('openssl not found');
+        final url = 'https://127.0.0.1:${server.port}/';
+        final base = [
+          'tls', 'check', url, '--ca', '${dir.path}/s.pem', //
+          '--cert', '${dir.path}/c.pem', '--key', '${dir.path}/k.pem',
+        ];
+        final (c1, o1, _) = await cli([...base, '--tls-min', '1.3']);
+        expect(c1, 0);
+        expect(o1, contains('Pinned key: not pinned yet'));
+        final (c2, o2, e2) = await cli([
+          ...base,
+          '--pin',
+          '127.0.0.1:${server.port}=${'cd' * 32}',
+        ]);
+        expect(c2, 3, reason: '$o2 $e2');
+        expect(o2, contains('Pinned key: CHANGED'));
+        final (c3, _, e3) = await cli([...base, '--pin', 'nohash']);
+        expect(c3, 2);
+        expect(e3, contains('--pin'));
+        final (c4, _, e4) = await cli([...base, '--pin', 'h=zz']);
+        expect(c4, 2);
+        expect(e4, contains('SHA-256'));
+      },
+    );
   });
 
   group('verbnest tls', () {

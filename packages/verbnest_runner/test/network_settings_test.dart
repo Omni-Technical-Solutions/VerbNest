@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
+import 'package:verbnest_http/verbnest_http.dart';
 import 'package:verbnest_runner/verbnest_runner.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
@@ -124,5 +125,60 @@ void main() {
     expect(c.proxy!.bypass, ['localhost', '*.internal']);
     expect(const NetworkConfig().tls, isNull);
     expect(const NetworkConfig().proxy, isNull);
+  });
+
+  test('pins, the pinning switch and the minimum TLS version round trip', () {
+    final local = LocalStore.memory();
+    addTearDown(local.close);
+    final store = NetworkConfigStore(local, LocalDbSecretStore(local), 'ws1');
+    // Defaults: nothing pinned, pinning on, no minimum.
+    final empty = store.read();
+    expect(empty.pins, isEmpty);
+    expect(empty.pinByDefault, isTrue);
+    expect(empty.minTls, isNull);
+    store.write(
+      _config().copyWith(
+        pins: [
+          PinEntry(
+            host: 'api.test',
+            spki: 'AA:BB',
+            leaf: 'CC:DD',
+            subject: 'CN=api.test',
+            notAfter: DateTime.utc(2030, 1, 2),
+            firstSeen: DateTime.utc(2026, 11, 1),
+            manual: true,
+          ),
+          const PinEntry(
+            host: 'b.test',
+            port: 8443,
+            spki: 'EE',
+            enabled: false,
+          ),
+        ],
+        pinByDefault: false,
+        minTls: TlsVersion.v13,
+      ),
+    );
+    final back = store.read();
+    expect(back.pins.map((p) => p.label), ['api.test', 'b.test:8443']);
+    expect(back.pins[0].manual, isTrue);
+    expect(back.pins[0].notAfter, DateTime.utc(2030, 1, 2));
+    expect(back.pins[1].enabled, isFalse);
+    expect(back.pinByDefault, isFalse);
+    expect(back.minTls, TlsVersion.v13);
+    final tls = back.tls!;
+    expect(tls.minimumVersion, TlsVersion.v13);
+    expect(tls.pinByDefault, isFalse);
+    expect(tls.pins!.entries, hasLength(2));
+  });
+
+  test('tlsWith tells the caller when the engine records a pin', () {
+    List<PinEntry>? saved;
+    final tls = const NetworkConfig(
+      clientCerts: [],
+      minTls: TlsVersion.v12,
+    ).tlsWith(onPinsChanged: (p) => saved = p)!;
+    tls.pins!.put(const PinEntry(host: 'x.test', spki: 'AA'));
+    expect(saved!.single.host, 'x.test');
   });
 }

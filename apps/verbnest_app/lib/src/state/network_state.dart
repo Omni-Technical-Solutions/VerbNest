@@ -41,6 +41,31 @@ class NetworkNotifier extends Notifier<NetworkConfig> {
     return null;
   }
 
+  /// Replaces the pin for [pin]'s host (or adds it).
+  void putPin(PinEntry pin) => update(
+    (c) => c.copyWith(
+      pins: [
+        for (final e in c.pins)
+          if (e.host != pin.host || e.port != pin.port) e,
+        pin,
+      ],
+    ),
+  );
+
+  void removePin(PinEntry pin) => update(
+    (c) => c.copyWith(
+      pins: [
+        for (final e in c.pins)
+          if (e.host != pin.host || e.port != pin.port) e,
+      ],
+    ),
+  );
+
+  void setPinByDefault(bool on) => update((c) => c.copyWith(pinByDefault: on));
+
+  void setMinTls(TlsVersion? v) =>
+      update((c) => c.copyWith(minTls: v, clearMinTls: v == null));
+
   void removeCa(int index) =>
       update((c) => c.copyWith(cas: [...c.cas]..removeAt(index)));
 

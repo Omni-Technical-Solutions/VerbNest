@@ -1,6 +1,6 @@
 # Certificate-based authentication: TLS and mTLS
 
-Status 2026-11-23: Phases A (0.66.0), B (0.67.0) and C (0.68.0) done; D to K not started. Phase C note: `--tls-min` and `--pin` are built in phase D together with the pinning and minimum-version support they control, not before. Owner decisions of the same day are in section 0 and are built into the phases below. Requirement: FR-HTTP-013 (client certificates per host pattern, PEM and PKCS#12, custom CA bundle) is marked P1 in `requirements.md`; this plan finishes and hardens it.
+Status 2026-11-23: Phases A (0.66.0), B (0.67.0), C (0.68.0) and D (0.69.0) done; E to K not started. Phase D note: `--pin` takes `host[:port]=sha256` (a bare hash cannot say which host it is for); WebSocket and SSE are not pinned. Owner decisions of the same day are in section 0 and are built into the phases below. Requirement: FR-HTTP-013 (client certificates per host pattern, PEM and PKCS#12, custom CA bundle) is marked P1 in `requirements.md`; this plan finishes and hardens it.
 
 ## 0. Owner decisions (2026-11-23)
 

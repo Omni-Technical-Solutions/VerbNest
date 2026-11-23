@@ -21,7 +21,8 @@ server certificate, whether it is trusted and names the host, and the client
 certificate that was offered. No request is sent. Exit 0 on success, 1 when
 the handshake fails or the server turns the client certificate down, 2 when a
 certificate file is unreadable; with --strict, 1 also when the server
-certificate is not trusted or does not name the host.
+certificate is not trusted or does not name the host. Exit 3 when a pinned
+server shows another key (also from `verbnest run`).
 ''';
 
 ArgParser _inspectParser() => ArgParser()
@@ -195,6 +196,31 @@ int _inspect(
   return 0;
 }
 
+/// Prints how the server key compares with the pins; 3 for a mismatch.
+int _pinLine(IOSink out, TlsProbe p) {
+  switch (p.pin.status) {
+    case PinStatus.matches:
+      out.writeln('Pinned key: matches');
+    case PinStatus.recorded:
+      out.writeln(
+        'Pinned key: not pinned yet (a run would pin ${p.server.spkiSha256})',
+      );
+    case PinStatus.disabled:
+      out.writeln('Pinned key: pin switched off');
+    case PinStatus.unverified:
+      out.writeln('Pinned key: not checked (the certificate is not trusted)');
+    case PinStatus.mismatch:
+      out.writeln(
+        'Pinned key: CHANGED. Pinned ${p.pin.entry!.spki}, now '
+        '${p.server.spkiSha256}',
+      );
+      return 3;
+    case PinStatus.notApplicable:
+      break;
+  }
+  return 0;
+}
+
 Future<int> _check(
   Iterable<String> args,
   IOSink out,
@@ -250,7 +276,7 @@ Future<int> _check(
         ? 'Client certificate: none configured for this host'
         : 'Client certificate: offered "${cc.label.isEmpty ? cc.hostPattern : cc.label}"',
   );
-  var code = 0;
+  var code = _pinLine(out, p);
   if (p.rejectedClientCertificate) {
     out.writeln(
       'The server closed the connection right after the handshake: it '
@@ -258,6 +284,10 @@ Future<int> _check(
       'accept the one offered.',
     );
     code = 1;
+  }
+  if (code == 3) {
+    err.writeln('The server key is not the pinned one.');
+    return 3;
   }
   if (r['strict'] as bool && (!p.trusted || !p.hostMatches)) {
     err.writeln(

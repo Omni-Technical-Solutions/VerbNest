@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.69.0
+
+- New: **server key pinning**, on by default for every host that has a client certificate. The first key a server shows is remembered (trust on first use); if the host later shows a different key, the request is stopped before anything is sent and the message names the old and the new key and their dates. The key is pinned, not the certificate, so a certificate renewed with the same key keeps working. Nothing is pinned or compared when the certificate is not verified (verification off, or untrusted).
+- New: **Settings > Network > Pinned servers** lists the pins (switch one off, forget it), has a switch for pinning by default and sets the **oldest TLS version** (default, 1.2 or 1.3).
+- New: **Test connection** connects to a host with your certificates and pins, sends no request, and shows the server certificate, whether it is trusted and names the host, the client certificate offered and the pin state; it can pin the server or trust a changed key.
+- New (command line): `--pin host[:port]=sha256` (repeatable), `--pin-file file` (read at the start; a server seen for the first time is added), `--trust-changed` and `--tls-min 1.2|1.3`; `verbnest run` and `verbnest tls check` exit with code 3 when a pinned server shows another key. The network export file carries pins and the minimum version.
+- Limit: WebSocket and SSE connections are not pinned yet. FR-HTTP-013d; phase D of `docs/spec/tls-certificates-plan.md`.
+
 ## 0.68.0
 
 - New (command line): `verbnest run` can use client certificates. `--cert` (with `--key` for a PEM) and `--cert-host`, `--cert-passphrase-env` or `--cert-passphrase-file` (a passphrase is never taken as an argument), and `--ca` for extra trusted CAs. Every file is checked first: a wrong passphrase, a key that does not match or a file that is not a certificate stops the run with exit code 2 and says why.

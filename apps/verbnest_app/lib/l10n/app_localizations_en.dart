@@ -1776,4 +1776,121 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rvFilter => 'Filter';
+
+  @override
+  String get nsPinsTitle => 'Pinned servers';
+
+  @override
+  String get nsPinByDefault => 'Pin servers that get a client certificate';
+
+  @override
+  String get nsPinByDefaultHint =>
+      'The first key a server shows is remembered; a different key later stops the request.';
+
+  @override
+  String get nsPinsNone => 'No server keys pinned yet.';
+
+  @override
+  String nsPinSub(String key, String date) {
+    return 'Key $key · seen $date';
+  }
+
+  @override
+  String nsPinManual(String key) {
+    return 'Key $key · set by you';
+  }
+
+  @override
+  String get nsPinRemove => 'Forget this pin';
+
+  @override
+  String get nsPinEnabled => 'Check this pin';
+
+  @override
+  String get nsMinTls => 'Oldest TLS version';
+
+  @override
+  String get nsMinTlsDefault => 'Default';
+
+  @override
+  String get nsMinTls12 => '1.2';
+
+  @override
+  String get nsMinTls13 => '1.3';
+
+  @override
+  String get nsTestConn => 'Test connection';
+
+  @override
+  String get nsTestTitle => 'Test connection';
+
+  @override
+  String get nsTestUrl => 'Server (host or URL)';
+
+  @override
+  String get nsTestRun => 'Connect';
+
+  @override
+  String nsTestOk(String ms) {
+    return 'Connected in $ms ms';
+  }
+
+  @override
+  String nsTestServer(String subject) {
+    return 'Server certificate: $subject';
+  }
+
+  @override
+  String nsTestExpires(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String get nsTestTrusted => 'Trusted by the system and your CAs';
+
+  @override
+  String get nsTestUntrusted => 'Not trusted by the system or your CAs';
+
+  @override
+  String get nsTestName => 'Names the host';
+
+  @override
+  String get nsTestNameNo => 'Does not name the host';
+
+  @override
+  String nsTestClient(String name) {
+    return 'Client certificate offered: $name';
+  }
+
+  @override
+  String get nsTestClientNone => 'No client certificate for this host';
+
+  @override
+  String get nsTestRejected =>
+      'The server closed the connection after the handshake: it probably needs a client certificate or does not accept the one offered.';
+
+  @override
+  String get nsTestPinRecorded => 'This server is not pinned yet.';
+
+  @override
+  String get nsTestPinMatches => 'The pinned key matches.';
+
+  @override
+  String nsTestPinMismatch(String pinned, String actual) {
+    return 'The key is not the pinned one. Pinned $pinned, now $actual.';
+  }
+
+  @override
+  String get nsTestPin => 'Pin this server';
+
+  @override
+  String get nsTestTrustNew => 'Trust the new key';
+
+  @override
+  String nsTestFailed(String error) {
+    return 'Could not connect: $error';
+  }
+
+  @override
+  String get nsTestClose => 'Close';
 }

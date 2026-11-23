@@ -3201,6 +3201,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Filter'**
   String get rvFilter;
+
+  /// No description provided for @nsPinsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned servers'**
+  String get nsPinsTitle;
+
+  /// No description provided for @nsPinByDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin servers that get a client certificate'**
+  String get nsPinByDefault;
+
+  /// No description provided for @nsPinByDefaultHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The first key a server shows is remembered; a different key later stops the request.'**
+  String get nsPinByDefaultHint;
+
+  /// No description provided for @nsPinsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No server keys pinned yet.'**
+  String get nsPinsNone;
+
+  /// No description provided for @nsPinSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Key {key} · seen {date}'**
+  String nsPinSub(String key, String date);
+
+  /// No description provided for @nsPinManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Key {key} · set by you'**
+  String nsPinManual(String key);
+
+  /// No description provided for @nsPinRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget this pin'**
+  String get nsPinRemove;
+
+  /// No description provided for @nsPinEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Check this pin'**
+  String get nsPinEnabled;
+
+  /// No description provided for @nsMinTls.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest TLS version'**
+  String get nsMinTls;
+
+  /// No description provided for @nsMinTlsDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get nsMinTlsDefault;
+
+  /// No description provided for @nsMinTls12.
+  ///
+  /// In en, this message translates to:
+  /// **'1.2'**
+  String get nsMinTls12;
+
+  /// No description provided for @nsMinTls13.
+  ///
+  /// In en, this message translates to:
+  /// **'1.3'**
+  String get nsMinTls13;
+
+  /// No description provided for @nsTestConn.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get nsTestConn;
+
+  /// No description provided for @nsTestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get nsTestTitle;
+
+  /// No description provided for @nsTestUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Server (host or URL)'**
+  String get nsTestUrl;
+
+  /// No description provided for @nsTestRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get nsTestRun;
+
+  /// No description provided for @nsTestOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected in {ms} ms'**
+  String nsTestOk(String ms);
+
+  /// No description provided for @nsTestServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server certificate: {subject}'**
+  String nsTestServer(String subject);
+
+  /// No description provided for @nsTestExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {date}'**
+  String nsTestExpires(String date);
+
+  /// No description provided for @nsTestTrusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted by the system and your CAs'**
+  String get nsTestTrusted;
+
+  /// No description provided for @nsTestUntrusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not trusted by the system or your CAs'**
+  String get nsTestUntrusted;
+
+  /// No description provided for @nsTestName.
+  ///
+  /// In en, this message translates to:
+  /// **'Names the host'**
+  String get nsTestName;
+
+  /// No description provided for @nsTestNameNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not name the host'**
+  String get nsTestNameNo;
+
+  /// No description provided for @nsTestClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificate offered: {name}'**
+  String nsTestClient(String name);
+
+  /// No description provided for @nsTestClientNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No client certificate for this host'**
+  String get nsTestClientNone;
+
+  /// No description provided for @nsTestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The server closed the connection after the handshake: it probably needs a client certificate or does not accept the one offered.'**
+  String get nsTestRejected;
+
+  /// No description provided for @nsTestPinRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'This server is not pinned yet.'**
+  String get nsTestPinRecorded;
+
+  /// No description provided for @nsTestPinMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'The pinned key matches.'**
+  String get nsTestPinMatches;
+
+  /// No description provided for @nsTestPinMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The key is not the pinned one. Pinned {pinned}, now {actual}.'**
+  String nsTestPinMismatch(String pinned, String actual);
+
+  /// No description provided for @nsTestPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin this server'**
+  String get nsTestPin;
+
+  /// No description provided for @nsTestTrustNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Trust the new key'**
+  String get nsTestTrustNew;
+
+  /// No description provided for @nsTestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect: {error}'**
+  String nsTestFailed(String error);
+
+  /// No description provided for @nsTestClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get nsTestClose;
 }
 
 class _AppLocalizationsDelegate

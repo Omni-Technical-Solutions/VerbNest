@@ -10,6 +10,7 @@ import '../state/file_port.dart';
 import '../state/network_state.dart';
 import 'cookie_manager.dart';
 import 'network_export_dialog.dart';
+import 'pin_settings.dart';
 import 'synced_field.dart';
 import '../../l10n/l10n.dart';
 import 'ui/toast.dart';
@@ -65,6 +66,8 @@ class NetworkSettingsSection extends ConsumerWidget {
         ),
         ..._certTiles(context, c, n),
         _addButtons(context, ref, n),
+        const Divider(),
+        const PinSettingsSection(),
         const SizedBox(height: 8),
       ],
     );

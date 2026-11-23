@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'cert_inspect.dart';
+import 'pin.dart';
 import 'tls_config.dart';
 
 /// What a handshake with a server showed (FR-HTTP-013c). No request is sent.
@@ -15,6 +16,7 @@ class TlsProbe {
     required this.clientCertificateConfigured,
     required this.rejectedClientCertificate,
     required this.time,
+    this.pin = const PinCheck(PinStatus.notApplicable),
   });
 
   /// The server's certificate (the leaf; `dart:io` does not give the chain).
@@ -40,6 +42,9 @@ class TlsProbe {
   /// already finished by then.
   final bool rejectedClientCertificate;
   final Duration time;
+
+  /// How the server key compares with the pins (nothing is recorded).
+  final PinCheck pin;
 }
 
 /// The handshake failed (or the certificate files could not be loaded).
@@ -135,6 +140,7 @@ Future<TlsProbe> probeTls(
       clientCertificateConfigured: chosen != null,
       rejectedClientCertificate: rejected,
       time: elapsed,
+      pin: checkPin(tls, host, port, info, verified: trusted, record: false),
     );
   } finally {
     socket.destroy();

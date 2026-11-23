@@ -234,9 +234,11 @@ void main() {
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('open-cookies')),
-      -200,
+      -100,
       scrollable: list,
     );
+    await tester.ensureVisible(find.byKey(const Key('open-cookies')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('open-cookies')));
     await tester.pumpAndSettle();
     expect(find.byType(CookieManagerDialog), findsOneWidget);

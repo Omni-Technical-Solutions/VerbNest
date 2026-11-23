@@ -74,6 +74,18 @@ wanted a client certificate and was not given an acceptable one), 2 means a
 file could not be read. With `--strict`, an untrusted or wrongly named server
 certificate is exit code 1 as well.
 
+## Pinning and the oldest TLS version
+
+A host that has a client certificate is pinned on first use: the SHA-256 of the server's public key is remembered, and a different key later stops the request (exit code 3, nothing sent). A renewed certificate with the same key still matches. Nothing is pinned when the certificate is not verified (for example with `--insecure`).
+
+- `--pin host[:port]=sha256` expects that key (or certificate hash) for the host. Repeatable. A pin you give is never replaced by `--trust-changed`.
+- `--pin-file file` keeps pins in a JSON file: it is read at the start and a server seen for the first time is added to it. Keep the file between CI runs to get trust on first use there too; without it first use is only remembered for the run.
+- `--trust-changed` accepts a changed key for a recorded pin and updates it.
+- `--tls-min 1.2|1.3` refuses servers that cannot do at least that version.
+- `verbnest tls check` prints the pin state and exits 3 on a mismatch.
+
+WebSocket and SSE connections are not pinned.
+
 ## What the output never contains
 
 The run report (JSON, JUnit, HTML) and the console never show a key, a

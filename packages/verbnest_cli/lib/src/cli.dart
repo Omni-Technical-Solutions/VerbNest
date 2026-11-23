@@ -349,6 +349,13 @@ Future<int> _run(
       );
     }
     _writeReport(report, reporter, live, r['out'] as String?, out);
+    if (tls.pinMismatches.isNotEmpty) {
+      err.writeln(
+        'The server key changed for ${{for (final p in tls.pinMismatches) p.label}.join(', ')}. '
+        'Check the change, then run again with --trust-changed or edit the pins.',
+      );
+      return 3;
+    }
     return report.ok && !report.stoppedEarly ? 0 : 1;
   } on _UsageError catch (e) {
     err.writeln(e.message);
