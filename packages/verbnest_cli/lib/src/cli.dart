@@ -9,6 +9,8 @@ import 'package:verbnest_script/verbnest_script.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
 import 'system_vault.dart';
+import 'tls_commands.dart';
+import 'tls_options.dart';
 
 const _usage = '''
 VerbNest CLI
@@ -16,6 +18,7 @@ VerbNest CLI
 Usage: verbnest run <workspace.verbnest> [options]
        verbnest mock <workspace.verbnest> [options]
        verbnest history <workspace.verbnest> --db <history.db> [options]
+       verbnest tls inspect <certificate> | tls check <url> [options]
 
 Runs the requests of a collection or folder and exits 0 when every request
 and test passed, 1 when something failed, 2 on a usage or file error.
@@ -36,12 +39,20 @@ device-local history database (the same format the app uses; secrets are
 masked). `verbnest history` lists, shows or clears those rows. Set
 VERBNEST_HISTORY_DB to avoid repeating the path.
 
+`verbnest run` can use certificates: --ca adds a trusted CA; --cert (and --key
+for a PEM) presents a client certificate to --cert-host (default every host),
+its passphrase from --cert-passphrase-env or --cert-passphrase-file;
+--app-network reads the proxy, CAs and client certificates saved in the app on
+this computer (their keys also need --vault); --network-config reads a file
+made by the app's "Export for the command line". `verbnest tls inspect <file>`
+shows a certificate and `verbnest tls check <url>` does a TLS handshake.
+
 `verbnest run --vault` reads secret variables from the system secret store
 (macOS Keychain, Linux libsecret) where the app saved them. --var and
 VERBNEST_VAR_<name> still win.
 ''';
 
-ArgParser _runParser() => ArgParser()
+ArgParser _runParserBase() => ArgParser()
   ..addOption(
     'collection',
     abbr: 'c',
@@ -129,6 +140,12 @@ ArgParser _runParser() => ArgParser()
   )
   ..addFlag('help', abbr: 'h', negatable: false);
 
+ArgParser _runParser() {
+  final p = _runParserBase();
+  addTlsOptions(p);
+  return p;
+}
+
 ArgParser _historyParser() => ArgParser()
   ..addOption('db', help: 'History database (or VERBNEST_HISTORY_DB).')
   ..addOption('query', abbr: 'q', help: 'Match method, URL or status.')
@@ -155,6 +172,14 @@ Future<int> runCli(
     out.writeln(_usage);
     out.writeln(_runParser().usage);
     return args.isEmpty ? 2 : 0;
+  }
+  if (args.first == 'tls') {
+    return runTlsCommand(
+      args.skip(1).toList(),
+      out,
+      err,
+      environment ?? Platform.environment,
+    );
   }
   final isMock = args.first == 'mock';
   final isHistory = args.first == 'history';
@@ -263,8 +288,9 @@ Future<int> _run(
     final (iterations, delay) = _loopSettings(r);
     final ids = [for (final n in requestsUnder(repo, container.id)) n.id];
     if (ids.isEmpty) throw _UsageError('"${container.name}" has no requests.');
-    final defaults = _httpDefaults(r, repo, err);
     final secrets = await _openSecrets(r, repo, vault);
+    final tls = await _tlsSetup(r, repo, environment, secrets, err);
+    final defaults = _httpDefaults(r, repo, err, tls);
     HistoryRecorder? recorder;
     final historyPath = (r['history'] as String?) ?? _historyEnv(environment);
     if (historyPath != null && historyPath.isNotEmpty) {
@@ -415,7 +441,12 @@ List<DataRow> _loadData(ArgResults r) {
 }
 
 /// The workspace's HTTP settings, with `--insecure` applied.
-HttpSettings _httpDefaults(ArgResults r, WorkspaceRepository repo, IOSink err) {
+HttpSettings _httpDefaults(
+  ArgResults r,
+  WorkspaceRepository repo,
+  IOSink err,
+  TlsSetup tls,
+) {
   final s = repo.settings;
   const d = HttpSettings();
   if (!(r['insecure'] as bool) && s['verifyTls'] == false) {
@@ -432,8 +463,37 @@ HttpSettings _httpDefaults(ArgResults r, WorkspaceRepository repo, IOSink err) {
         : (s['verifyTls'] as bool? ?? true),
     followRedirects: s['followRedirects'] as bool? ?? true,
     maxRedirects: s['maxRedirects'] as int? ?? d.maxRedirects,
-    useSystemProxy: true,
+    // A proxy from the app or an export file replaces the environment's.
+    useSystemProxy: tls.proxy == null,
+    proxy: tls.proxy,
+    tls: tls.tls,
   );
+}
+
+/// The certificates and proxy the options ask for; a note of where they came
+/// from goes to stderr, never a key or a passphrase.
+Future<TlsSetup> _tlsSetup(
+  ArgResults r,
+  WorkspaceRepository repo,
+  Map<String, String>? environment,
+  SecretStore? secrets,
+  IOSink err,
+) async {
+  try {
+    final setup = await buildTlsSetup(
+      r,
+      workspaceId: repo.workspaceId,
+      environment: environment ?? Platform.environment,
+      vaultSecrets: secrets,
+      warn: err.writeln,
+    );
+    for (final n in setup.notes) {
+      err.writeln('TLS: $n');
+    }
+    return setup;
+  } on TlsUsageError catch (e) {
+    throw _UsageError(e.message);
+  }
 }
 
 Future<SecretStore?> _openSecrets(

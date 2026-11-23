@@ -47,6 +47,35 @@ class CertInfo {
   /// Whole days from [now] to the end of validity; negative once expired.
   int daysLeft(DateTime now) => notAfter.difference(now).inDays;
 
+  /// Whether the certificate names [host]: a DNS or IP subject alternative
+  /// name (`*.example.com` covers one label), or, when there are none, the
+  /// common name.
+  bool coversHost(String host) {
+    final h = host.toLowerCase().replaceAll(RegExp(r'^\[|\]$'), '');
+    final sans = names
+        .where((n) => n.startsWith('DNS:') || n.startsWith('IP:'))
+        .map((n) => n.substring(n.indexOf(':') + 1).toLowerCase())
+        .toList();
+    final candidates = sans.isNotEmpty
+        ? sans
+        : [
+            for (final part in subject.split(', '))
+              if (part.startsWith('CN=')) part.substring(3).toLowerCase(),
+          ];
+    for (final c in candidates) {
+      if (c == h) return true;
+      if (c.startsWith('*.')) {
+        final rest = c.substring(1);
+        if (h.endsWith(rest) &&
+            !h.substring(0, h.length - rest.length).contains('.') &&
+            h.length > rest.length) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   bool isExpired(DateTime now) => now.isAfter(notAfter);
   bool isNotYetValid(DateTime now) => now.isBefore(notBefore);
 }

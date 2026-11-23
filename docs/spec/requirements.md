@@ -61,6 +61,8 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.verbnest`); 
 
 **FR-HTTP-013b (P1)** Client-certificate entries are chosen by specificity: an exact host beats `*.suffix` (longer suffix first) beats `*`, and a pattern with a port (`host:8443`, `https://host:8443`) beats the same pattern without; an entry can be edited, switched off, or set to "send no client certificate" to a host, which beats a broader entry; the TLS panel names the entry that was used. (Plan: `tls-certificates-plan.md` phase B.)
 
+**FR-HTTP-013c (P1)** The command line uses client certificates and CAs: `--ca`, `--cert`/`--key`/`--cert-host`, passphrases from an environment variable or a file (never an argument), `--app-network` (the app's saved settings, keys with `--vault`), `--network-config` (a passphrase-protected export made in Settings > Network), `verbnest tls inspect` and `verbnest tls check`; every file is validated first with exit code 2 and a reason; reports and console never carry key material. (Plan: `tls-certificates-plan.md` phase C.)
+
 ## 4. Responses (FR-RES)
 
 **FR-RES-001 (P0)** Show status code + reason, total time, size (headers/body, wire/decoded).

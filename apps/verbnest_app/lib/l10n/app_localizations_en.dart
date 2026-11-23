@@ -797,6 +797,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nsCertName => 'Name';
 
   @override
+  String get nsExport => 'Export for the command line';
+
+  @override
+  String get nsExportTitle => 'Export network settings';
+
+  @override
+  String get nsExportHint =>
+      'Makes one file with your proxy, CAs, client certificates and their keys, locked with a passphrase. Use it with `verbnest run --network-config`.';
+
+  @override
+  String get nsExportPass => 'Passphrase';
+
+  @override
+  String get nsExportPass2 => 'Repeat the passphrase';
+
+  @override
+  String get nsExportMismatch => 'The passphrases are not the same.';
+
+  @override
+  String get nsExportSaved => 'Saved the network export.';
+
+  @override
+  String get nsExportBusy => 'Locking the file (a few seconds)…';
+
+  @override
+  String get nsExportNothing => 'There is nothing to export yet.';
+
+  @override
   String get nsCancel => 'Cancel';
 
   @override

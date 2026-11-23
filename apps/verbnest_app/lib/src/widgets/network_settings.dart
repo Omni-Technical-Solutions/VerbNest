@@ -9,6 +9,7 @@ import 'package:verbnest_http/verbnest_http.dart';
 import '../state/file_port.dart';
 import '../state/network_state.dart';
 import 'cookie_manager.dart';
+import 'network_export_dialog.dart';
 import 'synced_field.dart';
 import '../../l10n/l10n.dart';
 import 'ui/toast.dart';
@@ -225,6 +226,12 @@ class NetworkSettingsSection extends ConsumerWidget {
                 }
               },
             ),
+          ),
+          OutlinedButton.icon(
+            key: const Key('export-network'),
+            icon: const Icon(Icons.terminal),
+            label: Text(context.l10n.nsExport),
+            onPressed: () => showNetworkExport(context),
           ),
           OutlinedButton.icon(
             key: const Key('add-client-cert'),

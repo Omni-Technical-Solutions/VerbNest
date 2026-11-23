@@ -1492,6 +1492,60 @@ abstract class AppLocalizations {
   /// **'Name'**
   String get nsCertName;
 
+  /// No description provided for @nsExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export for the command line'**
+  String get nsExport;
+
+  /// No description provided for @nsExportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export network settings'**
+  String get nsExportTitle;
+
+  /// No description provided for @nsExportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Makes one file with your proxy, CAs, client certificates and their keys, locked with a passphrase. Use it with `verbnest run --network-config`.'**
+  String get nsExportHint;
+
+  /// No description provided for @nsExportPass.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase'**
+  String get nsExportPass;
+
+  /// No description provided for @nsExportPass2.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat the passphrase'**
+  String get nsExportPass2;
+
+  /// No description provided for @nsExportMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The passphrases are not the same.'**
+  String get nsExportMismatch;
+
+  /// No description provided for @nsExportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved the network export.'**
+  String get nsExportSaved;
+
+  /// No description provided for @nsExportBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Locking the file (a few seconds)…'**
+  String get nsExportBusy;
+
+  /// No description provided for @nsExportNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'There is nothing to export yet.'**
+  String get nsExportNothing;
+
   /// No description provided for @nsCancel.
   ///
   /// In en, this message translates to:

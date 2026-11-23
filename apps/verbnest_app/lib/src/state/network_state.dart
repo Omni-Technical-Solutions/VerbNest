@@ -4,255 +4,27 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_http/verbnest_http.dart';
+import 'package:verbnest_runner/verbnest_runner.dart';
 
 import 'file_port.dart';
 import 'session.dart';
 
-const _kind = 'network';
-const _kvKey = 'network';
-
-/// A trusted CA the user added.
-class CaEntry {
-  const CaEntry(this.name, this.bytes);
-
-  final String name;
-  final Uint8List bytes;
-}
-
-/// A client certificate for hosts matching [pattern]. The private key and
-/// passphrase live in the secret store, not in [NetworkConfig]'s JSON.
-class ClientCertEntry {
-  const ClientCertEntry({
-    required this.id,
-    required this.pattern,
-    required this.name,
-    required this.certificate,
-    this.privateKey,
-    this.passphrase = '',
-    this.enabled = true,
-    this.none = false,
-  });
-
-  final String id;
-  final String pattern;
-  final String name;
-  final Uint8List certificate;
-  final Uint8List? privateKey;
-  final String passphrase;
-
-  /// A switched-off entry is kept but never used.
-  final bool enabled;
-
-  /// "Send no client certificate to these hosts"; has no certificate.
-  final bool none;
-
-  ClientCertEntry copyWith({
-    String? pattern,
-    String? name,
-    Uint8List? certificate,
-    Uint8List? privateKey,
-    bool clearKey = false,
-    String? passphrase,
-    bool? enabled,
-  }) => ClientCertEntry(
-    id: id,
-    pattern: pattern ?? this.pattern,
-    name: name ?? this.name,
-    certificate: certificate ?? this.certificate,
-    privateKey: clearKey ? null : (privateKey ?? this.privateKey),
-    passphrase: passphrase ?? this.passphrase,
-    enabled: enabled ?? this.enabled,
-    none: none,
-  );
-}
-
-/// Proxy and certificate settings. Device-local on purpose: they describe
-/// this machine's network, so they do not travel with the workspace file.
-class NetworkConfig {
-  const NetworkConfig({
-    this.proxyEnabled = false,
-    this.proxyKind = ProxyKind.http,
-    this.proxyHost = '',
-    this.proxyPort = 8080,
-    this.proxyUser = '',
-    this.proxyPassword = '',
-    this.bypass = '',
-    this.useSystemProxy = false,
-    this.cas = const [],
-    this.clientCerts = const [],
-  });
-
-  final bool proxyEnabled;
-  final ProxyKind proxyKind;
-  final String proxyHost;
-  final int proxyPort;
-  final String proxyUser;
-  final String proxyPassword;
-
-  /// Comma or space separated host patterns.
-  final String bypass;
-  final bool useSystemProxy;
-  final List<CaEntry> cas;
-  final List<ClientCertEntry> clientCerts;
-
-  NetworkConfig copyWith({
-    bool? proxyEnabled,
-    ProxyKind? proxyKind,
-    String? proxyHost,
-    int? proxyPort,
-    String? proxyUser,
-    String? proxyPassword,
-    String? bypass,
-    bool? useSystemProxy,
-    List<CaEntry>? cas,
-    List<ClientCertEntry>? clientCerts,
-  }) => NetworkConfig(
-    proxyEnabled: proxyEnabled ?? this.proxyEnabled,
-    proxyKind: proxyKind ?? this.proxyKind,
-    proxyHost: proxyHost ?? this.proxyHost,
-    proxyPort: proxyPort ?? this.proxyPort,
-    proxyUser: proxyUser ?? this.proxyUser,
-    proxyPassword: proxyPassword ?? this.proxyPassword,
-    bypass: bypass ?? this.bypass,
-    useSystemProxy: useSystemProxy ?? this.useSystemProxy,
-    cas: cas ?? this.cas,
-    clientCerts: clientCerts ?? this.clientCerts,
-  );
-
-  ProxyConfig? get proxy => proxyEnabled && proxyHost.trim().isNotEmpty
-      ? ProxyConfig(
-          kind: proxyKind,
-          host: proxyHost.trim(),
-          port: proxyPort,
-          username: proxyUser,
-          password: proxyPassword,
-          bypass: bypass
-              .split(RegExp(r'[,\s]+'))
-              .where((e) => e.isNotEmpty)
-              .toList(),
-        )
-      : null;
-
-  TlsConfig? get tls => cas.isEmpty && clientCerts.isEmpty
-      ? null
-      : TlsConfig(
-          caCertificates: [for (final c in cas) c.bytes],
-          clientCertificates: [
-            for (final c in clientCerts)
-              if (c.none)
-                ClientCertificate.none(
-                  c.pattern,
-                  enabled: c.enabled,
-                  label: c.name,
-                )
-              else
-                ClientCertificate(
-                  hostPattern: c.pattern,
-                  certificate: c.certificate,
-                  privateKey: c.privateKey,
-                  passphrase: c.passphrase,
-                  enabled: c.enabled,
-                  label: c.name,
-                ),
-          ],
-        );
-}
+// The model and its storage live in verbnest_runner so the command line reads
+// the same data; they are re-exported for the rest of the app.
+export 'package:verbnest_runner/verbnest_runner.dart'
+    show CaEntry, ClientCertEntry, NetworkConfig, NetworkConfigStore;
 
 class NetworkNotifier extends Notifier<NetworkConfig> {
-  @override
-  NetworkConfig build() {
+  NetworkConfigStore get _store {
     final s = ref.read(sessionProvider);
-    final ws = s.repo.workspaceId;
-    final raw = s.local.kv(ws, _kvKey);
-    if (raw == null) return const NetworkConfig();
-    try {
-      final j = jsonDecode(raw) as Map<String, Object?>;
-      final secrets = s.secrets.values(ws, _kind, 'config');
-      Uint8List bytes(Object? v) => base64Decode(v as String);
-      return NetworkConfig(
-        proxyEnabled: j['proxyEnabled'] as bool? ?? false,
-        proxyKind: j['proxyKind'] == 'socks5'
-            ? ProxyKind.socks5
-            : ProxyKind.http,
-        proxyHost: j['proxyHost'] as String? ?? '',
-        proxyPort: j['proxyPort'] as int? ?? 8080,
-        proxyUser: j['proxyUser'] as String? ?? '',
-        proxyPassword: secrets['proxyPassword'] ?? '',
-        bypass: j['bypass'] as String? ?? '',
-        useSystemProxy: j['useSystemProxy'] as bool? ?? false,
-        cas: [
-          for (final c
-              in (j['cas'] as List? ?? const []).cast<Map<dynamic, dynamic>>())
-            CaEntry(c['name'] as String, bytes(c['pem'])),
-        ],
-        clientCerts: [
-          for (final c
-              in (j['certs'] as List? ?? const [])
-                  .cast<Map<dynamic, dynamic>>())
-            ClientCertEntry(
-              id: c['id'] as String,
-              pattern: c['pattern'] as String,
-              name: c['name'] as String,
-              certificate: c['none'] == true ? Uint8List(0) : bytes(c['cert']),
-              enabled: c['enabled'] as bool? ?? true,
-              none: c['none'] as bool? ?? false,
-              privateKey: secrets['key.${c['id']}'] == null
-                  ? null
-                  : bytes(secrets['key.${c['id']}']),
-              passphrase: secrets['pass.${c['id']}'] ?? '',
-            ),
-        ],
-      );
-    } on Object {
-      return const NetworkConfig();
-    }
+    return NetworkConfigStore(s.local, s.secrets, s.repo.workspaceId);
   }
 
+  @override
+  NetworkConfig build() => _store.read();
+
   void set(NetworkConfig next) {
-    final s = ref.read(sessionProvider);
-    final ws = s.repo.workspaceId;
-    s.local.setKv(
-      ws,
-      _kvKey,
-      jsonEncode({
-        'proxyEnabled': next.proxyEnabled,
-        'proxyKind': next.proxyKind.name,
-        'proxyHost': next.proxyHost,
-        'proxyPort': next.proxyPort,
-        'proxyUser': next.proxyUser,
-        'bypass': next.bypass,
-        'useSystemProxy': next.useSystemProxy,
-        'cas': [
-          for (final c in next.cas)
-            {'name': c.name, 'pem': base64Encode(c.bytes)},
-        ],
-        'certs': [
-          for (final c in next.clientCerts)
-            {
-              'id': c.id,
-              'pattern': c.pattern,
-              'name': c.name,
-              if (!c.none) 'cert': base64Encode(c.certificate),
-              if (!c.enabled) 'enabled': false,
-              if (c.none) 'none': true,
-            },
-        ],
-      }),
-    );
-    final wanted = <String, String>{
-      if (next.proxyPassword.isNotEmpty) 'proxyPassword': next.proxyPassword,
-      for (final c in next.clientCerts) ...{
-        if (c.privateKey != null) 'key.${c.id}': base64Encode(c.privateKey!),
-        if (c.passphrase.isNotEmpty) 'pass.${c.id}': c.passphrase,
-      },
-    };
-    final have = s.secrets.values(ws, _kind, 'config');
-    for (final k in have.keys) {
-      if (!wanted.containsKey(k)) s.secrets.remove(ws, _kind, 'config', k);
-    }
-    wanted.forEach((k, v) {
-      if (have[k] != v) s.secrets.put(ws, _kind, 'config', k, v);
-    });
+    _store.write(next);
     state = next;
   }
 

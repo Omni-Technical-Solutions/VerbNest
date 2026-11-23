@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.68.0
+
+- New (command line): `verbnest run` can use client certificates. `--cert` (with `--key` for a PEM) and `--cert-host`, `--cert-passphrase-env` or `--cert-passphrase-file` (a passphrase is never taken as an argument), and `--ca` for extra trusted CAs. Every file is checked first: a wrong passphrase, a key that does not match or a file that is not a certificate stops the run with exit code 2 and says why.
+- New (command line): `--app-network` reads the proxy, CAs and client certificates saved in the app on the same computer (add `--vault` for the keys and passphrases kept in the system secret store).
+- New: **Settings > Network > Export for the command line** writes one file with your proxy, CAs, client certificates and keys, locked with a passphrase (PBKDF2-HMAC-SHA256, 600,000 rounds, AES-256-GCM). `verbnest run --network-config file --network-config-passphrase-env VAR` reads it. This is the way to use the settings in CI, and with the Mac App Store app, whose data a command-line tool cannot open.
+- New (command line): `verbnest tls inspect <file>` shows a certificate (and checks a key or PKCS#12 bundle); `verbnest tls check <url>` does the TLS handshake with your certificates and prints the server certificate, whether it is trusted and names the host, and what client certificate was offered. See `docs/release/cli-client-certificates.md`.
+- Internal: the network settings model and storage moved from the app into `verbnest_runner` so the app and the command line share them; `probeTls` in `verbnest_http`. FR-HTTP-013c; phase C of `docs/spec/tls-certificates-plan.md`.
+
 ## 0.67.0
 
 - New: client certificates are chosen by how specifically they name the host. An exact host beats `*.example.com` (the longer one first) beats `*`, and a pattern with a port (`api.example.com:8443`, or `https://api.example.com:8443`) beats the same pattern without one. The order of the list no longer matters.
