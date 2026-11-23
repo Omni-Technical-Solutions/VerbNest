@@ -18,6 +18,7 @@ Shared text for every store. Edit here, then copy into each console.
 
 ## Review notes (App Store and Play)
 
+- Client certificates (mutual TLS) are certificate and key files the user chooses with the system file picker (PEM or PKCS#12, with the passphrase the user types). VerbNest does not access the Keychain items of other apps, smart cards or any hardware; its own keys and passphrases are kept in its own Keychain items.
 - VerbNest sends the HTTP requests the user writes, to the addresses the user enters. That includes plain `http://` and self-signed servers, which is why cleartext traffic and an option to turn off certificate checks exist. Certificate checks are on by default.
 - Scripts are JavaScript run in a sandboxed QuickJS engine with no file or network access except through the request API. They are written by the user and stored in the user's workspace; the app downloads no code.
 - OAuth 2.0 sign-in opens the system browser and receives the redirect on `http://127.0.0.1:<random port>/callback`.
