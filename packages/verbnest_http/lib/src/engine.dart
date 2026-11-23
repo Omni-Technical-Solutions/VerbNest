@@ -7,6 +7,7 @@ import 'package:verbnest_core/verbnest_core.dart' show CookieJar;
 import 'byte_reader.dart';
 import 'cert_inspect.dart';
 import 'errors.dart';
+import 'keystore.dart';
 import 'pin.dart';
 import 'http2_exchange.dart';
 import 'models.dart';
@@ -168,6 +169,7 @@ class _Connection {
   final CancelToken token;
   final ProxyConfig? proxy;
   Socket? _socket;
+  RelaySession? _relaySession;
   Timer? _timer;
   bool _timedOut = false;
   void _onCancel() => _socket?.destroy();
@@ -190,6 +192,10 @@ class _Connection {
     _timer?.cancel();
     token._unlisten(_onCancel);
     _socket?.destroy();
+    // The keystore relay (if any) lives as long as the connection.
+    final relay = _relaySession;
+    _relaySession = null;
+    if (relay != null) unawaited(relay.close());
   }
 
   Future<HttpResponseRecord> _roundTrip(WireRequest wire, Stopwatch sw) async {
@@ -202,13 +208,11 @@ class _Connection {
       throw const ProtocolError('HTTP/2 needs an https:// URL');
     }
 
-    final dns = await _lookup(sw);
-    final tcp = await _connectTcp(dns.address, sw);
-    final tls = await _secure(tcp.socket, sw);
+    final (dnsTime, tcp, tls) = await _open(sw);
     final socket = tls.socket;
 
     if (tls.negotiated == 'h2') {
-      return _exchangeH2(wire, socket, sw, dns.time, tcp.time, tls);
+      return _exchangeH2(wire, socket, sw, dnsTime, tcp.time, tls);
     }
     if (wanted == HttpVersionPref.http2) {
       throw const ProtocolError('The server does not support HTTP/2');
@@ -227,7 +231,144 @@ class _Connection {
       sentAt,
       method: spec.method,
     );
-    return _record(parsed, wire, dns.time, tcp.time, tls.time, sw, tls.info);
+    return _record(parsed, wire, dnsTime, tcp.time, tls.time, sw, tls.info);
+  }
+
+  /// Connects and secures: through the platform keystore relay when the host's
+  /// client certificate entry names a keystore identity, else DNS, TCP (and
+  /// the proxy) and TLS in this process.
+  Future<
+    (Duration, ({Socket socket, ByteReader? reader, Duration time}), _Secured)
+  >
+  _open(Stopwatch sw) async {
+    final keystore = _keystoreEntry();
+    if (keystore != null) return _openViaKeystore(keystore, sw);
+    final dns = await _lookup(sw);
+    final tcp = await _connectTcp(dns.address, sw);
+    final tls = await _secure(tcp.socket, sw);
+    return (dns.time, tcp, tls);
+  }
+
+  /// The keystore entry that applies to this https request, if any.
+  ClientCertificate? _keystoreEntry() {
+    final u = spec.url;
+    if (u.scheme != 'https') return null;
+    final c = spec.settings.tls?.clientCertificateFor(u.host, port: u.port);
+    return c != null && c.isKeystore ? c : null;
+  }
+
+  Future<
+    (Duration, ({Socket socket, ByteReader? reader, Duration time}), _Secured)
+  >
+  _openViaKeystore(ClientCertificate entry, Stopwatch sw) async {
+    final u = spec.url;
+    final config = spec.settings.tls!;
+    final relay = config.relay;
+    if (relay == null || !relay.isSupported) {
+      throw KeystoreError(
+        'The client certificate "${entry.label.isEmpty ? entry.hostPattern : entry.label}" '
+        'is in the system keystore, which this build cannot use.',
+      );
+    }
+    if (proxy != null) {
+      throw const KeystoreError(
+        'A client certificate from the system keystore cannot be used '
+        'through a proxy yet.',
+      );
+    }
+    final mark = sw.elapsed;
+    final session = await relay.open(
+      RelayRequest(
+        host: u.host,
+        port: u.port,
+        identityId: entry.keystoreId!,
+        caCertificates: config.caCertificates,
+        minimumVersion: config.minimumVersion,
+        verify: spec.settings.verifyTls,
+        protocols: switch (spec.settings.httpVersion) {
+          HttpVersionPref.http1 => const ['http/1.1'],
+          HttpVersionPref.http2 => const ['h2'],
+          HttpVersionPref.auto => const ['h2', 'http/1.1'],
+        },
+      ),
+    );
+    _relaySession = session;
+    _checkCancelled();
+    final socket = await _connectRelay(session);
+    final tls = _keystoreSecured(entry, config, session, socket);
+    final tcp = (
+      socket: socket,
+      reader: null as ByteReader?,
+      time: sw.elapsed - mark - session.handshakeTime,
+    );
+    return (Duration.zero, tcp, tls);
+  }
+
+  /// Connects to the relay's loopback port; dispose() closes the session.
+  Future<Socket> _connectRelay(RelaySession session) async {
+    final socket = await Socket.connect(
+      InternetAddress.loopbackIPv4,
+      session.port,
+    );
+    _socket = socket;
+    return socket;
+  }
+
+  /// The TLS details and pin check for a connection made through the relay.
+  _Secured _keystoreSecured(
+    ClientCertificate entry,
+    TlsConfig config,
+    RelaySession session,
+    Socket socket,
+  ) {
+    final u = spec.url;
+    CertInfo? parsed;
+    final der = session.serverCertificate;
+    if (der != null) {
+      try {
+        parsed = parseCertificate(der);
+      } on CertFormatException {
+        // Shown without the details.
+      }
+    }
+    var pin = PinStatus.notApplicable;
+    if (parsed != null) {
+      final check = checkPin(
+        config,
+        u.host,
+        u.port,
+        parsed,
+        verified: spec.settings.verifyTls,
+      );
+      if (check.status == PinStatus.mismatch) {
+        socket.destroy();
+        throw PinMismatchError(check.entry!, parsed);
+      }
+      pin = check.status;
+    }
+    final label = entry.label.isEmpty ? null : entry.label;
+    final tls = _Secured(
+      socket,
+      secured: true,
+      negotiated: session.protocol,
+      time: session.handshakeTime,
+      info: parsed == null
+          ? null
+          : TlsInfo(
+              subject: parsed.subject,
+              issuer: parsed.issuer,
+              validFrom: parsed.notBefore,
+              validTo: parsed.notAfter,
+              protocol: session.protocol,
+              clientCertificateSent: true,
+              clientCertificateLabel: label,
+              fingerprint: parsed.sha256,
+              spkiFingerprint: parsed.spkiSha256,
+              names: parsed.names,
+              pin: pin,
+            ),
+    );
+    return tls;
   }
 
   int get _port {

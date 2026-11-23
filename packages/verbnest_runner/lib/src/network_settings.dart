@@ -24,6 +24,7 @@ class ClientCertEntry {
     this.passphrase = '',
     this.enabled = true,
     this.none = false,
+    this.keystoreId,
   });
 
   final String id;
@@ -38,6 +39,12 @@ class ClientCertEntry {
 
   /// "Send no client certificate to these hosts"; has no certificate.
   final bool none;
+
+  /// For an entry whose certificate and key are in the system keystore
+  /// (FR-HTTP-013f): the identity's id on this device. No bytes are stored.
+  final String? keystoreId;
+
+  bool get isKeystore => keystoreId != null;
 
   /// A PEM certificate whose private key is not available (it sits in the
   /// secret store, which was not read): it cannot be used yet.
@@ -54,6 +61,7 @@ class ClientCertEntry {
     bool clearKey = false,
     String? passphrase,
     bool? enabled,
+    String? keystoreId,
   }) => ClientCertEntry(
     id: id,
     pattern: pattern ?? this.pattern,
@@ -63,6 +71,7 @@ class ClientCertEntry {
     passphrase: passphrase ?? this.passphrase,
     enabled: enabled ?? this.enabled,
     none: none,
+    keystoreId: keystoreId ?? this.keystoreId,
   );
 }
 
@@ -157,17 +166,27 @@ class NetworkConfig {
 
   /// The TLS configuration for the engine. [onPinsChanged] receives the whole
   /// pin list when the engine records a pin, so the caller can save it.
-  TlsConfig? tlsWith({void Function(List<PinEntry>)? onPinsChanged}) =>
-      cas.isEmpty && clientCerts.isEmpty && pins.isEmpty && minTls == null
+  TlsConfig? tlsWith({
+    void Function(List<PinEntry>)? onPinsChanged,
+    KeystoreRelay? relay,
+  }) => cas.isEmpty && clientCerts.isEmpty && pins.isEmpty && minTls == null
       ? null
       : TlsConfig(
           caCertificates: [for (final c in cas) c.bytes],
           pins: PinBook(pins, onPinsChanged),
           pinByDefault: pinByDefault,
           minimumVersion: minTls,
+          relay: relay,
           clientCertificates: [
             for (final c in clientCerts)
-              if (c.none)
+              if (c.isKeystore)
+                ClientCertificate.keystore(
+                  c.pattern,
+                  c.keystoreId!,
+                  enabled: c.enabled,
+                  label: c.name,
+                )
+              else if (c.none)
                 ClientCertificate.none(
                   c.pattern,
                   enabled: c.enabled,
@@ -258,7 +277,10 @@ class NetworkConfigStore {
             id: c['id'] as String,
             pattern: c['pattern'] as String,
             name: c['name'] as String,
-            certificate: c['none'] == true ? Uint8List(0) : bytes(c['cert']),
+            certificate: c['none'] == true || c['keystore'] != null
+                ? Uint8List(0)
+                : bytes(c['cert']),
+            keystoreId: c['keystore'] as String?,
             enabled: c['enabled'] as bool? ?? true,
             none: c['none'] as bool? ?? false,
             privateKey: secrets['key.${c['id']}'] == null
@@ -292,7 +314,8 @@ class NetworkConfigStore {
           'id': c.id,
           'pattern': c.pattern,
           'name': c.name,
-          if (!c.none) 'cert': base64Encode(c.certificate),
+          if (!c.none && !c.isKeystore) 'cert': base64Encode(c.certificate),
+          if (c.isKeystore) 'keystore': c.keystoreId,
           if (!c.enabled) 'enabled': false,
           if (c.none) 'none': true,
         },

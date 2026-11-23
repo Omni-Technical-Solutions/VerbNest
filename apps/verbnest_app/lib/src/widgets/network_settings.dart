@@ -8,7 +8,9 @@ import 'package:verbnest_http/verbnest_http.dart';
 
 import '../state/file_port.dart';
 import '../state/network_state.dart';
+import '../state/keystore_relay.dart';
 import 'cookie_manager.dart';
+import 'keystore_dialog.dart';
 import 'network_export_dialog.dart';
 import 'pin_settings.dart';
 import 'synced_field.dart';
@@ -153,7 +155,11 @@ class NetworkSettingsSection extends ConsumerWidget {
         key: Key('client-cert-${cert.id}'),
         dense: true,
         leading: Icon(
-          cert.none ? Icons.block : Icons.badge_outlined,
+          cert.none
+              ? Icons.block
+              : cert.isKeystore
+              ? Icons.vpn_key_outlined
+              : Icons.badge_outlined,
           color: cert.enabled ? null : Theme.of(context).disabledColor,
         ),
         title: Text(cert.name),
@@ -170,11 +176,13 @@ class NetworkSettingsSection extends ConsumerWidget {
               key: Key('edit-cert-${cert.id}'),
               tooltip: context.l10n.nsCertEdit,
               icon: const Icon(Icons.edit_outlined),
-              onPressed: () => showDialog<void>(
-                animationStyle: AnimationStyle.noAnimation,
-                context: context,
-                builder: (_) => _ClientCertDialog(existing: cert),
-              ),
+              onPressed: () => cert.isKeystore
+                  ? showKeystoreCert(context, existing: cert)
+                  : showDialog<void>(
+                      animationStyle: AnimationStyle.noAnimation,
+                      context: context,
+                      builder: (_) => _ClientCertDialog(existing: cert),
+                    ),
             ),
             StillIconButton(
               tooltip: context.l10n.nsRemove,
@@ -190,6 +198,7 @@ class NetworkSettingsSection extends ConsumerWidget {
   /// about expiry is in the error colour once it is past or under 30 days.
   Widget _certSubtitle(BuildContext context, ClientCertEntry cert) {
     final l = context.l10n;
+    if (cert.isKeystore) return Text(l.ksKeystoreEntry(cert.pattern));
     final base = l.nsClientCertFor(cert.pattern);
     final info = cert.enabled ? clientCertInfo(cert) : null;
     if (info == null) return Text(base);
@@ -236,6 +245,13 @@ class NetworkSettingsSection extends ConsumerWidget {
             label: Text(context.l10n.nsExport),
             onPressed: () => showNetworkExport(context),
           ),
+          if (ref.watch(keystoreSupportedProvider).value ?? false)
+            OutlinedButton.icon(
+              key: const Key('add-keystore-cert'),
+              icon: const Icon(Icons.vpn_key_outlined),
+              label: Text(context.l10n.ksAdd),
+              onPressed: () => showKeystoreCert(context),
+            ),
           OutlinedButton.icon(
             key: const Key('add-client-cert'),
             icon: const Icon(Icons.add),

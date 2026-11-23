@@ -57,14 +57,33 @@ You can also set the oldest TLS version to accept (1.2 or 1.3), and
 **Test connection** shows the handshake (server certificate, trust, the client
 certificate offered, pin state) without sending a request.
 
+## Keys held by the system
+
+On macOS, iOS and Android, **Add from the system keystore** (Settings >
+Network) uses a certificate whose key stays in the Keychain or the Android
+KeyStore. VerbNest never reads that key: it opens a connection inside the app
+to the platform's TLS, which signs with the key and carries the bytes. Pick the
+identity, say which hosts get it, or import a PKCS#12 file into the keystore
+(the system keeps the key and VerbNest keeps only the identity's id). On
+Android you can also choose from the credentials installed in the system
+settings.
+
+- The identity can be unlocked by the system (a password, Touch ID or a smart
+  card prompt) each time it is used.
+- Such an entry is not in the export file and the command line cannot use it
+  (it prints a warning and skips it); it does not work through a proxy yet.
+- If the identity is removed from the keystore, requests say so and the entry
+  has to be chosen again.
+
 ## Limits
 
 - `dart:io` does not say which TLS version or cipher was negotiated, nor
   whether the server asked for or accepted the client certificate. When a
   server closes the connection right after the handshake, VerbNest says it
   probably needs a certificate.
-- Keys held by the system (a smart card, a non-exportable key) are not
-  supported yet; only certificate and key files.
+- Keys held by the system are supported on macOS, iOS and Android (see
+  below); smart cards only through what the system exposes as a Keychain
+  identity. Linux and Windows are not enabled yet.
 
 ## Command line and CI
 

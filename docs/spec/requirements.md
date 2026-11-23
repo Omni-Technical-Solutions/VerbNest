@@ -67,6 +67,8 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.verbnest`); 
 
 **FR-HTTP-013e (P2)** cURL parity: importing a command with `--cert` (`file[:passphrase]`), `--key`, `--cert-type`, `--pass`, `--cacert` or `-E` never reads the named files or keeps a passphrase; it adds a note saying which certificate or CA the command used and where to add it (Settings > Network). Generated cURL for a host that has a client certificate or extra CAs includes `--cert client-cert.pem --key client-key.pem` and `--cacert ca.pem` as placeholder names (never key material); the other languages get a comment line. (Plan phase E.)
 
+**FR-HTTP-013f (P2)** Client certificates held by the system keystore: a host entry can name an identity in the macOS or iOS Keychain or the Android KeyStore (or an installed Android credential) instead of holding key files. The key is never read by VerbNest: a loopback relay inside the app process lets the platform's own TLS (Network.framework, `SSLSocket`) do the handshake with the identity and carry the bytes, so timings, HTTP/2, redirects and cookies stay VerbNest's. Server pinning, the minimum TLS version, CAs and verification off apply as for files. PKCS#12 files can be imported into the keystore (Android: non-exportable). Only the id is stored; such entries are not exported, not used by the command line (a warning says so), and do not work through a proxy. Linux (PKCS#11 via GnuTLS) and Windows (certificate store, SChannel) sources exist but are not built or tested yet. (Plan phases G to K.)
+
 ## 4. Responses (FR-RES)
 
 **FR-RES-001 (P0)** Show status code + reason, total time, size (headers/body, wire/decoded).

@@ -181,4 +181,36 @@ void main() {
     tls.pins!.put(const PinEntry(host: 'x.test', spki: 'AA'));
     expect(saved!.single.host, 'x.test');
   });
+
+  test('a keystore entry stores its id and no certificate bytes', () {
+    final local = LocalStore.memory();
+    addTearDown(local.close);
+    final store = NetworkConfigStore(local, LocalDbSecretStore(local), 'ws1');
+    store.write(
+      NetworkConfig(
+        clientCerts: [
+          ClientCertEntry(
+            id: 'k',
+            pattern: 'corp.test',
+            name: 'Work identity',
+            certificate: Uint8List(0),
+            keystoreId: 'AA:BB',
+          ),
+        ],
+      ),
+    );
+    final raw = local.kv('ws1', networkKvKey)!;
+    expect(raw, contains('"keystore":"AA:BB"'));
+    expect(raw, isNot(contains('"cert"')));
+    final back = store.read().clientCerts.single;
+    expect(back.isKeystore, isTrue);
+    expect(back.keystoreId, 'AA:BB');
+    expect(back.needsKey, isFalse);
+    final entry = store.read().tls!.clientCertificates.single;
+    expect(entry.isKeystore, isTrue);
+    expect(entry.keystoreId, 'AA:BB');
+    expect(entry.label, 'Work identity');
+    // copyWith keeps the identity.
+    expect(back.copyWith(pattern: 'x.test').keystoreId, 'AA:BB');
+  });
 }

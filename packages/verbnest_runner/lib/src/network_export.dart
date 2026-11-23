@@ -57,12 +57,19 @@ class NetworkExport {
     if (passphrase.isEmpty) {
       throw const NetworkExportError('Choose a passphrase for the export file');
     }
+    // A keystore identity exists only on this device, so it is not exported.
+    final exportable = config.copyWith(
+      clientCerts: [
+        for (final c in config.clientCerts)
+          if (!c.isKeystore) c,
+      ],
+    );
     final salt = _random(16);
     final nonce = _random(12);
     final plain = utf8.encode(
       jsonEncode({
-        'config': NetworkConfigStore.toJson(config),
-        'secrets': NetworkConfigStore.secretsOf(config),
+        'config': NetworkConfigStore.toJson(exportable),
+        'secrets': NetworkConfigStore.secretsOf(exportable),
       }),
     );
     final box = await AesGcm.with256bits().encrypt(

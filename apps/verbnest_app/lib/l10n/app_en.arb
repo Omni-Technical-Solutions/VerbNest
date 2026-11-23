@@ -1213,5 +1213,32 @@
       }
     }
   },
-  "nsTestClose": "Close"
+  "nsTestClose": "Close",
+  "ksAdd": "Add from the system keystore",
+  "ksTitle": "Client certificate from the system keystore",
+  "ksHint": "The key stays in the system keystore (Keychain, Android KeyStore, a smart card); VerbNest never reads it. It cannot be exported or used from the command line, or through a proxy.",
+  "ksLoading": "Reading the keystore…",
+  "ksNone": "No identities found. Import a PKCS#12 file below, or install one in the system.",
+  "ksUnavailable": "This build cannot use the system keystore on this platform.",
+  "ksImport": "Import a PKCS#12 file into the keystore",
+  "ksImportPass": "File passphrase",
+  "ksImportFailed": "Could not import: {error}",
+  "@ksImportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "ksSave": "Save",
+  "ksCancel": "Cancel",
+  "ksKeystoreEntry": "In the system keystore · {pattern}",
+  "@ksKeystoreEntry": {
+    "placeholders": {
+      "pattern": {
+        "type": "String"
+      }
+    }
+  },
+  "ksChoose": "Choose from the certificates installed on this device"
 }

@@ -161,4 +161,29 @@ void main() {
     // ignore: avoid_print
     print('600k-round export + import: ${sw.elapsedMilliseconds} ms');
   });
+
+  test(
+    'a keystore identity is not exported: it exists only on this device',
+    () async {
+      final config = _config().copyWith(
+        clientCerts: [
+          ..._config().clientCerts,
+          ClientCertEntry(
+            id: 'k',
+            pattern: 'corp.test',
+            name: 'Work identity',
+            certificate: Uint8List(0),
+            keystoreId: 'AA:BB',
+          ),
+        ],
+      );
+      final file = await NetworkExport.encrypt(
+        config,
+        'pw',
+        iterations: _rounds,
+      );
+      final back = await NetworkExport.decrypt(file, 'pw');
+      expect(back.clientCerts.map((c) => c.id), ['a']);
+    },
+  );
 }

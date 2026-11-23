@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'keystore.dart';
 import 'pin.dart';
 
 /// A client certificate offered to hosts that match [hostPattern]
@@ -18,7 +19,8 @@ class ClientCertificate {
     this.passphrase = '',
     this.enabled = true,
     this.label = '',
-  }) : isNone = false;
+  }) : isNone = false,
+       keystoreId = null;
 
   /// An entry that says "send no client certificate" to the hosts it matches,
   /// beating any broader entry (for example a `*` entry).
@@ -29,7 +31,21 @@ class ClientCertificate {
   }) : certificate = Uint8List(0),
        privateKey = null,
        passphrase = '',
-       isNone = true;
+       isNone = true,
+       keystoreId = null;
+
+  /// An entry whose certificate and key live in the operating system's
+  /// keystore, named by [identityId] (FR-HTTP-013f). The connection goes
+  /// through [TlsConfig.relay]; no key bytes are held here.
+  ClientCertificate.keystore(
+    this.hostPattern,
+    String this.keystoreId, {
+    this.enabled = true,
+    this.label = '',
+  }) : certificate = Uint8List(0),
+       privateKey = null,
+       passphrase = '',
+       isNone = false;
 
   final String hostPattern;
   final Uint8List certificate;
@@ -46,7 +62,13 @@ class ClientCertificate {
   /// True for a [ClientCertificate.none] entry.
   final bool isNone;
 
-  bool get isPkcs12 => privateKey == null && !isNone;
+  /// The identity in the system keystore, for a [ClientCertificate.keystore]
+  /// entry.
+  final String? keystoreId;
+
+  bool get isKeystore => keystoreId != null;
+
+  bool get isPkcs12 => privateKey == null && !isNone && !isKeystore;
 
   /// How specifically this entry names [host] on [port]; negative when it does
   /// not match. Exact host beats `*.suffix` (longer suffix first) beats `*`,
@@ -107,6 +129,7 @@ class TlsConfig {
     this.pins,
     this.pinByDefault = true,
     this.minimumVersion,
+    this.relay,
   });
 
   /// PEM or DER bytes, added to the trusted roots.
@@ -124,6 +147,10 @@ class TlsConfig {
   /// The oldest TLS version to accept: [TlsVersion.v12] (the default of the
   /// platform library) or [TlsVersion.v13].
   final TlsVersion? minimumVersion;
+
+  /// The platform's keystore bridge, for entries made with
+  /// [ClientCertificate.keystore]. Null where there is none.
+  final KeystoreRelay? relay;
 
   bool get isEmpty =>
       caCertificates.isEmpty &&
@@ -166,7 +193,8 @@ class TlsConfig {
       context.setTrustedCertificatesBytes(ca);
     }
     final match = clientCertificateFor(host, port: port);
-    if (match != null) {
+    // A keystore identity never loads into a context: the relay presents it.
+    if (match != null && !match.isKeystore) {
       final pass = match.passphrase.isEmpty ? null : match.passphrase;
       context.useCertificateChainBytes(match.certificate, password: pass);
       context.usePrivateKeyBytes(

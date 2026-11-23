@@ -12,5 +12,6 @@ workspace:
   - packages/verbnest_script
   - packages/verbnest_cli
   - packages/verbnest_storage
+  - packages/verbnest_keystore
   - test_server
   - apps/verbnest_app

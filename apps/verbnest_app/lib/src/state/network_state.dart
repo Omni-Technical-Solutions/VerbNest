@@ -110,6 +110,36 @@ extension NetworkEdits on NetworkNotifier {
     ),
   );
 
+  /// Adds, or with [existingId] changes, a client certificate that lives in
+  /// the system keystore (FR-HTTP-013f). Only its id is stored.
+  void saveKeystoreCert({
+    String? existingId,
+    required String pattern,
+    required String name,
+    required String identityId,
+  }) {
+    final p = pattern.trim().isEmpty ? '*' : pattern.trim();
+    update(
+      (c) => c.copyWith(
+        clientCerts: [
+          for (final e in c.clientCerts)
+            if (e.id == existingId)
+              e.copyWith(pattern: p, name: name, keystoreId: identityId)
+            else
+              e,
+          if (existingId == null)
+            ClientCertEntry(
+              id: DateTime.now().microsecondsSinceEpoch.toRadixString(36),
+              pattern: p,
+              name: name,
+              certificate: Uint8List(0),
+              keystoreId: identityId,
+            ),
+        ],
+      ),
+    );
+  }
+
   void setClientCertEnabled(String id, bool enabled) => update(
     (c) => c.copyWith(
       clientCerts: [

@@ -276,6 +276,14 @@ Future<TlsSetup> buildTlsSetup(
     pins.addAll(cfg.pins);
     appMin ??= cfg.minTls == null ? null : _versionText(cfg.minTls!);
     pinByDefault = pinByDefault && cfg.pinByDefault;
+    final inKeystore = cfg.clientCerts.where((c) => c.enabled && c.isKeystore);
+    if (inKeystore.isNotEmpty) {
+      warn(
+        'Warning: ${inKeystore.length} client certificate(s) in the app are '
+        'in the system keystore, which the command line cannot use: '
+        '${inKeystore.map((c) => c.name).join(', ')}.',
+      );
+    }
     if (skipped > 0) {
       warn(
         'Warning: $skipped client certificate(s) in the app need their key: '
@@ -396,10 +404,11 @@ void _take(
     certs.addAll(
       tls.clientCertificates.where(
         (c) =>
-            c.isNone ||
-            c.privateKey != null ||
-            !String.fromCharCodes(c.certificate.take(200))
-                .contains('-----BEGIN'),
+            !c.isKeystore &&
+            (c.isNone ||
+                c.privateKey != null ||
+                !String.fromCharCodes(c.certificate.take(200))
+                    .contains('-----BEGIN')),
       ),
     );
   }

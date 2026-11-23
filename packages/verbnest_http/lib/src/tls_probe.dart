@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'cert_inspect.dart';
+import 'keystore.dart';
 import 'pin.dart';
 import 'tls_config.dart';
 
@@ -72,6 +73,10 @@ Future<TlsProbe> probeTls(
   final host = url.host;
   final port = url.hasPort ? url.port : 443;
   final sw = Stopwatch()..start();
+  final entry = tls?.clientCertificateFor(host, port: port);
+  if (tls != null && entry != null && entry.isKeystore) {
+    return _probeViaKeystore(url, tls, entry, settle, sw);
+  }
   SecurityContext? context;
   if (tls != null && !tls.isEmpty) {
     try {
@@ -144,5 +149,98 @@ Future<TlsProbe> probeTls(
     );
   } finally {
     socket.destroy();
+  }
+}
+
+/// [probeTls] for a host whose client certificate is in the system keystore:
+/// the platform relay does the handshake. Trust is tried first; when that
+/// fails the connection is repeated without checking, so the certificate can
+/// still be shown (as the plain path does), and marked untrusted.
+Future<TlsProbe> _probeViaKeystore(
+  Uri url,
+  TlsConfig tls,
+  ClientCertificate entry,
+  Duration settle,
+  Stopwatch sw,
+) async {
+  final host = url.host;
+  final port = url.hasPort ? url.port : 443;
+  final relay = tls.relay;
+  if (relay == null || !relay.isSupported) {
+    throw const TlsProbeError(
+      'The client certificate is in the system keystore, which this build '
+      'cannot use.',
+    );
+  }
+  Future<RelaySession> open(bool verify) => relay.open(
+    RelayRequest(
+      host: host,
+      port: port,
+      identityId: entry.keystoreId!,
+      caCertificates: tls.caCertificates,
+      minimumVersion: tls.minimumVersion,
+      verify: verify,
+      protocols: const ['h2', 'http/1.1'],
+    ),
+  );
+  var trusted = true;
+  RelaySession session;
+  try {
+    session = await open(true);
+  } on KeystoreError catch (first) {
+    try {
+      session = await open(false);
+      trusted = false;
+    } on KeystoreError {
+      throw TlsProbeError(first.message);
+    }
+  }
+  try {
+    final der = session.serverCertificate;
+    if (der == null) {
+      throw const TlsProbeError('The server presented no certificate');
+    }
+    final CertInfo info;
+    try {
+      info = parseCertificate(der);
+    } on CertFormatException catch (e) {
+      throw TlsProbeError('The server certificate is unreadable: $e');
+    }
+    // Open the loopback socket and see whether the server closes at once.
+    var rejected = false;
+    final socket = await Socket.connect(
+      InternetAddress.loopbackIPv4,
+      session.port,
+    );
+    final done = Completer<void>();
+    socket.listen(
+      (_) {},
+      onError: (Object e) {
+        rejected = true;
+        if (!done.isCompleted) done.complete();
+      },
+      onDone: () {
+        rejected = true;
+        if (!done.isCompleted) done.complete();
+      },
+      cancelOnError: true,
+    );
+    await done.future.timeout(settle, onTimeout: () {});
+    // Read the flag before destroying: destroy() ends the listener too.
+    final closedByServer = rejected;
+    socket.destroy();
+    return TlsProbe(
+      server: info,
+      trusted: trusted,
+      hostMatches: info.coversHost(host),
+      protocol: session.protocol,
+      clientCertificate: entry,
+      clientCertificateConfigured: true,
+      rejectedClientCertificate: closedByServer,
+      time: sw.elapsed,
+      pin: checkPin(tls, host, port, info, verified: trusted, record: false),
+    );
+  } finally {
+    await session.close();
   }
 }

@@ -3399,6 +3399,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get nsTestClose;
+
+  /// No description provided for @ksAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add from the system keystore'**
+  String get ksAdd;
+
+  /// No description provided for @ksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificate from the system keystore'**
+  String get ksTitle;
+
+  /// No description provided for @ksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The key stays in the system keystore (Keychain, Android KeyStore, a smart card); VerbNest never reads it. It cannot be exported or used from the command line, or through a proxy.'**
+  String get ksHint;
+
+  /// No description provided for @ksLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the keystore…'**
+  String get ksLoading;
+
+  /// No description provided for @ksNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No identities found. Import a PKCS#12 file below, or install one in the system.'**
+  String get ksNone;
+
+  /// No description provided for @ksUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This build cannot use the system keystore on this platform.'**
+  String get ksUnavailable;
+
+  /// No description provided for @ksImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a PKCS#12 file into the keystore'**
+  String get ksImport;
+
+  /// No description provided for @ksImportPass.
+  ///
+  /// In en, this message translates to:
+  /// **'File passphrase'**
+  String get ksImportPass;
+
+  /// No description provided for @ksImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not import: {error}'**
+  String ksImportFailed(String error);
+
+  /// No description provided for @ksSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get ksSave;
+
+  /// No description provided for @ksCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get ksCancel;
+
+  /// No description provided for @ksKeystoreEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'In the system keystore · {pattern}'**
+  String ksKeystoreEntry(String pattern);
+
+  /// No description provided for @ksChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from the certificates installed on this device'**
+  String get ksChoose;
 }
 
 class _AppLocalizationsDelegate

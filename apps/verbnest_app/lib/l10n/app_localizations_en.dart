@@ -1893,4 +1893,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nsTestClose => 'Close';
+
+  @override
+  String get ksAdd => 'Add from the system keystore';
+
+  @override
+  String get ksTitle => 'Client certificate from the system keystore';
+
+  @override
+  String get ksHint =>
+      'The key stays in the system keystore (Keychain, Android KeyStore, a smart card); VerbNest never reads it. It cannot be exported or used from the command line, or through a proxy.';
+
+  @override
+  String get ksLoading => 'Reading the keystore…';
+
+  @override
+  String get ksNone =>
+      'No identities found. Import a PKCS#12 file below, or install one in the system.';
+
+  @override
+  String get ksUnavailable =>
+      'This build cannot use the system keystore on this platform.';
+
+  @override
+  String get ksImport => 'Import a PKCS#12 file into the keystore';
+
+  @override
+  String get ksImportPass => 'File passphrase';
+
+  @override
+  String ksImportFailed(String error) {
+    return 'Could not import: $error';
+  }
+
+  @override
+  String get ksSave => 'Save';
+
+  @override
+  String get ksCancel => 'Cancel';
+
+  @override
+  String ksKeystoreEntry(String pattern) {
+    return 'In the system keystore · $pattern';
+  }
+
+  @override
+  String get ksChoose =>
+      'Choose from the certificates installed on this device';
 }

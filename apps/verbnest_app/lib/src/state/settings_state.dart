@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:verbnest_http/verbnest_http.dart';
 
+import 'keystore_relay.dart';
 import 'network_state.dart';
 import 'session.dart';
 
@@ -18,6 +19,7 @@ class HttpDefaultsNotifier extends Notifier<HttpSettings> {
       // First-use pins are saved as the engine records them, so they survive
       // a restart.
       tls: net.tlsWith(
+        relay: ref.read(keystoreRelayProvider),
         onPinsChanged: (pins) => ref
             .read(networkProvider.notifier)
             .update((c) => c.copyWith(pins: pins)),

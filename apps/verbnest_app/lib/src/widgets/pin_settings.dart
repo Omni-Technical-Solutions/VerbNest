@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:verbnest_http/verbnest_http.dart';
 
 import '../../l10n/l10n.dart';
+import '../state/keystore_relay.dart';
 import '../state/network_state.dart';
 import 'ui/still_controls.dart';
 import 'ui/still_tooltip.dart';
@@ -177,7 +178,9 @@ class _TestState extends ConsumerState<TestConnectionDialog> {
       _probe = null;
       _target = u;
     });
-    final tls = ref.read(networkProvider).tlsWith();
+    final tls = ref
+        .read(networkProvider)
+        .tlsWith(relay: ref.read(keystoreRelayProvider));
     try {
       final p = await ref.read(tlsProberProvider)(u, tls);
       if (mounted) setState(() => _probe = p);
