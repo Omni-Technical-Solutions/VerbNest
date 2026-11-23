@@ -24,17 +24,33 @@ String generateCode(
   HttpRequestItem item, {
   Auth? auth,
   String Function(String)? resolve,
+  bool clientCertificate = false,
+  bool customCa = false,
 }) {
   if (language == CodeLanguage.curl) {
-    return toCurl(item, auth: auth, resolve: resolve);
+    return toCurl(
+      item,
+      auth: auth,
+      resolve: resolve,
+      clientCertificate: clientCertificate,
+      customCa: customCa,
+    );
   }
   final p = _Plan.of(item, auth ?? item.auth, resolve ?? (s) => s);
-  return switch (language) {
+  final code = switch (language) {
     CodeLanguage.javascriptFetch => _js(p),
     CodeLanguage.pythonRequests => _python(p),
     CodeLanguage.dartHttp => _dart(p),
     CodeLanguage.curl => '',
   };
+  if (!clientCertificate && !customCa) return code;
+  final comment = language == CodeLanguage.pythonRequests ? '#' : '//';
+  final what = [
+    if (clientCertificate) 'a client certificate',
+    if (customCa) 'a custom CA',
+  ].join(' and ');
+  return '$comment VerbNest sends this request with $what; this code does '
+      'not: add it to the HTTP client.\n$code';
 }
 
 enum _BodyKind { none, text, form, multipart }

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:verbnest_core/verbnest_core.dart';
 import 'package:verbnest_import/verbnest_import.dart';
+import 'package:verbnest_runner/verbnest_runner.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
 import 'session.dart';
@@ -175,11 +176,31 @@ String exportCollectionJson(WorkspaceSession s, String collectionId) =>
       exportPostmanCollection(loadCollectionTree(s.repo, collectionId)),
     );
 
+/// Whether a client certificate and extra CAs apply to [item]'s host, so the
+/// generated code can say so (the certificate and key themselves never leave).
+(bool, bool) _certificatesFor(WorkspaceSession s, HttpRequestItem item) {
+  final tls = NetworkConfigStore(
+    s.local,
+    s.secrets,
+    s.repo.workspaceId,
+  ).read().tls;
+  final u = Uri.tryParse(item.url);
+  if (tls == null || u == null || u.host.isEmpty) return (false, false);
+  final port = u.hasPort ? u.port : (u.scheme == 'http' ? 80 : 443);
+  return (
+    tls.clientCertificateFor(u.host, port: port) != null,
+    tls.caCertificates.isNotEmpty,
+  );
+}
+
 String requestAsCurl(WorkspaceSession s, String requestId) {
   final item = s.repo.getRequest(requestId);
+  final (cert, ca) = _certificatesFor(s, item);
   return toCurl(
     item,
     auth: effectiveAuth(item.auth, s.repo.authChain(requestId)),
+    clientCertificate: cert,
+    customCa: ca,
   );
 }
 
@@ -198,10 +219,13 @@ String requestAsCode(
   final resolver = resolve
       ? VariableResolver(buildScopes(s, requestId: requestId, envId: envId))
       : null;
+  final (cert, ca) = _certificatesFor(s, item);
   return generateCode(
     language,
     item,
     auth: auth,
+    clientCertificate: cert,
+    customCa: ca,
     resolve: resolver == null ? null : (t) => resolver.resolve(t).value,
   );
 }

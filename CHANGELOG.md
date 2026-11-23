@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.70.0
+
+- New: importing a cURL command with `--cert`, `--key`, `--cert-type`, `--pass`, `--cacert` or `-E` adds a note saying which certificate or CA it used and where to add it (Settings > Network). The files are on another machine, so they are not read, and a passphrase (in `--pass` or after the colon of `--cert`) is dropped, never shown.
+- New: **Copy as cURL** and the code dialog, for a host that has a client certificate or extra CAs, add `--cert client-cert.pem --key client-key.pem` and `--cacert ca.pem` as placeholder names. The certificate and key are never written. JavaScript, Python and Dart code get a comment saying the request is sent with a certificate there. FR-HTTP-013e; phase E of `docs/spec/tls-certificates-plan.md`.
+
 ## 0.69.0
 
 - New: **server key pinning**, on by default for every host that has a client certificate. The first key a server shows is remembered (trust on first use); if the host later shows a different key, the request is stopped before anything is sent and the message names the old and the new key and their dates. The key is pinned, not the certificate, so a certificate renewed with the same key keeps working. Nothing is pinned or compared when the certificate is not verified (verification off, or untrusted).

@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:verbnest_app/src/state/import_actions.dart';
 import 'package:verbnest_app/src/state/session.dart';
 import 'package:verbnest_import/verbnest_import.dart';
+import 'package:verbnest_runner/verbnest_runner.dart';
 import 'package:verbnest_storage/verbnest_storage.dart';
 
 void main() {
@@ -99,5 +102,35 @@ paths:
       requestAsCode(s, r.nodeId!, CodeLanguage.curl, resolve: true),
       contains('curl'),
     );
+  });
+
+  test('code for a host with a client certificate says so, without a key', () {
+    final r = importText(s, 'curl https://api.test/x');
+    NetworkConfigStore(s.local, s.secrets, s.repo.workspaceId).write(
+      NetworkConfig(
+        cas: [
+          CaEntry('ca.pem', Uint8List.fromList([1])),
+        ],
+        clientCerts: [
+          ClientCertEntry(
+            id: 'a',
+            pattern: 'api.test',
+            name: 'API',
+            certificate: Uint8List.fromList([2]),
+            privateKey: Uint8List.fromList([3]),
+          ),
+        ],
+      ),
+    );
+    final curl = requestAsCurl(s, r.nodeId!);
+    expect(curl, contains('--cert client-cert.pem --key client-key.pem'));
+    expect(curl, contains('--cacert ca.pem'));
+    final py = requestAsCode(s, r.nodeId!, CodeLanguage.pythonRequests);
+    expect(py, startsWith('# VerbNest sends this request with a client'));
+    // Another host gets the client certificate note only for the CA.
+    final other = importText(s, 'curl https://other.test/');
+    final c2 = requestAsCurl(s, other.nodeId!);
+    expect(c2, isNot(contains('--cert')));
+    expect(c2, contains('--cacert'));
   });
 }

@@ -65,6 +65,8 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.verbnest`); 
 
 **FR-HTTP-013d (P1)** The server's key is pinned on first use for every host that has a client certificate (switch in Settings > Network), and a different key later stops the request before anything is sent, with the old and new key and dates in the message. The key (SHA-256 of the public key) is what is pinned, so a certificate renewed with the same key still matches. Pins are listed in Settings (switch off, forget), can be set by hand (`--pin host[:port]=sha256`, which a changed key never replaces) or kept in a file (`--pin-file`, first use added to it); `--trust-changed` accepts a changed recorded key; exit code 3 on a mismatch. Nothing is pinned or compared when the certificate is not verified. The oldest TLS version can be set (Settings, `--tls-min 1.2|1.3`). **Test connection** (Settings, `verbnest tls check`) shows the handshake and pin state without sending a request. Limit: WebSocket and SSE connections are not pinned. (Plan phase D.)
 
+**FR-HTTP-013e (P2)** cURL parity: importing a command with `--cert` (`file[:passphrase]`), `--key`, `--cert-type`, `--pass`, `--cacert` or `-E` never reads the named files or keeps a passphrase; it adds a note saying which certificate or CA the command used and where to add it (Settings > Network). Generated cURL for a host that has a client certificate or extra CAs includes `--cert client-cert.pem --key client-key.pem` and `--cacert ca.pem` as placeholder names (never key material); the other languages get a comment line. (Plan phase E.)
+
 ## 4. Responses (FR-RES)
 
 **FR-RES-001 (P0)** Show status code + reason, total time, size (headers/body, wire/decoded).

@@ -50,6 +50,11 @@ class _CurlParser {
   var getMode = false;
   bool? follow;
   int? timeoutMs;
+  String? certFile;
+  String? keyFile;
+  String? caFile;
+  String? certType;
+  var hadPassphrase = false;
 
   CurlImport parse(String name) {
     var i = 1;
@@ -60,6 +65,7 @@ class _CurlParser {
     if (target == null) {
       throw const FormatException('No URL in the cURL command');
     }
+    _tlsNotes();
     return _build(target, name);
   }
 
@@ -160,6 +166,17 @@ class _CurlParser {
         headers.add(KeyValue(key: 'Referer', value: arg()));
       case 'url':
         url = arg();
+      case 'E' || 'cert':
+        _setCert(arg());
+      case 'key':
+        keyFile = arg();
+      case 'cacert':
+        caFile = arg();
+      case 'cert-type':
+        certType = arg();
+      case 'pass':
+        arg();
+        hadPassphrase = true;
       case 'm' || 'max-time':
         final secs = double.tryParse(arg());
         if (secs != null) timeoutMs = (secs * 1000).round();
@@ -167,6 +184,42 @@ class _CurlParser {
         return false;
     }
     return true;
+  }
+
+  /// `--cert file[:passphrase]`. The passphrase is dropped, never kept.
+  void _setCert(String v) {
+    // A Windows path (C:\...) has a colon that is not a separator.
+    final i = v.lastIndexOf(':');
+    final isDrive = i == 1 && v.length > 2 && (v[2] == '\\' || v[2] == '/');
+    if (i > 0 && !isDrive) {
+      certFile = v.substring(0, i);
+      hadPassphrase = true;
+    } else {
+      certFile = v;
+    }
+  }
+
+  /// What the command said about certificates, as notes for the person: the
+  /// files are on another machine and are not read.
+  void _tlsNotes() {
+    if (certFile != null) {
+      final type = certType == null ? '' : ' (type ${certType!.toUpperCase()})';
+      final key = keyFile == null ? '' : ' with key $keyFile';
+      warnings.add(
+        'This command used the client certificate $certFile$type$key. '
+        'Files named in a command are not read: add it under Settings > '
+        'Network > Add client certificate.'
+        '${hadPassphrase ? ' Its passphrase was not imported.' : ''}',
+      );
+    } else if (hadPassphrase || keyFile != null) {
+      warnings.add('Ignored --key/--pass: they need --cert.');
+    }
+    if (caFile != null) {
+      warnings.add(
+        'This command trusted the CA $caFile. Add it under Settings > '
+        'Network > Add CA file.',
+      );
+    }
   }
 
   void _addHeader(String h) {
@@ -266,9 +319,6 @@ const _longWithArg = {
   'output',
   'upload-file',
   'proxy',
-  'cert',
-  'cacert',
-  'key',
   'write-out',
   'connect-timeout',
   'max-redirs',
@@ -320,6 +370,8 @@ String toCurl(
   HttpRequestItem item, {
   Auth? auth,
   String Function(String)? resolve,
+  bool clientCertificate = false,
+  bool customCa = false,
 }) {
   String r(String s) => resolve == null ? s : resolve(s);
   final effective = auth ?? item.auth;
@@ -401,6 +453,11 @@ String toCurl(
     case BinaryBody() || NoBody():
   }
 
+  // Placeholder file names: the certificate and key are never written out.
+  if (clientCertificate) {
+    parts.addAll(['--cert', 'client-cert.pem', '--key', 'client-key.pem']);
+  }
+  if (customCa) parts.addAll(['--cacert', 'ca.pem']);
   if (item.settings.verifyTls == false) parts.add('-k');
   if (item.settings.followRedirects ?? true) parts.add('-L');
   return parts.join(' ');
