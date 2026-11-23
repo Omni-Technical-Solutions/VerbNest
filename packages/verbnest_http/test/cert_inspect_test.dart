@@ -122,15 +122,19 @@ void main() {
         '-sha256', //
       ]);
       expect(r!.stdout.toString().trim().split('=').last, info.sha256);
-      final pub = await Process.run('sh', [
-        '-c',
-        'openssl x509 -in ${f.path('rsa.crt')} -pubkey -noout | '
-            'openssl pkey -pubin -outform der | openssl dgst -sha256 -binary',
+      // The public key as DER, without a shell (there is none on Windows).
+      final pubPem = await _openssl([
+        'x509', '-in', f.path('rsa.crt'), '-pubkey', '-noout', //
+      ]);
+      File(f.path('pub.pem')).writeAsStringSync(pubPem!.stdout.toString());
+      final der = await Process.run('openssl', [
+        'pkey', '-pubin', '-in', f.path('pub.pem'), '-outform', 'der', //
       ], stdoutEncoding: null);
-      final bytes = (pub.stdout as List<int>);
       expect(
         info.spkiSha256,
-        bytes
+        sha256
+            .convert(der.stdout as List<int>)
+            .bytes
             .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
             .join(':'),
       );
