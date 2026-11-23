@@ -282,7 +282,7 @@ class _Connection {
     SecurityContext? context;
     if (config != null && !config.isEmpty) {
       try {
-        context = config.contextFor(u.host);
+        context = config.contextFor(u.host, port: u.port);
       } on Object catch (e) {
         throw TlsError('Could not load the certificates: $e');
       }
@@ -300,6 +300,7 @@ class _Connection {
     );
     _socket = secure;
     final cert = secure.peerCertificate;
+    final used = config?.clientCertificateFor(u.host, port: u.port);
     CertInfo? parsed;
     if (cert != null) {
       try {
@@ -321,9 +322,10 @@ class _Connection {
               validFrom: cert.startValidity,
               validTo: cert.endValidity,
               protocol: secure.selectedProtocol,
-              clientCertificateSent:
-                  config?.clientCertificates.any((c) => c.matches(u.host)) ??
-                  false,
+              clientCertificateSent: used != null,
+              clientCertificateLabel: used?.label.isEmpty ?? true
+                  ? null
+                  : used!.label,
               fingerprint: parsed?.sha256 ?? fingerprintOf(cert.der),
               spkiFingerprint: parsed?.spkiSha256,
               names: parsed?.names ?? const [],

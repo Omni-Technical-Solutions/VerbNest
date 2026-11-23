@@ -29,6 +29,8 @@ class ClientCertEntry {
     required this.certificate,
     this.privateKey,
     this.passphrase = '',
+    this.enabled = true,
+    this.none = false,
   });
 
   final String id;
@@ -37,6 +39,31 @@ class ClientCertEntry {
   final Uint8List certificate;
   final Uint8List? privateKey;
   final String passphrase;
+
+  /// A switched-off entry is kept but never used.
+  final bool enabled;
+
+  /// "Send no client certificate to these hosts"; has no certificate.
+  final bool none;
+
+  ClientCertEntry copyWith({
+    String? pattern,
+    String? name,
+    Uint8List? certificate,
+    Uint8List? privateKey,
+    bool clearKey = false,
+    String? passphrase,
+    bool? enabled,
+  }) => ClientCertEntry(
+    id: id,
+    pattern: pattern ?? this.pattern,
+    name: name ?? this.name,
+    certificate: certificate ?? this.certificate,
+    privateKey: clearKey ? null : (privateKey ?? this.privateKey),
+    passphrase: passphrase ?? this.passphrase,
+    enabled: enabled ?? this.enabled,
+    none: none,
+  );
 }
 
 /// Proxy and certificate settings. Device-local on purpose: they describe
@@ -112,12 +139,21 @@ class NetworkConfig {
           caCertificates: [for (final c in cas) c.bytes],
           clientCertificates: [
             for (final c in clientCerts)
-              ClientCertificate(
-                hostPattern: c.pattern,
-                certificate: c.certificate,
-                privateKey: c.privateKey,
-                passphrase: c.passphrase,
-              ),
+              if (c.none)
+                ClientCertificate.none(
+                  c.pattern,
+                  enabled: c.enabled,
+                  label: c.name,
+                )
+              else
+                ClientCertificate(
+                  hostPattern: c.pattern,
+                  certificate: c.certificate,
+                  privateKey: c.privateKey,
+                  passphrase: c.passphrase,
+                  enabled: c.enabled,
+                  label: c.name,
+                ),
           ],
         );
 }
@@ -157,7 +193,9 @@ class NetworkNotifier extends Notifier<NetworkConfig> {
               id: c['id'] as String,
               pattern: c['pattern'] as String,
               name: c['name'] as String,
-              certificate: bytes(c['cert']),
+              certificate: c['none'] == true ? Uint8List(0) : bytes(c['cert']),
+              enabled: c['enabled'] as bool? ?? true,
+              none: c['none'] as bool? ?? false,
               privateKey: secrets['key.${c['id']}'] == null
                   ? null
                   : bytes(secrets['key.${c['id']}']),
@@ -194,7 +232,9 @@ class NetworkNotifier extends Notifier<NetworkConfig> {
               'id': c.id,
               'pattern': c.pattern,
               'name': c.name,
-              'cert': base64Encode(c.certificate),
+              if (!c.none) 'cert': base64Encode(c.certificate),
+              if (!c.enabled) 'enabled': false,
+              if (c.none) 'none': true,
             },
         ],
       }),
@@ -262,11 +302,48 @@ class NetworkNotifier extends Notifier<NetworkConfig> {
   );
 }
 
+/// Replaces the entry with [entry]'s id (the edit dialog's save).
+extension NetworkEdits on NetworkNotifier {
+  void replaceClientCert(ClientCertEntry entry) => update(
+    (c) => c.copyWith(
+      clientCerts: [
+        for (final e in c.clientCerts)
+          if (e.id == entry.id) entry else e,
+      ],
+    ),
+  );
+
+  void setClientCertEnabled(String id, bool enabled) => update(
+    (c) => c.copyWith(
+      clientCerts: [
+        for (final e in c.clientCerts)
+          if (e.id == id) e.copyWith(enabled: enabled) else e,
+      ],
+    ),
+  );
+
+  /// "Send no client certificate to [pattern]": beats a broader entry.
+  void addNoClientCert(String pattern) => update(
+    (c) => c.copyWith(
+      clientCerts: [
+        ...c.clientCerts,
+        ClientCertEntry(
+          id: DateTime.now().microsecondsSinceEpoch.toRadixString(36),
+          pattern: pattern.trim().isEmpty ? '*' : pattern.trim(),
+          name: 'No client certificate',
+          certificate: Uint8List(0),
+          none: true,
+        ),
+      ],
+    ),
+  );
+}
+
 /// What a saved PEM client certificate says about itself, or null for a
 /// PKCS#12 bundle (its contents need the passphrase and the TLS library does
 /// not expose them) and for anything unreadable.
 CertInfo? clientCertInfo(ClientCertEntry entry) {
-  if (entry.privateKey == null) return null;
+  if (entry.none || entry.privateKey == null) return null;
   try {
     return parseCertificate(entry.certificate);
   } on CertFormatException {

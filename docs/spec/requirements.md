@@ -59,6 +59,8 @@ Storage decision: ADR-007. A workspace is a SQLite database file (`.verbnest`); 
 
 **FR-HTTP-013a (P1)** A client certificate is checked when it is imported: the certificate and key (or PKCS#12 bundle and passphrase) are loaded the way the engine loads them; a wrong passphrase, a key that does not match, a file that is not a certificate or an encryption the TLS library cannot read is reported at once with a reason; a PEM certificate shows its subject, issuer, validity, key type, names and SHA-256 fingerprint; an expired, not yet valid, soon-to-expire or self-signed certificate is a warning, not an error; saved certificates show their expiry; the server certificate in the TLS panel shows its names and fingerprints. (Plan: `tls-certificates-plan.md` phase A.)
 
+**FR-HTTP-013b (P1)** Client-certificate entries are chosen by specificity: an exact host beats `*.suffix` (longer suffix first) beats `*`, and a pattern with a port (`host:8443`, `https://host:8443`) beats the same pattern without; an entry can be edited, switched off, or set to "send no client certificate" to a host, which beats a broader entry; the TLS panel names the entry that was used. (Plan: `tls-certificates-plan.md` phase B.)
+
 ## 4. Responses (FR-RES)
 
 **FR-RES-001 (P0)** Show status code + reason, total time, size (headers/body, wire/decoded).

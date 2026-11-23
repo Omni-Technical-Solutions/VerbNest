@@ -256,7 +256,10 @@ void showResponseTls(BuildContext context, TlsInfo t) {
         if (t.fingerprint != null)
           context.l10n.rvTlsFingerprint(t.fingerprint!),
         context.l10n.rvTlsClientCert(
-          t.clientCertificateSent ? context.l10n.rvYes : context.l10n.rvNo,
+          t.clientCertificateSent
+              ? '${context.l10n.rvYes}'
+                    '${t.clientCertificateLabel == null ? '' : ' (${t.clientCertificateLabel})'}'
+              : context.l10n.rvNo,
         ),
       ].join('\n'),
     ),

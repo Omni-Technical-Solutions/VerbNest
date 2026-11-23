@@ -2,6 +2,14 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.67.0
+
+- New: client certificates are chosen by how specifically they name the host. An exact host beats `*.example.com` (the longer one first) beats `*`, and a pattern with a port (`api.example.com:8443`, or `https://api.example.com:8443`) beats the same pattern without one. The order of the list no longer matters.
+- New: each client certificate can be edited (host, name, files, passphrase) and switched off without deleting it.
+- New: **Send no client certificate to these hosts** is an entry of its own: it stops a broader entry (for example `*`) from sending your certificate to a host that does not need it.
+- New: the TLS panel of a response names the entry that was used.
+- Stored settings from earlier versions read unchanged. Internal: `TlsConfig.selectFor` and `ClientCertificate.specificity` (FR-HTTP-013b; phase B of `docs/spec/tls-certificates-plan.md`).
+
 ## 0.66.0
 
 - New: a client certificate is checked when you add it (Settings > Network > Add client certificate). The certificate and key, or the PKCS#12 bundle and its passphrase, are loaded the way VerbNest will use them, so a wrong passphrase, a key that does not match, or a file that is not a certificate is reported at once, with the reason, instead of at the first request. Save stays off until it loads.

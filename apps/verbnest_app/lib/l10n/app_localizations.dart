@@ -1462,6 +1462,36 @@ abstract class AppLocalizations {
   /// **'Names: {value}'**
   String rvTlsNames(String value);
 
+  /// No description provided for @nsCertNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Send no client certificate to these hosts'**
+  String get nsCertNone;
+
+  /// No description provided for @nsCertEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get nsCertEdit;
+
+  /// No description provided for @nsCertUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this entry'**
+  String get nsCertUse;
+
+  /// No description provided for @nsCertEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit client certificate'**
+  String get nsCertEditTitle;
+
+  /// No description provided for @nsCertName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nsCertName;
+
   /// No description provided for @nsCancel.
   ///
   /// In en, this message translates to:

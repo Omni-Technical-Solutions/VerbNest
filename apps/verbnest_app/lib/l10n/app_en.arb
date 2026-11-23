@@ -502,6 +502,11 @@
       }
     }
   },
+  "nsCertNone": "Send no client certificate to these hosts",
+  "nsCertEdit": "Edit",
+  "nsCertUse": "Use this entry",
+  "nsCertEditTitle": "Edit client certificate",
+  "nsCertName": "Name",
   "nsCancel": "Cancel",
   "nsAdd": "Add",
   "authInherit": "Uses the auth of the enclosing folder or collection.",

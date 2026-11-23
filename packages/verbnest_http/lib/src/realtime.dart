@@ -148,7 +148,7 @@ HttpClient _client(
   final client = HttpClient(
     context: s.tls == null || s.tls!.isEmpty
         ? null
-        : s.tls!.contextFor(url.host),
+        : s.tls!.contextFor(url.host, port: url.port),
   );
   if (!s.verifyTls) client.badCertificateCallback = (_, _, _) => true;
   client.connectionTimeout = s.timeout;

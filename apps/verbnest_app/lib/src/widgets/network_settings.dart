@@ -148,13 +148,36 @@ class NetworkSettingsSection extends ConsumerWidget {
       ListTile(
         key: Key('client-cert-${cert.id}'),
         dense: true,
-        leading: const Icon(Icons.badge_outlined),
+        leading: Icon(
+          cert.none ? Icons.block : Icons.badge_outlined,
+          color: cert.enabled ? null : Theme.of(context).disabledColor,
+        ),
         title: Text(cert.name),
         subtitle: _certSubtitle(context, cert),
-        trailing: StillIconButton(
-          tooltip: context.l10n.nsRemove,
-          icon: const Icon(Icons.delete_outline),
-          onPressed: () => n.removeClientCert(cert.id),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Switch(
+              key: Key('cert-enabled-${cert.id}'),
+              value: cert.enabled,
+              onChanged: (v) => n.setClientCertEnabled(cert.id, v),
+            ),
+            StillIconButton(
+              key: Key('edit-cert-${cert.id}'),
+              tooltip: context.l10n.nsCertEdit,
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => showDialog<void>(
+                animationStyle: AnimationStyle.noAnimation,
+                context: context,
+                builder: (_) => _ClientCertDialog(existing: cert),
+              ),
+            ),
+            StillIconButton(
+              tooltip: context.l10n.nsRemove,
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => n.removeClientCert(cert.id),
+            ),
+          ],
         ),
       ),
   ];
@@ -164,7 +187,7 @@ class NetworkSettingsSection extends ConsumerWidget {
   Widget _certSubtitle(BuildContext context, ClientCertEntry cert) {
     final l = context.l10n;
     final base = l.nsClientCertFor(cert.pattern);
-    final info = clientCertInfo(cert);
+    final info = cert.enabled ? clientCertInfo(cert) : null;
     if (info == null) return Text(base);
     final now = DateTime.now();
     final date = info.notAfter.toIso8601String().substring(0, 10);
@@ -236,17 +259,45 @@ class NetworkSettingsSection extends ConsumerWidget {
 
 /// Asks for the host pattern, the files and the passphrase.
 class _ClientCertDialog extends ConsumerStatefulWidget {
-  const _ClientCertDialog();
+  const _ClientCertDialog({this.existing});
+
+  /// The entry being edited; null when adding one.
+  final ClientCertEntry? existing;
 
   @override
   ConsumerState<_ClientCertDialog> createState() => _ClientCertDialogState();
 }
 
 class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
-  final _host = TextEditingController(text: '*');
-  final _pass = TextEditingController();
+  late final _host = TextEditingController(
+    text: widget.existing?.pattern ?? '*',
+  );
+  late final _pass = TextEditingController(
+    text: widget.existing?.passphrase ?? '',
+  );
+
+  /// What the entry is called in the list and in the TLS panel; the
+  /// certificate's file name until the person types another.
+  late final _name = TextEditingController(text: widget.existing?.name ?? '');
   PickedFile? _cert;
   PickedFile? _key;
+
+  /// "Send no client certificate" instead of a certificate.
+  bool _none = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    if (e == null) return;
+    _none = e.none;
+    if (!e.none) {
+      _cert = PickedFile(e.name, e.certificate);
+      final k = e.privateKey;
+      if (k != null) _key = PickedFile(e.name, k);
+      _recheck();
+    }
+  }
 
   /// What loading the chosen files and passphrase gave; null until there is
   /// something to check.
@@ -256,6 +307,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
   void dispose() {
     _host.dispose();
     _pass.dispose();
+    _name.dispose();
     super.dispose();
   }
 
@@ -272,6 +324,10 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
       if (key) {
         _key = f;
       } else {
+        // The name follows the file until it has been changed by hand.
+        if (_name.text.isEmpty || _name.text == _cert?.name) {
+          _name.text = f.name;
+        }
         _cert = f;
         if (!_isPem) _key = null;
       }
@@ -292,6 +348,41 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
       privateKey: _isPem ? _key!.bytes : null,
       passphrase: _pass.text,
     );
+  }
+
+  void _save(bool needsKey) {
+    final n = ref.read(networkProvider.notifier);
+    final pattern = _host.text.trim().isEmpty ? '*' : _host.text.trim();
+    final old = widget.existing;
+    final label = _name.text.trim().isEmpty
+        ? (_cert?.name ?? '')
+        : _name.text.trim();
+    if (_none) {
+      if (old == null) {
+        n.addNoClientCert(pattern);
+      } else {
+        n.replaceClientCert(old.copyWith(pattern: pattern));
+      }
+    } else if (old == null) {
+      n.addClientCert(
+        pattern: pattern,
+        name: label,
+        certificate: _cert!.bytes,
+        privateKey: needsKey ? _key!.bytes : null,
+        passphrase: _pass.text,
+      );
+    } else {
+      n.replaceClientCert(
+        old.copyWith(
+          pattern: pattern,
+          name: label,
+          certificate: _cert!.bytes,
+          privateKey: needsKey ? _key!.bytes : null,
+          clearKey: !needsKey,
+          passphrase: _pass.text,
+        ),
+      );
+    }
   }
 
   /// The outcome of the check: the reason it fails, or what the certificate
@@ -361,7 +452,11 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
     return AlertDialog(
       // The details and warnings can be long: the dialog scrolls.
       scrollable: true,
-      title: Text(context.l10n.nsClientCertTitle),
+      title: Text(
+        widget.existing == null
+            ? context.l10n.nsClientCertTitle
+            : context.l10n.nsCertEditTitle,
+      ),
       content: SizedBox(
         width: 420,
         child: Column(
@@ -372,14 +467,23 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
               controller: _host,
               decoration: InputDecoration(labelText: context.l10n.nsCertHosts),
             ),
-            ListTile(
-              key: const Key('pick-cert'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(_cert?.name ?? context.l10n.nsChooseCert),
-              trailing: const Icon(Icons.folder_open),
-              onTap: () => _pick(false),
-            ),
-            if (needsKey)
+            if (widget.existing == null || widget.existing!.none)
+              CheckboxListTile(
+                key: const Key('cert-none'),
+                contentPadding: EdgeInsets.zero,
+                value: _none,
+                title: Text(context.l10n.nsCertNone),
+                onChanged: (v) => setState(() => _none = v ?? false),
+              ),
+            if (!_none)
+              ListTile(
+                key: const Key('pick-cert'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(_cert?.name ?? context.l10n.nsChooseCert),
+                trailing: const Icon(Icons.folder_open),
+                onTap: () => _pick(false),
+              ),
+            if (needsKey && !_none)
               ListTile(
                 key: const Key('pick-key'),
                 contentPadding: EdgeInsets.zero,
@@ -387,14 +491,23 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
                 trailing: const Icon(Icons.folder_open),
                 onTap: () => _pick(true),
               ),
-            TextField(
-              key: const Key('cert-pass'),
-              controller: _pass,
-              obscureText: true,
-              decoration: InputDecoration(labelText: context.l10n.nsPassphrase),
-              onChanged: (_) => setState(_recheck),
-            ),
-            _checkResult(context),
+            if (!_none) ...[
+              TextField(
+                key: const Key('cert-name'),
+                controller: _name,
+                decoration: InputDecoration(labelText: context.l10n.nsCertName),
+              ),
+              TextField(
+                key: const Key('cert-pass'),
+                controller: _pass,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: context.l10n.nsPassphrase,
+                ),
+                onChanged: (_) => setState(_recheck),
+              ),
+              _checkResult(context),
+            ],
           ],
         ),
       ),
@@ -405,18 +518,10 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
         ),
         FilledButton(
           key: const Key('save-cert'),
-          onPressed: _check?.ok != true
+          onPressed: !_none && _check?.ok != true
               ? null
               : () {
-                  ref
-                      .read(networkProvider.notifier)
-                      .addClientCert(
-                        pattern: _host.text,
-                        name: _cert!.name,
-                        certificate: _cert!.bytes,
-                        privateKey: needsKey ? _key!.bytes : null,
-                        passphrase: _pass.text,
-                      );
+                  _save(needsKey);
                   Navigator.pop(context);
                 },
           child: Text(context.l10n.nsAdd),

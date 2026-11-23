@@ -1,6 +1,6 @@
 # Certificate-based authentication: TLS and mTLS
 
-Status 2026-11-23: Phase A done (0.66.0); phases B to K not started. Owner decisions of the same day are in section 0 and are built into the phases below. Requirement: FR-HTTP-013 (client certificates per host pattern, PEM and PKCS#12, custom CA bundle) is marked P1 in `requirements.md`; this plan finishes and hardens it.
+Status 2026-11-23: Phases A (0.66.0) and B (0.67.0) done; C to K not started. Owner decisions of the same day are in section 0 and are built into the phases below. Requirement: FR-HTTP-013 (client certificates per host pattern, PEM and PKCS#12, custom CA bundle) is marked P1 in `requirements.md`; this plan finishes and hardens it.
 
 ## 0. Owner decisions (2026-11-23)
 

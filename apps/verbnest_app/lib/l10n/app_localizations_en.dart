@@ -782,6 +782,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get nsCertNone => 'Send no client certificate to these hosts';
+
+  @override
+  String get nsCertEdit => 'Edit';
+
+  @override
+  String get nsCertUse => 'Use this entry';
+
+  @override
+  String get nsCertEditTitle => 'Edit client certificate';
+
+  @override
+  String get nsCertName => 'Name';
+
+  @override
   String get nsCancel => 'Cancel';
 
   @override

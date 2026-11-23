@@ -8,6 +8,8 @@ import 'package:verbnest_app/src/settings_page.dart';
 import 'package:verbnest_app/src/state/file_port.dart';
 import 'package:verbnest_app/src/state/network_state.dart';
 import 'package:verbnest_app/src/state/session.dart';
+import 'package:verbnest_app/src/state/settings_state.dart';
+import 'package:verbnest_http/verbnest_http.dart';
 
 /// The client certificate dialog loads the files the way the engine will, so
 /// a wrong passphrase or a key that does not match shows when it is chosen and
@@ -194,5 +196,148 @@ void main() {
     );
     expect(find.textContaining('not a certificate'), findsOneWidget);
     expect(canSave(t), isFalse);
+  });
+
+  testWidgets('an entry can be switched off and on', (t) async {
+    final m = await t.runAsync(_make);
+    if (m == null) return markTestSkipped('openssl not found');
+    final (c, files) = await open(t);
+    await pick(t, files, 'pick-cert', 'me.pem', m.cert);
+    await pick(t, files, 'pick-key', 'me.key', m.key);
+    await t.tap(find.byKey(const Key('save-cert')));
+    await t.pumpAndSettle();
+    final id = c.read(networkProvider).clientCerts.single.id;
+    TlsConfig tls() => c.read(httpDefaultsProvider).tls!;
+    expect(tls().clientCertificateFor('api.test'), isNotNull);
+    await t.tap(find.byKey(Key('cert-enabled-$id')));
+    await t.pumpAndSettle();
+    expect(c.read(networkProvider).clientCerts.single.enabled, isFalse);
+    expect(tls().clientCertificateFor('api.test'), isNull);
+    await t.tap(find.byKey(Key('cert-enabled-$id')));
+    await t.pumpAndSettle();
+    expect(tls().clientCertificateFor('api.test'), isNotNull);
+  });
+
+  testWidgets('editing keeps the files and changes the host and name', (
+    t,
+  ) async {
+    final m = await t.runAsync(_make);
+    if (m == null) return markTestSkipped('openssl not found');
+    final (c, files) = await open(t);
+    await pick(t, files, 'pick-cert', 'me.pem', m.cert);
+    await pick(t, files, 'pick-key', 'me.key', m.key);
+    await t.tap(find.byKey(const Key('save-cert')));
+    await t.pumpAndSettle();
+    final before = c.read(networkProvider).clientCerts.single;
+    await t.tap(find.byKey(Key('edit-cert-${before.id}')));
+    await t.pumpAndSettle();
+    // The stored files are loaded again, so the details show at once.
+    expect(find.byKey(const Key('cert-details')), findsOneWidget);
+    expect(canSave(t), isTrue);
+    await t.enterText(find.byKey(const Key('cert-host')), 'api.test:8443');
+    await t.enterText(find.byKey(const Key('cert-name')), 'Staging API');
+    await t.tap(find.byKey(const Key('save-cert')));
+    await t.pumpAndSettle();
+    final after = c.read(networkProvider).clientCerts.single;
+    expect(after.id, before.id);
+    expect(after.pattern, 'api.test:8443');
+    expect(after.name, 'Staging API');
+    expect(after.privateKey, before.privateKey);
+    expect(after.certificate, before.certificate);
+    expect(
+      c
+          .read(httpDefaultsProvider)
+          .tls!
+          .clientCertificateFor('api.test', port: 8443)!
+          .label,
+      'Staging API',
+    );
+    expect(
+      c
+          .read(httpDefaultsProvider)
+          .tls!
+          .clientCertificateFor('api.test', port: 443),
+      isNull,
+    );
+  });
+
+  testWidgets('"no client certificate" beats a broader entry', (t) async {
+    final m = await t.runAsync(_make);
+    if (m == null) return markTestSkipped('openssl not found');
+    final (c, files) = await open(t);
+    await pick(t, files, 'pick-cert', 'me.pem', m.cert);
+    await pick(t, files, 'pick-key', 'me.key', m.key);
+    await t.tap(find.byKey(const Key('save-cert')));
+    await t.pumpAndSettle();
+    await t.scrollUntilVisible(
+      find.byKey(const Key('add-client-cert')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await t.tap(find.byKey(const Key('add-client-cert')));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('cert-none')));
+    await t.pump();
+    expect(find.byKey(const Key('pick-cert')), findsNothing);
+    await t.enterText(find.byKey(const Key('cert-host')), 'internal.test');
+    await t.tap(find.byKey(const Key('save-cert')));
+    await t.pumpAndSettle();
+    final tls = c.read(httpDefaultsProvider).tls!;
+    expect(c.read(networkProvider).clientCerts.length, 2);
+    expect(tls.clientCertificateFor('internal.test'), isNull);
+    expect(tls.clientCertificateFor('api.test'), isNotNull);
+  });
+
+  test('stored settings: old data reads as enabled, new fields round trip', () {
+    final s = WorkspaceSession.memory();
+    addTearDown(s.close);
+    ProviderContainer open() {
+      final c = ProviderContainer(
+        overrides: [sessionProvider.overrideWithValue(s)],
+      );
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    final first = open();
+    final cert = Uint8List.fromList([1, 2, 3]);
+    first
+        .read(networkProvider.notifier)
+        .set(
+          NetworkConfig(
+            clientCerts: [
+              ClientCertEntry(
+                id: 'a',
+                pattern: '*',
+                name: 'one',
+                certificate: cert,
+                privateKey: Uint8List(2),
+              ),
+              ClientCertEntry(
+                id: 'b',
+                pattern: 'x.test',
+                name: 'two',
+                certificate: cert,
+                privateKey: Uint8List(2),
+                enabled: false,
+              ),
+              ClientCertEntry(
+                id: 'c',
+                pattern: 'y.test:9',
+                name: 'none',
+                certificate: Uint8List(0),
+                none: true,
+              ),
+            ],
+          ),
+        );
+    final again = open().read(networkProvider).clientCerts;
+    expect(again.map((e) => e.enabled), [true, false, true]);
+    expect(again.map((e) => e.none), [false, false, true]);
+    expect(again[2].pattern, 'y.test:9');
+    // A config written before these fields existed has neither key.
+    final raw = s.local.kv(s.repo.workspaceId, 'network');
+    expect(raw, isNotNull);
+    expect(raw, isNot(contains('"enabled":true')));
   });
 }
