@@ -582,6 +582,9 @@ void main() {
 
     test('the minimum TLS version is enforced', () async {
       if (!available) return markTestSkipped('openssl not found');
+      // `openssl s_server` serves one connection at a time and the readiness
+      // check below hangs it on the Windows runner (30 s timeout in CI).
+      if (Platform.isWindows) return markTestSkipped('s_server on Windows');
       final (cert, key) = await TestServer.selfSignedCertificate();
       File('${dir.path}/c.pem').writeAsBytesSync(cert);
       File('${dir.path}/k.pem').writeAsBytesSync(key);
