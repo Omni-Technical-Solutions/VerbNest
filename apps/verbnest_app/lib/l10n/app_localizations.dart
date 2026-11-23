@@ -1396,6 +1396,72 @@ abstract class AppLocalizations {
   /// **'Passphrase (optional)'**
   String get nsPassphrase;
 
+  /// No description provided for @nsCertKeyAlgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Key: {value}'**
+  String nsCertKeyAlgo(String value);
+
+  /// No description provided for @nsCertNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Names: {value}'**
+  String nsCertNames(String value);
+
+  /// No description provided for @nsCertBundleOk.
+  ///
+  /// In en, this message translates to:
+  /// **'The bundle opens with this passphrase. The details inside a PKCS#12 file are not shown.'**
+  String get nsCertBundleOk;
+
+  /// No description provided for @nsCertWarnExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This certificate has expired.'**
+  String get nsCertWarnExpired;
+
+  /// No description provided for @nsCertWarnNotYet.
+  ///
+  /// In en, this message translates to:
+  /// **'This certificate is not valid yet.'**
+  String get nsCertWarnNotYet;
+
+  /// No description provided for @nsCertWarnSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'This certificate expires in {days} days.'**
+  String nsCertWarnSoon(String days);
+
+  /// No description provided for @nsCertWarnSelfSigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-signed: the server has to trust it directly.'**
+  String get nsCertWarnSelfSigned;
+
+  /// No description provided for @nsCertExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'expires {date}'**
+  String nsCertExpires(String date);
+
+  /// No description provided for @nsCertExpiredOn.
+  ///
+  /// In en, this message translates to:
+  /// **'expired {date}'**
+  String nsCertExpiredOn(String date);
+
+  /// No description provided for @rvTlsFingerprint.
+  ///
+  /// In en, this message translates to:
+  /// **'SHA-256: {value}'**
+  String rvTlsFingerprint(String value);
+
+  /// No description provided for @rvTlsNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Names: {value}'**
+  String rvTlsNames(String value);
+
   /// No description provided for @nsCancel.
   ///
   /// In en, this message translates to:

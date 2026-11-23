@@ -252,6 +252,9 @@ void showResponseTls(BuildContext context, TlsInfo t) {
         context.l10n.rvTlsIssuer(t.issuer),
         context.l10n.rvTlsValid(d(t.validFrom), d(t.validTo)),
         if (t.protocol != null) context.l10n.rvTlsProtocol(t.protocol!),
+        if (t.names.isNotEmpty) context.l10n.rvTlsNames(t.names.join(', ')),
+        if (t.fingerprint != null)
+          context.l10n.rvTlsFingerprint(t.fingerprint!),
         context.l10n.rvTlsClientCert(
           t.clientCertificateSent ? context.l10n.rvYes : context.l10n.rvNo,
         ),

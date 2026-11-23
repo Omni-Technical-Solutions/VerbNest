@@ -535,6 +535,13 @@ void main() {
         expect(r.tls!.subject, contains('localhost'));
         expect(r.tls!.validTo.isAfter(r.tls!.validFrom), isTrue);
         expect(r.tls!.clientCertificateSent, isFalse);
+        // The details parsed from the DER certificate (FR-HTTP-013a).
+        expect(
+          r.tls!.fingerprint,
+          matches(RegExp(r'^([0-9A-F]{2}:){31}[0-9A-F]{2}$')),
+        );
+        expect(r.tls!.spkiFingerprint, isNotNull);
+        expect(r.tls!.names, containsAll(['DNS:localhost', 'IP:127.0.0.1']));
       },
     );
 

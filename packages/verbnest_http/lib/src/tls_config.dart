@@ -72,6 +72,9 @@ class TlsInfo {
     required this.validTo,
     this.protocol,
     this.clientCertificateSent = false,
+    this.fingerprint,
+    this.spkiFingerprint,
+    this.names = const [],
   });
 
   final String subject;
@@ -82,4 +85,14 @@ class TlsInfo {
   /// ALPN protocol, e.g. `http/1.1`.
   final String? protocol;
   final bool clientCertificateSent;
+
+  /// SHA-256 of the server's certificate, upper-case hex with colons.
+  final String? fingerprint;
+
+  /// SHA-256 of its public key; unchanged when the certificate is renewed
+  /// with the same key (the value to pin).
+  final String? spkiFingerprint;
+
+  /// The names the certificate covers (`DNS:api.example.com`, `IP:...`).
+  final List<String> names;
 }

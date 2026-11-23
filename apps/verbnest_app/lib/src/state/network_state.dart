@@ -262,6 +262,18 @@ class NetworkNotifier extends Notifier<NetworkConfig> {
   );
 }
 
+/// What a saved PEM client certificate says about itself, or null for a
+/// PKCS#12 bundle (its contents need the passphrase and the TLS library does
+/// not expose them) and for anything unreadable.
+CertInfo? clientCertInfo(ClientCertEntry entry) {
+  if (entry.privateKey == null) return null;
+  try {
+    return parseCertificate(entry.certificate);
+  } on CertFormatException {
+    return null;
+  }
+}
+
 bool _looksLikeCertificate(Uint8List b) {
   final head = latin1.decode(b.take(64).toList(), allowInvalid: true);
   return head.contains('-----BEGIN') || (b.isNotEmpty && b.first == 0x30);

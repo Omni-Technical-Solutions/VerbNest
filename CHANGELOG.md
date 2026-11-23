@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.66.0
+
+- New: a client certificate is checked when you add it (Settings > Network > Add client certificate). The certificate and key, or the PKCS#12 bundle and its passphrase, are loaded the way VerbNest will use them, so a wrong passphrase, a key that does not match, or a file that is not a certificate is reported at once, with the reason, instead of at the first request. Save stays off until it loads.
+- New: a PEM certificate shows its subject, issuer, validity, key type, names and SHA-256 fingerprint before you save it; an expired, not yet valid, soon-to-expire (under 30 days) or self-signed certificate gets a warning (it can still be saved, for testing how a server answers one). Saved certificates show when they expire.
+- New: the TLS panel of a response also shows the names the server certificate covers and its SHA-256 fingerprint.
+- Internal: a certificate reader (`cert_inspect.dart`) and loader check (`cert_check.dart`) in `verbnest_http`, with fuzz tests; first phase of `docs/spec/tls-certificates-plan.md` (FR-HTTP-013a).
+
 ## 0.65.4
 
 - Release: build 59, Windows installer (unsigned), published on the VerbNest-releases `v0.65.4` release.

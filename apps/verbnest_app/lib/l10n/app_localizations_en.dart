@@ -733,6 +733,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nsPassphrase => 'Passphrase (optional)';
 
   @override
+  String nsCertKeyAlgo(String value) {
+    return 'Key: $value';
+  }
+
+  @override
+  String nsCertNames(String value) {
+    return 'Names: $value';
+  }
+
+  @override
+  String get nsCertBundleOk =>
+      'The bundle opens with this passphrase. The details inside a PKCS#12 file are not shown.';
+
+  @override
+  String get nsCertWarnExpired => 'This certificate has expired.';
+
+  @override
+  String get nsCertWarnNotYet => 'This certificate is not valid yet.';
+
+  @override
+  String nsCertWarnSoon(String days) {
+    return 'This certificate expires in $days days.';
+  }
+
+  @override
+  String get nsCertWarnSelfSigned =>
+      'Self-signed: the server has to trust it directly.';
+
+  @override
+  String nsCertExpires(String date) {
+    return 'expires $date';
+  }
+
+  @override
+  String nsCertExpiredOn(String date) {
+    return 'expired $date';
+  }
+
+  @override
+  String rvTlsFingerprint(String value) {
+    return 'SHA-256: $value';
+  }
+
+  @override
+  String rvTlsNames(String value) {
+    return 'Names: $value';
+  }
+
+  @override
   String get nsCancel => 'Cancel';
 
   @override

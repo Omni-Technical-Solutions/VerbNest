@@ -442,6 +442,66 @@
   "nsChooseCert": "Choose certificate (.pem, .p12)",
   "nsChooseKey": "Choose private key (.pem)",
   "nsPassphrase": "Passphrase (optional)",
+  "nsCertKeyAlgo": "Key: {value}",
+  "@nsCertKeyAlgo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "nsCertNames": "Names: {value}",
+  "@nsCertNames": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "nsCertBundleOk": "The bundle opens with this passphrase. The details inside a PKCS#12 file are not shown.",
+  "nsCertWarnExpired": "This certificate has expired.",
+  "nsCertWarnNotYet": "This certificate is not valid yet.",
+  "nsCertWarnSoon": "This certificate expires in {days} days.",
+  "@nsCertWarnSoon": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "nsCertWarnSelfSigned": "Self-signed: the server has to trust it directly.",
+  "nsCertExpires": "expires {date}",
+  "@nsCertExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "nsCertExpiredOn": "expired {date}",
+  "@nsCertExpiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "rvTlsFingerprint": "SHA-256: {value}",
+  "@rvTlsFingerprint": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "rvTlsNames": "Names: {value}",
+  "@rvTlsNames": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "nsCancel": "Cancel",
   "nsAdd": "Add",
   "authInherit": "Uses the auth of the enclosing folder or collection.",

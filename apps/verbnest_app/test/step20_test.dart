@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart';
@@ -30,6 +31,27 @@ class OneFile implements FilePort {
 Uint8List pem(String label) => Uint8List.fromList(
   '-----BEGIN $label-----\nAAAA\n-----END $label-----\n'.codeUnits,
 );
+
+/// A throwaway certificate and key made with `openssl`, or null without it.
+Future<(Uint8List, Uint8List)?> opensslPair() async {
+  final dir = await Directory.systemTemp.createTemp('verbnest-s20');
+  try {
+    final r = await Process.run('openssl', [
+      'req', '-x509', '-newkey', 'rsa:2048', '-nodes', //
+      '-keyout', '${dir.path}/k.pem', '-out', '${dir.path}/c.pem',
+      '-days', '30', '-subj', '/CN=me',
+    ]);
+    if (r.exitCode != 0) return null;
+    return (
+      File('${dir.path}/c.pem').readAsBytesSync(),
+      File('${dir.path}/k.pem').readAsBytesSync(),
+    );
+  } on ProcessException {
+    return null;
+  } finally {
+    await dir.delete(recursive: true);
+  }
+}
 
 ProviderContainer container(WorkspaceSession s, [FilePort? files]) {
   final c = ProviderContainer(
@@ -137,6 +159,7 @@ void main() {
     final s = WorkspaceSession.memory();
     addTearDown(s.close);
     final files = OneFile(PickedFile('ca.pem', pem('CERTIFICATE')));
+    final pair = await tester.runAsync(opensslPair);
     final c = container(s, files);
     c.read(cookiesProvider);
     c
@@ -182,26 +205,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('ca-0')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('add-client-cert')));
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<FilledButton>(find.byKey(const Key('save-cert'))).onPressed,
-      isNull,
-    );
-    files.file = PickedFile('me.pem', pem('CERTIFICATE'));
-    await tester.tap(find.byKey(const Key('pick-cert')));
-    await tester.pumpAndSettle();
-    // A PEM certificate needs its key file too.
-    expect(find.byKey(const Key('pick-key')), findsOneWidget);
-    files.file = PickedFile('me.key', pem('PRIVATE KEY'));
-    await tester.tap(find.byKey(const Key('pick-key')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('cert-host')), 'api.test');
-    await tester.tap(find.byKey(const Key('save-cert')));
-    await tester.pumpAndSettle();
-    final cert = c.read(networkProvider).clientCerts.single;
-    expect(cert.pattern, 'api.test');
-    expect(cert.privateKey, isNotNull);
+    // The client certificate part needs a real certificate: the dialog now
+    // loads it before it lets you save.
+    if (pair != null) {
+      await tester.tap(find.byKey(const Key('add-client-cert')));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('save-cert')))
+            .onPressed,
+        isNull,
+      );
+      files.file = PickedFile('me.pem', pair.$1);
+      await tester.tap(find.byKey(const Key('pick-cert')));
+      await tester.pumpAndSettle();
+      // A PEM certificate needs its key file too.
+      expect(find.byKey(const Key('pick-key')), findsOneWidget);
+      files.file = PickedFile('me.key', pair.$2);
+      await tester.tap(find.byKey(const Key('pick-key')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('cert-host')), 'api.test');
+      await tester.tap(find.byKey(const Key('save-cert')));
+      await tester.pumpAndSettle();
+      final cert = c.read(networkProvider).clientCerts.single;
+      expect(cert.pattern, 'api.test');
+      expect(cert.privateKey, isNotNull);
+    }
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('open-cookies')),

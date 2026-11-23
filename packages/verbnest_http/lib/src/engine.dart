@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:verbnest_core/verbnest_core.dart' show CookieJar;
 
 import 'byte_reader.dart';
+import 'cert_inspect.dart';
 import 'errors.dart';
 import 'http2_exchange.dart';
 import 'models.dart';
@@ -299,6 +300,14 @@ class _Connection {
     );
     _socket = secure;
     final cert = secure.peerCertificate;
+    CertInfo? parsed;
+    if (cert != null) {
+      try {
+        parsed = parseCertificate(cert.der);
+      } on CertFormatException {
+        // The details below come from dart:io's own fields.
+      }
+    }
     return _Secured(
       secure,
       secured: true,
@@ -315,6 +324,9 @@ class _Connection {
               clientCertificateSent:
                   config?.clientCertificates.any((c) => c.matches(u.host)) ??
                   false,
+              fingerprint: parsed?.sha256 ?? fingerprintOf(cert.der),
+              spkiFingerprint: parsed?.spkiSha256,
+              names: parsed?.names ?? const [],
             ),
     );
   }

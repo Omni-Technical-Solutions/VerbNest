@@ -150,7 +150,7 @@ class NetworkSettingsSection extends ConsumerWidget {
         dense: true,
         leading: const Icon(Icons.badge_outlined),
         title: Text(cert.name),
-        subtitle: Text(context.l10n.nsClientCertFor(cert.pattern)),
+        subtitle: _certSubtitle(context, cert),
         trailing: StillIconButton(
           tooltip: context.l10n.nsRemove,
           icon: const Icon(Icons.delete_outline),
@@ -158,6 +158,32 @@ class NetworkSettingsSection extends ConsumerWidget {
         ),
       ),
   ];
+
+  /// The host pattern and, for a PEM certificate, when it runs out; the part
+  /// about expiry is in the error colour once it is past or under 30 days.
+  Widget _certSubtitle(BuildContext context, ClientCertEntry cert) {
+    final l = context.l10n;
+    final base = l.nsClientCertFor(cert.pattern);
+    final info = clientCertInfo(cert);
+    if (info == null) return Text(base);
+    final now = DateTime.now();
+    final date = info.notAfter.toIso8601String().substring(0, 10);
+    final expired = info.isExpired(now);
+    final soon = !expired && info.daysLeft(now) < 30;
+    return Text.rich(
+      TextSpan(
+        text: '$base · ',
+        children: [
+          TextSpan(
+            text: expired ? l.nsCertExpiredOn(date) : l.nsCertExpires(date),
+            style: expired || soon
+                ? TextStyle(color: Theme.of(context).colorScheme.error)
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _addButtons(BuildContext context, WidgetRef ref, NetworkNotifier n) =>
       Wrap(
@@ -222,6 +248,10 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
   PickedFile? _cert;
   PickedFile? _key;
 
+  /// What loading the chosen files and passphrase gave; null until there is
+  /// something to check.
+  CertCheck? _check;
+
   @override
   void dispose() {
     _host.dispose();
@@ -237,13 +267,100 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
 
   Future<void> _pick(bool key) async {
     final f = await ref.read(filePortProvider).pick();
-    if (f != null) setState(() => key ? _key = f : _cert = f);
+    if (f == null) return;
+    setState(() {
+      if (key) {
+        _key = f;
+      } else {
+        _cert = f;
+        if (!_isPem) _key = null;
+      }
+      _recheck();
+    });
+  }
+
+  /// Loads the files the way the engine will, so a wrong passphrase or a key
+  /// that does not match shows here and not at the first request.
+  void _recheck() {
+    final cert = _cert;
+    if (cert == null || (_isPem && _key == null)) {
+      _check = null;
+      return;
+    }
+    _check = checkClientCertificate(
+      certificate: cert.bytes,
+      privateKey: _isPem ? _key!.bytes : null,
+      passphrase: _pass.text,
+    );
+  }
+
+  /// The outcome of the check: the reason it fails, or what the certificate
+  /// says about itself with any warnings.
+  Widget _checkResult(BuildContext context) {
+    final c = _check;
+    if (c == null) return const SizedBox.shrink();
+    final l = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    if (!c.ok) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          c.message ?? '',
+          key: const Key('cert-problem'),
+          style: TextStyle(color: scheme.error),
+        ),
+      );
+    }
+    final info = c.info;
+    final now = DateTime.now();
+    String d(DateTime x) => x.toUtc().toIso8601String().substring(0, 10);
+    final lines = <String>[
+      if (info == null) l.nsCertBundleOk,
+      if (info != null) ...[
+        l.rvTlsSubject(info.subject),
+        l.rvTlsIssuer(info.issuer),
+        l.rvTlsValid(d(info.notBefore), d(info.notAfter)),
+        l.nsCertKeyAlgo(info.keyAlgorithm),
+        if (info.names.isNotEmpty) l.nsCertNames(info.names.join(', ')),
+        l.rvTlsFingerprint(info.sha256),
+      ],
+    ];
+    final warnings = [
+      for (final w in c.warnings)
+        switch (w) {
+          CertWarning.expired => l.nsCertWarnExpired,
+          CertWarning.notYetValid => l.nsCertWarnNotYet,
+          CertWarning.expiresSoon => l.nsCertWarnSoon('${info!.daysLeft(now)}'),
+          CertWarning.selfSigned => l.nsCertWarnSelfSigned,
+        },
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SelectableText(
+            lines.join('\n'),
+            key: const Key('cert-details'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          for (final (i, w) in warnings.indexed)
+            Text(
+              w,
+              key: Key('cert-warning-$i'),
+              style: TextStyle(color: scheme.error),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final needsKey = _isPem;
     return AlertDialog(
+      // The details and warnings can be long: the dialog scrolls.
+      scrollable: true,
       title: Text(context.l10n.nsClientCertTitle),
       content: SizedBox(
         width: 420,
@@ -275,7 +392,9 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
               controller: _pass,
               obscureText: true,
               decoration: InputDecoration(labelText: context.l10n.nsPassphrase),
+              onChanged: (_) => setState(_recheck),
             ),
+            _checkResult(context),
           ],
         ),
       ),
@@ -286,7 +405,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
         ),
         FilledButton(
           key: const Key('save-cert'),
-          onPressed: _cert == null || (needsKey && _key == null)
+          onPressed: _check?.ok != true
               ? null
               : () {
                   ref
