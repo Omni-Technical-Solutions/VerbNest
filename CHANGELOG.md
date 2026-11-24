@@ -7,6 +7,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - New: **client certificates from the system keystore** (macOS, iOS, Android). Settings > Network > **Add from the system keystore** lists the identities in the Keychain (or the Android KeyStore), lets you choose one for chosen hosts, and import a PKCS#12 file into the keystore, where the system keeps the key. VerbNest never reads the key: the platform's own TLS does the handshake through a loopback relay inside the app, so timings, HTTP/2 and redirects still work, and pinning, the minimum TLS version, extra CAs and "do not verify" apply as usual. On Android there is also a button to choose from the credentials installed in the system settings. **Test connection** works with them.
 - Such entries are stored as an id only. They are left out of the export file, the command line ignores them with a warning, and they cannot be used through a proxy yet.
 - Linux (PKCS#11 through GnuTLS) and Windows (the certificate store through SChannel) sources are in the repository but not built or tested yet; see `docs/release/keystore-linux-windows.md`. FR-HTTP-013f; phases G to K of `docs/spec/tls-certificates-plan.md`.
+- Release: build 67, Linux `.deb` (Ubuntu 22.04 root, glibc 2.35), published on the VerbNest-releases `v0.71.0` release.
 
 ## 0.70.0
 
