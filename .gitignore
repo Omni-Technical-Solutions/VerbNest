@@ -13,3 +13,6 @@ build/
 docs/context.md
 docs/release/windows-signing.md
 workspaces/
+
+# Gradle caches (plugin packages build with their own wrapper-less Gradle)
+.gradle/
