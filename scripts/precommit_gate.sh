@@ -21,9 +21,9 @@ for d in $dirs; do
   if grep -q '^  flutter:' "$d/pubspec.yaml"; then tool=flutter; else tool=dart; fi
   echo "precommit_gate: $tool analyze $d"
   (cd "$d" && $tool analyze --fatal-infos)
-  if [ -d "$d/test" ]; then
+  if [ -n "$(find "$d/test" -name '*_test.dart' 2>/dev/null | head -1)" ]; then
     echo "precommit_gate: $tool test $d"
-    (cd "$d" && $tool test)
+    (cd "$d" && $tool test -r failures-only)
   fi
 done
 echo "precommit_gate: passed"

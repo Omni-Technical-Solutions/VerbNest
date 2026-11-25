@@ -489,6 +489,45 @@ void main() {
       );
     });
 
+    test(
+      'an SSE stream records the key, then refuses a different one',
+      () async {
+        if (!available) return markTestSkipped('openssl not found');
+        final (cert, key) = await TestServer.selfSignedCertificate();
+        final s = await serve(cert, key);
+        final url = Uri.parse('https://127.0.0.1:${s.port}/');
+        final (tls, book) = await trusting(cert);
+        final ok = await connectSse(
+          url,
+          settings: HttpSettings(verifyTls: true, tls: tls),
+        );
+        await ok.close();
+        expect(book.lookup('127.0.0.1', s.port), isNotNull);
+        final (bad, _) = await trusting(
+          cert,
+          pins: [
+            PinEntry(
+              host: '127.0.0.1',
+              port: s.port,
+              spki: 'AA:BB',
+              manual: true,
+            ),
+          ],
+        );
+        await expectLater(
+          connectSse(url, settings: HttpSettings(verifyTls: true, tls: bad)),
+          throwsA(isA<PinMismatchError>()),
+        );
+        await expectLater(
+          connectWebSocket(
+            Uri.parse('wss://127.0.0.1:${s.port}/'),
+            settings: HttpSettings(verifyTls: true, tls: bad),
+          ),
+          throwsA(isA<PinMismatchError>()),
+        );
+      },
+    );
+
     test('the same key in a renewed certificate passes', () async {
       if (!available) return markTestSkipped('openssl not found');
       final (cert, key) = await TestServer.selfSignedCertificate();

@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.72.0
+
+- New: **WebSocket and SSE connections are pinned** like requests. A short handshake with the same trust settings runs before the upgrade; its key is recorded on first use or compared with the pin, and a different key stops the connection before anything is sent. Not done through a proxy, and a server that swaps keys between the two handshakes is not caught. FR-HTTP-013d.
+- Internal: shared pin check in the engine, one "closed within" helper for both probe paths, `NetworkConfigStore.readJson` split, `pinApplies`. A pre-commit review gate (`scripts/precommit_gate.sh`).
+
 ## 0.71.0
 
 - New: **client certificates from the system keystore** (macOS, iOS, Android). Settings > Network > **Add from the system keystore** lists the identities in the Keychain (or the Android KeyStore), lets you choose one for chosen hosts, and import a PKCS#12 file into the keystore, where the system keeps the key. VerbNest never reads the key: the platform's own TLS does the handshake through a loopback relay inside the app, so timings, HTTP/2 and redirects still work, and pinning, the minimum TLS version, extra CAs and "do not verify" apply as usual. On Android there is also a button to choose from the credentials installed in the system settings. **Test connection** works with them.

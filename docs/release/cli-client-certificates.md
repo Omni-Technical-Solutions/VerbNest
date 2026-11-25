@@ -84,7 +84,7 @@ A host that has a client certificate is pinned on first use: the SHA-256 of the 
 - `--tls-min 1.2|1.3` refuses servers that cannot do at least that version.
 - `verbnest tls check` prints the pin state and exits 3 on a mismatch.
 
-WebSocket and SSE connections are not pinned.
+WebSocket and SSE connections are pinned by a short handshake before the upgrade (not through a proxy).
 
 ## What the output never contains
 

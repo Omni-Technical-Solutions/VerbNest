@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'cert_inspect.dart';
 import 'models.dart';
+import 'pin.dart';
 import 'proxy.dart';
 
 enum RealtimeDirection { sent, received, system }
@@ -182,6 +184,42 @@ HttpClient _client(
   return client;
 }
 
+/// Pinning (FR-HTTP-013d) for WebSocket and SSE: `dart:io` gives the upgrade
+/// no hook to read the server key, so a short handshake with the same trust
+/// settings runs first and its key is compared with (or recorded as) the pin.
+/// A key that changed stops the connection before anything is sent. Skipped
+/// for plain schemes, through a proxy, and when no pin applies to the host.
+/// The real connection is a second handshake, so a server that swaps keys
+/// between the two is not caught (the request path has no such gap).
+Future<void> _checkServerPin(HttpSettings s, Uri url) async {
+  final tls = s.tls;
+  final secure = url.scheme == 'https' || url.scheme == 'wss';
+  if (tls == null || tls.pins == null || !secure) return;
+  if (s.proxy != null && !s.proxy!.bypasses(url.host)) return;
+  final port = url.hasPort ? url.port : 443;
+  if (!pinApplies(tls, url.host, port)) return;
+  final socket = await SecureSocket.secure(
+    await Socket.connect(url.host, port, timeout: s.timeout),
+    host: url.host,
+    context: tls.isEmpty ? null : tls.contextFor(url.host, port: port),
+    onBadCertificate: s.verifyTls ? null : (_) => true,
+  );
+  try {
+    final cert = socket.peerCertificate;
+    if (cert == null) return;
+    final info = parseCertificate(cert.der);
+    final check = checkPin(tls, url.host, port, info, verified: s.verifyTls);
+    if (check.status == PinStatus.mismatch) {
+      throw PinMismatchError(check.entry!, info);
+    }
+  } on CertFormatException {
+    // An unreadable certificate cannot be compared; the real connection
+    // decides whether to trust it.
+  } finally {
+    socket.destroy();
+  }
+}
+
 /// Opens a WebSocket. `ws`/`wss` map to `http`/`https` for the handshake.
 Future<RealtimeConnection> connectWebSocket(
   Uri url, {
@@ -189,6 +227,7 @@ Future<RealtimeConnection> connectWebSocket(
   List<String> protocols = const [],
   HttpSettings settings = const HttpSettings(),
 }) async {
+  await _checkServerPin(settings, url);
   final client = _client(settings, url);
   final target = url.replace(
     scheme: url.scheme == 'wss' || url.scheme == 'https' ? 'https' : 'http',
@@ -330,6 +369,7 @@ Future<_SseConnection> _openSse(
   required String? lastEventId,
   required bool quiet,
 }) async {
+  await _checkServerPin(settings, url);
   final client = _client(settings, url);
   try {
     final req = await client.openUrl(method, url);

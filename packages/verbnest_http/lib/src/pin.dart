@@ -226,6 +226,15 @@ class PinMismatchError extends TlsError {
       d.toUtc().toIso8601String().substring(0, 10);
 }
 
+/// Whether a pin is in play for [host]:[port]: an entry for it exists, or
+/// pinning by default is on and the host has a client certificate.
+bool pinApplies(TlsConfig? tls, String host, int port) {
+  final book = tls?.pins;
+  if (tls == null || book == null) return false;
+  return book.lookup(host, port) != null ||
+      (tls.pinByDefault && tls.clientCertificateFor(host, port: port) != null);
+}
+
 /// Compares the server's [leaf] certificate with the pins in [tls] for
 /// [host]:[port], recording the key on first use. Pinning applies to a host
 /// that has a pin, and (unless switched off) to every host a client
@@ -246,10 +255,9 @@ PinCheck checkPin(
     return const PinCheck(PinStatus.notApplicable);
   }
   final entry = book.lookup(host, port);
-  final inScope =
-      entry != null ||
-      (tls.pinByDefault && tls.clientCertificateFor(host, port: port) != null);
-  if (!inScope) return const PinCheck(PinStatus.notApplicable);
+  if (!pinApplies(tls, host, port)) {
+    return const PinCheck(PinStatus.notApplicable);
+  }
   if (entry != null && !entry.enabled) {
     return PinCheck(PinStatus.disabled, entry);
   }

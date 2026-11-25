@@ -51,7 +51,7 @@ old and new key and their dates. A certificate renewed with the same key still
 matches. Settings > Network > Pinned servers lists the pins; each can be
 switched off or forgotten, and pinning can be switched off altogether.
 Nothing is pinned when certificate checking is off or the certificate is not
-trusted. WebSocket and SSE connections are not pinned.
+trusted. WebSocket and SSE connections are pinned by a short handshake before the upgrade (not through a proxy).
 
 You can also set the oldest TLS version to accept (1.2 or 1.3), and
 **Test connection** shows the handshake (server certificate, trust, the client
