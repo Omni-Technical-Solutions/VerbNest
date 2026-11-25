@@ -8,6 +8,7 @@ import '../../state/session.dart';
 import '../../state/settings_state.dart';
 import '../../state/var_text.dart';
 import '../kv_editor.dart';
+import 'tls_certificates_section.dart';
 
 class HeadersTab extends ConsumerWidget {
   const HeadersTab({
@@ -33,6 +34,7 @@ class HeadersTab extends ConsumerWidget {
     return Column(
       children: [
         _AutoHeaders(auto: auto),
+        TlsCertificatesSection(url: item.url),
         Expanded(
           child: KeyValueEditor(
             idPrefix: 'headers',

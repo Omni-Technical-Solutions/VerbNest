@@ -231,12 +231,7 @@ class NetworkSettingsSection extends ConsumerWidget {
               key: const Key('add-ca'),
               icon: const Icon(Icons.add),
               label: Text(context.l10n.nsAddCa),
-              onPressed: () async {
-                final err = await n.addCa(ref.read(filePortProvider));
-                if (err != null && context.mounted) {
-                  showToast(context, err);
-                }
-              },
+              onPressed: () => addTrustedCa(context, ref),
             ),
           ),
           OutlinedButton.icon(
@@ -285,7 +280,11 @@ class NetworkSettingsSection extends ConsumerWidget {
 
 /// Asks for the host pattern, the files and the passphrase.
 class _ClientCertDialog extends ConsumerStatefulWidget {
-  const _ClientCertDialog({this.existing});
+  const _ClientCertDialog({this.existing, this.initialHost});
+
+  /// The host pattern to start with when adding (the request's host when the
+  /// dialog is opened from the Headers tab).
+  final String? initialHost;
 
   /// The entry being edited; null when adding one.
   final ClientCertEntry? existing;
@@ -296,7 +295,7 @@ class _ClientCertDialog extends ConsumerStatefulWidget {
 
 class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
   late final _host = TextEditingController(
-    text: widget.existing?.pattern ?? '*',
+    text: widget.existing?.pattern ?? widget.initialHost ?? '*',
   );
   late final _pass = TextEditingController(
     text: widget.existing?.passphrase ?? '',
@@ -555,4 +554,24 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
       ],
     );
   }
+}
+
+/// Opens the client certificate dialog (add), starting with [host] as the
+/// host pattern; used by the Settings page and the request's Headers tab.
+Future<void> showClientCertDialog(BuildContext context, {String? host}) =>
+    showDialog<void>(
+      animationStyle: AnimationStyle.noAnimation,
+      context: context,
+      builder: (_) => _ClientCertDialog(initialHost: host),
+    );
+
+/// Adds a trusted CA from a file the person picks, and says what happened.
+Future<void> addTrustedCa(BuildContext context, WidgetRef ref) async {
+  final r = await ref
+      .read(networkProvider.notifier)
+      .addCa(ref.read(filePortProvider));
+  if (!context.mounted) return;
+  final msg =
+      r.error ?? (r.added == null ? null : context.l10n.nsCaAdded(r.added!));
+  if (msg != null) showToast(context, msg);
 }

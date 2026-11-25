@@ -142,14 +142,17 @@ final tlsProberProvider = Provider<TlsProber>(
 /// and shows the handshake: server certificate, trust, client certificate and
 /// pin state. Lets the person pin the server or trust a changed key.
 class TestConnectionDialog extends ConsumerStatefulWidget {
-  const TestConnectionDialog({super.key});
+  const TestConnectionDialog({super.key, this.initialUrl});
+
+  /// The address to fill in (the request's URL, from the Headers tab).
+  final String? initialUrl;
 
   @override
   ConsumerState<TestConnectionDialog> createState() => _TestState();
 }
 
 class _TestState extends ConsumerState<TestConnectionDialog> {
-  final _url = TextEditingController();
+  late final _url = TextEditingController(text: widget.initialUrl ?? '');
   bool _busy = false;
   String? _error;
   TlsProbe? _probe;

@@ -1,6 +1,6 @@
 name: verbnest_keystore
 description: Native bridge to the system keystore (Keychain, Android KeyStore) for client-certificate TLS (FR-HTTP-013f). The Dart side is in verbnest_app; this package holds the platform code.
-version: 0.72.0
+version: 0.73.0
 publish_to: none
 resolution: workspace
 

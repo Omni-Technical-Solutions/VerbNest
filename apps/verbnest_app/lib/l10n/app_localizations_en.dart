@@ -715,6 +715,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nsAddCa => 'Add trusted CA';
 
   @override
+  String nsCaAdded(String subjects) {
+    return 'Trusted: $subjects';
+  }
+
+  @override
   String get nsAddClientCert => 'Add client certificate';
 
   @override
@@ -1604,6 +1609,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reValue => 'Value';
+
+  @override
+  String get tlsSection => 'TLS certificates';
+
+  @override
+  String get tlsSectionHint =>
+      'Client certificates and trusted CAs for this request\'s host';
+
+  @override
+  String get tlsHttpsOnly =>
+      'Certificates apply to https:// and wss:// addresses only.';
+
+  @override
+  String get tlsVariableHost =>
+      'The host comes from a variable, so certificates are added for all hosts (*).';
+
+  @override
+  String tlsNoCert(String host) {
+    return 'No client certificate for $host.';
+  }
+
+  @override
+  String tlsNoneSent(String host) {
+    return 'No client certificate is sent to $host (on purpose).';
+  }
+
+  @override
+  String tlsCertUsed(String host, String name, String pattern) {
+    return 'Client certificate for $host: $name ($pattern)';
+  }
+
+  @override
+  String tlsCaCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trusted CAs added',
+      one: '1 trusted CA added',
+      zero: 'No trusted CAs added',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tlsSendNone => 'Send no client certificate';
+
+  @override
+  String get tlsTest => 'Test connection';
 
   @override
   String reGenerated(int count) {

@@ -1360,6 +1360,12 @@ abstract class AppLocalizations {
   /// **'Add trusted CA'**
   String get nsAddCa;
 
+  /// No description provided for @nsCaAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted: {subjects}'**
+  String nsCaAdded(String subjects);
+
   /// No description provided for @nsAddClientCert.
   ///
   /// In en, this message translates to:
@@ -2877,6 +2883,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Value'**
   String get reValue;
+
+  /// No description provided for @tlsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'TLS certificates'**
+  String get tlsSection;
+
+  /// No description provided for @tlsSectionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificates and trusted CAs for this request\'s host'**
+  String get tlsSectionHint;
+
+  /// No description provided for @tlsHttpsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Certificates apply to https:// and wss:// addresses only.'**
+  String get tlsHttpsOnly;
+
+  /// No description provided for @tlsVariableHost.
+  ///
+  /// In en, this message translates to:
+  /// **'The host comes from a variable, so certificates are added for all hosts (*).'**
+  String get tlsVariableHost;
+
+  /// No description provided for @tlsNoCert.
+  ///
+  /// In en, this message translates to:
+  /// **'No client certificate for {host}.'**
+  String tlsNoCert(String host);
+
+  /// No description provided for @tlsNoneSent.
+  ///
+  /// In en, this message translates to:
+  /// **'No client certificate is sent to {host} (on purpose).'**
+  String tlsNoneSent(String host);
+
+  /// No description provided for @tlsCertUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificate for {host}: {name} ({pattern})'**
+  String tlsCertUsed(String host, String name, String pattern);
+
+  /// No description provided for @tlsCaCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No trusted CAs added} =1{1 trusted CA added} other{{count} trusted CAs added}}'**
+  String tlsCaCount(int count);
+
+  /// No description provided for @tlsSendNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Send no client certificate'**
+  String get tlsSendNone;
+
+  /// No description provided for @tlsTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get tlsTest;
 
   /// No description provided for @reGenerated.
   ///

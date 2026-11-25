@@ -13,16 +13,20 @@ import '../state/network_state.dart';
 Future<void> showKeystoreCert(
   BuildContext context, {
   ClientCertEntry? existing,
+  String? host,
 }) => showDialog<void>(
   animationStyle: AnimationStyle.noAnimation,
   context: context,
-  builder: (_) => KeystoreCertDialog(existing: existing),
+  builder: (_) => KeystoreCertDialog(existing: existing, initialHost: host),
 );
 
 class KeystoreCertDialog extends ConsumerStatefulWidget {
-  const KeystoreCertDialog({super.key, this.existing});
+  const KeystoreCertDialog({super.key, this.existing, this.initialHost});
 
   final ClientCertEntry? existing;
+
+  /// The host pattern to start with when adding.
+  final String? initialHost;
 
   @override
   ConsumerState<KeystoreCertDialog> createState() => _KeystoreDialogState();
@@ -30,7 +34,7 @@ class KeystoreCertDialog extends ConsumerStatefulWidget {
 
 class _KeystoreDialogState extends ConsumerState<KeystoreCertDialog> {
   late final _host = TextEditingController(
-    text: widget.existing?.pattern ?? '*',
+    text: widget.existing?.pattern ?? widget.initialHost ?? '*',
   );
   late final _name = TextEditingController(text: widget.existing?.name ?? '');
   final _pass = TextEditingController();

@@ -112,23 +112,34 @@ void main() {
     expect(c.read(httpDefaultsProvider).proxy, isNotNull);
   });
 
-  test('adding a CA checks that the file looks like a certificate', () async {
+  test('adding a CA validates the file', () async {
+    final pair = await opensslPair();
+    if (pair == null) return markTestSkipped('openssl not found');
+    final (cert, key) = pair;
     final s = WorkspaceSession.memory();
     addTearDown(s.close);
     final c = container(s);
     final n = c.read(networkProvider.notifier);
-    expect(
-      await n.addCa(
-        OneFile(PickedFile('notes.txt', Uint8List.fromList([104, 105]))),
-      ),
-      contains('not a PEM or DER'),
-    );
-    expect(
-      await n.addCa(OneFile(PickedFile('ca.pem', pem('CERTIFICATE')))),
-      null,
-    );
+    Future<CaAddResult> add(String name, List<int> bytes, {DateTime? now}) =>
+        n.addCa(OneFile(PickedFile(name, Uint8List.fromList(bytes))), now: now);
+    expect((await add('notes.txt', [104, 105])).error, contains('notes.txt'));
+    expect((await add('key.pem', key)).error, contains('no CERTIFICATE'));
+    final ok = await add('ca.pem', cert);
+    expect(ok.error, isNull);
+    expect(ok.added, contains('CN='));
     expect(c.read(networkProvider).cas.single.name, 'ca.pem');
     expect(c.read(httpDefaultsProvider).tls!.caCertificates, hasLength(1));
+    // The same certificates again are not added twice.
+    expect((await add('copy.pem', cert)).error, contains('already trusted'));
+    expect(c.read(networkProvider).cas, hasLength(1));
+    // An expired CA is refused with its date.
+    final info = parseCertificate(Uint8List.fromList(cert));
+    final late = await add(
+      'old.pem',
+      cert,
+      now: info.notAfter.add(const Duration(days: 2)),
+    );
+    expect(late.error, contains('expired on'));
     n.removeCa(0);
     expect(c.read(httpDefaultsProvider).tls, isNull);
   });
@@ -158,8 +169,8 @@ void main() {
     addTearDown(tester.view.reset);
     final s = WorkspaceSession.memory();
     addTearDown(s.close);
-    final files = OneFile(PickedFile('ca.pem', pem('CERTIFICATE')));
     final pair = await tester.runAsync(opensslPair);
+    final files = OneFile(PickedFile('ca.pem', pair?.$1 ?? pem('CERTIFICATE')));
     final c = container(s, files);
     c.read(cookiesProvider);
     c
@@ -203,7 +214,11 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('add-ca')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('ca-0')), findsOneWidget);
+    // A real certificate is added; the placeholder (no openssl) is refused.
+    expect(
+      find.byKey(const Key('ca-0')),
+      pair == null ? findsNothing : findsOneWidget,
+    );
 
     // The client certificate part needs a real certificate: the dialog now
     // loads it before it lets you save.

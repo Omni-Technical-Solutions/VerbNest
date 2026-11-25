@@ -14,6 +14,19 @@ import 'session.dart';
 export 'package:verbnest_runner/verbnest_runner.dart'
     show CaEntry, ClientCertEntry, NetworkConfig, NetworkConfigStore;
 
+/// What [NetworkNotifier.addCa] did: [error] when the file was refused,
+/// [added] (the subjects) when it was added, both null when nothing was
+/// picked.
+class CaAddResult {
+  const CaAddResult({this.error, this.added, this.expiresSoon = false});
+
+  final String? error;
+  final String? added;
+
+  /// A certificate in the file ends within 30 days.
+  final bool expiresSoon;
+}
+
 class NetworkNotifier extends Notifier<NetworkConfig> {
   NetworkConfigStore get _store {
     final s = ref.read(sessionProvider);
@@ -30,15 +43,38 @@ class NetworkNotifier extends Notifier<NetworkConfig> {
 
   void update(NetworkConfig Function(NetworkConfig c) f) => set(f(state));
 
-  /// Reads a CA file the user picks. Returns the error to show, or null.
-  Future<String?> addCa(FilePort files) async {
+  /// Reads a CA file the user picks and validates it (FR-HTTP-013g): every
+  /// certificate is read, none may be expired or not yet valid, and the file
+  /// must load as trusted roots, as the engine will load it. A DER file is
+  /// stored as PEM. A file already in the list (same certificates) is not
+  /// added twice.
+  Future<CaAddResult> addCa(FilePort files, {DateTime? now}) async {
     final f = await files.pick();
-    if (f == null) return null;
-    if (!_looksLikeCertificate(f.bytes)) {
-      return '${f.name} is not a PEM or DER certificate';
+    if (f == null) return const CaAddResult();
+    final check = checkCaCertificates(f.bytes, now: now);
+    if (!check.ok) return CaAddResult(error: '${f.name}: ${check.message}');
+    final known = {
+      for (final c in state.cas)
+        for (final i in _certs(c.bytes)) i.sha256,
+    };
+    if (check.certs.every((c) => known.contains(c.sha256))) {
+      return CaAddResult(error: '${f.name} is already trusted');
     }
-    update((c) => c.copyWith(cas: [...c.cas, CaEntry(f.name, f.bytes)]));
-    return null;
+    final pem = check.pem!;
+    update((c) => c.copyWith(cas: [...c.cas, CaEntry(f.name, pem)]));
+    final days = check.warnings.contains(CertWarning.expiresSoon);
+    return CaAddResult(
+      added: check.certs.map((c) => c.subject).join('; '),
+      expiresSoon: days,
+    );
+  }
+
+  static List<CertInfo> _certs(Uint8List b) {
+    try {
+      return parseCertificates(b);
+    } on CertFormatException {
+      return const [];
+    }
   }
 
   /// Replaces the pin for [pin]'s host (or adds it).
@@ -176,11 +212,6 @@ CertInfo? clientCertInfo(ClientCertEntry entry) {
   } on CertFormatException {
     return null;
   }
-}
-
-bool _looksLikeCertificate(Uint8List b) {
-  final head = latin1.decode(b.take(64).toList(), allowInvalid: true);
-  return head.contains('-----BEGIN') || (b.isNotEmpty && b.first == 0x30);
 }
 
 final networkProvider = NotifierProvider<NetworkNotifier, NetworkConfig>(

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -176,4 +177,102 @@ CertCheck _classify(
 bool _isPem(Uint8List bytes) {
   final head = String.fromCharCodes(bytes.take(200));
   return head.contains('-----BEGIN');
+}
+
+/// The outcome of [checkCaCertificates].
+class CaCheck {
+  const CaCheck({
+    this.message,
+    this.certs = const [],
+    this.warnings = const [],
+    this.pem,
+  });
+
+  /// The certificates as PEM, the form to store: `dart:io` loads trusted
+  /// roots from PEM only, so a DER file is converted. Null when [message] is
+  /// set.
+  final Uint8List? pem;
+
+  /// A sentence for the person when the file cannot be used as trusted CAs.
+  final String? message;
+
+  /// Every certificate in the file, in order.
+  final List<CertInfo> certs;
+  final List<CertWarning> warnings;
+
+  bool get ok => message == null;
+}
+
+/// Checks a file of trusted CA certificates (PEM with one or more
+/// certificates, or one DER certificate) the way the engine will use it: every
+/// certificate is read, and the bytes are loaded into a TLS context as trusted
+/// roots, so a file that parses but cannot be used is reported now.
+///
+/// An expired or not yet valid certificate is a [CaCheck.message] (it would
+/// never validate a server); one that ends within [soonDays] is a warning.
+CaCheck checkCaCertificates(
+  Uint8List bytes, {
+  DateTime? now,
+  int soonDays = 30,
+}) {
+  final when = now ?? DateTime.now();
+  final List<CertInfo> certs;
+  try {
+    certs = parseCertificates(bytes);
+  } on CertFormatException catch (e) {
+    return CaCheck(message: e.message);
+  }
+  for (final c in certs) {
+    final date = c.notAfter.toIso8601String().substring(0, 10);
+    if (c.isExpired(when)) {
+      return CaCheck(
+        certs: certs,
+        message: '${c.subject} expired on $date, so it cannot be trusted',
+      );
+    }
+    if (c.isNotYetValid(when)) {
+      return CaCheck(
+        certs: certs,
+        message:
+            '${c.subject} is not valid until '
+            '${c.notBefore.toIso8601String().substring(0, 10)}',
+      );
+    }
+  }
+  final pem = _asPem(bytes);
+  try {
+    SecurityContext(withTrustedRoots: false).setTrustedCertificatesBytes(pem);
+  } on Object catch (e) {
+    return CaCheck(
+      certs: certs,
+      message:
+          'The TLS library cannot load this file: '
+          '${e.toString().split('\n').first}',
+    );
+  }
+  final soon = certs.any((c) => c.daysLeft(when) < soonDays);
+  return CaCheck(
+    certs: certs,
+    warnings: soon ? const [CertWarning.expiresSoon] : const [],
+    pem: pem,
+  );
+}
+
+/// [bytes] as PEM: a PEM file is returned as it is, one DER certificate is
+/// wrapped in a `CERTIFICATE` block.
+Uint8List _asPem(Uint8List bytes) {
+  if (latin1.decode(bytes, allowInvalid: true).contains('-----BEGIN')) {
+    return bytes;
+  }
+  final b64 = base64Encode(bytes);
+  final lines = [
+    for (var i = 0; i < b64.length; i += 64)
+      b64.substring(i, i + 64 > b64.length ? b64.length : i + 64),
+  ];
+  return Uint8List.fromList(
+    latin1.encode(
+      '-----BEGIN CERTIFICATE-----\n${lines.join('\n')}\n'
+      '-----END CERTIFICATE-----\n',
+    ),
+  );
 }

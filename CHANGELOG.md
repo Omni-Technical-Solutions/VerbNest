@@ -2,6 +2,13 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.73.0
+
+- New: the request's **Headers tab** has a **TLS certificates** section. It says which client certificate (or none) and how many trusted CAs apply to the request's host, and lets you add a client certificate, a trusted CA, a keystore identity or a "send no client certificate" entry for that host in place, with the host filled in; **Test connection** opens for the same URL. Entries are the same ones Settings > Network shows, and are never stored in the request. FR-HTTP-013g.
+- New: **trusted CA files are validated** when added: every certificate is read, an expired or not yet valid one is refused with its date, the file must load as trusted roots (as the engine loads it), the added subjects are shown, and a file whose certificates are already trusted is not added twice.
+- Fix: a **DER** CA file used to be accepted and then failed at the first request, because `dart:io` loads PEM only. It is now converted to PEM when added.
+- Plan: `docs/spec/certificate-upload-plan.md`.
+
 ## 0.72.0
 
 - New: **WebSocket and SSE connections are pinned** like requests. A short handshake with the same trust settings runs before the upgrade; its key is recorded on first use or compared with the pin, and a different key stops the connection before anything is sent. Not done through a proxy, and a server that swaps keys between the two handshakes is not caught. FR-HTTP-013d.
