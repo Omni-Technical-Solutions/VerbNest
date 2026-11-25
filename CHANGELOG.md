@@ -8,6 +8,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - New: **trusted CA files are validated** when added: every certificate is read, an expired or not yet valid one is refused with its date, the file must load as trusted roots (as the engine loads it), the added subjects are shown, and a file whose certificates are already trusted is not added twice.
 - Fix: a **DER** CA file used to be accepted and then failed at the first request, because `dart:io` loads PEM only. It is now converted to PEM when added.
 - Plan: `docs/spec/certificate-upload-plan.md`.
+- Release: build 70, Linux `.deb` (Ubuntu 22.04 root, glibc 2.35), published on the VerbNest-releases `v0.73.0` release.
 
 ## 0.72.0
 
