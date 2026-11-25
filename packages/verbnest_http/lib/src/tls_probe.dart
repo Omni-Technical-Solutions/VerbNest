@@ -107,7 +107,6 @@ Future<TlsProbe> probeTls(
     throw TlsProbeError('Timed out connecting to $host:$port');
   }
   final elapsed = sw.elapsed;
-  var rejected = false;
   try {
     final cert = socket.peerCertificate;
     if (cert == null) {
@@ -121,20 +120,7 @@ Future<TlsProbe> probeTls(
     }
     // With TLS 1.3 the client finishes its handshake before the server has
     // looked at the client certificate, so wait a moment for an alert.
-    final done = Completer<void>();
-    socket.listen(
-      (_) {},
-      onError: (Object e) {
-        rejected = true;
-        if (!done.isCompleted) done.complete();
-      },
-      onDone: () {
-        rejected = true;
-        if (!done.isCompleted) done.complete();
-      },
-      cancelOnError: true,
-    );
-    await done.future.timeout(settle, onTimeout: () {});
+    final rejected = await _closedWithin(socket, settle);
     final chosen = tls?.clientCertificateFor(host, port: port);
     return TlsProbe(
       server: info,
@@ -207,28 +193,11 @@ Future<TlsProbe> _probeViaKeystore(
       throw TlsProbeError('The server certificate is unreadable: $e');
     }
     // Open the loopback socket and see whether the server closes at once.
-    var rejected = false;
     final socket = await Socket.connect(
       InternetAddress.loopbackIPv4,
       session.port,
     );
-    final done = Completer<void>();
-    socket.listen(
-      (_) {},
-      onError: (Object e) {
-        rejected = true;
-        if (!done.isCompleted) done.complete();
-      },
-      onDone: () {
-        rejected = true;
-        if (!done.isCompleted) done.complete();
-      },
-      cancelOnError: true,
-    );
-    await done.future.timeout(settle, onTimeout: () {});
-    // Read the flag before destroying: destroy() ends the listener too.
-    final closedByServer = rejected;
-    socket.destroy();
+    final closedByServer = await _closedWithin(socket, settle);
     return TlsProbe(
       server: info,
       trusted: trusted,
@@ -243,4 +212,25 @@ Future<TlsProbe> _probeViaKeystore(
   } finally {
     await session.close();
   }
+}
+
+/// Whether [socket] ends (an error or a close) within [settle]; the socket is
+/// left for the caller to destroy. The flag is read before returning because
+/// `destroy()` ends the listener too.
+Future<bool> _closedWithin(Socket socket, Duration settle) async {
+  var closed = false;
+  final done = Completer<void>();
+  void end() {
+    closed = true;
+    if (!done.isCompleted) done.complete();
+  }
+
+  socket.listen(
+    (_) {},
+    onError: (Object e) => end(),
+    onDone: end,
+    cancelOnError: true,
+  );
+  await done.future.timeout(settle, onTimeout: () {});
+  return closed;
 }

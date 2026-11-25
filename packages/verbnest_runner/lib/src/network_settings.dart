@@ -255,15 +255,10 @@ class NetworkConfigStore {
       bypass: j['bypass'] as String? ?? '',
       useSystemProxy: j['useSystemProxy'] as bool? ?? false,
       cas: [
-        for (final c
-            in (j['cas'] as List? ?? const []).cast<Map<dynamic, dynamic>>())
+        for (final c in _maps(j['cas']))
           CaEntry(c['name'] as String, bytes(c['pem'])),
       ],
-      pins: [
-        for (final p
-            in (j['pins'] as List? ?? const []).cast<Map<dynamic, dynamic>>())
-          PinEntry.fromJson(p),
-      ],
+      pins: [for (final p in _maps(j['pins'])) PinEntry.fromJson(p)],
       pinByDefault: j['pinning'] as bool? ?? true,
       minTls: switch (j['minTls']) {
         '1.3' => TlsVersion.v13,
@@ -271,24 +266,32 @@ class NetworkConfigStore {
         _ => null,
       },
       clientCerts: [
-        for (final c
-            in (j['certs'] as List? ?? const []).cast<Map<dynamic, dynamic>>())
-          ClientCertEntry(
-            id: c['id'] as String,
-            pattern: c['pattern'] as String,
-            name: c['name'] as String,
-            certificate: c['none'] == true || c['keystore'] != null
-                ? Uint8List(0)
-                : bytes(c['cert']),
-            keystoreId: c['keystore'] as String?,
-            enabled: c['enabled'] as bool? ?? true,
-            none: c['none'] as bool? ?? false,
-            privateKey: secrets['key.${c['id']}'] == null
-                ? null
-                : bytes(secrets['key.${c['id']}']),
-            passphrase: secrets['pass.${c['id']}'] ?? '',
-          ),
+        for (final c in _maps(j['certs'])) _readCert(c, secrets, bytes),
       ],
+    );
+  }
+
+  static List<Map<dynamic, dynamic>> _maps(Object? v) =>
+      (v as List? ?? const []).cast<Map<dynamic, dynamic>>();
+
+  static ClientCertEntry _readCert(
+    Map<dynamic, dynamic> c,
+    Map<String, String> secrets,
+    Uint8List Function(Object?) bytes,
+  ) {
+    final key = secrets['key.${c['id']}'];
+    return ClientCertEntry(
+      id: c['id'] as String,
+      pattern: c['pattern'] as String,
+      name: c['name'] as String,
+      certificate: c['none'] == true || c['keystore'] != null
+          ? Uint8List(0)
+          : bytes(c['cert']),
+      keystoreId: c['keystore'] as String?,
+      enabled: c['enabled'] as bool? ?? true,
+      none: c['none'] as bool? ?? false,
+      privateKey: key == null ? null : bytes(key),
+      passphrase: secrets['pass.${c['id']}'] ?? '',
     );
   }
 

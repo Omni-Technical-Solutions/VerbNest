@@ -16,3 +16,4 @@ workspaces/
 
 # Gradle caches (plugin packages build with their own wrapper-less Gradle)
 .gradle/
+packages/verbnest_keystore/android/.gradle/

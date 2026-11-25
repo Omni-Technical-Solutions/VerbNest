@@ -314,6 +314,25 @@ class _Connection {
     return socket;
   }
 
+  /// Compares the server key with the pins (recording it on first use). A
+  /// key that changed closes [socket] and throws before anything is sent.
+  PinStatus _checkedPin(TlsConfig? config, CertInfo? parsed, Socket socket) {
+    if (parsed == null) return PinStatus.notApplicable;
+    final u = spec.url;
+    final check = checkPin(
+      config,
+      u.host,
+      u.port,
+      parsed,
+      verified: spec.settings.verifyTls,
+    );
+    if (check.status == PinStatus.mismatch) {
+      socket.destroy();
+      throw PinMismatchError(check.entry!, parsed);
+    }
+    return check.status;
+  }
+
   /// The TLS details and pin check for a connection made through the relay.
   _Secured _keystoreSecured(
     ClientCertificate entry,
@@ -321,7 +340,6 @@ class _Connection {
     RelaySession session,
     Socket socket,
   ) {
-    final u = spec.url;
     CertInfo? parsed;
     final der = session.serverCertificate;
     if (der != null) {
@@ -331,21 +349,7 @@ class _Connection {
         // Shown without the details.
       }
     }
-    var pin = PinStatus.notApplicable;
-    if (parsed != null) {
-      final check = checkPin(
-        config,
-        u.host,
-        u.port,
-        parsed,
-        verified: spec.settings.verifyTls,
-      );
-      if (check.status == PinStatus.mismatch) {
-        socket.destroy();
-        throw PinMismatchError(check.entry!, parsed);
-      }
-      pin = check.status;
-    }
+    final pin = _checkedPin(config, parsed, socket);
     final label = entry.label.isEmpty ? null : entry.label;
     final tls = _Secured(
       socket,
@@ -454,21 +458,7 @@ class _Connection {
     // Pinning (FR-HTTP-013d): with verification on, a certificate that got
     // this far is trusted, so the key can be recorded or compared. A key that
     // changed closes the connection before anything is sent.
-    var pin = PinStatus.notApplicable;
-    if (parsed != null) {
-      final check = checkPin(
-        config,
-        u.host,
-        u.port,
-        parsed,
-        verified: spec.settings.verifyTls,
-      );
-      if (check.status == PinStatus.mismatch) {
-        secure.destroy();
-        throw PinMismatchError(check.entry!, parsed);
-      }
-      pin = check.status;
-    }
+    final pin = _checkedPin(config, parsed, secure);
     return _Secured(
       secure,
       secured: true,
