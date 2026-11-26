@@ -6,6 +6,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 
 - Fix: **a pinned host whose certificate cannot be read is refused.** When a pin is in force and verification is on, a server certificate that VerbNest cannot parse used to skip the pin check silently (requests, WebSocket and SSE alike); the connection is now closed before anything is sent, with a sentence saying why. Hosts without a pin, and runs with verification off, are unchanged. The WebSocket/SSE key check also closes its probe socket when the TLS handshake fails.
 - Internal: CI. The Windows package tests failed because a test helper broke on CRLF PEM files (the CA parser itself was fine); a test now pins CRLF input. The Linux build job is pinned to `ubuntu-24.04` and prints the app's own log when an integration test dies. Two new fjs advisories (RUSTSEC-2026-0543, -0592) are reviewed in `osv-scanner.toml`. `TestServer.tlsAvailable` fails instead of skipping when `CI=true` and `openssl` is missing. The commit gate skips the test run for a commit that only changes `BUILD_NUMBER` and a pubspec `version:` line, and `scripts/next_build.sh` also reads `origin/main`'s build number. Plan: `docs/spec/review-2026-11-26-plan.md`.
+- Release: build 73, Linux `.deb` (Ubuntu 22.04 root, glibc 2.35), published on the VerbNest-releases `v0.73.2` release. The security scan (`scripts/security_scan.sh`) passed first.
 
 ## 0.73.1
 
