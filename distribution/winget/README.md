@@ -11,7 +11,7 @@ Installers are hosted publicly on `https://github.com/Omni-Technical-Solutions/V
 ## New version
 
 1. Bump the app version (`/phase-commit`), then build: `scripts/package_windows.sh`.
-2. Create release `v<version>` in `Omni-Technical-Solutions/VerbNest-releases` and upload the setup exe.
+2. Create release `v<version>` (or add to it if another platform already made it; never replace an asset) in `Omni-Technical-Solutions/VerbNest-releases` and upload the setup exe.
 3. Submit (needs `wingetcreate`: `winget install Microsoft.WingetCreate`, and a GitHub token with `public_repo`):
 
    ```sh
@@ -20,6 +20,8 @@ Installers are hosted publicly on `https://github.com/Omni-Technical-Solutions/V
      --submit --token <token>
    ```
 
-4. Copy the generated manifests into `manifests/o/Omni/VerbNest/<version>/`.
+   Needs `gh` and a token: use git's stored credentials (`git credential fill` for github.com), never ask for one.
+
+4. Copy the generated manifests into `manifests/o/Omni/VerbNest/<version>/` and commit them (`chore`), then push.
 
 winget versions are app versions. A rebuild with the same version cannot be resubmitted.
