@@ -45,6 +45,19 @@ for f in "${files[@]}"; do
     sleep 3
     echo "== $f (diagnostic run, verbose)"
     ${runner[@]+"${runner[@]}"} flutter test "$f" -d "$device" --reporter expanded -v 2>&1 | tail -n 60 || true
+    if [ "$device" = linux ]; then
+      # The test harness hides the app's own output. Run the built app by
+      # itself under the same display and show what it prints and why it ends.
+      echo "== linux diagnostics: HOME=$HOME XDG_DOCUMENTS=$(xdg-user-dir DOCUMENTS 2>&1) df:"
+      df -h "$HOME" /tmp 2>&1 | tail -n 3
+      bundle=build/linux/x64/debug/bundle/verbnest_app
+      if [ -x "$bundle" ]; then
+        echo "== linux diagnostics: ldd (missing libraries)"
+        ldd "$bundle" 2>&1 | grep -i "not found" || echo "none missing"
+        echo "== linux diagnostics: the app on its own for 10 s"
+        ( ulimit -c 0; timeout 10 xvfb-run -a "$bundle" 2>&1 | tail -n 40; echo "exit ${PIPESTATUS[0]}" ) || true
+      fi
+    fi
   fi
 done
 kill_app
