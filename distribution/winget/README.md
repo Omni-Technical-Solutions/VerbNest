@@ -24,4 +24,6 @@ Installers are hosted publicly on `https://github.com/Omni-Technical-Solutions/V
 
 4. Copy the generated manifests into `manifests/o/Omni/VerbNest/<version>/` and commit them (`chore`), then push.
 
+While the new-package PR is still open (the package is not yet in `microsoft/winget-pkgs`, so `wingetcreate update` fails with "not found"), update the PR instead: copy the previous manifest folder to the new version, change `PackageVersion`, `DisplayVersion`, the installer URL and `InstallerSha256` (`certutil -hashfile <exe> SHA256`), then in a clone of the fork's PR branch replace the old version folder with the new one, push, and retitle the PR (`gh api -X PATCH repos/microsoft/winget-pkgs/pulls/<n> -f title=...`; `gh pr edit` needs scopes the stored token lacks). Keep only the submitted version under `manifests/`.
+
 winget versions are app versions. A rebuild with the same version cannot be resubmitted.
