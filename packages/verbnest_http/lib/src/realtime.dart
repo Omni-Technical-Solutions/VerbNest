@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'cert_inspect.dart';
+import 'errors.dart';
 import 'models.dart';
 import 'pin.dart';
 import 'proxy.dart';
@@ -198,23 +199,36 @@ Future<void> _checkServerPin(HttpSettings s, Uri url) async {
   if (s.proxy != null && !s.proxy!.bypasses(url.host)) return;
   final port = url.hasPort ? url.port : 443;
   if (!pinApplies(tls, url.host, port)) return;
-  final socket = await SecureSocket.secure(
-    await Socket.connect(url.host, port, timeout: s.timeout),
-    host: url.host,
-    context: tls.isEmpty ? null : tls.contextFor(url.host, port: port),
-    onBadCertificate: s.verifyTls ? null : (_) => true,
-  );
+  final raw = await Socket.connect(url.host, port, timeout: s.timeout);
+  final SecureSocket socket;
+  try {
+    socket = await SecureSocket.secure(
+      raw,
+      host: url.host,
+      context: tls.isEmpty ? null : tls.contextFor(url.host, port: port),
+      onBadCertificate: s.verifyTls ? null : (_) => true,
+    );
+  } on Object {
+    raw.destroy();
+    rethrow;
+  }
   try {
     final cert = socket.peerCertificate;
     if (cert == null) return;
-    final info = parseCertificate(cert.der);
+    final CertInfo info;
+    try {
+      info = parseCertificate(cert.der);
+    } on CertFormatException {
+      // A pin in force cannot be compared with an unreadable certificate.
+      if (pinRequired(tls, url.host, port, verified: s.verifyTls) != null) {
+        throw TlsError(pinUnreadableMessage(url.host, port));
+      }
+      return;
+    }
     final check = checkPin(tls, url.host, port, info, verified: s.verifyTls);
     if (check.status == PinStatus.mismatch) {
       throw PinMismatchError(check.entry!, info);
     }
-  } on CertFormatException {
-    // An unreadable certificate cannot be compared; the real connection
-    // decides whether to trust it.
   } finally {
     socket.destroy();
   }

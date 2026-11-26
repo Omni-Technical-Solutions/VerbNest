@@ -317,8 +317,22 @@ class _Connection {
   /// Compares the server key with the pins (recording it on first use). A
   /// key that changed closes [socket] and throws before anything is sent.
   PinStatus _checkedPin(TlsConfig? config, CertInfo? parsed, Socket socket) {
-    if (parsed == null) return PinStatus.notApplicable;
     final u = spec.url;
+    if (parsed == null) {
+      // A pin that is in force cannot be compared with an unreadable
+      // certificate: refuse, do not let the connection through unchecked.
+      if (pinRequired(
+            config,
+            u.host,
+            u.port,
+            verified: spec.settings.verifyTls,
+          ) !=
+          null) {
+        socket.destroy();
+        throw TlsError(pinUnreadableMessage(u.host, u.port));
+      }
+      return PinStatus.notApplicable;
+    }
     final check = checkPin(
       config,
       u.host,

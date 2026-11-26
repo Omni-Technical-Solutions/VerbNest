@@ -7,6 +7,21 @@ cd "$(git rev-parse --show-toplevel)"
 
 staged=$(git diff --cached --name-only --diff-filter=ACMR)
 code=$(printf '%s\n' "$staged" | grep -E '\.(dart|py|sh|swift|java|kt|c|cc|cpp|h|yaml)$|pubspec' || true)
+
+# A release bookkeeping commit (BUILD_NUMBER, and a pubspec whose only change is
+# its `version:` line) changes no code: it must not cost a full test run.
+only_version_line() {
+  [ -z "$(git diff --cached -U0 -- "$1" | grep -E '^[+-][^+-]' | grep -vE '^[+-]version: ' || true)" ]
+}
+kept=""
+for f in $code; do
+  case "$f" in
+    */pubspec.yaml | pubspec.yaml) only_version_line "$f" && continue ;;
+  esac
+  kept="$kept$f
+"
+done
+code=$(printf '%s' "$kept" | sed '/^$/d')
 if [ -z "$code" ]; then
   echo "precommit_gate: no code staged, nothing to check"
   exit 0

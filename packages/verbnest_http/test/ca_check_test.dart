@@ -8,7 +8,7 @@ import 'package:verbnest_http/verbnest_http.dart';
 Uint8List _der(List<int> pem) {
   final body = latin1
       .decode(pem)
-      .split('\n')
+      .split(RegExp(r'\r?\n'))
       .where((l) => l.isNotEmpty && !l.startsWith('-----'))
       .join();
   return base64Decode(body);
@@ -35,6 +35,20 @@ void main() {
     );
     expect(r.ok, isTrue, reason: r.message);
     expect(r.certs.single.subject, contains('localhost'));
+  });
+
+  test('a PEM with Windows line endings is accepted and a DER from it too', () {
+    if (!available) return markTestSkipped('openssl not found');
+    final crlf = Uint8List.fromList(
+      latin1.encode(
+        latin1.decode(cert).replaceAll('\r\n', '\n').replaceAll('\n', '\r\n'),
+      ),
+    );
+    expect(latin1.decode(crlf), contains('\r\n'));
+    final r = checkCaCertificates(crlf);
+    expect(r.ok, isTrue, reason: r.message);
+    expect(r.certs.single.sha256, parseCertificate(cert).sha256);
+    expect(checkCaCertificates(_der(crlf)).ok, isTrue);
   });
 
   test('a bundle lists every certificate', () {

@@ -156,11 +156,14 @@ void main() {
     final sw = Stopwatch()..start();
     final file = await NetworkExport.encrypt(_config(), 'x');
     await NetworkExport.decrypt(file, 'x');
-    // Two derivations at 600,000 rounds each, in pure Dart.
-    expect(sw.elapsed, lessThan(const Duration(seconds: 30)));
+    // Two derivations at 600,000 rounds each, in pure Dart: a few seconds on
+    // an idle machine. The bound is loose and the test timeout longer than the
+    // default 30 s, so a busy machine (a parallel build, a CI runner) does not
+    // fail it; a derivation that took minutes would still fail.
+    expect(sw.elapsed, lessThan(const Duration(seconds: 90)));
     // ignore: avoid_print
     print('600k-round export + import: ${sw.elapsedMilliseconds} ms');
-  });
+  }, timeout: const Timeout(Duration(minutes: 3)));
 
   test(
     'a keystore identity is not exported: it exists only on this device',

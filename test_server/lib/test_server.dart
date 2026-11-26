@@ -66,11 +66,22 @@ class TestServer {
   }
 
   /// Whether `openssl` can be run to create the TLS test certificate.
+  ///
+  /// On CI (`CI=true`) a missing `openssl` is an error, not a skip: the TLS
+  /// tests would otherwise pass without testing anything. Set
+  /// `VERBNEST_ALLOW_NO_OPENSSL=1` to allow the skip there.
   static Future<bool> get tlsAvailable async {
     try {
       await selfSignedCertificate();
       return true;
     } on Object {
+      final env = Platform.environment;
+      if (env['CI'] == 'true' && env['VERBNEST_ALLOW_NO_OPENSSL'] != '1') {
+        throw StateError(
+          'openssl is required on CI to create the TLS test certificates; '
+          'the TLS tests would be skipped otherwise',
+        );
+      }
       return false;
     }
   }

@@ -27,6 +27,11 @@ What is ready in the repository and what only the account owner can do. Nothing 
 2. In Xcode open `apps/verbnest_app/ios/Runner.xcworkspace` and `macos/Runner.xcworkspace`, set your Team under Signing & Capabilities (automatic signing), then `flutter build ipa --release` and upload with Xcode Organizer or `xcrun altool`/Transporter. The macOS Mac App Store build needs the 3rd Party Mac Developer Application and Installer certificates.
 3. Fill listing, screenshots, privacy ("Data Not Collected") and review notes from `store-listing.md`.
 
+## Before any release
+- The latest `ci.yml` run on `main` is green (`gh run list -R Omni-Technical-Solutions/VerbNest --workflow ci.yml --branch main --limit 1`). From 2026-11-13 to 2026-11-26 releases went out on a red `main`; do not repeat that.
+- All artefacts of one version are built on one machine, so build numbers cannot collide (`scripts/next_build.sh` checks `origin/main`'s `BUILD_NUMBER` as well).
+- The macOS DMG is notarised before the push (`scripts/notarize_macos.sh`).
+
 ## Needs the owner
 1. Google Play: developer account, `keytool -genkey` upload key, `flutter build appbundle --release`, Play App Signing, data safety form (no data collected), content rating.
 2. F-Droid: merge request to `fdroiddata` with a build recipe for the tag; the app has no proprietary dependencies, but check `fjs` (Rust) builds from source in their build server.

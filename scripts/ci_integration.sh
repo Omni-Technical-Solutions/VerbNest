@@ -36,7 +36,16 @@ for f in "${files[@]}"; do
     # "0 tests passed. No tests were found." and failed a passing run.
     if ${runner[@]+"${runner[@]}"} flutter test "$f" -d "$device" --reporter expanded; then ok=1; break; fi
   done
-  if [ "$ok" -ne 1 ]; then echo "FAILED: $f"; status=1; fi
+  if [ "$ok" -ne 1 ]; then
+    echo "FAILED: $f"
+    status=1
+    # The expanded reporter hides why the app process died; one more run with
+    # the verbose log shows the embedder's own output (its tail is enough).
+    kill_app
+    sleep 3
+    echo "== $f (diagnostic run, verbose)"
+    ${runner[@]+"${runner[@]}"} flutter test "$f" -d "$device" --reporter expanded -v 2>&1 | tail -n 60 || true
+  fi
 done
 kill_app
 exit $status

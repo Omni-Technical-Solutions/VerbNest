@@ -119,3 +119,16 @@ reason = "zstd/zstd-safe/zstd-sys bindings, reached only through fjs' compressio
 id = "RUSTSEC-2026-0410"
 ignoreUntil = 2026-12-31
 reason = "zstd/zstd-safe/zstd-sys bindings, reached only through fjs' compression modules (llrt_compression via fetch and zlib); VerbNest enables no fjs builtins, so scripts cannot decompress anything; wait for an fjs release"
+
+# Added 2026-11-26: two new advisories in the same fjs 3.3.2 lockfile (still the
+# latest fjs release, published 2026-09-30).
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0543"
+ignoreUntil = 2026-12-31
+reason = "chrono is unmaintained (no vulnerability, no fixed version); it is a dependency of the fjs engine's own modules, not code VerbNest calls; wait for an fjs release that moves to jiff or time"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0592"
+ignoreUntil = 2026-12-31
+reason = "stack overflow in url 2.5.8 Url::origin() on deeply nested blob: URLs; reached only through fjs' fetch/URL modules, which VerbNest does not enable (JsBuiltinOptions() has no builtins), so scripts cannot build such a URL; fixed in url 2.5.9, wait for an fjs release that updates its lockfile"

@@ -235,6 +235,25 @@ bool pinApplies(TlsConfig? tls, String host, int port) {
       (tls.pinByDefault && tls.clientCertificateFor(host, port: port) != null);
 }
 
+/// The enabled pin entry that a connection to [host]:[port] must be checked
+/// against, or null. Used when the server certificate cannot be read, so its
+/// key cannot be compared: with such a pin in force and verification on, the
+/// connection must be refused rather than let through unchecked.
+PinEntry? pinRequired(
+  TlsConfig? tls,
+  String host,
+  int port, {
+  required bool verified,
+}) {
+  final entry = tls?.pins?.lookup(host, port);
+  if (!verified || entry == null || !entry.enabled) return null;
+  return entry;
+}
+
+String pinUnreadableMessage(String host, int port) =>
+    'The certificate of $host:$port could not be read, so its pinned key '
+    'cannot be checked. The connection was closed before anything was sent';
+
 /// Compares the server's [leaf] certificate with the pins in [tls] for
 /// [host]:[port], recording the key on first use. Pinning applies to a host
 /// that has a pin, and (unless switched off) to every host a client

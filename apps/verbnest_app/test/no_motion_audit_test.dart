@@ -327,6 +327,8 @@ void main() {
           await tour.step('toggle a switch', () async {
             final f = find.byKey(const Key('compact-density'));
             await t.scrollUntilVisible(f, 300, scrollable: settingsScroll);
+            await t.ensureVisible(f);
+            await t.pump();
             await t.tap(f);
           });
           await tour.step(
@@ -334,6 +336,8 @@ void main() {
             () async {
               final f = find.byKey(const Key('accent-2'));
               await t.scrollUntilVisible(f, 300, scrollable: settingsScroll);
+              await t.ensureVisible(f);
+              await t.pump();
               await t.tap(f);
             },
             // Known exception: Material surfaces (Scaffold, cards) cross-fade their

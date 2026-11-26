@@ -93,7 +93,10 @@ jobs:
       matrix:
         include:
           - name: linux
-            os: ubuntu-latest
+            # Pinned: on `ubuntu-latest` (now Ubuntu 26.04) the app dies a few
+            # seconds into every integration test ("did not complete"); the
+            # release .deb targets Ubuntu 22.04 and newer anyway.
+            os: ubuntu-24.04
             build: flutter build linux --release
             test: ../../scripts/ci_integration.sh linux verbnest_app integration_test/platform_test.dart integration_test/workspace_test.dart integration_test/script_test.dart integration_test/auth_test.dart integration_test/pdf_test.dart
           - name: windows

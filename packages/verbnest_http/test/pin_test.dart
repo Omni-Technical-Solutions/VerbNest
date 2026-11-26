@@ -266,6 +266,36 @@ void main() {
       );
     });
 
+    test('an unreadable certificate is refused only under an enabled pin', () {
+      final pinned = PinBook([PinEntry(host: 'host.test', spki: 'K1')]);
+      expect(
+        pinRequired(config(pinned), 'host.test', 443, verified: true),
+        isNotNull,
+      );
+      // No entry for the host, verification off, a disabled entry, no book:
+      // there is nothing to compare, so nothing is refused.
+      expect(
+        pinRequired(config(pinned), 'other.test', 443, verified: true),
+        isNull,
+      );
+      expect(
+        pinRequired(config(pinned), 'host.test', 443, verified: false),
+        isNull,
+      );
+      final off = PinBook([
+        PinEntry(host: 'host.test', spki: 'K1', enabled: false),
+      ]);
+      expect(
+        pinRequired(config(off), 'host.test', 443, verified: true),
+        isNull,
+      );
+      expect(pinRequired(null, 'host.test', 443, verified: true), isNull);
+      expect(
+        pinUnreadableMessage('host.test', 443),
+        contains('host.test:443 could not be read'),
+      );
+    });
+
     test('nothing is recorded or compared without verification', () {
       final book = PinBook([PinEntry(host: 'host.test', spki: 'K1')]);
       expect(
