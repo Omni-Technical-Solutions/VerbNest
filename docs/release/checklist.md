@@ -29,6 +29,8 @@ What is ready in the repository and what only the account owner can do. Nothing 
 
 ## Before any release
 - The latest `ci.yml` run on `main` is green (`gh run list -R Omni-Technical-Solutions/VerbNest --workflow ci.yml --branch main --limit 1`). From 2026-11-13 to 2026-11-26 releases went out on a red `main`; do not repeat that.
+- **Security scan passes: `scripts/security_scan.sh`** (secrets in the history, known advisories in the Dart and Rust dependencies, reviewed exceptions that expire within 30 days, CI on `main`). It needs `gitleaks`, `osv-scanner` (`brew install gitleaks osv-scanner`) and `gh`; a missing tool fails the scan. Also run `/security-review` on the changes since the last release tag.
+- **Every finding is fixed before release**, in its own commit: a code fix (`fix(...)`), an updated package, or, only when the code is not reachable, a reviewed exception with a reason and an expiry in `osv-scanner.toml`. Run the scan again until it passes. Do not tag, push a release, upload to a store or publish an installer on a failing scan.
 - All artefacts of one version are built on one machine, so build numbers cannot collide (`scripts/next_build.sh` checks `origin/main`'s `BUILD_NUMBER` as well).
 - The macOS DMG is notarised before the push (`scripts/notarize_macos.sh`).
 
