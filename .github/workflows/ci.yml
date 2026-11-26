@@ -130,7 +130,7 @@ jobs:
         if: matrix.name == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev xvfb
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev xvfb dbus gnome-keyring
       # The script engine (fjs) is Rust; Linux, Windows and Android build it
       # from source. Apple targets use its signed prebuilt binaries.
       - name: Free disk space for the emulator

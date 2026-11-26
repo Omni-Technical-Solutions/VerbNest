@@ -8,7 +8,8 @@ set -u
 device=$1
 proc=$2
 shift 2
-cd "$(dirname "$0")/../apps/verbnest_app"
+here="$(cd "$(dirname "$0")" && pwd)"
+cd "$here/../apps/verbnest_app"
 files=("$@")
 if [ ${#files[@]} -eq 0 ]; then files=(integration_test/*_test.dart); fi
 
@@ -22,7 +23,11 @@ kill_app() {
 }
 
 runner=()
-if [ "$device" = linux ]; then runner=(xvfb-run -a); fi
+# Linux: a display, and a D-Bus session with an unlocked keyring (see
+# ci_linux_session.sh): without a secret service the app exits at its vault check.
+if [ "$device" = linux ]; then
+  runner=(dbus-run-session -- "$here/ci_linux_session.sh" xvfb-run -a)
+fi
 
 status=0
 for f in "${files[@]}"; do
@@ -51,7 +56,7 @@ for f in "${files[@]}"; do
       echo "== linux diagnostics: HOME=$HOME XDG_DOCUMENTS=$(xdg-user-dir DOCUMENTS 2>&1) df:"
       df -h "$HOME" /tmp 2>&1 | tail -n 3
       echo "== linux diagnostics: step-by-step probe (the last DIAG line printed is where the app ends)"
-      xvfb-run -a flutter test integration_test/linux_diag_test.dart -d linux --reporter expanded 2>&1 | grep -E "DIAG|Some tests failed|All tests passed|did not complete" || true
+      ${runner[@]+"${runner[@]}"} flutter test integration_test/linux_diag_test.dart -d linux --reporter expanded 2>&1 | grep -E "DIAG|Some tests failed|All tests passed|did not complete" || true
       bundle=build/linux/x64/debug/bundle/verbnest_app
       if [ -x "$bundle" ]; then
         echo "== linux diagnostics: ldd (missing libraries)"
