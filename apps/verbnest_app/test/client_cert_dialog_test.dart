@@ -143,6 +143,47 @@ void main() {
     expect(canSave(t), isTrue);
   });
 
+  testWidgets('a combined PEM (certificate and key in one file) enables Add', (
+    t,
+  ) async {
+    final m = await t.runAsync(_make);
+    if (m == null) return markTestSkipped('openssl not found');
+    final (c, files) = await open(t);
+    await pick(
+      t,
+      files,
+      'pick-cert',
+      'both.pem',
+      Uint8List.fromList([...m.cert, ...m.key]),
+    );
+    // No second file is needed: the key is taken from the same one.
+    expect(find.byKey(const Key('cert-problem')), findsNothing);
+    expect(
+      find.textContaining('found in the certificate file'),
+      findsOneWidget,
+    );
+    expect(canSave(t), isTrue);
+    await t.tap(find.byKey(const Key('save-cert')));
+    await t.pumpAndSettle();
+    expect(c.read(networkProvider).clientCerts.single.privateKey, isNotNull);
+  });
+
+  testWidgets('a PEM certificate alone says why Add is off', (t) async {
+    final m = await t.runAsync(_make);
+    if (m == null) return markTestSkipped('openssl not found');
+    final (_, files) = await open(t);
+    await pick(t, files, 'pick-cert', 'me.pem', m.cert);
+    expect(canSave(t), isFalse);
+    expect(find.textContaining('choose its private key'), findsOneWidget);
+    await pick(t, files, 'pick-key', 'me.key', m.key);
+    expect(find.byKey(const Key('cert-problem')), findsNothing);
+    expect(canSave(t), isTrue);
+    // Choosing another certificate afterwards asks for its key again only
+    // when the new file has none.
+    await pick(t, files, 'pick-cert', 'other.pem', m.cert);
+    expect(canSave(t), isTrue);
+  });
+
   testWidgets('a PKCS#12 bundle checks the passphrase as it is typed', (
     t,
   ) async {

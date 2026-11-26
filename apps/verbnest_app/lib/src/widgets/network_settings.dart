@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'ui/still_controls.dart';
 
@@ -307,6 +308,10 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
   PickedFile? _cert;
   PickedFile? _key;
 
+  /// The private key was found inside the certificate file (a combined PEM,
+  /// what `openssl pkcs12 -nodes` writes), so no separate key is asked for.
+  bool _keyInCert = false;
+
   /// "Send no client certificate" instead of a certificate.
   bool _none = false;
 
@@ -348,13 +353,18 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
     setState(() {
       if (key) {
         _key = f;
+        _keyInCert = false;
       } else {
         // The name follows the file until it has been changed by hand.
         if (_name.text.isEmpty || _name.text == _cert?.name) {
           _name.text = f.name;
         }
         _cert = f;
-        if (!_isPem) _key = null;
+        // A combined PEM carries its own key; a new certificate drops a key
+        // that was taken from the previous one.
+        if (_keyInCert || !_isPem) _key = null;
+        _keyInCert = _isPem && _hasPrivateKey(f.bytes);
+        if (_keyInCert) _key = f;
       }
       _recheck();
     });
@@ -364,13 +374,15 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
   /// that does not match shows here and not at the first request.
   void _recheck() {
     final cert = _cert;
-    if (cert == null || (_isPem && _key == null)) {
+    if (cert == null) {
       _check = null;
       return;
     }
+    // A PEM certificate with no key yet is checked too, so the reason the
+    // Add button is off ("choose its private key as well") is on screen.
     _check = checkClientCertificate(
       certificate: cert.bytes,
-      privateKey: _isPem ? _key!.bytes : null,
+      privateKey: _isPem ? _key?.bytes : null,
       passphrase: _pass.text,
     );
   }
@@ -512,7 +524,11 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
               ListTile(
                 key: const Key('pick-key'),
                 contentPadding: EdgeInsets.zero,
-                title: Text(_key?.name ?? context.l10n.nsChooseKey),
+                title: Text(
+                  _keyInCert
+                      ? context.l10n.nsKeyInCert
+                      : (_key?.name ?? context.l10n.nsChooseKey),
+                ),
                 trailing: const Icon(Icons.folder_open),
                 onTap: () => _pick(true),
               ),
@@ -575,3 +591,9 @@ Future<void> addTrustedCa(BuildContext context, WidgetRef ref) async {
       r.error ?? (r.added == null ? null : context.l10n.nsCaAdded(r.added!));
   if (msg != null) showToast(context, msg);
 }
+
+final _privateKeyBlock = RegExp(r'-----BEGIN [A-Z ]*PRIVATE KEY-----');
+
+/// Whether a PEM file holds a private key block as well as the certificate.
+bool _hasPrivateKey(Uint8List bytes) =>
+    _privateKeyBlock.hasMatch(latin1.decode(bytes, allowInvalid: true));

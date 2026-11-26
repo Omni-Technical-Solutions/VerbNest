@@ -712,6 +712,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get nsKeyInCert =>
+      'Private key: found in the certificate file (tap to choose another)';
+
+  @override
   String get nsAddCa => 'Add trusted CA';
 
   @override

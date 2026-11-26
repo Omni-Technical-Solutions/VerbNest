@@ -435,6 +435,7 @@
       }
     }
   },
+  "nsKeyInCert": "Private key: found in the certificate file (tap to choose another)",
   "nsAddCa": "Add trusted CA",
   "nsCaAdded": "Trusted: {subjects}",
   "@nsCaAdded": {"placeholders": {"subjects": {"type": "String"}}},

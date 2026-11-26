@@ -1354,6 +1354,12 @@ abstract class AppLocalizations {
   /// **'Client certificate for {pattern}'**
   String nsClientCertFor(String pattern);
 
+  /// No description provided for @nsKeyInCert.
+  ///
+  /// In en, this message translates to:
+  /// **'Private key: found in the certificate file (tap to choose another)'**
+  String get nsKeyInCert;
+
   /// No description provided for @nsAddCa.
   ///
   /// In en, this message translates to:

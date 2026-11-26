@@ -2,6 +2,10 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.73.1
+
+- Fix: **Add stayed disabled when a client certificate was chosen** in the certificate dialog (Settings and the Headers tab) if the certificate was a PEM that also holds its private key (a combined file, what `openssl pkcs12 -nodes` writes), or if the key file had not been chosen: the button stayed off with no explanation. A combined PEM now takes its key from the same file, and a PEM certificate without a key says "choose its private key as well" in red while Add is off.
+
 ## 0.73.0
 
 - New: the request's **Headers tab** has a **TLS certificates** section. It says which client certificate (or none) and how many trusted CAs apply to the request's host, and lets you add a client certificate, a trusted CA, a keystore identity or a "send no client certificate" entry for that host in place, with the host filled in; **Test connection** opens for the same URL. Entries are the same ones Settings > Network shows, and are never stored in the request. FR-HTTP-013g.
