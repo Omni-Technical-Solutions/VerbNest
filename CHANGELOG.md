@@ -2,6 +2,11 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.73.3
+
+- Fix: **a PEM certificate with text before its first block could not be added.** The certificate dialog said "This is a PEM certificate: choose its private key as well" and kept Add off, but showed no row to choose the key. Files that `openssl pkcs12 -nodes` writes start with `Bag Attributes` and `subject=` lines, and the dialog looked for the first block only in the first 80 bytes while the check that wrote the message looked in 200. Both now ask one shared function, `looksLikePem`, which searches the whole file; the key row also shows whenever the check says the key is missing. The same copied rule in `verbnest run` and the command line (`verbnest tls`, `--cert`) is gone too, so those accept such files. A combined certificate-and-key file with text first takes its key from the same file.
+- Tests: headed certificates and keys (94, 300 and 5000 bytes of text, and a real `openssl pkcs12 -nodes` file) in `cert_inspect_test.dart`, `client_cert_dialog_test.dart`, `network_settings_test.dart` and `tls_cli_test.dart`; `pem_detector_guard_test.dart` fails if a start-of-file PEM check is written again. Plan: `docs/spec/pem-key-row-plan.md`.
+
 ## 0.73.2
 
 - Fix: **a pinned host whose certificate cannot be read is refused.** When a pin is in force and verification is on, a server certificate that VerbNest cannot parse used to skip the pin check silently (requests, WebSocket and SSE alike); the connection is now closed before anything is sent, with a sentence saying why. Hosts without a pin, and runs with verification off, are unchanged. The WebSocket/SSE key check also closes its probe socket when the TLS handshake fails.

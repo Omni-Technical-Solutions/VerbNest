@@ -184,6 +184,55 @@ void main() {
     expect(canSave(t), isTrue);
   });
 
+  // `openssl pkcs12 -nodes` and some CAs write text before the first block.
+  // The key row used to depend on a file starting with the block within 80
+  // bytes, while the message asking for the key did not.
+  Uint8List headed(Uint8List pem, int headerBytes) {
+    final text = StringBuffer('Bag Attributes\n');
+    while (text.length < headerBytes) {
+      text.write('subject=/CN=dialog-client/O=Example Organisation\n');
+    }
+    return Uint8List.fromList([...text.toString().codeUnits, ...pem]);
+  }
+
+  for (final header in [94, 300]) {
+    testWidgets('a PEM certificate with $header bytes of text first still '
+        'offers its private key', (t) async {
+      final m = await t.runAsync(_make);
+      if (m == null) return markTestSkipped('openssl not found');
+      final (c, files) = await open(t);
+      await pick(t, files, 'pick-cert', 'me.pem', headed(m.cert, header));
+      expect(find.textContaining('choose its private key'), findsOneWidget);
+      expect(find.byKey(const Key('pick-key')), findsOneWidget);
+      expect(canSave(t), isFalse);
+      await pick(t, files, 'pick-key', 'me.key', headed(m.key, header));
+      expect(find.byKey(const Key('cert-problem')), findsNothing);
+      expect(canSave(t), isTrue);
+      await t.tap(find.byKey(const Key('save-cert')));
+      await t.pumpAndSettle();
+      expect(c.read(networkProvider).clientCerts.single.privateKey, isNotNull);
+    });
+  }
+
+  testWidgets('a combined PEM with text first takes its key from the file', (
+    t,
+  ) async {
+    final m = await t.runAsync(_make);
+    if (m == null) return markTestSkipped('openssl not found');
+    final (c, files) = await open(t);
+    final both = headed(Uint8List.fromList([...m.cert, ...m.key]), 300);
+    await pick(t, files, 'pick-cert', 'both.pem', both);
+    expect(find.byKey(const Key('cert-problem')), findsNothing);
+    expect(
+      find.textContaining('found in the certificate file'),
+      findsOneWidget,
+    );
+    expect(canSave(t), isTrue);
+    await t.tap(find.byKey(const Key('save-cert')));
+    await t.pumpAndSettle();
+    expect(c.read(networkProvider).clientCerts.single.privateKey, isNotNull);
+  });
+
   testWidgets('a PKCS#12 bundle checks the passphrase as it is typed', (
     t,
   ) async {

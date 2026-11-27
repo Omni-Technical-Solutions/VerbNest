@@ -72,6 +72,12 @@ Future<_Files?> _make() async {
     '-out', f.path('old.p12'), '-passout', 'pass:hunter2', //
     '-certpbe', 'PBE-SHA1-3DES', '-keypbe', 'PBE-SHA1-3DES', '-macalg', 'sha1',
   ]);
+  // What `openssl pkcs12 -nodes` writes: `Bag Attributes` and `subject=` text
+  // in front of every block, certificate and key in one file.
+  await run([
+    'pkcs12', '-in', f.path('modern.p12'), '-nodes', //
+    '-passin', 'pass:hunter2', '-out', f.path('headed.pem'),
+  ]);
   // Two certificates in one PEM, like a chain.
   File(f.path('chain.pem'))
       .writeAsBytesSync([...f.read('rsa.crt'), ...f.read('other.crt')]);
@@ -308,6 +314,68 @@ void main() {
         expect(text, isNot(contains('secret-xyz-123')));
         expect(text, isNot(contains(keyText.substring(0, 40))));
       }
+    });
+  });
+
+  group('text before the first PEM block', () {
+    Uint8List headed(Uint8List pem, int headerBytes) {
+      final text = StringBuffer('Bag Attributes\n');
+      while (text.length < headerBytes) {
+        text.write('subject=/CN=client1/O=Example Organisation\n');
+      }
+      return Uint8List.fromList([...utf8.encode(text.toString()), ...pem]);
+    }
+
+    test('looksLikePem sees a block after any amount of text', () {
+      final f = need();
+      final crt = f.read('rsa.crt');
+      expect(looksLikePem(crt), isTrue);
+      for (final n in [94, 300, 5000]) {
+        expect(looksLikePem(headed(crt, n)), isTrue, reason: '$n bytes');
+      }
+      expect(
+        looksLikePem(
+          Uint8List.fromList(crt.map((b) => b == 13 ? 10 : b).toList()),
+        ),
+        isTrue,
+      );
+      expect(looksLikePem(f.read('modern.p12')), isFalse);
+      expect(looksLikePem(Uint8List(0)), isFalse);
+      expect(
+        looksLikePem(Uint8List.fromList(utf8.encode('plain text'))),
+        isFalse,
+      );
+    });
+
+    test('hasPrivateKeyBlock finds a key, encrypted or not, anywhere', () {
+      final f = need();
+      expect(hasPrivateKeyBlock(f.read('rsa.crt')), isFalse);
+      expect(hasPrivateKeyBlock(f.read('rsa.key')), isTrue);
+      expect(hasPrivateKeyBlock(f.read('rsa.enc.key')), isTrue);
+      expect(hasPrivateKeyBlock(f.read('headed.pem')), isTrue);
+    });
+
+    test('a headed certificate asks for its key, and loads with it', () {
+      final f = need();
+      for (final n in [94, 300]) {
+        final crt = headed(f.read('rsa.crt'), n);
+        final alone = checkClientCertificate(certificate: crt);
+        expect(alone.problem, CertProblem.keyMissing, reason: '$n bytes');
+        final withKey = checkClientCertificate(
+          certificate: crt,
+          privateKey: headed(f.read('rsa.key'), n),
+        );
+        expect(withKey.ok, isTrue, reason: '$n bytes: ${withKey.message}');
+        expect(withKey.info!.subject, contains('client1'));
+      }
+    });
+
+    test('a combined file from openssl pkcs12 -nodes loads on its own', () {
+      final f = need();
+      final both = f.read('headed.pem');
+      expect(String.fromCharCodes(both.take(20)), contains('Bag Attributes'));
+      final c = checkClientCertificate(certificate: both, privateKey: both);
+      expect(c.ok, isTrue, reason: c.message);
     });
   });
 

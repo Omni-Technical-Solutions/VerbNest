@@ -138,7 +138,7 @@ int _inspect(
     err.writeln('--passphrase-env: $envName is not set.');
     return 2;
   }
-  final isPem = String.fromCharCodes(bytes.take(200)).contains('-----BEGIN');
+  final isPem = looksLikePem(bytes);
   if (isPem) {
     final List<CertInfo> chain;
     try {

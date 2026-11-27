@@ -162,6 +162,22 @@ void main() {
       expect(err, contains('TLS: client certificate'));
     });
 
+    test('--cert and --key with text before the first block', () async {
+      if (!available) return markTestSkipped('openssl not found');
+      final header =
+          'Bag Attributes\n${'subject=/CN=cli-client/O=Example\n' * 8}';
+      for (final n in ['c', 'k']) {
+        final f = File('${dir.path}/$n.pem');
+        f.writeAsBytesSync([...header.codeUnits, ...f.readAsBytesSync()]);
+      }
+      final (code, out, err) = await cli(
+        run(['--cert', '${dir.path}/c.pem', '--key', '${dir.path}/k.pem']),
+      );
+      expect(code, 0, reason: '$out $err');
+      expect(out, contains('PASS'));
+      expect(err, contains('TLS: client certificate'));
+    });
+
     test('a PKCS#12 bundle with its passphrase from the environment', () async {
       if (!available) return markTestSkipped('openssl not found');
       final p12 = await TestServer.pkcs12(client.$1, client.$2, 'bundle-pw');

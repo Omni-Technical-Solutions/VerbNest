@@ -405,10 +405,7 @@ void _take(
       tls.clientCertificates.where(
         (c) =>
             !c.isKeystore &&
-            (c.isNone ||
-                c.privateKey != null ||
-                !String.fromCharCodes(c.certificate.take(200))
-                    .contains('-----BEGIN')),
+            (c.isNone || c.privateKey != null || !looksLikePem(c.certificate)),
       ),
     );
   }

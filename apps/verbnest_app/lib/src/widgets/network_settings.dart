@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'ui/still_controls.dart';
 
 import 'package:material_ui/material_ui.dart';
@@ -341,11 +338,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
     super.dispose();
   }
 
-  bool get _isPem =>
-      _cert != null &&
-      latin1
-          .decode(_cert!.bytes.take(80).toList(), allowInvalid: true)
-          .contains('-----BEGIN');
+  bool get _isPem => _cert != null && looksLikePem(_cert!.bytes);
 
   Future<void> _pick(bool key) async {
     final f = await ref.read(filePortProvider).pick();
@@ -363,7 +356,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
         // A combined PEM carries its own key; a new certificate drops a key
         // that was taken from the previous one.
         if (_keyInCert || !_isPem) _key = null;
-        _keyInCert = _isPem && _hasPrivateKey(f.bytes);
+        _keyInCert = _isPem && hasPrivateKeyBlock(f.bytes);
         if (_keyInCert) _key = f;
       }
       _recheck();
@@ -485,7 +478,10 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final needsKey = _isPem;
+    // The key row is there whenever the file is a PEM, and also whenever the
+    // check says the key is missing, so that message never shows without the
+    // control it asks for.
+    final needsKey = _isPem || _check?.problem == CertProblem.keyMissing;
     return AlertDialog(
       // The details and warnings can be long: the dialog scrolls.
       scrollable: true,
@@ -591,9 +587,3 @@ Future<void> addTrustedCa(BuildContext context, WidgetRef ref) async {
       r.error ?? (r.added == null ? null : context.l10n.nsCaAdded(r.added!));
   if (msg != null) showToast(context, msg);
 }
-
-final _privateKeyBlock = RegExp(r'-----BEGIN [A-Z ]*PRIVATE KEY-----');
-
-/// Whether a PEM file holds a private key block as well as the certificate.
-bool _hasPrivateKey(Uint8List bytes) =>
-    _privateKeyBlock.hasMatch(latin1.decode(bytes, allowInvalid: true));

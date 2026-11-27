@@ -1,6 +1,6 @@
 # Plan: the private key cannot be chosen for a PEM certificate
 
-Status: plan only, nothing changed yet. Planned release type: `fix` (patch). Reported 2026-11-27 while testing certificate upload: after choosing a certificate the dialog says "This is a PEM certificate: choose its private key as well" and Add stays off, but there is no way to choose the key.
+Status: done in 0.73.3. Planned release type: `fix` (patch). Reported 2026-11-27 while testing certificate upload: after choosing a certificate the dialog says "This is a PEM certificate: choose its private key as well" and Add stays off, but there is no way to choose the key.
 
 ## Verified: it happens, and why
 

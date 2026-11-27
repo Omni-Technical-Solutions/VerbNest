@@ -182,6 +182,34 @@ void main() {
     expect(saved!.single.host, 'x.test');
   });
 
+  test('a PEM certificate with text before its block still needs its key', () {
+    Uint8List pem(String header) => Uint8List.fromList(
+      '$header-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n'
+          .codeUnits,
+    );
+    final header = 'Bag Attributes\n${'subject=/CN=x/O=Example Org\n' * 8}';
+    expect(header.length, greaterThan(200));
+    for (final bytes in [pem(''), pem(header)]) {
+      final entry = ClientCertEntry(
+        id: 'c',
+        pattern: 'x.test',
+        name: 'c',
+        certificate: bytes,
+      );
+      expect(entry.needsKey, isTrue);
+    }
+    // A bundle (no PEM text) does not ask for a key.
+    expect(
+      ClientCertEntry(
+        id: 'p',
+        pattern: 'x.test',
+        name: 'p',
+        certificate: Uint8List.fromList([0x30, 0x82, 0x01, 0x02]),
+      ).needsKey,
+      isFalse,
+    );
+  });
+
   test('a keystore entry stores its id and no certificate bytes', () {
     final local = LocalStore.memory();
     addTearDown(local.close);

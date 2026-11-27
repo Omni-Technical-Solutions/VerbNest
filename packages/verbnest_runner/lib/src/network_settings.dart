@@ -48,10 +48,7 @@ class ClientCertEntry {
 
   /// A PEM certificate whose private key is not available (it sits in the
   /// secret store, which was not read): it cannot be used yet.
-  bool get needsKey =>
-      !none &&
-      privateKey == null &&
-      String.fromCharCodes(certificate.take(200)).contains('-----BEGIN');
+  bool get needsKey => !none && privateKey == null && looksLikePem(certificate);
 
   ClientCertEntry copyWith({
     String? pattern,

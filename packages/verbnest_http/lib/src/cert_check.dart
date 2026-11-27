@@ -174,10 +174,31 @@ CertCheck _classify(
   );
 }
 
-bool _isPem(Uint8List bytes) {
-  final head = String.fromCharCodes(bytes.take(200));
-  return head.contains('-----BEGIN');
-}
+bool _isPem(Uint8List bytes) => looksLikePem(bytes);
+
+/// Longest file that is searched for a PEM block; certificate and key files
+/// are a few kilobytes, so a bigger file is not one.
+const _pemSearchLimit = 1024 * 1024;
+
+/// Whether [bytes] hold a PEM block anywhere in the file. Text before the
+/// first block is normal (`openssl pkcs12 -nodes` writes `Bag Attributes`,
+/// `subject=` and `issuer=` lines) and OpenSSL skips it, so the start of the
+/// file is not enough to look at. A binary PKCS#12 or DER file has no such
+/// text. This is the one place that decides it: the app, the runner and the
+/// command line all call it, so they cannot disagree.
+bool looksLikePem(Uint8List bytes) => _text(bytes).contains('-----BEGIN');
+
+String _text(Uint8List bytes) => latin1.decode(
+  bytes.length > _pemSearchLimit ? bytes.sublist(0, _pemSearchLimit) : bytes,
+  allowInvalid: true,
+);
+
+final _privateKeyBlock = RegExp(r'-----BEGIN [A-Z ]*PRIVATE KEY-----');
+
+/// Whether a PEM file holds a private key block (plain or encrypted), as a
+/// combined certificate and key file does.
+bool hasPrivateKeyBlock(Uint8List bytes) =>
+    _privateKeyBlock.hasMatch(_text(bytes));
 
 /// The outcome of [checkCaCertificates].
 class CaCheck {
@@ -261,7 +282,7 @@ CaCheck checkCaCertificates(
 /// [bytes] as PEM: a PEM file is returned as it is, one DER certificate is
 /// wrapped in a `CERTIFICATE` block.
 Uint8List _asPem(Uint8List bytes) {
-  if (latin1.decode(bytes, allowInvalid: true).contains('-----BEGIN')) {
+  if (looksLikePem(bytes)) {
     return bytes;
   }
   final b64 = base64Encode(bytes);
