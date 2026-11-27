@@ -7,6 +7,7 @@ Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, m
 - Fix: **the certificate dialog now says that a `.key` file must be uploaded.** A CA returns the certificate (a PEM, often with a P7B chain) but never the private key, which stays with whoever made the certificate request (CSR). Before a file is chosen the dialog says a `.pem` or `.crt` needs its private key file as well and a `.p12` does not; once a PEM without a key is chosen, a highlighted box says "You also need to upload the .key file that was created with the certificate request (CSR). The CA does not send it." The key row now reads "Choose private key file (.key or .pem)". A P7B file is still not read directly (convert it with `openssl pkcs7 -print_certs`).
 - Test: `client_cert_dialog_test.dart` (hint, box, row label, `.p12` shows no box). 724 app tests pass.
 - Release: store builds (macOS, iOS, Android) carry 0.73.3 and 0.73.4 together. The security scan and `/security-review` passed first.
+- Release: build 77, Linux `.deb` (Ubuntu 22.04 root, glibc 2.35), added to the VerbNest-releases `v0.73.4` release. The security scan (`scripts/security_scan.sh`) passed first.
 
 ## 0.73.3
 
