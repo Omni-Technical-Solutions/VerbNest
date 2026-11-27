@@ -443,7 +443,9 @@
   "nsClientCertTitle": "Client certificate",
   "nsCertHosts": "Hosts (api.example.com, *.example.com or *)",
   "nsChooseCert": "Choose certificate (.pem, .p12)",
-  "nsChooseKey": "Choose private key (.pem)",
+  "nsChooseKey": "Choose private key file (.key or .pem)",
+  "nsKeyRequiredNote": "A PEM certificate does not contain its private key. You also need to upload the .key file that was created with the certificate request (CSR). The CA does not send it.",
+  "nsKeyHintNoCert": "A .pem or .crt certificate needs its private key file (.key) as well; a .p12 file already contains it.",
   "nsPassphrase": "Passphrase (optional)",
   "nsCertKeyAlgo": "Key: {value}",
   "@nsCertKeyAlgo": {

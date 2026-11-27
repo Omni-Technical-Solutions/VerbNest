@@ -736,7 +736,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nsChooseCert => 'Choose certificate (.pem, .p12)';
 
   @override
-  String get nsChooseKey => 'Choose private key (.pem)';
+  String get nsChooseKey => 'Choose private key file (.key or .pem)';
+
+  @override
+  String get nsKeyRequiredNote =>
+      'A PEM certificate does not contain its private key. You also need to upload the .key file that was created with the certificate request (CSR). The CA does not send it.';
+
+  @override
+  String get nsKeyHintNoCert =>
+      'A .pem or .crt certificate needs its private key file (.key) as well; a .p12 file already contains it.';
 
   @override
   String get nsPassphrase => 'Passphrase (optional)';

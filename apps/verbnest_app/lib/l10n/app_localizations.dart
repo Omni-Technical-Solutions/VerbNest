@@ -1399,8 +1399,20 @@ abstract class AppLocalizations {
   /// No description provided for @nsChooseKey.
   ///
   /// In en, this message translates to:
-  /// **'Choose private key (.pem)'**
+  /// **'Choose private key file (.key or .pem)'**
   String get nsChooseKey;
+
+  /// No description provided for @nsKeyRequiredNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A PEM certificate does not contain its private key. You also need to upload the .key file that was created with the certificate request (CSR). The CA does not send it.'**
+  String get nsKeyRequiredNote;
+
+  /// No description provided for @nsKeyHintNoCert.
+  ///
+  /// In en, this message translates to:
+  /// **'A .pem or .crt certificate needs its private key file (.key) as well; a .p12 file already contains it.'**
+  String get nsKeyHintNoCert;
 
   /// No description provided for @nsPassphrase.
   ///

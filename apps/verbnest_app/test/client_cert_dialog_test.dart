@@ -119,6 +119,25 @@ void main() {
       t.widget<FilledButton>(find.byKey(const Key('save-cert'))).onPressed !=
       null;
 
+  testWidgets('the dialog calls out that a PEM needs its .key file', (t) async {
+    final m = await t.runAsync(_make);
+    if (m == null) return markTestSkipped('openssl not found');
+    final (_, files) = await open(t);
+    // Before a file is chosen: a hint that a .pem needs a key and a .p12 not.
+    expect(find.byKey(const Key('key-hint')), findsOneWidget);
+    expect(find.byKey(const Key('key-required-note')), findsNothing);
+    await pick(t, files, 'pick-cert', 'me.pem', m.cert);
+    // A PEM without a key: the boxed note and the key row.
+    expect(find.byKey(const Key('key-hint')), findsNothing);
+    expect(find.byKey(const Key('key-required-note')), findsOneWidget);
+    expect(find.textContaining('.key file'), findsOneWidget);
+    expect(find.byKey(const Key('pick-key')), findsOneWidget);
+    expect(find.textContaining('.key or .pem'), findsOneWidget);
+    // A PKCS#12 bundle holds its key: no note.
+    await pick(t, files, 'pick-cert', 'me.p12', m.p12);
+    expect(find.byKey(const Key('key-required-note')), findsNothing);
+  });
+
   testWidgets('a key of another certificate is refused with a reason', (
     t,
   ) async {

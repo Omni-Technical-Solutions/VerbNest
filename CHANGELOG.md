@@ -2,6 +2,12 @@
 
 Versioning follows `docs/spec/roadmap.md` (Release workflow): feature = major, minor = minor, fix = patch, chore = no version change. The build number is separate and rises with every build (`BUILD_NUMBER`). One version covers the whole workspace.
 
+## 0.73.4
+
+- Fix: **the certificate dialog now says that a `.key` file must be uploaded.** A CA returns the certificate (a PEM, often with a P7B chain) but never the private key, which stays with whoever made the certificate request (CSR). Before a file is chosen the dialog says a `.pem` or `.crt` needs its private key file as well and a `.p12` does not; once a PEM without a key is chosen, a highlighted box says "You also need to upload the .key file that was created with the certificate request (CSR). The CA does not send it." The key row now reads "Choose private key file (.key or .pem)". A P7B file is still not read directly (convert it with `openssl pkcs7 -print_certs`).
+- Test: `client_cert_dialog_test.dart` (hint, box, row label, `.p12` shows no box). 724 app tests pass.
+- Release: store builds (macOS, iOS, Android) carry 0.73.3 and 0.73.4 together. The security scan and `/security-review` passed first.
+
 ## 0.73.3
 
 - Fix: **a PEM certificate with text before its first block could not be added.** The certificate dialog said "This is a PEM certificate: choose its private key as well" and kept Add off, but showed no row to choose the key. Files that `openssl pkcs12 -nodes` writes start with `Bag Attributes` and `subject=` lines, and the dialog looked for the first block only in the first 80 bytes while the check that wrote the message looked in 200. Both now ask one shared function, `looksLikePem`, which searches the whole file; the key row also shows whenever the check says the key is missing. The same copied rule in `verbnest run` and the command line (`verbnest tls`, `--cert`) is gone too, so those accept such files. A combined certificate-and-key file with text first takes its key from the same file.

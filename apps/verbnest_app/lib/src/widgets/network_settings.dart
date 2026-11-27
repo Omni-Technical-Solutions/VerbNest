@@ -476,6 +476,31 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
     );
   }
 
+  /// The key hint, the call-out that a PEM needs its `.key` file, and the row
+  /// that chooses it.
+  List<Widget> _keyRows(BuildContext context, bool needsKey) => [
+    if (_cert == null && !_none)
+      _KeyNote(key: const Key('key-hint'), text: context.l10n.nsKeyHintNoCert),
+    if (needsKey && !_none && !_keyInCert)
+      _KeyNote(
+        key: const Key('key-required-note'),
+        text: context.l10n.nsKeyRequiredNote,
+        strong: true,
+      ),
+    if (needsKey && !_none)
+      ListTile(
+        key: const Key('pick-key'),
+        contentPadding: EdgeInsets.zero,
+        title: Text(
+          _keyInCert
+              ? context.l10n.nsKeyInCert
+              : (_key?.name ?? context.l10n.nsChooseKey),
+        ),
+        trailing: const Icon(Icons.folder_open),
+        onTap: () => _pick(true),
+      ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     // The key row is there whenever the file is a PEM, and also whenever the
@@ -516,18 +541,7 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
                 trailing: const Icon(Icons.folder_open),
                 onTap: () => _pick(false),
               ),
-            if (needsKey && !_none)
-              ListTile(
-                key: const Key('pick-key'),
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  _keyInCert
-                      ? context.l10n.nsKeyInCert
-                      : (_key?.name ?? context.l10n.nsChooseKey),
-                ),
-                trailing: const Icon(Icons.folder_open),
-                onTap: () => _pick(true),
-              ),
+            ..._keyRows(context, needsKey),
             if (!_none) ...[
               TextField(
                 key: const Key('cert-name'),
@@ -564,6 +578,48 @@ class _ClientCertDialogState extends ConsumerState<_ClientCertDialog> {
           child: Text(context.l10n.nsAdd),
         ),
       ],
+    );
+  }
+}
+
+/// A line of explanation in the certificate dialog; [strong] boxes it so the
+/// private key requirement cannot be missed.
+class _KeyNote extends StatelessWidget {
+  const _KeyNote({super.key, required this.text, this.strong = false});
+
+  final String text;
+  final bool strong;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = Theme.of(context).textTheme.bodySmall;
+    if (!strong) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(text, style: style),
+      );
+    }
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.vpn_key, size: 18, color: scheme.onSecondaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: style?.copyWith(color: scheme.onSecondaryContainer),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
